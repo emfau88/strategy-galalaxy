@@ -344,23 +344,23 @@ ab 6 min: 3.0× Income / Sudden Death
 
 ### Command Phase
 
-- [ ] Pausiertes Schlachtfeld vollständig sichtbar halten.
-- [ ] Linke und rechte Lane eindeutig auswählbar und unterscheidbar darstellen.
-- [ ] Auto-Wave und zusätzlich geplante Units je Lane anzeigen.
-- [ ] Scout-, Fighter-, Bomber- und Frigate-Buttons mit Kosten und Verfügbarkeit anzeigen.
-- [ ] Hinzufügen und Entfernen geplanter Units ermöglichen.
-- [ ] Restenergie und Gesamtkosten sofort aktualisieren.
-- [ ] Economy- und Turret-Upgrades klar anbieten.
-- [ ] Einen eindeutigen `DEPLOY WAVE`-Button bereitstellen.
-- [ ] Bei Timerablauf eine konsistente Standardaktion ausführen.
+- [x] Pausiertes Schlachtfeld vollständig sichtbar halten.
+- [x] Linke und rechte Lane eindeutig auswählbar und unterscheidbar darstellen.
+- [x] Auto-Wave und zusätzlich geplante Units je Lane anzeigen.
+- [x] Scout-, Fighter-, Bomber- und Frigate-Buttons mit Kosten und Verfügbarkeit anzeigen.
+- [x] Hinzufügen und Entfernen geplanter Units ermöglichen.
+- [x] Restenergie und Gesamtkosten sofort aktualisieren.
+- [x] Economy- und Turret-Upgrades klar anbieten.
+- [x] Einen eindeutigen `DEPLOY WAVE`-Button bereitstellen.
+- [x] Bei Timerablauf eine konsistente Standardaktion ausführen.
 
 ### Battle Phase
 
-- [ ] Kauf- und Upgrade-Steuerung ausblenden oder eindeutig deaktivieren.
-- [ ] Phasentimer und Zeit bis zur nächsten Command Phase anzeigen.
-- [ ] Player-/Enemy-HQ-HP, Turretstatus, Energy und Income anzeigen.
-- [ ] Nodebesitz und Lane Pressure lesbar darstellen.
-- [ ] UI-Fläche so begrenzen, dass das Beobachten der Schlacht im Mittelpunkt bleibt.
+- [x] Kauf- und Upgrade-Steuerung ausblenden oder eindeutig deaktivieren.
+- [x] Phasentimer und Zeit bis zur nächsten Command Phase anzeigen.
+- [x] Player-/Enemy-HQ-HP, Turretstatus, Energy und Income anzeigen.
+- [x] Nodebesitz und Lane Pressure lesbar darstellen.
+- [x] UI-Fläche so begrenzen, dass das Beobachten der Schlacht im Mittelpunkt bleibt.
 
 ### Ergebnis / Abnahme
 

@@ -13,6 +13,7 @@ import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 import { ASSET_GROUPS } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
+import { commandActionAt } from "../src/ui/commandUi.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
@@ -199,5 +200,11 @@ effects.observe([{ type: "hit", x: 12, y: 24, team: TEAM.PLAYER }, { type: "dest
 assert.equal(effects.effects.length, 2);
 effects.update(1);
 assert.equal(effects.effects.length, 0);
+
+assert.deepEqual(commandActionAt({ x: 24, y: 112 }), { type: "SELECT_LANE", laneId: LANE.LEFT });
+assert.deepEqual(commandActionAt({ x: 224, y: 112 }), { type: "SELECT_LANE", laneId: LANE.RIGHT });
+assert.deepEqual(commandActionAt({ x: 24, y: 574 }), { type: "QUEUE_UNIT", unitType: "scout" });
+assert.deepEqual(commandActionAt({ x: 160, y: 684 }), { type: "BUY_UPGRADE", upgradeId: "turret" });
+assert.deepEqual(commandActionAt({ x: 300, y: 580 }), { type: "DEPLOY" });
 
 console.log(`Foundation, battle, match, and economy checks passed for ${targetViewports.length} target viewports.`);

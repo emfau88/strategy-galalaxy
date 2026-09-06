@@ -1,7 +1,7 @@
 import { ASSET_GROUPS } from "./assets.js";
 import { CONFIG } from "./config.js";
 import { GameClock } from "./core/clock.js";
-import { MATCH_STATE } from "./core/constants.js";
+import { LANE, MATCH_STATE, TEAM } from "./core/constants.js";
 import { SeededRng } from "./core/rng.js";
 import { computeViewportTransform } from "./core/viewport.js";
 import { readLaunchOptions } from "./qa/matchTestMode.js";
@@ -10,6 +10,7 @@ import { Renderer } from "./rendering/renderer.js";
 import { PresentationEffects } from "./rendering/presentationEffects.js";
 import { MatchDirector } from "./simulation/matchDirector.js";
 import { InputRouter } from "./ui/inputRouter.js";
+import { commandActionAt } from "./ui/commandUi.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
 
@@ -27,6 +28,8 @@ export class Game {
     this.renderer = new Renderer(canvas, context);
     this.effects = new PresentationEffects();
     this.lastInput = null;
+    this.selectedLaneId = LANE.LEFT;
+    this.commandFeedback = null;
     this.match = new MatchDirector();
     this.lastFrameAt = null;
     this.running = false;
@@ -91,12 +94,39 @@ export class Game {
       this.match.start();
       this.effects.reset();
     }
-    else if (this.match.state === MATCH_STATE.COMMAND) this.match.deployNow();
+    else if (this.match.state === MATCH_STATE.COMMAND) this.executeCommandAction(commandActionAt(input));
     else if (this.match.state === MATCH_STATE.VICTORY || this.match.state === MATCH_STATE.DEFEAT) {
       this.match.restart();
       this.effects.reset();
     }
     this.syncMatchState();
+  }
+
+  executeCommandAction(action) {
+    if (!action) return;
+    if (action.type === "SELECT_LANE") {
+      this.selectedLaneId = action.laneId;
+      this.commandFeedback = `${action.laneId === LANE.LEFT ? "LEFT" : "RIGHT"} LANE SELECTED`;
+      return;
+    }
+    if (action.type === "DEPLOY") {
+      this.match.deployNow();
+      this.commandFeedback = "WAVES DEPLOYED";
+      return;
+    }
+    if (action.type === "REMOVE_LAST_UNIT") {
+      const queue = this.match.queuedWaves.get(TEAM.PLAYER).get(this.selectedLaneId);
+      const entry = queue.at(-1);
+      const result = entry ? this.match.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.PLAYER, laneId: this.selectedLaneId, queueEntryId: entry.id }) : { ok: false };
+      this.commandFeedback = result.ok ? `REFUNDED ${result.refunded} ENERGY` : "NOTHING TO UNDO";
+      return;
+    }
+    const result = this.match.executeCommand({ ...action, team: TEAM.PLAYER, laneId: this.selectedLaneId });
+    this.commandFeedback = result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE INSTALLED" : `${action.unitType.toUpperCase()} QUEUED`) : this.commandFailureLabel(result.reason);
+  }
+
+  commandFailureLabel(reason) {
+    return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", CAPACITY_RESERVED: "LANE CAPACITY RESERVED", WRONG_PHASE: "COMMAND PHASE ONLY" })[reason] ?? "COMMAND UNAVAILABLE";
   }
 
   handleKeyDown(event) {
@@ -138,8 +168,12 @@ export class Game {
       simulation: this.match.simulation,
       cycle: this.match.cycle,
       phaseRemaining: this.match.phaseRemaining,
+      activeBattleSeconds: this.match.activeBattleSeconds,
       economy: this.match.simulation ? this.match.economy : null,
+      director: this.match,
       lastAiDecision: this.match.lastAiDecision,
+      selectedLaneId: this.selectedLaneId,
+      commandFeedback: this.commandFeedback,
       assets: this.loader,
       effects: this.effects.effects,
     });
