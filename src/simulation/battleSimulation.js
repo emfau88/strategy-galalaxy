@@ -124,11 +124,11 @@ export class BattleSimulation {
       const target = getEntity(this.state, event.targetId);
       if (!target?.alive || target.team === event.ownerTeam) continue;
       target.hp = Math.max(0, target.hp - event.damage);
-      this.state.events.push({ type: "hit", ...event });
+      this.state.events.push({ type: "hit", ...event, x: target.x, y: target.y, team: target.team });
       if (target.hp !== 0) continue;
       target.alive = false;
       if (!target.structureType) target.state = UNIT_STATE.DEAD;
-      this.state.events.push({ type: "destroyed", entityId: target.id });
+      this.state.events.push({ type: "destroyed", entityId: target.id, x: target.x, y: target.y, team: target.team });
       if (target.structureType === "hq") this.state.terminalTeam = enemyOf(target.team);
     }
   }

@@ -379,14 +379,14 @@ ab 6 min: 3.0× Income / Sudden Death
 
 ### Aufgaben
 
-- [ ] Zwei visuell konsistente Referenzflotten integrieren.
-- [ ] Scout, Fighter, Bomber und Frigate über Größe und Silhouette klar unterscheiden.
-- [ ] Geeignete Assets oder robuste Placeholder für HQ, Turrets und Nodes verwenden.
+- [x] Zwei visuell konsistente Referenzflotten integrieren.
+- [x] Scout, Fighter, Bomber und Frigate über Größe und Silhouette klar unterscheiden.
+- [x] Geeignete Assets oder robuste Placeholder für HQ, Turrets und Nodes verwenden.
 - [ ] Projektile, Homing, Trails, Hit Sparks, Explosionen, Zaps und Shield Feedback gezielt adaptieren.
-- [ ] Partikel und Effekte für kleine Displays begrenzen.
-- [ ] Helle, freundliche Space-Palette mit Navy, Space Blue, Cyan, Teal, Lavender und Coral umsetzen.
-- [ ] Hintergrundelemente wie Sterne, Nebel, Planeten und Asteroiden hinter die Lesbarkeit der Lanes stellen.
-- [ ] Team- und Waffenfarben klar unterscheiden.
+- [x] Partikel und Effekte für kleine Displays begrenzen.
+- [x] Helle, freundliche Space-Palette mit Navy, Space Blue, Cyan, Teal, Lavender und Coral umsetzen.
+- [x] Hintergrundelemente wie Sterne, Nebel, Planeten und Asteroiden hinter die Lesbarkeit der Lanes stellen.
+- [x] Team- und Waffenfarben klar unterscheiden.
 - [ ] Sound-System und geeignete bestehende Sounds integrieren.
 - [ ] Kleine UI-Transitions und Trefferfeedback ergänzen.
 

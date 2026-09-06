@@ -20,7 +20,7 @@ export class Renderer {
     ctx.clearRect(0, 0, transform.viewportWidth, transform.viewportHeight);
     ctx.translate(transform.offsetX, transform.offsetY);
     ctx.scale(transform.scale, transform.scale);
-    renderBackground(ctx, transform.designWidth, transform.designHeight, model.frameTime);
+    renderBackground(ctx, transform.designWidth, transform.designHeight, model.frameTime, model.assets);
     renderBattlefieldLayer(ctx, transform.designWidth, transform.designHeight);
     renderEntityLayer(ctx, model);
     renderEffectsLayer(ctx, model);

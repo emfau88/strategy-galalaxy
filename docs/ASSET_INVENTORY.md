@@ -6,7 +6,7 @@ This inventory describes the read-only Galalaxy reference at commit:
 
 `d2c3a7bd1d8b5657b27b39bd7ce9a6414c770739`
 
-No files listed here have been copied into Strategy Galalaxy yet.
+The following curated runtime files have now been copied into Strategy Galalaxy: four Nairan and four Kla'ed ship bases, one projectile per team, and four Environment Pack images. They total 310,705 bytes including the three copied CC0 notices. Exact origins are recorded in `docs/SOURCE_PROVENANCE.md`.
 
 ## Complete repository inventory
 

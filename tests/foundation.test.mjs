@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { access } from "node:fs/promises";
 import { GameClock } from "../src/core/clock.js";
 import { MATCH_STATE } from "../src/core/constants.js";
 import { SeededRng } from "../src/core/rng.js";
@@ -10,6 +11,8 @@ import { UNIT_DEFINITIONS } from "../src/data/definitions.js";
 import { STRUCTURE_DEFINITIONS } from "../src/data/definitions.js";
 import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
+import { ASSET_GROUPS } from "../src/assets.js";
+import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
@@ -174,5 +177,12 @@ capacityMatch.start();
 const rejected = capacityMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
 assert.deepEqual(rejected, { ok: false, reason: "CAPACITY_RESERVED" });
 assert.equal(capacityMatch.economy.get(TEAM.PLAYER).energy, 300);
+
+for (const path of Object.values(ASSET_GROUPS.boot)) await access(new URL(`../${path}`, import.meta.url));
+const effects = new PresentationEffects();
+effects.observe([{ type: "hit", x: 12, y: 24, team: TEAM.PLAYER }, { type: "destroyed", x: 48, y: 96, team: TEAM.ENEMY }]);
+assert.equal(effects.effects.length, 2);
+effects.update(1);
+assert.equal(effects.effects.length, 0);
 
 console.log(`Foundation, battle, match, and economy checks passed for ${targetViewports.length} target viewports.`);

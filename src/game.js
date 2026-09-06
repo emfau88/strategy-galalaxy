@@ -7,6 +7,7 @@ import { computeViewportTransform } from "./core/viewport.js";
 import { readLaunchOptions } from "./qa/matchTestMode.js";
 import { AssetLoader } from "./rendering/assetLoader.js";
 import { Renderer } from "./rendering/renderer.js";
+import { PresentationEffects } from "./rendering/presentationEffects.js";
 import { MatchDirector } from "./simulation/matchDirector.js";
 import { InputRouter } from "./ui/inputRouter.js";
 
@@ -24,6 +25,7 @@ export class Game {
     this.visualRng = new SeededRng(options.seed ^ 0x9e3779b9);
     this.loader = new AssetLoader(ASSET_GROUPS.boot);
     this.renderer = new Renderer(canvas, context);
+    this.effects = new PresentationEffects();
     this.lastInput = null;
     this.match = new MatchDirector();
     this.lastFrameAt = null;
@@ -45,6 +47,7 @@ export class Game {
     if (this.options.testMode) {
       this.match.start();
       this.match.deployNow();
+      this.effects.reset();
     }
     this.syncMatchState();
     this.running = true;
@@ -84,9 +87,15 @@ export class Game {
   receiveInput(input) {
     this.lastInput = input;
     if (input.kind !== "down") return;
-    if (this.match.state === MATCH_STATE.TITLE) this.match.start();
+    if (this.match.state === MATCH_STATE.TITLE) {
+      this.match.start();
+      this.effects.reset();
+    }
     else if (this.match.state === MATCH_STATE.COMMAND) this.match.deployNow();
-    else if (this.match.state === MATCH_STATE.VICTORY || this.match.state === MATCH_STATE.DEFEAT) this.match.restart();
+    else if (this.match.state === MATCH_STATE.VICTORY || this.match.state === MATCH_STATE.DEFEAT) {
+      this.match.restart();
+      this.effects.reset();
+    }
     this.syncMatchState();
   }
 
@@ -95,7 +104,7 @@ export class Game {
       if (this.match.state === MATCH_STATE.PAUSED) this.match.resume();
       else this.match.pause();
     }
-    if (event.key.toLowerCase() === "r") this.match.restart();
+    if (event.key.toLowerCase() === "r" && this.match.restart()) this.effects.reset();
     this.syncMatchState();
   }
 
@@ -114,8 +123,10 @@ export class Game {
       },
       onSimulationStep: (step) => {
         if (this.match.advanceBattle(step)) this.clock.beginPhase();
+        this.effects.observe(this.match.simulation?.state.events ?? []);
       },
     });
+    this.effects.update(delta);
     if (this.options.testMode && this.match.state === MATCH_STATE.COMMAND) this.match.deployNow();
     this.syncMatchState();
     this.renderer.render({
@@ -128,6 +139,8 @@ export class Game {
       cycle: this.match.cycle,
       phaseRemaining: this.match.phaseRemaining,
       economy: this.match.simulation ? this.match.economy : null,
+      assets: this.loader,
+      effects: this.effects.effects,
     });
     requestAnimationFrame(this.onFrame);
   }
