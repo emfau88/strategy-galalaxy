@@ -316,16 +316,16 @@ ab 6 min: 3.0× Income / Sudden Death
 
 ### Aufgaben
 
-- [ ] AI ausschließlich während der Command Phase planen lassen.
-- [ ] Dieselben Energy-, Kosten-, Income-, Node-, Wave- und Upgrade-Regeln wie beim Player verwenden.
-- [ ] Lane Pressure aus Units, Positionen, Rollen, Turretstatus und Nodebesitz ableiten.
-- [ ] Defensive Verstärkung einer bedrohten Lane ermöglichen.
-- [ ] Push gegen eine erkennbare schwache Lane ermöglichen.
-- [ ] Einfaches Budget für unmittelbare Units, Economy, Verteidigung und Sparen festlegen.
-- [ ] Unit-Mix statt reinem Kauf der teuersten verfügbaren Unit fördern.
-- [ ] Späte schwere Units über Sparziele technisch ermöglichen.
-- [ ] Letzte AI-Entscheidung im Debug Overlay ausgeben.
-- [ ] Garantieren, dass die AI nie mehr Energy ausgibt als vorhanden.
+- [x] AI ausschließlich während der Command Phase planen lassen.
+- [x] Dieselben Energy-, Kosten-, Income-, Node-, Wave- und Upgrade-Regeln wie beim Player verwenden.
+- [x] Lane Pressure aus Units, Positionen, Rollen, Turretstatus und Nodebesitz ableiten.
+- [x] Defensive Verstärkung einer bedrohten Lane ermöglichen.
+- [x] Push gegen eine erkennbare schwache Lane ermöglichen.
+- [x] Einfaches Budget für unmittelbare Units, Economy, Verteidigung und Sparen festlegen.
+- [x] Unit-Mix statt reinem Kauf der teuersten verfügbaren Unit fördern.
+- [x] Späte schwere Units über Sparziele technisch ermöglichen.
+- [x] Letzte AI-Entscheidung im Debug Overlay ausgeben.
+- [x] Garantieren, dass die AI nie mehr Energy ausgibt als vorhanden.
 
 ### Ergebnis / Abnahme
 

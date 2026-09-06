@@ -35,5 +35,10 @@ export const renderUiLayer = (ctx, model) => {
     ctx.fillRect(16, height - 34, width - 32, 18);
     const label = testMode ? "TEST MODE: match harness ready" : "DEBUG MODE";
     text(ctx, label, 28, height - 21, 10, "#f9d783");
+    if (debugEnabled && model.lastAiDecision) {
+      const decision = model.lastAiDecision;
+      const laneName = (laneId) => (laneId === "LANE_LEFT" ? "L" : "R");
+      text(ctx, `AI: defend ${laneName(decision.defenseLane)} · push ${laneName(decision.pushLane)} · spent ${decision.spent}`, width - 28, height - 21, 10, "#c7b4ff", "right");
+    }
   }
 };

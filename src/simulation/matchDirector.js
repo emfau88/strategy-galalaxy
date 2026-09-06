@@ -5,6 +5,7 @@ import { BattleSimulation } from "./battleSimulation.js";
 import { CaptureSystem } from "./captureSystem.js";
 import { CommandSystem } from "./commandSystem.js";
 import { EconomySystem } from "./economySystem.js";
+import { OpponentAi } from "./opponentAi.js";
 
 const laneIds = Object.freeze([LANE.LEFT, LANE.RIGHT]);
 const teams = Object.freeze([TEAM.PLAYER, TEAM.ENEMY]);
@@ -27,6 +28,8 @@ export class MatchDirector {
     this.queuedWaves = emptyTeamLanes();
     this.baseWaveBacklog = emptyTeamLanes();
     this.events = [];
+    this.ai = new OpponentAi();
+    this.lastAiDecision = null;
   }
 
   start() {
@@ -41,6 +44,8 @@ export class MatchDirector {
     this.baseWaveBacklog = emptyTeamLanes();
     this.nextQueueSequence = 1;
     this.events = [{ type: "PHASE_CHANGED", state: this.state }];
+    this.ai = new OpponentAi();
+    this.planAi();
     return true;
   }
 
@@ -106,7 +111,17 @@ export class MatchDirector {
   enterCommand() {
     this.state = MATCH_STATE.COMMAND;
     this.phaseElapsed = 0;
+    this.planAi();
     this.events.push({ type: "PHASE_CHANGED", state: this.state });
+  }
+
+  planAi() {
+    const result = this.ai.plan(this);
+    if (result.ok) {
+      this.lastAiDecision = result.decision;
+      this.events.push({ type: "AI_PLANNED", decision: result.decision });
+    }
+    return result;
   }
 
   pause() {

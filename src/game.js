@@ -139,6 +139,7 @@ export class Game {
       cycle: this.match.cycle,
       phaseRemaining: this.match.phaseRemaining,
       economy: this.match.simulation ? this.match.economy : null,
+      lastAiDecision: this.match.lastAiDecision,
       assets: this.loader,
       effects: this.effects.effects,
     });
