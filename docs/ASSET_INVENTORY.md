@@ -8,6 +8,8 @@ This inventory describes the read-only Galalaxy reference at commit:
 
 The following curated runtime files have now been copied into Strategy Galalaxy: four Nairan and four Kla'ed ship bases, one projectile per team, and four Environment Pack images. They total 310,705 bytes including the three copied CC0 notices. Exact origins are recorded in `docs/SOURCE_PROVENANCE.md`.
 
+An additional 1,445,597-byte portrait placeholder background was generated for Strategy Galalaxy through ImageGen and is stored as `assets/environment/strategy-galaxy-background-v1.png`. It is original project artwork, not a reference-repository asset.
+
 ## Complete repository inventory
 
 The reference contains 517 asset files totaling 25.51 MiB.

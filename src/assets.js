@@ -1,6 +1,7 @@
 /** Semantic groups keep gameplay independent from individual filenames. */
 export const ASSET_GROUPS = Object.freeze({
   boot: Object.freeze({
+    "background-placeholder": "assets/environment/strategy-galaxy-background-v1.png",
     "background-void": "assets/environment/void.png",
     "background-stars": "assets/environment/stars.png",
     "background-planet": "assets/environment/planet.png",

@@ -6,6 +6,11 @@ const stars = Object.freeze([
 const asset = (assets, key) => assets?.get(key) ?? null;
 
 export const renderBackground = (ctx, width, height, frameTime, assets) => {
+  const generatedBackground = asset(assets, "background-placeholder");
+  if (generatedBackground) {
+    ctx.drawImage(generatedBackground, 0, 0, width, height);
+    return;
+  }
   const gradient = ctx.createLinearGradient(0, 0, 0, height);
   gradient.addColorStop(0, "#0a1730");
   gradient.addColorStop(0.52, "#071228");
