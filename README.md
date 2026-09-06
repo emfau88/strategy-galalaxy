@@ -21,6 +21,8 @@ See [Repository rules](docs/REPOSITORY_RULES.md) for the enforced workflow and [
 ## Planning
 
 - [Development roadmap](ROADMAP.md)
+- [Galalaxy reference audit](docs/REFERENCE_AUDIT.md)
+- [Galalaxy asset inventory](docs/ASSET_INVENTORY.md)
 - Game design document: planned in Roadmap Bulk 2
 - Architecture document: planned in Roadmap Bulk 2 after the reference audit
 
@@ -29,6 +31,5 @@ See [Repository rules](docs/REPOSITORY_RULES.md) for the enforced workflow and [
 - [x] Working repository connected
 - [x] Read-only reference boundary established
 - [x] Development roadmap created
-- [ ] Galalaxy reference audit
+- [x] Galalaxy reference audit
 - [ ] Gameplay foundation
-

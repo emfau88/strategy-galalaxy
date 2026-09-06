@@ -90,18 +90,18 @@ Die Bulks werden in der folgenden Reihenfolge bearbeitet. Jeder Bulk endet mit e
 
 ### Aufgaben
 
-- [ ] Projektaufbau, Build-/Startprozess, Runtime und Abhängigkeiten erfassen.
-- [ ] Game Loop, Canvas-Rendering, Mobile Scaling und Safe-Area-Verhalten analysieren.
-- [ ] Asset Loader und Asset-Registrierung analysieren.
-- [ ] Entity- und Datenmodelle untersuchen, besonders Player, Enemies, Projectiles, Pickups und Particles.
-- [ ] Combat-, Ability-, FX-, Sector-, Upgrade- und Sound-Systeme untersuchen.
-- [ ] Flotten-, Schiffs-, Waffen-, Projektil- und Visual-Definitionen erfassen.
-- [ ] Formation-/Flyby-Logik und Spawn-Verhalten prüfen.
-- [ ] Save-, Run-Stats-, Input- und QA-/Reliability-Mechanismen prüfen.
-- [ ] Performance-Caps und bekannte Schutzmechanismen für Units, Projectiles und Particles dokumentieren.
-- [ ] Sämtliche relevanten Assets inventarisieren und nach Schiffsklasse, Fraktion, Projektil, FX, UI, Hintergrund und Sound gruppieren.
-- [ ] Zwei visuell konsistente Fraktionen für den Vertical Slice vorschlagen.
-- [ ] Lizenz-/Attributionslage der übernommenen Bestandteile prüfen und dokumentieren.
+- [x] Projektaufbau, Build-/Startprozess, Runtime und Abhängigkeiten erfassen.
+- [x] Game Loop, Canvas-Rendering, Mobile Scaling und Safe-Area-Verhalten analysieren.
+- [x] Asset Loader und Asset-Registrierung analysieren.
+- [x] Entity- und Datenmodelle untersuchen, besonders Player, Enemies, Projectiles, Pickups und Particles.
+- [x] Combat-, Ability-, FX-, Sector-, Upgrade- und Sound-Systeme untersuchen.
+- [x] Flotten-, Schiffs-, Waffen-, Projektil- und Visual-Definitionen erfassen.
+- [x] Formation-/Flyby-Logik und Spawn-Verhalten prüfen.
+- [x] Save-, Run-Stats-, Input- und QA-/Reliability-Mechanismen prüfen.
+- [x] Performance-Caps und bekannte Schutzmechanismen für Units, Projectiles und Particles dokumentieren.
+- [x] Sämtliche relevanten Assets inventarisieren und nach Schiffsklasse, Fraktion, Projektil, FX, UI, Hintergrund und Sound gruppieren.
+- [x] Zwei visuell konsistente Fraktionen für den Vertical Slice vorschlagen.
+- [x] Lizenz-/Attributionslage der übernommenen Bestandteile prüfen und dokumentieren.
 
 ### Zu analysierende Kernbereiche
 
