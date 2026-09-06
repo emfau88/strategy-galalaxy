@@ -2,7 +2,7 @@
 
 Strategy Galalaxy is a standalone, mobile-first singleplayer Space Lane Wars game. Players plan reinforcements, economy, and defense during a paused Command Phase, then watch two persistent lanes resolve automatically during the Battle Phase.
 
-The product and architecture contracts are complete. Gameplay implementation has not started; the next milestone is the technical Canvas foundation.
+The Canvas foundation is complete. It establishes mobile portrait scaling, Safe-Area-aware coordinates, layered rendering, deterministic utility primitives, and a simulation clock without implementing gameplay yet.
 
 ## Core loop
 
@@ -39,9 +39,21 @@ See [Repository rules](docs/REPOSITORY_RULES.md) for the enforced workflow and [
 - [Galalaxy reference audit](docs/REFERENCE_AUDIT.md)
 - [Galalaxy asset inventory](docs/ASSET_INVENTORY.md)
 
-## Planned local development
+## Local development
 
-The technical foundation is not present yet. It will keep Galalaxy's lightweight static Canvas approach. Once Bulk 3 lands, the exact local start and QA commands will be documented here rather than promising commands before they exist.
+The project uses native browser modules and needs no build step.
+
+```powershell
+python -m http.server 8765 --directory .
+```
+
+Open `http://127.0.0.1:8765/`. The two prepared QA entry points are `?debug=1` and `?test=match`; they can be combined as `?debug=1&test=match`.
+
+```powershell
+npm.cmd run check
+```
+
+The check validates the five target portrait viewports, design-space input mapping, paused simulation time, deterministic RNG, and the empty boot asset group.
 
 ## Current status
 
@@ -50,4 +62,5 @@ The technical foundation is not present yet. It will keep Galalaxy's lightweight
 - [x] Development roadmap created
 - [x] Galalaxy reference audit
 - [x] Product and architecture contracts
-- [ ] Gameplay foundation
+- [x] Technical Canvas foundation
+- [ ] Headless lane combat

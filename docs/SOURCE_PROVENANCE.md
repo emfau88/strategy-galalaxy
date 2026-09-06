@@ -17,12 +17,13 @@ If the reference is updated before or during an audit, record the exact newer co
 
 ## Reuse log
 
-No code or assets have been copied yet.
+The following concrete technical adaptation has been copied from the reference:
 
 Add one row per logical file or tightly related asset group:
 
 | Reference path | Reference commit | Destination path | Reuse type | Adaptation | Reason |
 | --- | --- | --- | --- | --- | --- |
+| `src/assetLoader.js` | `d2c3a7bd1d8b5657b27b39bd7ce9a6414c770739` | `src/rendering/assetLoader.js` | Adapted | Replaced mutable object registries with maps, added semantic manifests and retained timeout/error visibility; no reference assets are loaded yet. | It is a small, isolated browser image-loading primitive compatible with the new asset boundary. |
 | _Example: `src/example.js`_ | _full commit SHA_ | _`src/example.js`_ | _Direct / Adapted / Concept only_ | _Summary of changes_ | _Why reuse is appropriate_ |
 
 ## Reuse rules
@@ -33,4 +34,3 @@ Add one row per logical file or tightly related asset group:
 - Record derived assets as well as byte-for-byte copies.
 - Keep conceptual inspiration in the audit document; use this file for concrete code and asset lineage.
 - Verify licensing and attribution requirements during the reference audit before distributing reused material.
-

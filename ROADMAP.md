@@ -179,15 +179,15 @@ Jedes relevante System wird einer Kategorie zugeordnet:
 
 ### Aufgaben
 
-- [ ] Minimale Projekt-, Build- und Verzeichnisstruktur aufsetzen.
-- [ ] `index.html`, Einstiegspunkt, Canvas und Game Loop integrieren.
-- [ ] Design Space auf Portrait ausrichten; Galalaxys circa `420 × 760` als Ausgangspunkt prüfen.
-- [ ] Viewport Scaling, Safe Areas, Touch-Koordinaten und Desktop-Mausabbildung umsetzen.
-- [ ] Asset Loader gezielt übernehmen oder adaptieren.
-- [ ] Rendering-Schichten für Hintergrund, Battlefield, Entities, FX und UI vorbereiten.
-- [ ] Zeitmodell mit pausierbarer Simulation und getrennten Render-/Simulationszeiten anlegen.
-- [ ] Zentrale Konfiguration für Phasenlängen, Caps und Balancing-Ausgangswerte anlegen.
-- [ ] Einfachen `?debug=1`- und `?test=match`-Einstieg vorbereiten.
+- [x] Minimale Projekt-, Build- und Verzeichnisstruktur aufsetzen.
+- [x] `index.html`, Einstiegspunkt, Canvas und Game Loop integrieren.
+- [x] Design Space auf Portrait ausrichten; Galalaxys circa `420 × 760` als Ausgangspunkt prüfen.
+- [x] Viewport Scaling, Safe Areas, Touch-Koordinaten und Desktop-Mausabbildung umsetzen.
+- [x] Asset Loader gezielt übernehmen oder adaptieren.
+- [x] Rendering-Schichten für Hintergrund, Battlefield, Entities, FX und UI vorbereiten.
+- [x] Zeitmodell mit pausierbarer Simulation und getrennten Render-/Simulationszeiten anlegen.
+- [x] Zentrale Konfiguration für Phasenlängen, Caps und Balancing-Ausgangswerte anlegen.
+- [x] Einfachen `?debug=1`- und `?test=match`-Einstieg vorbereiten.
 
 ### Ergebnis / Abnahme
 
