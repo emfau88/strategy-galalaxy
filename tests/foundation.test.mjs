@@ -13,7 +13,7 @@ import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 import { ASSET_GROUPS } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
-import { commandActionAt } from "../src/ui/commandUi.js";
+import { commandActionAt, fullscreenActionAt } from "../src/ui/commandUi.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
@@ -129,6 +129,20 @@ terminalMatch.restart();
 assert.equal(terminalMatch.state, MATCH_STATE.COMMAND);
 assert.equal(terminalMatch.simulation.state.units.size, 0);
 
+const manualCommandMatch = new MatchDirector();
+manualCommandMatch.start();
+assert.equal(manualCommandMatch.phaseRemaining, null);
+assert.equal(manualCommandMatch.advanceCommand(999), false);
+assert.equal(manualCommandMatch.state, MATCH_STATE.COMMAND);
+manualCommandMatch.deployNow();
+assert.equal(manualCommandMatch.state, MATCH_STATE.BATTLE);
+
+const formationSimulation = new BattleSimulation();
+const formation = formationSimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["scout", "scout", "scout", "scout", "scout", "scout"]);
+assert.equal(new Set(formation.map((unit) => unit.y)).size, 2);
+formationSimulation.step(1 / 60);
+assert.ok(formation.every((unit) => Math.abs(unit.x - 112) <= 47));
+
 const economyMatch = new MatchDirector();
 economyMatch.start();
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
@@ -208,5 +222,7 @@ assert.deepEqual(commandActionAt({ x: 160, y: 662 }), { type: "QUEUE_UNIT", unit
 assert.deepEqual(commandActionAt({ x: 300, y: 620 }), { type: "TOGGLE_MENU" });
 assert.deepEqual(commandActionAt({ x: 160, y: 662 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "turret" });
 assert.deepEqual(commandActionAt({ x: 300, y: 662 }), { type: "DEPLOY" });
+assert.deepEqual(fullscreenActionAt({ x: 380, y: 26 }), { type: "TOGGLE_FULLSCREEN" });
+assert.equal(fullscreenActionAt({ x: 210, y: 26 }), null);
 
 console.log(`Foundation, battle, match, and economy checks passed for ${targetViewports.length} target viewports.`);

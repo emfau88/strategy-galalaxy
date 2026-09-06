@@ -55,6 +55,7 @@ export class MatchDirector {
 
   advanceCommand(delta) {
     if (this.state !== MATCH_STATE.COMMAND) return false;
+    if (!Number.isFinite(this.config.timing.commandPhaseSeconds)) return false;
     this.phaseElapsed += delta;
     if (this.phaseElapsed + Number.EPSILON < this.config.timing.commandPhaseSeconds) return false;
     this.deployWaves();
@@ -147,6 +148,7 @@ export class MatchDirector {
 
   get phaseRemaining() {
     const activeState = this.state === MATCH_STATE.PAUSED ? this.resumeState : this.state;
+    if (activeState === MATCH_STATE.COMMAND && !Number.isFinite(this.config.timing.commandPhaseSeconds)) return null;
     const duration = activeState === MATCH_STATE.COMMAND ? this.config.timing.commandPhaseSeconds : this.config.timing.battlePhaseSeconds;
     return Math.max(0, duration - this.phaseElapsed);
   }

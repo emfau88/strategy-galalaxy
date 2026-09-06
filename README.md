@@ -49,7 +49,7 @@ python -m http.server 8765 --directory .
 
 Open `http://127.0.0.1:8765/`. The two prepared QA entry points are `?debug=1` and `?test=match`; they can be combined as `?debug=1&test=match`.
 
-In the normal build, tap to start, choose `LEFT` or `RIGHT` from the side of the battlefield, plan ships, and use `DEPLOY WAVE`. The lower panel can switch between ships and upgrades; `UNDO` refunds the most recently planned ship on the selected lane. `P` pauses or resumes an active phase. `?test=match` enters the automatic repeatable test match immediately.
+In the normal build, tap to start, choose `LEFT` or `RIGHT` from the side of the battlefield, plan ships, and use `DEPLOY WAVE` when ready; the Command Phase has no forced countdown. The lower panel can switch between ships and upgrades; `UNDO` refunds the most recently planned ship on the selected lane. `FULL` requests browser fullscreen where supported. `P` pauses or resumes an active phase. `?test=match` enters the automatic repeatable test match immediately.
 
 ```powershell
 npm.cmd run check

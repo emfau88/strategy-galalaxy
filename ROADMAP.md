@@ -246,7 +246,7 @@ Jedes relevante System wird einer Kategorie zugeordnet:
 ### Aufgaben
 
 - [x] `MatchDirector` als alleinige Instanz für Match-State und Phasenwechsel implementieren.
-- [x] Command Phase mit zentral konfigurierbarer Ausgangsdauer von circa 8 Sekunden umsetzen.
+- [x] Command Phase zunächst mit Timer umgesetzt und anschließend für das Mobile-Spiel auf manuelle Bestätigung umgestellt.
 - [x] Battle Phase mit zentral konfigurierbarer Ausgangsdauer von circa 22 Sekunden umsetzen.
 - [x] Während der Command Phase Movement, Combat, Capture, Income und Cooldowns vollständig einfrieren.
 - [x] Pro Team und Lane eine geplante Wave verwalten.
@@ -352,7 +352,7 @@ ab 6 min: 3.0× Income / Sudden Death
 - [x] Restenergie und Gesamtkosten sofort aktualisieren.
 - [x] Economy- und Turret-Upgrades klar anbieten.
 - [x] Einen eindeutigen `DEPLOY WAVE`-Button bereitstellen.
-- [x] Bei Timerablauf eine konsistente Standardaktion ausführen.
+- [x] Bei explizitem `DEPLOY WAVE` eine konsistente Standardaktion ausführen; Testmodus darf automatisch fortsetzen.
 
 ### Battle Phase
 
@@ -382,6 +382,9 @@ ab 6 min: 3.0× Income / Sudden Death
 - [x] Mobile-Lesbarkeits-Pass: schlanke Statusleiste, seitliche Lane-Auswahl, kompaktes unteres Command-Panel und freies Enemy-HQ.
 - [x] Zwei Lanes mit größerem Mittelraum und klaren Seitenrändern anordnen.
 - [x] Grobe originale Top-down-Placeholder für HQ, Turrets und Energy Nodes ergänzen.
+- [x] Command Phase auf manuelle Bestätigung umstellen und Testmodus automatisch belassen.
+- [x] Mobile Fullscreen-Steuerung als progressive Browser-Funktion ergänzen.
+- [x] Kampfgeschwindigkeit, Feuerintervalle, Formation und gleichteamige Abstände für mobile Lesbarkeit entschärfen.
 
 - [x] Zwei visuell konsistente Referenzflotten integrieren.
 - [x] Scout, Fighter, Bomber und Frigate über Größe und Silhouette klar unterscheiden.

@@ -175,7 +175,7 @@ PAUSED ─resume──────→ previous COMMAND/BATTLE state
 VICTORY/DEFEAT ─restart→ COMMAND with a new match state
 ```
 
-`PAUSED` stores `resumeState`. Loading and terminal states do not resume into combat. Visibility loss pauses an active Command or Battle state and freezes the phase countdown as well as simulation.
+`PAUSED` stores `resumeState`. Loading and terminal states do not resume into combat. Visibility loss pauses an active Command or Battle state and freezes simulation; an optional finite Command timer is frozen when a test configuration enables one.
 
 State transition methods are centralized in `MatchDirector`. Tests may use explicit QA hooks rather than assigning arbitrary state strings.
 
@@ -186,7 +186,7 @@ Four time concepts remain separate.
 | Clock | Advances in | Purpose |
 | --- | --- | --- |
 | `frameTime` | foreground animation frames | presentation animation and FPS measurement |
-| `phaseElapsed` | `COMMAND` or `BATTLE` | current phase countdown |
+| `phaseElapsed` | `COMMAND` or `BATTLE` | active Battle duration, or optional Command timer in test configurations |
 | `simulationTime` | fixed steps in `BATTLE` only | cooldowns, projectiles, movement, capture, combat |
 | `battleElapsed` | fixed steps in `BATTLE` only | economy escalation and match telemetry |
 
@@ -197,7 +197,7 @@ read wall-clock delta
 clamp frame delta
 advance presentation clock
 process input intents
-advance Command phase countdown when in COMMAND
+advance optional Command phase timer when configured, otherwise wait for explicit deploy
 accumulate Battle delta when in BATTLE
 run zero or more 1/60-second simulation steps
 render current state
@@ -208,7 +208,7 @@ Implementation constraints:
 - `SIMULATION_STEP = 1 / 60` lives in configuration.
 - Battle phase duration is measured in completed simulation steps.
 - Command duration uses foreground phase time because combat is intentionally frozen while the decision timer runs.
-- `PAUSED`, hidden, terminal, and loading states advance neither phase countdown nor simulation.
+- `PAUSED`, hidden, terminal, and loading states advance neither Battle duration nor simulation; optional test timers also freeze.
 - The per-frame catch-up count is capped to prevent a spiral of death.
 - If the cap is reached, excess accumulated wall time is discarded and recorded in debug metrics.
 - The accumulator resets when starting a new match and after a long interruption.

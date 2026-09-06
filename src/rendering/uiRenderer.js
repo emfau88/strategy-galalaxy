@@ -21,9 +21,11 @@ const header = (ctx, model) => {
   text(ctx, `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E  +${income}/s`, 18, 42, 12, C.text);
   const phase = model.state === MATCH_STATE.COMMAND ? "COMMAND" : model.state === MATCH_STATE.BATTLE ? "BATTLE" : model.state;
   text(ctx, phase, model.width / 2, 23, 13, model.state === MATCH_STATE.COMMAND ? C.gold : C.text, "center");
-  text(ctx, `${Math.ceil(model.phaseRemaining)} SEC`, model.width / 2, 42, 15, C.text, "center");
-  text(ctx, `ENEMY  ${ratio(enemyHq)}%`, model.width - 18, 24, 13, C.enemy, "right");
-  text(ctx, "HEADQUARTERS", model.width - 18, 42, 10, C.muted, "right");
+  text(ctx, model.manualCommand ? "WAITING FOR YOU" : `${Math.ceil(model.phaseRemaining)} SEC`, model.width / 2, 42, model.manualCommand ? 11 : 15, C.text, "center");
+  text(ctx, `ENEMY  ${ratio(enemyHq)}%`, 354, 24, 12, C.enemy, "right");
+  text(ctx, "HEADQUARTERS", 354, 42, 10, C.muted, "right");
+  box(ctx, COMMAND_UI.fullscreen, "rgba(20, 54, 79, 0.98)", "rgba(169, 239, 255, 0.72)", 6);
+  text(ctx, model.fullscreenActive ? "EXIT" : "FULL", 388, 32, 10, C.text, "center");
 };
 
 const laneSelector = (ctx, model, rect) => {
@@ -85,7 +87,7 @@ const laneStatus = (ctx, model, laneId, rect) => {
   text(ctx, node.ownerTeam === TEAM.PLAYER ? "YOU" : node.ownerTeam === TEAM.ENEMY ? "EN" : "—", rect.x + rect.width / 2, rect.y + 48, 10, selectedColor, "center");
 };
 
-const title = (ctx, model) => { box(ctx, { x: 52, y: 318, width: model.width - 104, height: 128 }, "rgba(4, 13, 30, 0.94)", C.player); text(ctx, "STRATEGY GALALAXY", model.width / 2, 352, 19, C.text, "center"); text(ctx, "PLAN · DEPLOY · HOLD THE LINE", model.width / 2, 379, 12, C.muted, "center"); box(ctx, { x: 104, y: 398, width: model.width - 208, height: 34 }, "rgba(17, 120, 133, 0.98)", "#a5efff"); text(ctx, "TAP TO START", model.width / 2, 415, 12, C.text, "center"); };
+const title = (ctx, model) => { box(ctx, COMMAND_UI.fullscreen, "rgba(20, 54, 79, 0.98)", "rgba(169, 239, 255, 0.72)", 6); text(ctx, model.fullscreenActive ? "EXIT" : "FULL", 388, 32, 10, C.text, "center"); box(ctx, { x: 52, y: 318, width: model.width - 104, height: 128 }, "rgba(4, 13, 30, 0.94)", C.player); text(ctx, "STRATEGY GALALAXY", model.width / 2, 352, 19, C.text, "center"); text(ctx, "PLAN · DEPLOY · HOLD THE LINE", model.width / 2, 379, 12, C.muted, "center"); box(ctx, { x: 104, y: 398, width: model.width - 208, height: 34 }, "rgba(17, 120, 133, 0.98)", "#a5efff"); text(ctx, "TAP TO START", model.width / 2, 415, 12, C.text, "center"); };
 const endState = (ctx, model) => { const win = model.state === MATCH_STATE.VICTORY; box(ctx, { x: 72, y: 324, width: model.width - 144, height: 118 }, "rgba(4, 13, 30, 0.95)", win ? C.player : C.enemy); text(ctx, win ? "VICTORY" : "DEFEAT", model.width / 2, 360, 24, win ? C.player : C.enemy, "center"); text(ctx, "TAP FOR A NEW MATCH", model.width / 2, 408, 12, C.text, "center"); };
 
 export const renderUiLayer = (ctx, model) => {

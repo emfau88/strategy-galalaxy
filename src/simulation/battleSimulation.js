@@ -15,30 +15,68 @@ export class BattleSimulation {
     this.economy = economy;
   }
 
-  spawnUnit(team, laneId, unitType, { x, y, slotOffsetX = 0, spawnCycle = 0 } = {}) {
+  spawnUnit(team, laneId, unitType, { x, y, slotOffsetX = 0, slotOffsetY = 0, spawnCycle = 0 } = {}) {
     const lane = laneFor(this.state, laneId);
     const active = lane.unitIds.get(team);
     if (active.length >= CONFIG.caps.unitsPerLaneTeam) return null;
     const spawn = team === TEAM.PLAYER ? this.state.map.lanes.find((item) => item.id === laneId).playerSpawn : this.state.map.lanes.find((item) => item.id === laneId).enemySpawn;
     return addUnitToState(this.state, createUnit({
       id: this.state.ids.next(), team, laneId, unitType,
-      x: x ?? spawn.x + slotOffsetX, y: y ?? spawn.y, slotOffsetX, spawnCycle,
+      x: x ?? spawn.x + slotOffsetX, y: y ?? spawn.y + slotOffsetY, slotOffsetX, spawnCycle,
     }));
   }
 
   spawnFormation(team, laneId, unitTypes, spawnCycle = 0) {
-    const offsets = [-18, 18, -8, 8, -28, 28];
-    return unitTypes.map((unitType, index) => this.spawnUnit(team, laneId, unitType, { slotOffsetX: offsets[index % offsets.length], spawnCycle })).filter(Boolean);
+    const lateralOffsets = [-25, 0, 25];
+    const direction = team === TEAM.PLAYER ? 1 : -1;
+    return unitTypes.map((unitType, index) => {
+      const row = Math.floor(index / lateralOffsets.length);
+      return this.spawnUnit(team, laneId, unitType, {
+        slotOffsetX: lateralOffsets[index % lateralOffsets.length],
+        slotOffsetY: row * 28 * direction,
+        spawnCycle,
+      });
+    }).filter(Boolean);
   }
 
   step(dt) {
     if (this.state.terminalTeam) return;
     this.state.time += dt;
+    this.resolveLaneSpacing();
     for (const unit of [...this.state.units.values()].sort((a, b) => a.id.localeCompare(b.id))) this.updateUnit(unit, dt);
     for (const structure of [...this.state.structures.values()].sort((a, b) => a.id.localeCompare(b.id))) this.updateStructure(structure, dt);
     const damageEvents = this.updateProjectiles(dt);
     this.applyDamage(damageEvents);
     removeDeadEntities(this.state);
+  }
+
+  resolveLaneSpacing() {
+    for (const lane of this.state.lanes.values()) {
+      const laneDefinition = this.state.map.lanes.find((item) => item.id === lane.id);
+      for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
+        const units = lane.unitIds.get(team).map((id) => this.state.units.get(id)).filter((unit) => unit?.alive).sort((left, right) => left.id.localeCompare(right.id));
+        for (let first = 0; first < units.length; first += 1) {
+          for (let second = first + 1; second < units.length; second += 1) {
+            const left = units[first];
+            const right = units[second];
+            const minimum = UNIT_DEFINITIONS[left.unitType].collisionRadius + UNIT_DEFINITIONS[right.unitType].collisionRadius + 8;
+            const dx = right.x - left.x || (second % 2 ? 0.5 : -0.5);
+            const dy = right.y - left.y || (second % 2 ? 0.25 : -0.25);
+            const current = Math.hypot(dx, dy);
+            if (current >= minimum) continue;
+            const push = (minimum - current) * 0.5;
+            const horizontal = dx / current * push;
+            const vertical = dy / current * push * 0.42;
+            const minX = laneDefinition.centerX - laneDefinition.width / 2 + 7;
+            const maxX = laneDefinition.centerX + laneDefinition.width / 2 - 7;
+            left.x = Math.max(minX, Math.min(maxX, left.x - horizontal));
+            right.x = Math.max(minX, Math.min(maxX, right.x + horizontal));
+            left.y -= vertical;
+            right.y += vertical;
+          }
+        }
+      }
+    }
   }
 
   updateUnit(unit, dt) {

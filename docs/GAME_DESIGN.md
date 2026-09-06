@@ -112,11 +112,11 @@ The cycle repeats until an HQ reaches zero HP.
 
 ### Starting duration
 
-`8 seconds`, centrally configurable.
+There is no mandatory countdown. The Command Phase remains open until the player presses `DEPLOY WAVE`. Test and automation modes may opt into a finite timer without changing normal mobile play.
 
 ### Time behavior
 
-The Command countdown advances while the game is in Command Phase. The combat simulation is completely frozen:
+The Command Phase holds for player confirmation. The combat simulation is completely frozen:
 
 - units do not move
 - structures and units do not fire
@@ -152,7 +152,6 @@ The player cannot interact with existing battlefield units.
 - Free automatic units cannot be removed or refunded.
 - Upgrade purchases take effect immediately and are not refundable.
 - Confirming deployment converts all queued entries into units without another charge.
-- If the timer expires, the current valid plan deploys automatically.
 - An empty paid plan still deploys the free base wave.
 
 ### Early confirmation
@@ -474,7 +473,7 @@ The player must see at a glance:
 - total committed cost and remaining Energy
 - current income and Node bonuses
 - Economy and Turret Upgrade availability/cost
-- time remaining
+- explicit waiting-for-player state
 - clear `DEPLOY WAVE` action
 
 Adding and removing a planned unit should require few taps and give immediate visual and numeric feedback. Touch targets must be comfortably usable with one thumb.
@@ -485,7 +484,7 @@ If space requires a lane selector, switching lanes changes only which queue is e
 
 The Battle UI emphasizes observation:
 
-- phase label and time remaining
+- phase label and Battle time remaining
 - Player and Enemy HQ health
 - Defense Station health/state
 - Energy and current income

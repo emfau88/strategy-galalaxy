@@ -1,6 +1,7 @@
 import { LANE } from "../core/constants.js";
 
 export const COMMAND_UI = Object.freeze({
+  fullscreen: Object.freeze({ x: 364, y: 12, width: 48, height: 40 }),
   lanes: Object.freeze([
     Object.freeze({ laneId: LANE.LEFT, x: 8, y: 218, width: 76, height: 58 }),
     Object.freeze({ laneId: LANE.RIGHT, x: 336, y: 218, width: 76, height: 58 }),
@@ -37,3 +38,5 @@ export const commandActionAt = (point, menu = "units") => {
   if (containsPoint(COMMAND_UI.deploy, point)) return { type: "DEPLOY" };
   return null;
 };
+
+export const fullscreenActionAt = (point) => (containsPoint(COMMAND_UI.fullscreen, point) ? { type: "TOGGLE_FULLSCREEN" } : null);

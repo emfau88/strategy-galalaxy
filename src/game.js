@@ -10,7 +10,7 @@ import { Renderer } from "./rendering/renderer.js";
 import { PresentationEffects } from "./rendering/presentationEffects.js";
 import { MatchDirector } from "./simulation/matchDirector.js";
 import { InputRouter } from "./ui/inputRouter.js";
-import { commandActionAt } from "./ui/commandUi.js";
+import { commandActionAt, fullscreenActionAt } from "./ui/commandUi.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
 
@@ -31,6 +31,7 @@ export class Game {
     this.selectedLaneId = LANE.LEFT;
     this.commandMenu = "units";
     this.commandFeedback = null;
+    this.fullscreenActive = false;
     this.match = new MatchDirector();
     this.lastFrameAt = null;
     this.running = false;
@@ -38,6 +39,7 @@ export class Game {
     this.input = new InputRouter(canvas, () => this.transform, (input) => this.receiveInput(input));
     this.onResize = () => this.resize();
     this.onKeyDown = (event) => this.handleKeyDown(event);
+    this.onFullscreenChange = () => { this.fullscreenActive = Boolean(document.fullscreenElement); };
     this.onFrame = (now) => this.frame(now);
   }
 
@@ -47,6 +49,7 @@ export class Game {
     window.addEventListener("resize", this.onResize, { passive: true });
     window.visualViewport?.addEventListener("resize", this.onResize, { passive: true });
     window.addEventListener("keydown", this.onKeyDown);
+    document.addEventListener("fullscreenchange", this.onFullscreenChange);
     await this.loader.load();
     if (this.options.testMode) {
       this.match.start();
@@ -64,6 +67,7 @@ export class Game {
     window.removeEventListener("resize", this.onResize);
     window.visualViewport?.removeEventListener("resize", this.onResize);
     window.removeEventListener("keydown", this.onKeyDown);
+    document.removeEventListener("fullscreenchange", this.onFullscreenChange);
   }
 
   resize() {
@@ -91,6 +95,10 @@ export class Game {
   receiveInput(input) {
     this.lastInput = input;
     if (input.kind !== "down") return;
+    if (fullscreenActionAt(input)) {
+      this.toggleFullscreen();
+      return;
+    }
     if (this.match.state === MATCH_STATE.TITLE) {
       this.match.start();
       this.effects.reset();
@@ -101,6 +109,19 @@ export class Game {
       this.effects.reset();
     }
     this.syncMatchState();
+  }
+
+  toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => { this.commandFeedback = "FULLSCREEN UNAVAILABLE"; });
+      return;
+    }
+    const target = this.canvas.parentElement ?? this.canvas;
+    if (!target.requestFullscreen) {
+      this.commandFeedback = "FULLSCREEN UNAVAILABLE";
+      return;
+    }
+    target.requestFullscreen().catch(() => { this.commandFeedback = "FULLSCREEN UNAVAILABLE"; });
   }
 
   executeCommandAction(action) {
@@ -180,6 +201,8 @@ export class Game {
       lastAiDecision: this.match.lastAiDecision,
       selectedLaneId: this.selectedLaneId,
       commandMenu: this.commandMenu,
+      fullscreenActive: this.fullscreenActive,
+      manualCommand: this.match.state === MATCH_STATE.COMMAND && this.match.phaseRemaining === null,
       commandFeedback: this.commandFeedback,
       assets: this.loader,
       effects: this.effects.effects,

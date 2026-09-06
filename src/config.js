@@ -12,7 +12,7 @@ export const CONFIG = Object.freeze({
     fixedStepSeconds: 1 / 60,
     maxFrameDeltaSeconds: 0.1,
     maxCatchUpSteps: 6,
-    commandPhaseSeconds: 8,
+    commandPhaseSeconds: null,
     battlePhaseSeconds: 22,
   }),
   caps: Object.freeze({
