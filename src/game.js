@@ -7,6 +7,7 @@ import { computeViewportTransform } from "./core/viewport.js";
 import { readLaunchOptions } from "./qa/matchTestMode.js";
 import { AssetLoader } from "./rendering/assetLoader.js";
 import { Renderer } from "./rendering/renderer.js";
+import { createDemoBattle } from "./simulation/battleSimulation.js";
 import { InputRouter } from "./ui/inputRouter.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
@@ -24,6 +25,7 @@ export class Game {
     this.loader = new AssetLoader(ASSET_GROUPS.boot);
     this.renderer = new Renderer(canvas, context);
     this.lastInput = null;
+    this.simulation = null;
     this.lastFrameAt = null;
     this.running = false;
     this.transform = null;
@@ -38,7 +40,8 @@ export class Game {
     window.addEventListener("resize", this.onResize, { passive: true });
     window.visualViewport?.addEventListener("resize", this.onResize, { passive: true });
     await this.loader.load();
-    this.state = MATCH_STATE.TITLE;
+    this.simulation = this.options.testMode ? createDemoBattle() : null;
+    this.state = this.options.testMode ? MATCH_STATE.BATTLE : MATCH_STATE.TITLE;
     this.running = true;
     requestAnimationFrame(this.onFrame);
   }
@@ -81,7 +84,7 @@ export class Game {
     const delta = this.lastFrameAt === null ? 0 : (now - this.lastFrameAt) / 1000;
     this.lastFrameAt = now;
     this.clock.advance(delta, this.state, {
-      onSimulationStep: () => {},
+      onSimulationStep: (step) => this.simulation?.step(step),
     });
     this.renderer.render({
       state: this.state,
@@ -89,6 +92,7 @@ export class Game {
       debugEnabled: this.options.debugEnabled,
       testMode: this.options.testMode,
       lastInput: this.lastInput,
+      simulation: this.simulation,
     });
     requestAnimationFrame(this.onFrame);
   }

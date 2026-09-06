@@ -41,5 +41,30 @@ export const renderBattlefieldLayer = (ctx, width, height) => {
   ctx.setLineDash([]);
 };
 
-export const renderEntityLayer = () => {};
+const teamColor = (team) => (team === "TEAM_PLAYER" ? "#6fddff" : "#ff958f");
+
+export const renderEntityLayer = (ctx, model) => {
+  const simulation = model.simulation;
+  if (!simulation) return;
+  const { structures, units, projectiles } = simulation.state;
+  for (const structure of structures.values()) {
+    ctx.globalAlpha = structure.alive ? 1 : 0.22;
+    ctx.fillStyle = structure.structureType === "hq" ? teamColor(structure.team) : "#8aaed4";
+    ctx.beginPath();
+    ctx.arc(structure.x, structure.y, structure.structureType === "hq" ? 24 : 15, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  for (const unit of units.values()) {
+    ctx.fillStyle = teamColor(unit.team);
+    ctx.beginPath();
+    ctx.arc(unit.x, unit.y, 6 + (unit.unitType === "frigate" ? 3 : 0), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  for (const projectile of projectiles.values()) {
+    ctx.fillStyle = "#fff3bd";
+    ctx.fillRect(projectile.x - 2, projectile.y - 2, 4, 4);
+  }
+  ctx.globalAlpha = 1;
+};
+
 export const renderEffectsLayer = () => {};

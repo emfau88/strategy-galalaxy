@@ -16,7 +16,7 @@ export const CONFIG = Object.freeze({
     battlePhaseSeconds: 22,
   }),
   caps: Object.freeze({
-    unitsPerTeam: 80,
+    unitsPerLaneTeam: 40,
     projectiles: 180,
     particles: 240,
   }),

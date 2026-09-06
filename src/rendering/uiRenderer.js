@@ -10,11 +10,12 @@ export const renderUiLayer = (ctx, model) => {
   ctx.fillStyle = "rgba(4, 12, 28, 0.74)";
   ctx.fillRect(16, 16, width - 32, 86);
   text(ctx, "STRATEGY GALALAXY", width / 2, 50, 18, "#d9f4ff", "center");
-  text(ctx, "Canvas foundation", width / 2, 76, 12, "#7fd2ff", "center");
+  text(ctx, model.simulation ? "Headless lane combat" : "Canvas foundation", width / 2, 76, 12, "#7fd2ff", "center");
 
   text(ctx, "LEFT LANE", width * 0.29, 137, 10, "#84d7ff", "center");
   text(ctx, "RIGHT LANE", width * 0.71, 137, 10, "#84d7ff", "center");
-  text(ctx, "RENDER LAYERS READY", width / 2, height / 2, 12, "rgba(218, 244, 255, 0.52)", "center");
+  const activeUnits = model.simulation?.state.units.size ?? 0;
+  text(ctx, model.simulation ? `${activeUnits} units · automatic test battle` : "RENDER LAYERS READY", width / 2, height / 2, 12, "rgba(218, 244, 255, 0.52)", "center");
 
   if (lastInput) {
     text(ctx, `Input: ${Math.round(lastInput.x)}, ${Math.round(lastInput.y)}`, width / 2, height - 94, 11, "#b6eaff", "center");

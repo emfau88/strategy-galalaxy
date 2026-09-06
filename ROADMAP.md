@@ -214,18 +214,18 @@ Jedes relevante System wird einer Kategorie zugeordnet:
 
 ### Aufgaben
 
-- [ ] Mapdaten für zwei parallele Lanes definieren.
-- [ ] Allgemeine `Unit`-, `Structure`- und `Projectile`-Modelle implementieren.
-- [ ] HQs, vier Defense Stations und feste Lane-Zuordnung implementieren.
-- [ ] Scout, Fighter, Bomber und Frigate datengetrieben anlegen.
-- [ ] Battlecruiser und Dreadnought im Datenmodell ermöglichen, ohne sie schon fertig auszubalancieren.
-- [ ] Lane-gebundene Bewegung und sinnvolle Spawn-Formationen implementieren.
-- [ ] Vorhersehbare Zielauswahl implementieren: Lane-Unit, Lane-Struktur, HQ.
-- [ ] Zustände umsetzen: `ADVANCING`, `ENGAGING`, `HOLDING`, `ATTACKING_STRUCTURE`, `DEAD`.
-- [ ] Projectile-, Treffer-, Schaden-, Tod- und Strukturkampf integrieren.
-- [ ] Turret- und HQ-Auto-Angriffe implementieren.
-- [ ] Lane-spezifische Collections und begrenzte Suchen verwenden.
-- [ ] Caps und Object-Pooling dort übernehmen, wo Messung oder Audit es rechtfertigen.
+- [x] Mapdaten für zwei parallele Lanes definieren.
+- [x] Allgemeine `Unit`-, `Structure`- und `Projectile`-Modelle implementieren.
+- [x] HQs, vier Defense Stations und feste Lane-Zuordnung implementieren.
+- [x] Scout, Fighter, Bomber und Frigate datengetrieben anlegen.
+- [x] Battlecruiser und Dreadnought im Datenmodell ermöglichen, ohne sie schon fertig auszubalancieren.
+- [x] Lane-gebundene Bewegung und sinnvolle Spawn-Formationen implementieren.
+- [x] Vorhersehbare Zielauswahl implementieren: Lane-Unit, Lane-Struktur, HQ.
+- [x] Zustände umsetzen: `ADVANCING`, `ENGAGING`, `HOLDING`, `ATTACKING_STRUCTURE`, `DEAD`.
+- [x] Projectile-, Treffer-, Schaden-, Tod- und Strukturkampf integrieren.
+- [x] Turret- und HQ-Auto-Angriffe implementieren.
+- [x] Lane-spezifische Collections und begrenzte Suchen verwenden.
+- [x] Caps und Object-Pooling dort übernehmen, wo Messung oder Audit es rechtfertigen.
 
 ### Ergebnis / Abnahme
 
