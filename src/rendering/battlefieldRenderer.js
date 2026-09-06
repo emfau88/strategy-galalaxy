@@ -7,33 +7,26 @@ const asset = (assets, key) => assets?.get(key) ?? null;
 
 export const renderBackground = (ctx, width, height, frameTime, assets) => {
   const gradient = ctx.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, "#102b58");
-  gradient.addColorStop(0.52, "#081b3a");
-  gradient.addColorStop(1, "#050d20");
+  gradient.addColorStop(0, "#0a1730");
+  gradient.addColorStop(0.52, "#071228");
+  gradient.addColorStop(1, "#050b19");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  const voidLayer = asset(assets, "background-void");
   const starLayer = asset(assets, "background-stars");
   const planet = asset(assets, "background-planet");
-  const asteroid = asset(assets, "background-asteroid");
-  if (voidLayer) ctx.drawImage(voidLayer, 0, 0, width, height);
   if (starLayer) {
-    ctx.globalAlpha = 0.34;
+    ctx.globalAlpha = 0.07;
     ctx.drawImage(starLayer, 0, 0, width, height);
   }
   if (planet) {
-    ctx.globalAlpha = 0.17;
-    ctx.drawImage(planet, -78, 268, 174, 174);
-  }
-  if (asteroid) {
-    ctx.globalAlpha = 0.24;
-    ctx.drawImage(asteroid, width - 75, 290, 58, 58);
+    ctx.globalAlpha = 0.07;
+    ctx.drawImage(planet, width - 104, 544, 148, 148);
   }
   ctx.globalAlpha = 1;
 
   for (const [x, y, radius] of stars) {
-    ctx.globalAlpha = 0.42 + Math.sin(frameTime * 1.6 + x) * 0.18;
+    ctx.globalAlpha = 0.22 + Math.sin(frameTime * 1.1 + x) * 0.05;
     ctx.fillStyle = "#c7eaff";
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -64,7 +57,7 @@ export const renderBattlefieldLayer = (ctx, width, height) => {
 
 const teamColor = (team) => (team === "TEAM_PLAYER" ? "#6fddff" : "#ff958f");
 const factionKey = (unit) => `${unit.team === "TEAM_PLAYER" ? "nairan" : "klaed"}-${unit.unitType}`;
-const unitSize = (unitType) => ({ scout: 22, fighter: 27, bomber: 31, frigate: 37 }[unitType] ?? 28);
+const unitSize = (unitType) => ({ scout: 44, fighter: 54, bomber: 62, frigate: 74 }[unitType] ?? 56);
 
 const drawBar = (ctx, x, y, width, ratio, color) => {
   ctx.fillStyle = "rgba(3, 10, 23, 0.72)";
@@ -115,6 +108,15 @@ export const renderEntityLayer = (ctx, model) => {
   for (const unit of units.values()) {
     const size = unitSize(unit.unitType);
     const sprite = asset(model.assets, factionKey(unit));
+    const engineDirection = unit.team === "TEAM_PLAYER" ? 1 : -1;
+    const pulse = 0.72 + Math.sin(model.frameTime * 7 + unit.x) * 0.16;
+    ctx.save();
+    ctx.globalAlpha = 0.3 * pulse;
+    ctx.fillStyle = teamColor(unit.team);
+    ctx.beginPath();
+    ctx.ellipse(unit.x, unit.y + engineDirection * size * 0.34, size * 0.18, size * 0.32 * pulse, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
     ctx.save();
     ctx.translate(unit.x, unit.y);
     if (unit.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
