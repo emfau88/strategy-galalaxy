@@ -1,0 +1,13 @@
+# Local read-only source material. Never commit the nested reference clone.
+.reference/
+
+# Local development output
+node_modules/
+dist/
+coverage/
+
+# Local editor and operating-system files
+.DS_Store
+Thumbs.db
+*.log
+
