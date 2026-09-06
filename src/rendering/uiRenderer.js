@@ -23,11 +23,12 @@ export const renderUiLayer = (ctx, model) => {
     text(ctx, "Tap or click to verify design-space input", width / 2, height - 94, 11, "#b6eaff", "center");
   }
   text(ctx, state, width / 2, height - 68, 11, "#829cc4", "center");
+  if (model.simulation) text(ctx, `Cycle ${model.cycle} · ${model.phaseRemaining.toFixed(1)}s`, width / 2, height - 48, 11, "#b6eaff", "center");
 
   if (debugEnabled || testMode) {
     ctx.fillStyle = "rgba(5, 16, 34, 0.82)";
-    ctx.fillRect(16, height - 52, width - 32, 36);
+    ctx.fillRect(16, height - 34, width - 32, 18);
     const label = testMode ? "TEST MODE: match harness ready" : "DEBUG MODE";
-    text(ctx, label, 28, height - 29, 11, "#f9d783");
+    text(ctx, label, 28, height - 21, 10, "#f9d783");
   }
 };

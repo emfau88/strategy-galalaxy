@@ -245,16 +245,16 @@ Jedes relevante System wird einer Kategorie zugeordnet:
 
 ### Aufgaben
 
-- [ ] `MatchDirector` als alleinige Instanz für Match-State und Phasenwechsel implementieren.
-- [ ] Command Phase mit zentral konfigurierbarer Ausgangsdauer von circa 8 Sekunden umsetzen.
-- [ ] Battle Phase mit zentral konfigurierbarer Ausgangsdauer von circa 22 Sekunden umsetzen.
-- [ ] Während der Command Phase Movement, Combat, Capture, Income und Cooldowns vollständig einfrieren.
-- [ ] Pro Team und Lane eine geplante Wave verwalten.
-- [ ] Automatische kostenlose Basis-Wave von zunächst zwei Scouts pro Lane integrieren.
-- [ ] Player- und AI-Waves gleichzeitig zu Beginn der Battle Phase deployen.
-- [ ] Überlebende Einheiten ohne Reset in den nächsten Cycle übernehmen.
-- [ ] Victory und Defeat ausschließlich über HQ-Zerstörung auslösen.
-- [ ] Restart in einen sauberen initialen Matchzustand umsetzen.
+- [x] `MatchDirector` als alleinige Instanz für Match-State und Phasenwechsel implementieren.
+- [x] Command Phase mit zentral konfigurierbarer Ausgangsdauer von circa 8 Sekunden umsetzen.
+- [x] Battle Phase mit zentral konfigurierbarer Ausgangsdauer von circa 22 Sekunden umsetzen.
+- [x] Während der Command Phase Movement, Combat, Capture, Income und Cooldowns vollständig einfrieren.
+- [x] Pro Team und Lane eine geplante Wave verwalten.
+- [x] Automatische kostenlose Basis-Wave von zunächst zwei Scouts pro Lane integrieren.
+- [x] Player- und AI-Waves gleichzeitig zu Beginn der Battle Phase deployen.
+- [x] Überlebende Einheiten ohne Reset in den nächsten Cycle übernehmen.
+- [x] Victory und Defeat ausschließlich über HQ-Zerstörung auslösen.
+- [x] Restart in einen sauberen initialen Matchzustand umsetzen.
 
 ### Ergebnis / Abnahme
 

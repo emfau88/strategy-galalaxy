@@ -7,6 +7,8 @@ import { AssetLoader } from "../src/rendering/assetLoader.js";
 import { BattleSimulation, createDemoBattle } from "../src/simulation/battleSimulation.js";
 import { LANE, TEAM } from "../src/core/constants.js";
 import { UNIT_DEFINITIONS } from "../src/data/definitions.js";
+import { CONFIG } from "../src/config.js";
+import { MatchDirector } from "../src/simulation/matchDirector.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
@@ -87,5 +89,39 @@ for (let index = 0; index < 480; index += 1) {
   secondBattle.step(1 / 60);
 }
 assert.deepEqual(firstBattle.snapshot(), secondBattle.snapshot());
+
+const match = new MatchDirector({ config: { ...CONFIG, timing: { ...CONFIG.timing, commandPhaseSeconds: 0.1, battlePhaseSeconds: 0.2 } } });
+match.start();
+assert.equal(match.state, MATCH_STATE.COMMAND);
+assert.equal(match.simulation.state.units.size, 0);
+match.advanceCommand(0.1);
+assert.equal(match.state, MATCH_STATE.BATTLE);
+assert.equal(match.cycle, 1);
+assert.equal(match.simulation.state.units.size, 8);
+assert.equal(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.PLAYER).length, 2);
+assert.equal(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.ENEMY).length, 2);
+const positionsBeforePause = match.simulation.snapshot();
+match.pause();
+assert.equal(match.advanceBattle(1 / 60), false);
+assert.deepEqual(match.simulation.snapshot(), positionsBeforePause);
+match.resume();
+for (let index = 0; index < 12; index += 1) match.advanceBattle(1 / 60);
+assert.equal(match.state, MATCH_STATE.COMMAND);
+assert.equal(match.cycle, 1);
+const survivorIds = new Set(match.simulation.snapshot().units.map((unit) => unit.id));
+match.deployNow();
+assert.equal(match.state, MATCH_STATE.BATTLE);
+assert.equal(match.cycle, 2);
+assert.ok([...survivorIds].every((id) => match.simulation.state.units.has(id)));
+
+const terminalMatch = new MatchDirector();
+terminalMatch.start();
+terminalMatch.deployNow();
+terminalMatch.simulation.state.terminalTeam = TEAM.PLAYER;
+terminalMatch.advanceBattle(1 / 60);
+assert.equal(terminalMatch.state, MATCH_STATE.VICTORY);
+terminalMatch.restart();
+assert.equal(terminalMatch.state, MATCH_STATE.COMMAND);
+assert.equal(terminalMatch.simulation.state.units.size, 0);
 
 console.log(`Foundation and battle checks passed for ${targetViewports.length} target viewports.`);

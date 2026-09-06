@@ -7,7 +7,7 @@ import { computeViewportTransform } from "./core/viewport.js";
 import { readLaunchOptions } from "./qa/matchTestMode.js";
 import { AssetLoader } from "./rendering/assetLoader.js";
 import { Renderer } from "./rendering/renderer.js";
-import { createDemoBattle } from "./simulation/battleSimulation.js";
+import { MatchDirector } from "./simulation/matchDirector.js";
 import { InputRouter } from "./ui/inputRouter.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
@@ -25,12 +25,13 @@ export class Game {
     this.loader = new AssetLoader(ASSET_GROUPS.boot);
     this.renderer = new Renderer(canvas, context);
     this.lastInput = null;
-    this.simulation = null;
+    this.match = new MatchDirector();
     this.lastFrameAt = null;
     this.running = false;
     this.transform = null;
     this.input = new InputRouter(canvas, () => this.transform, (input) => this.receiveInput(input));
     this.onResize = () => this.resize();
+    this.onKeyDown = (event) => this.handleKeyDown(event);
     this.onFrame = (now) => this.frame(now);
   }
 
@@ -39,9 +40,13 @@ export class Game {
     this.input.attach();
     window.addEventListener("resize", this.onResize, { passive: true });
     window.visualViewport?.addEventListener("resize", this.onResize, { passive: true });
+    window.addEventListener("keydown", this.onKeyDown);
     await this.loader.load();
-    this.simulation = this.options.testMode ? createDemoBattle() : null;
-    this.state = this.options.testMode ? MATCH_STATE.BATTLE : MATCH_STATE.TITLE;
+    if (this.options.testMode) {
+      this.match.start();
+      this.match.deployNow();
+    }
+    this.syncMatchState();
     this.running = true;
     requestAnimationFrame(this.onFrame);
   }
@@ -51,6 +56,7 @@ export class Game {
     this.input.destroy();
     window.removeEventListener("resize", this.onResize);
     window.visualViewport?.removeEventListener("resize", this.onResize);
+    window.removeEventListener("keydown", this.onKeyDown);
   }
 
   resize() {
@@ -77,22 +83,50 @@ export class Game {
 
   receiveInput(input) {
     this.lastInput = input;
+    if (input.kind !== "down") return;
+    if (this.match.state === MATCH_STATE.TITLE) this.match.start();
+    else if (this.match.state === MATCH_STATE.COMMAND) this.match.deployNow();
+    else if (this.match.state === MATCH_STATE.VICTORY || this.match.state === MATCH_STATE.DEFEAT) this.match.restart();
+    this.syncMatchState();
+  }
+
+  handleKeyDown(event) {
+    if (event.key.toLowerCase() === "p") {
+      if (this.match.state === MATCH_STATE.PAUSED) this.match.resume();
+      else this.match.pause();
+    }
+    if (event.key.toLowerCase() === "r") this.match.restart();
+    this.syncMatchState();
+  }
+
+  syncMatchState() {
+    this.state = this.match.state;
   }
 
   frame(now) {
     if (!this.running) return;
     const delta = this.lastFrameAt === null ? 0 : (now - this.lastFrameAt) / 1000;
     this.lastFrameAt = now;
-    this.clock.advance(delta, this.state, {
-      onSimulationStep: (step) => this.simulation?.step(step),
+    const previousState = this.match.state;
+    this.clock.advance(delta, previousState, {
+      onPhaseTick: (phaseDelta) => {
+        if (previousState === MATCH_STATE.COMMAND && this.match.advanceCommand(phaseDelta)) this.clock.beginPhase();
+      },
+      onSimulationStep: (step) => {
+        if (this.match.advanceBattle(step)) this.clock.beginPhase();
+      },
     });
+    if (this.options.testMode && this.match.state === MATCH_STATE.COMMAND) this.match.deployNow();
+    this.syncMatchState();
     this.renderer.render({
       state: this.state,
       frameTime: this.clock.frameTime,
       debugEnabled: this.options.debugEnabled,
       testMode: this.options.testMode,
       lastInput: this.lastInput,
-      simulation: this.simulation,
+      simulation: this.match.simulation,
+      cycle: this.match.cycle,
+      phaseRemaining: this.match.phaseRemaining,
     });
     requestAnimationFrame(this.onFrame);
   }
