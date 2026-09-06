@@ -2,6 +2,9 @@ import { CONFIG } from "../config.js";
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
 import { createBattleState } from "./battleState.js";
 import { BattleSimulation } from "./battleSimulation.js";
+import { CaptureSystem } from "./captureSystem.js";
+import { CommandSystem } from "./commandSystem.js";
+import { EconomySystem } from "./economySystem.js";
 
 const laneIds = Object.freeze([LANE.LEFT, LANE.RIGHT]);
 const teams = Object.freeze([TEAM.PLAYER, TEAM.ENEMY]);
@@ -17,6 +20,10 @@ export class MatchDirector {
     this.phaseElapsed = 0;
     this.activeBattleSeconds = 0;
     this.simulation = null;
+    this.economy = new EconomySystem({ balance: config.balance });
+    this.capture = new CaptureSystem({ captureRatePerSecond: config.balance.nodeCaptureRatePerSecond });
+    this.commands = new CommandSystem();
+    this.nextQueueSequence = 1;
     this.queuedWaves = emptyTeamLanes();
     this.baseWaveBacklog = emptyTeamLanes();
     this.events = [];
@@ -28,11 +35,17 @@ export class MatchDirector {
     this.cycle = 0;
     this.phaseElapsed = 0;
     this.activeBattleSeconds = 0;
-    this.simulation = new BattleSimulation({ state: createBattleState() });
+    this.economy = new EconomySystem({ balance: this.config.balance });
+    this.simulation = new BattleSimulation({ state: createBattleState(), economy: this.economy });
     this.queuedWaves = emptyTeamLanes();
     this.baseWaveBacklog = emptyTeamLanes();
+    this.nextQueueSequence = 1;
     this.events = [{ type: "PHASE_CHANGED", state: this.state }];
     return true;
+  }
+
+  executeCommand(command) {
+    return this.commands.execute(this, command);
   }
 
   advanceCommand(delta) {
@@ -45,7 +58,9 @@ export class MatchDirector {
 
   advanceBattle(step) {
     if (this.state !== MATCH_STATE.BATTLE) return false;
+    this.economy.advance(this.simulation.state, step, this.activeBattleSeconds);
     this.simulation.step(step);
+    this.capture.advance(this.simulation.state, step);
     this.phaseElapsed += step;
     this.activeBattleSeconds += step;
     if (this.simulation.state.terminalTeam) {
@@ -77,7 +92,7 @@ export class MatchDirector {
         const acceptedPaid = paidEntries.slice(0, Math.max(0, available - acceptedBase.length));
         this.baseWaveBacklog.get(team).set(laneId, baseEntries.slice(acceptedBase.length));
         this.queuedWaves.get(team).set(laneId, paidEntries.slice(acceptedPaid.length));
-        deployment.push({ team, laneId, unitTypes: [...acceptedBase, ...acceptedPaid] });
+        deployment.push({ team, laneId, unitTypes: [...acceptedBase, ...acceptedPaid.map((entry) => entry.unitType)] });
       }
     }
     this.cycle += 1;

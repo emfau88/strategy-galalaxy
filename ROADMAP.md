@@ -274,17 +274,17 @@ Jedes relevante System wird einer Kategorie zugeordnet:
 
 ### Aufgaben
 
-- [ ] Eine einzige Hauptressource `Energy` implementieren.
-- [ ] Konfigurierbare Startenergie und Basiseinkommen anlegen.
-- [ ] Einkommen ausschließlich während aktiver Battle-Zeit erzeugen.
-- [ ] Pro Lane einen Capture Node mit Fortschritt und Besitzstatus implementieren.
-- [ ] Capture-Regeln umsetzen: ein Team im Bereich bewegt Fortschritt, beide Teams pausieren ihn.
-- [ ] Kontrollierte Nodes gewähren konfigurierbaren Einkommensbonus.
-- [ ] Kaufkosten reservieren/abbuchen und Entfernen geplanter Units korrekt erstatten.
-- [ ] Economy Upgrade mit steigenden Kosten und prozentualem Basisbonus implementieren.
-- [ ] Turret Upgrade mit steigenden Kosten und Damage-Bonus implementieren.
-- [ ] Einkommensskalierung nach Matchzeit zentral konfigurieren.
-- [ ] Stagnationsschutz für das Late Game vorsehen; zunächst über Income-Multiplikator und optional stärkere Auto-Waves.
+- [x] Eine einzige Hauptressource `Energy` implementieren.
+- [x] Konfigurierbare Startenergie und Basiseinkommen anlegen.
+- [x] Einkommen ausschließlich während aktiver Battle-Zeit erzeugen.
+- [x] Pro Lane einen Capture Node mit Fortschritt und Besitzstatus implementieren.
+- [x] Capture-Regeln umsetzen: ein Team im Bereich bewegt Fortschritt, beide Teams pausieren ihn.
+- [x] Kontrollierte Nodes gewähren konfigurierbaren Einkommensbonus.
+- [x] Kaufkosten reservieren/abbuchen und Entfernen geplanter Units korrekt erstatten.
+- [x] Economy Upgrade mit steigenden Kosten und prozentualem Basisbonus implementieren.
+- [x] Turret Upgrade mit steigenden Kosten und Damage-Bonus implementieren.
+- [x] Einkommensskalierung nach Matchzeit zentral konfigurieren.
+- [x] Stagnationsschutz für das Late Game vorsehen; zunächst über Income-Multiplikator und optional stärkere Auto-Waves.
 
 ### Ausgangswerte zum Testen
 

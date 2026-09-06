@@ -127,6 +127,7 @@ export class Game {
       simulation: this.match.simulation,
       cycle: this.match.cycle,
       phaseRemaining: this.match.phaseRemaining,
+      economy: this.match.simulation ? this.match.economy : null,
     });
     requestAnimationFrame(this.onFrame);
   }

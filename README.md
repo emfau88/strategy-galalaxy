@@ -2,7 +2,7 @@
 
 Strategy Galalaxy is a standalone, mobile-first singleplayer Space Lane Wars game. Players plan reinforcements, economy, and defense during a paused Command Phase, then watch two persistent lanes resolve automatically during the Battle Phase.
 
-The Canvas foundation, headless two-lane combat, and persistent Command-/Battle-cycle are complete. The current build establishes mobile portrait scaling, Safe-Area-aware coordinates, layered rendering, deterministic combat, free base waves, pause/resume, and restart. Economy, Nodes, AI, and the player UI follow in later bulks.
+The Canvas foundation, headless two-lane combat, persistent Command-/Battle-cycle, and the Economy core are complete. The current build establishes mobile portrait scaling, deterministic combat, free base waves, Energy, capturable Nodes, upgrades, and escalation. AI and the player UI follow in later bulks.
 
 ## Core loop
 
@@ -55,7 +55,7 @@ In the normal build, a tap starts a Command Phase; a tap during Command deploys 
 npm.cmd run check
 ```
 
-The check validates the five target portrait viewports, design-space input mapping, paused simulation time, deterministic RNG, and the empty boot asset group.
+The check validates the five target portrait viewports, design-space input mapping, paused simulation time, combat, match cycles, Energy accounting, Nodes, upgrades, and escalation.
 
 ## Current status
 
@@ -67,4 +67,5 @@ The check validates the five target portrait viewports, design-space input mappi
 - [x] Technical Canvas foundation
 - [x] Headless lane combat
 - [x] Deployment cycles and persistent match
-- [ ] Economy and Energy Nodes
+- [x] Economy and Energy Nodes
+- [ ] Singleplayer AI

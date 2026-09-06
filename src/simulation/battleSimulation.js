@@ -10,8 +10,9 @@ const forwardDirection = (team) => (team === TEAM.PLAYER ? -1 : 1);
 const targetDefinition = (entity) => entity.structureType ? STRUCTURE_DEFINITIONS[entity.structureType] : UNIT_DEFINITIONS[entity.unitType];
 
 export class BattleSimulation {
-  constructor({ state = createBattleState() } = {}) {
+  constructor({ state = createBattleState(), economy = null } = {}) {
     this.state = state;
+    this.economy = economy;
   }
 
   spawnUnit(team, laneId, unitType, { x, y, slotOffsetX = 0, spawnCycle = 0 } = {}) {
@@ -85,12 +86,18 @@ export class BattleSimulation {
       id: this.state.ids.next(), ownerId: owner.id, ownerTeam: owner.team, laneId: owner.laneId ?? target.laneId,
       projectileType: projectileDefinition.id, x: owner.x, y: owner.y,
       vx: (dx / magnitude) * projectileDefinition.speed, vy: (dy / magnitude) * projectileDefinition.speed,
-      damage: definition.damage, targetId: target.id,
+      damage: this.damageFor(owner, definition), targetId: target.id,
     });
     projectile.remainingLife = projectileDefinition.lifetime;
     addProjectileToState(this.state, projectile);
     owner.fireCooldown = definition.fireInterval;
     this.state.events.push({ type: "shot", ownerId: owner.id, targetId: target.id });
+  }
+
+  damageFor(owner, definition) {
+    if (owner.structureType !== "turret" || !this.economy) return definition.damage;
+    const level = this.economy.get(owner.team).turretLevel;
+    return definition.damage * (1 + level * this.economy.balance.turretUpgradeDamageBonus);
   }
 
   updateProjectiles(dt) {

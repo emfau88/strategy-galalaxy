@@ -7,6 +7,7 @@ import { AssetLoader } from "../src/rendering/assetLoader.js";
 import { BattleSimulation, createDemoBattle } from "../src/simulation/battleSimulation.js";
 import { LANE, TEAM } from "../src/core/constants.js";
 import { UNIT_DEFINITIONS } from "../src/data/definitions.js";
+import { STRUCTURE_DEFINITIONS } from "../src/data/definitions.js";
 import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 
@@ -124,4 +125,54 @@ terminalMatch.restart();
 assert.equal(terminalMatch.state, MATCH_STATE.COMMAND);
 assert.equal(terminalMatch.simulation.state.units.size, 0);
 
-console.log(`Foundation and battle checks passed for ${targetViewports.length} target viewports.`);
+const economyMatch = new MatchDirector();
+economyMatch.start();
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
+economyMatch.advanceCommand(1);
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
+const queued = economyMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "fighter" });
+assert.equal(queued.ok, true);
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 210);
+const removed = economyMatch.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, queueEntryId: queued.entry.id });
+assert.deepEqual({ ok: removed.ok, refunded: removed.refunded }, { ok: true, refunded: 90 });
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
+const economyUpgrade = economyMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" });
+assert.deepEqual({ ok: economyUpgrade.ok, cost: economyUpgrade.cost, level: economyUpgrade.level }, { ok: true, cost: 240, level: 1 });
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 60);
+assert.equal(economyMatch.economy.incomePerSecond(economyMatch.simulation.state, TEAM.PLAYER, 0), 24);
+economyMatch.deployNow();
+economyMatch.advanceBattle(1);
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 84);
+
+const captureMatch = new MatchDirector();
+captureMatch.start();
+const captureUnit = captureMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 132, y: 380 });
+captureMatch.capture.advance(captureMatch.simulation.state, 2);
+const leftNode = captureMatch.simulation.state.nodes.get("left-node");
+assert.equal(leftNode.ownerTeam, TEAM.PLAYER);
+const enemyCaptor = captureMatch.simulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 132, y: 380 });
+captureMatch.capture.advance(captureMatch.simulation.state, 1);
+assert.equal(leftNode.contested, true);
+assert.equal(leftNode.progress, 100);
+captureUnit.alive = false;
+captureMatch.capture.advance(captureMatch.simulation.state, 2.1);
+assert.equal(leftNode.ownerTeam, null);
+assert.ok(leftNode.progress < 0);
+leftNode.ownerTeam = TEAM.PLAYER;
+leftNode.progress = 100;
+assert.equal(captureMatch.economy.incomePerSecond(captureMatch.simulation.state, TEAM.PLAYER, 120), 45);
+
+const turretMatch = new MatchDirector();
+turretMatch.start();
+const turretUpgrade = turretMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "turret" });
+assert.equal(turretUpgrade.ok, true);
+const playerTurret = turretMatch.simulation.state.structures.get("player-left-turret");
+assert.equal(turretMatch.simulation.damageFor(playerTurret, STRUCTURE_DEFINITIONS.turret), STRUCTURE_DEFINITIONS.turret.damage * 1.2);
+
+const capacityMatch = new MatchDirector({ config: { ...CONFIG, caps: { ...CONFIG.caps, unitsPerLaneTeam: 2 } } });
+capacityMatch.start();
+const rejected = capacityMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
+assert.deepEqual(rejected, { ok: false, reason: "CAPACITY_RESERVED" });
+assert.equal(capacityMatch.economy.get(TEAM.PLAYER).energy, 300);
+
+console.log(`Foundation, battle, match, and economy checks passed for ${targetViewports.length} target viewports.`);

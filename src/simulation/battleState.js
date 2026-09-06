@@ -10,6 +10,7 @@ export const createBattleState = ({ map = CLASSIC_LANES } = {}) => {
     units: new Map(),
     structures: new Map(),
     projectiles: new Map(),
+    nodes: new Map(),
     lanes: new Map(),
     events: [],
     terminalTeam: null,
@@ -20,6 +21,10 @@ export const createBattleState = ({ map = CLASSIC_LANES } = {}) => {
       id: lane.id,
       unitIds: new Map([[TEAM.PLAYER, []], [TEAM.ENEMY, []]]),
       projectileIds: [],
+    });
+    state.nodes.set(lane.node.id, {
+      id: lane.node.id, laneId: lane.id, x: lane.node.x, y: lane.node.y, radius: lane.node.radius,
+      progress: 0, ownerTeam: null, contested: false,
     });
   }
   for (const structure of map.structures) state.structures.set(structure.id, createStructure(structure));

@@ -46,7 +46,19 @@ const teamColor = (team) => (team === "TEAM_PLAYER" ? "#6fddff" : "#ff958f");
 export const renderEntityLayer = (ctx, model) => {
   const simulation = model.simulation;
   if (!simulation) return;
-  const { structures, units, projectiles } = simulation.state;
+  const { nodes, structures, units, projectiles } = simulation.state;
+  for (const node of nodes.values()) {
+    const color = node.ownerTeam === "TEAM_PLAYER" ? "#6fddff" : node.ownerTeam === "TEAM_ENEMY" ? "#ff958f" : "#d5dce9";
+    ctx.fillStyle = `${color}33`;
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = node.contested ? "#ffd37f" : color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, 12, 0, Math.PI * 2);
+    ctx.stroke();
+  }
   for (const structure of structures.values()) {
     ctx.globalAlpha = structure.alive ? 1 : 0.22;
     ctx.fillStyle = structure.structureType === "hq" ? teamColor(structure.team) : "#8aaed4";

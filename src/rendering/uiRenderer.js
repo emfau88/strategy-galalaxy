@@ -24,6 +24,11 @@ export const renderUiLayer = (ctx, model) => {
   }
   text(ctx, state, width / 2, height - 68, 11, "#829cc4", "center");
   if (model.simulation) text(ctx, `Cycle ${model.cycle} · ${model.phaseRemaining.toFixed(1)}s`, width / 2, height - 48, 11, "#b6eaff", "center");
+  if (model.economy) {
+    const playerEnergy = Math.floor(model.economy.get("TEAM_PLAYER").energy);
+    const enemyEnergy = Math.floor(model.economy.get("TEAM_ENEMY").energy);
+    text(ctx, `Energy  P ${playerEnergy}  ·  E ${enemyEnergy}`, width / 2, 120, 11, "#d9f4ff", "center");
+  }
 
   if (debugEnabled || testMode) {
     ctx.fillStyle = "rgba(5, 16, 34, 0.82)";
