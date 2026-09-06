@@ -1,5 +1,7 @@
 # Strategy Galalaxy
 
+**[▶ Play Strategy Galalaxy](https://emfau88.github.io/strategy-galalaxy/)**
+
 Strategy Galalaxy is a standalone, mobile-first singleplayer Space Lane Wars game. Players plan reinforcements, economy, and defense during a paused Command Phase, then watch two persistent lanes resolve automatically during the Battle Phase.
 
 The Canvas foundation, headless two-lane combat, persistent Command-/Battle-cycle, Economy core, opponent AI, and the first visual slice are complete. The current build establishes mobile portrait scaling, deterministic combat, free base waves, Energy, capturable Nodes, upgrades, a touch-first Command UI, top-down structure placeholders, CC0 fleet art, projectile art, and hit feedback.
