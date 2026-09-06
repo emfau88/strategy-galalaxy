@@ -2,7 +2,20 @@
 
 Strategy Galalaxy is a standalone, mobile-first singleplayer Space Lane Wars game. Players plan reinforcements, economy, and defense during a paused Command Phase, then watch two persistent lanes resolve automatically during the Battle Phase.
 
-The project is currently in the repository and reference-audit stage. Gameplay implementation has not started.
+The product and architecture contracts are complete. Gameplay implementation has not started; the next milestone is the technical Canvas foundation.
+
+## Core loop
+
+```text
+Read the persistent battlefield
+  → plan Left and Right Lane reinforcements
+  → invest or save Energy
+  → deploy both teams simultaneously
+  → watch 22 seconds of automatic combat
+  → repeat until one Headquarters is destroyed
+```
+
+There is no manual ship or unit control.
 
 ## Repository boundary
 
@@ -21,10 +34,14 @@ See [Repository rules](docs/REPOSITORY_RULES.md) for the enforced workflow and [
 ## Planning
 
 - [Development roadmap](ROADMAP.md)
+- [Game design contract](docs/GAME_DESIGN.md)
+- [Architecture contract](docs/ARCHITECTURE.md)
 - [Galalaxy reference audit](docs/REFERENCE_AUDIT.md)
 - [Galalaxy asset inventory](docs/ASSET_INVENTORY.md)
-- Game design document: planned in Roadmap Bulk 2
-- Architecture document: planned in Roadmap Bulk 2 after the reference audit
+
+## Planned local development
+
+The technical foundation is not present yet. It will keep Galalaxy's lightweight static Canvas approach. Once Bulk 3 lands, the exact local start and QA commands will be documented here rather than promising commands before they exist.
 
 ## Current status
 
@@ -32,4 +49,5 @@ See [Repository rules](docs/REPOSITORY_RULES.md) for the enforced workflow and [
 - [x] Read-only reference boundary established
 - [x] Development roadmap created
 - [x] Galalaxy reference audit
+- [x] Product and architecture contracts
 - [ ] Gameplay foundation

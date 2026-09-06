@@ -144,15 +144,15 @@ Jedes relevante System wird einer Kategorie zugeordnet:
 
 ### Aufgaben
 
-- [ ] `README.md` mit Projektziel, lokalem Start, aktuellem Status und Dokumentationslinks erstellen.
-- [ ] `docs/GAME_DESIGN.md` mit Kernloop, Siegbedingung, Economy, Units, Nodes, Upgrades, AI-Regeln und Scope-Grenzen erstellen.
-- [ ] `docs/ARCHITECTURE.md` mit Systemgrenzen, Datenfluss und Herkunft übernommener Technik erstellen.
-- [ ] Zentrale Match-States definieren: `LOADING`, `TITLE`, `COMMAND`, `BATTLE`, `VICTORY`, `DEFEAT`, `PAUSED`.
-- [ ] Domänenmodell festlegen: `Team`, `Unit`, `Lane`, `Structure`, `Wave`, `Economy`, `CaptureNode`, `Match`, `AI`.
-- [ ] Teammodell generalisieren: `TEAM_PLAYER`, `TEAM_ENEMY`, `ownerTeam` und teamneutrales Targeting.
-- [ ] Datenformate für Units, Fraktionen, Maps, Upgrades und Balancing festlegen.
-- [ ] Schnittstellen zwischen Simulation, Rendering, UI und Input festlegen.
-- [ ] Deterministische Zeitführung sowie Seed-/Teststrategie beschreiben.
+- [x] `README.md` mit Projektziel, geplantem lokalen Start, aktuellem Status und Dokumentationslinks erstellen.
+- [x] `docs/GAME_DESIGN.md` mit Kernloop, Siegbedingung, Economy, Units, Nodes, Upgrades, AI-Regeln und Scope-Grenzen erstellen.
+- [x] `docs/ARCHITECTURE.md` mit Systemgrenzen, Datenfluss und Herkunft übernommener Technik erstellen.
+- [x] Zentrale Match-States definieren: `LOADING`, `TITLE`, `COMMAND`, `BATTLE`, `VICTORY`, `DEFEAT`, `PAUSED`.
+- [x] Domänenmodell festlegen: `Team`, `Unit`, `Lane`, `Structure`, `Wave`, `Economy`, `CaptureNode`, `Match`, `AI`.
+- [x] Teammodell generalisieren: `TEAM_PLAYER`, `TEAM_ENEMY`, `ownerTeam` und teamneutrales Targeting.
+- [x] Datenformate für Units, Fraktionen, Maps, Upgrades und Balancing festlegen.
+- [x] Schnittstellen zwischen Simulation, Rendering, UI und Input festlegen.
+- [x] Deterministische Zeitführung sowie Seed-/Teststrategie beschreiben.
 
 ### Architekturprinzipien
 
