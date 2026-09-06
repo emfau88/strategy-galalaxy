@@ -10,6 +10,8 @@ The following curated runtime files have now been copied into Strategy Galalaxy:
 
 An additional 1,445,597-byte portrait placeholder background was generated for Strategy Galalaxy through ImageGen and is stored as `assets/environment/strategy-galaxy-background-v1.png`. It is original project artwork, not a reference-repository asset.
 
+Three original, top-down ImageGen structure placeholders are also included under `assets/structures/`: a command HQ, defense turret, and energy relay. They were prompted against the visual language of the imported Nairan sprites and remain replaceable presentation assets.
+
 ## Complete repository inventory
 
 The reference contains 517 asset files totaling 25.51 MiB.

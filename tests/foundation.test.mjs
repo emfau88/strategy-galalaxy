@@ -150,11 +150,11 @@ assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 84);
 
 const captureMatch = new MatchDirector();
 captureMatch.start();
-const captureUnit = captureMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 132, y: 380 });
+const captureUnit = captureMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 112, y: 332 });
 captureMatch.capture.advance(captureMatch.simulation.state, 2);
 const leftNode = captureMatch.simulation.state.nodes.get("left-node");
 assert.equal(leftNode.ownerTeam, TEAM.PLAYER);
-const enemyCaptor = captureMatch.simulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 132, y: 380 });
+const enemyCaptor = captureMatch.simulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 112, y: 332 });
 captureMatch.capture.advance(captureMatch.simulation.state, 1);
 assert.equal(leftNode.contested, true);
 assert.equal(leftNode.progress, 100);
@@ -201,10 +201,12 @@ assert.equal(effects.effects.length, 2);
 effects.update(1);
 assert.equal(effects.effects.length, 0);
 
-assert.deepEqual(commandActionAt({ x: 24, y: 112 }), { type: "SELECT_LANE", laneId: LANE.LEFT });
-assert.deepEqual(commandActionAt({ x: 224, y: 112 }), { type: "SELECT_LANE", laneId: LANE.RIGHT });
-assert.deepEqual(commandActionAt({ x: 24, y: 574 }), { type: "QUEUE_UNIT", unitType: "scout" });
-assert.deepEqual(commandActionAt({ x: 160, y: 684 }), { type: "BUY_UPGRADE", upgradeId: "turret" });
-assert.deepEqual(commandActionAt({ x: 300, y: 580 }), { type: "DEPLOY" });
+assert.deepEqual(commandActionAt({ x: 24, y: 224 }), { type: "SELECT_LANE", laneId: LANE.LEFT });
+assert.deepEqual(commandActionAt({ x: 344, y: 224 }), { type: "SELECT_LANE", laneId: LANE.RIGHT });
+assert.deepEqual(commandActionAt({ x: 24, y: 662 }), { type: "QUEUE_UNIT", unitType: "scout" });
+assert.deepEqual(commandActionAt({ x: 160, y: 662 }), { type: "QUEUE_UNIT", unitType: "fighter" });
+assert.deepEqual(commandActionAt({ x: 300, y: 620 }), { type: "TOGGLE_MENU" });
+assert.deepEqual(commandActionAt({ x: 160, y: 662 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "turret" });
+assert.deepEqual(commandActionAt({ x: 300, y: 662 }), { type: "DEPLOY" });
 
 console.log(`Foundation, battle, match, and economy checks passed for ${targetViewports.length} target viewports.`);

@@ -41,11 +41,11 @@ export const renderBackground = (ctx, width, height, frameTime, assets) => {
 };
 
 export const renderBattlefieldLayer = (ctx, width, height) => {
-  const laneTop = 152;
-  const laneBottom = height - 128;
+  const laneTop = 108;
+  const laneBottom = height - 164;
   ctx.strokeStyle = "rgba(126, 207, 255, 0.18)";
   ctx.lineWidth = 1.5;
-  for (const x of [width * 0.29, width * 0.71]) {
+  for (const x of [112, 308]) {
     ctx.beginPath();
     ctx.moveTo(x, laneTop);
     ctx.lineTo(x, laneBottom);
@@ -71,23 +71,45 @@ const drawBar = (ctx, x, y, width, ratio, color) => {
   ctx.fillRect(x - width / 2, y, width * Math.max(0, ratio), 3);
 };
 
-const drawStructure = (ctx, structure) => {
-  const radius = structure.structureType === "hq" ? 27 : 18;
+const clipPolygon = (ctx, radius, sides = 8) => {
+  ctx.beginPath();
+  for (let index = 0; index < sides; index += 1) {
+    const angle = -Math.PI / 2 + index * Math.PI * 2 / sides;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+};
+
+const drawStructure = (ctx, structure, assets) => {
+  const radius = structure.structureType === "hq" ? 32 : 23;
   const color = teamColor(structure.team);
+  const sprite = asset(assets, structure.structureType === "hq" ? "structure-hq" : "structure-turret");
   ctx.save();
   ctx.translate(structure.x, structure.y);
-  ctx.rotate(structure.structureType === "hq" ? Math.PI / 4 : 0);
-  ctx.fillStyle = structure.structureType === "hq" ? "#112947" : "#173858";
+  ctx.fillStyle = `${color}22`;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius + 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.save();
+  clipPolygon(ctx, radius, structure.structureType === "hq" ? 8 : 6);
+  ctx.clip();
+  if (sprite) {
+    if (structure.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
+    ctx.drawImage(sprite, -radius, -radius, radius * 2, radius * 2);
+  } else {
+    ctx.fillStyle = "#173858";
+    ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
+  }
+  ctx.restore();
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  if (structure.structureType === "hq") ctx.rect(-radius * 0.72, -radius * 0.72, radius * 1.44, radius * 1.44);
-  else if (ctx.roundRect) ctx.roundRect(-radius, -radius * 0.62, radius * 2, radius * 1.24, 5);
-  else ctx.rect(-radius, -radius * 0.62, radius * 2, radius * 1.24);
-  ctx.fill();
+  clipPolygon(ctx, radius, structure.structureType === "hq" ? 8 : 6);
   ctx.stroke();
   ctx.restore();
-  drawBar(ctx, structure.x, structure.y + radius + 6, structure.structureType === "hq" ? 48 : 32, structure.hp / structure.maxHp, color);
+  drawBar(ctx, structure.x, structure.y + radius + 5, structure.structureType === "hq" ? 54 : 38, structure.hp / structure.maxHp, color);
 };
 
 export const renderEntityLayer = (ctx, model) => {
@@ -96,19 +118,27 @@ export const renderEntityLayer = (ctx, model) => {
   const { nodes, structures, units, projectiles } = simulation.state;
   for (const node of nodes.values()) {
     const color = node.ownerTeam === "TEAM_PLAYER" ? "#6fddff" : node.ownerTeam === "TEAM_ENEMY" ? "#ff958f" : "#d5dce9";
-    ctx.fillStyle = `${color}33`;
+    const sprite = asset(model.assets, "structure-node");
+    ctx.fillStyle = `${color}22`;
     ctx.beginPath();
     ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
     ctx.fill();
+    ctx.save();
+    ctx.translate(node.x, node.y);
+    ctx.save();
+    clipPolygon(ctx, 22, 6);
+    ctx.clip();
+    if (sprite) ctx.drawImage(sprite, -22, -22, 44, 44);
+    ctx.restore();
     ctx.strokeStyle = node.contested ? "#ffd37f" : color;
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, 12, 0, Math.PI * 2);
+    clipPolygon(ctx, 22, 6);
     ctx.stroke();
+    ctx.restore();
   }
   for (const structure of structures.values()) {
     ctx.globalAlpha = structure.alive ? 1 : 0.22;
-    drawStructure(ctx, structure);
+    drawStructure(ctx, structure, model.assets);
   }
   for (const unit of units.values()) {
     const size = unitSize(unit.unitType);

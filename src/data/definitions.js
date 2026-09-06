@@ -25,15 +25,15 @@ export const CLASSIC_LANES = freeze({
   id: "classic_lanes",
   bounds: freeze({ width: 420, height: 760 }),
   lanes: freeze([
-    freeze({ id: LANE.LEFT, centerX: 132, width: 118, node: freeze({ id: "left-node", x: 132, y: 380, radius: 44 }), playerSpawn: freeze({ x: 132, y: 650 }), enemySpawn: freeze({ x: 132, y: 110 }) }),
-    freeze({ id: LANE.RIGHT, centerX: 288, width: 118, node: freeze({ id: "right-node", x: 288, y: 380, radius: 44 }), playerSpawn: freeze({ x: 288, y: 650 }), enemySpawn: freeze({ x: 288, y: 110 }) }),
+    freeze({ id: LANE.LEFT, centerX: 112, width: 94, node: freeze({ id: "left-node", x: 112, y: 332, radius: 38 }), playerSpawn: freeze({ x: 112, y: 536 }), enemySpawn: freeze({ x: 112, y: 118 }) }),
+    freeze({ id: LANE.RIGHT, centerX: 308, width: 94, node: freeze({ id: "right-node", x: 308, y: 332, radius: 38 }), playerSpawn: freeze({ x: 308, y: 536 }), enemySpawn: freeze({ x: 308, y: 118 }) }),
   ]),
   structures: freeze([
-    freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 710 }),
-    freeze({ id: "enemy-hq", team: TEAM.ENEMY, laneId: null, structureType: "hq", x: 210, y: 50 }),
-    freeze({ id: "player-left-turret", team: TEAM.PLAYER, laneId: LANE.LEFT, structureType: "turret", x: 132, y: 595 }),
-    freeze({ id: "player-right-turret", team: TEAM.PLAYER, laneId: LANE.RIGHT, structureType: "turret", x: 288, y: 595 }),
-    freeze({ id: "enemy-left-turret", team: TEAM.ENEMY, laneId: LANE.LEFT, structureType: "turret", x: 132, y: 165 }),
-    freeze({ id: "enemy-right-turret", team: TEAM.ENEMY, laneId: LANE.RIGHT, structureType: "turret", x: 288, y: 165 }),
+    freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 552 }),
+    freeze({ id: "enemy-hq", team: TEAM.ENEMY, laneId: null, structureType: "hq", x: 210, y: 94 }),
+    freeze({ id: "player-left-turret", team: TEAM.PLAYER, laneId: LANE.LEFT, structureType: "turret", x: 112, y: 470 }),
+    freeze({ id: "player-right-turret", team: TEAM.PLAYER, laneId: LANE.RIGHT, structureType: "turret", x: 308, y: 470 }),
+    freeze({ id: "enemy-left-turret", team: TEAM.ENEMY, laneId: LANE.LEFT, structureType: "turret", x: 112, y: 176 }),
+    freeze({ id: "enemy-right-turret", team: TEAM.ENEMY, laneId: LANE.RIGHT, structureType: "turret", x: 308, y: 176 }),
   ]),
 });

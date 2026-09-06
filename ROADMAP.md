@@ -379,6 +379,10 @@ ab 6 min: 3.0× Income / Sudden Death
 
 ### Aufgaben
 
+- [x] Mobile-Lesbarkeits-Pass: schlanke Statusleiste, seitliche Lane-Auswahl, kompaktes unteres Command-Panel und freies Enemy-HQ.
+- [x] Zwei Lanes mit größerem Mittelraum und klaren Seitenrändern anordnen.
+- [x] Grobe originale Top-down-Placeholder für HQ, Turrets und Energy Nodes ergänzen.
+
 - [x] Zwei visuell konsistente Referenzflotten integrieren.
 - [x] Scout, Fighter, Bomber und Frigate über Größe und Silhouette klar unterscheiden.
 - [x] Geeignete Assets oder robuste Placeholder für HQ, Turrets und Nodes verwenden.

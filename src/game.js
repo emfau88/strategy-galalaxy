@@ -29,6 +29,7 @@ export class Game {
     this.effects = new PresentationEffects();
     this.lastInput = null;
     this.selectedLaneId = LANE.LEFT;
+    this.commandMenu = "units";
     this.commandFeedback = null;
     this.match = new MatchDirector();
     this.lastFrameAt = null;
@@ -94,7 +95,7 @@ export class Game {
       this.match.start();
       this.effects.reset();
     }
-    else if (this.match.state === MATCH_STATE.COMMAND) this.executeCommandAction(commandActionAt(input));
+    else if (this.match.state === MATCH_STATE.COMMAND) this.executeCommandAction(commandActionAt(input, this.commandMenu));
     else if (this.match.state === MATCH_STATE.VICTORY || this.match.state === MATCH_STATE.DEFEAT) {
       this.match.restart();
       this.effects.reset();
@@ -107,6 +108,11 @@ export class Game {
     if (action.type === "SELECT_LANE") {
       this.selectedLaneId = action.laneId;
       this.commandFeedback = `${action.laneId === LANE.LEFT ? "LEFT" : "RIGHT"} LANE SELECTED`;
+      return;
+    }
+    if (action.type === "TOGGLE_MENU") {
+      this.commandMenu = this.commandMenu === "units" ? "upgrades" : "units";
+      this.commandFeedback = this.commandMenu === "units" ? "SHIP REINFORCEMENTS" : "UPGRADES";
       return;
     }
     if (action.type === "DEPLOY") {
@@ -173,6 +179,7 @@ export class Game {
       director: this.match,
       lastAiDecision: this.match.lastAiDecision,
       selectedLaneId: this.selectedLaneId,
+      commandMenu: this.commandMenu,
       commandFeedback: this.commandFeedback,
       assets: this.loader,
       effects: this.effects.effects,

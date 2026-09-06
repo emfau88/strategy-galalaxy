@@ -2,7 +2,7 @@
 
 Strategy Galalaxy is a standalone, mobile-first singleplayer Space Lane Wars game. Players plan reinforcements, economy, and defense during a paused Command Phase, then watch two persistent lanes resolve automatically during the Battle Phase.
 
-The Canvas foundation, headless two-lane combat, persistent Command-/Battle-cycle, Economy core, opponent AI, and the first visual slice are complete. The current build establishes mobile portrait scaling, deterministic combat, free base waves, Energy, capturable Nodes, upgrades, a touch-first Command UI, CC0 fleet art, projectile art, and hit feedback.
+The Canvas foundation, headless two-lane combat, persistent Command-/Battle-cycle, Economy core, opponent AI, and the first visual slice are complete. The current build establishes mobile portrait scaling, deterministic combat, free base waves, Energy, capturable Nodes, upgrades, a touch-first Command UI, top-down structure placeholders, CC0 fleet art, projectile art, and hit feedback.
 
 ## Core loop
 
@@ -49,7 +49,7 @@ python -m http.server 8765 --directory .
 
 Open `http://127.0.0.1:8765/`. The two prepared QA entry points are `?debug=1` and `?test=match`; they can be combined as `?debug=1&test=match`.
 
-In the normal build, tap to start, select a lane, plan ships or upgrades, then use `DEPLOY WAVE`. `UNDO LAST` refunds the most recently planned ship on the selected lane. `P` pauses or resumes an active phase. `?test=match` enters the automatic repeatable test match immediately.
+In the normal build, tap to start, choose `LEFT` or `RIGHT` from the side of the battlefield, plan ships, and use `DEPLOY WAVE`. The lower panel can switch between ships and upgrades; `UNDO` refunds the most recently planned ship on the selected lane. `P` pauses or resumes an active phase. `?test=match` enters the automatic repeatable test match immediately.
 
 ```powershell
 npm.cmd run check
