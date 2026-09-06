@@ -8,6 +8,15 @@ import { acquireStructureTarget, acquireUnitTarget, getEntity, inRange } from ".
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const forwardDirection = (team) => (team === TEAM.PLAYER ? -1 : 1);
 const targetDefinition = (entity) => entity.structureType ? STRUCTURE_DEFINITIONS[entity.structureType] : UNIT_DEFINITIONS[entity.unitType];
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const angleDelta = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
+
+const FORMATION = Object.freeze({
+  scout: Object.freeze({ forward: 46, lateral: [0, -48, 48, -24, 24] }),
+  frigate: Object.freeze({ forward: 18, lateral: [0, -32, 32] }),
+  fighter: Object.freeze({ forward: 4, lateral: [-38, 38, -13, 13, -55, 55] }),
+  bomber: Object.freeze({ forward: -34, lateral: [0, -28, 28] }),
+});
 
 export class BattleSimulation {
   constructor({ state = createBattleState(), economy = null } = {}) {
@@ -27,13 +36,17 @@ export class BattleSimulation {
   }
 
   spawnFormation(team, laneId, unitTypes, spawnCycle = 0) {
-    const lateralOffsets = [-25, 0, 25];
-    const direction = team === TEAM.PLAYER ? 1 : -1;
+    const direction = forwardDirection(team);
+    const typeCounts = new Map();
     return unitTypes.map((unitType, index) => {
-      const row = Math.floor(index / lateralOffsets.length);
+      const pattern = FORMATION[unitType] ?? FORMATION.fighter;
+      const typeIndex = typeCounts.get(unitType) ?? 0;
+      typeCounts.set(unitType, typeIndex + 1);
+      const row = Math.floor(typeIndex / pattern.lateral.length);
+      const lateral = pattern.lateral[typeIndex % pattern.lateral.length];
       return this.spawnUnit(team, laneId, unitType, {
-        slotOffsetX: lateralOffsets[index % lateralOffsets.length],
-        slotOffsetY: row * 28 * direction,
+        slotOffsetX: lateral,
+        slotOffsetY: direction * (pattern.forward - row * 26) + ((index + spawnCycle) % 2 ? 2 : -2),
         spawnCycle,
       });
     }).filter(Boolean);
@@ -59,7 +72,7 @@ export class BattleSimulation {
           for (let second = first + 1; second < units.length; second += 1) {
             const left = units[first];
             const right = units[second];
-            const minimum = UNIT_DEFINITIONS[left.unitType].collisionRadius + UNIT_DEFINITIONS[right.unitType].collisionRadius + 8;
+            const minimum = UNIT_DEFINITIONS[left.unitType].collisionRadius + UNIT_DEFINITIONS[right.unitType].collisionRadius + 9;
             const dx = right.x - left.x || (second % 2 ? 0.5 : -0.5);
             const dy = right.y - left.y || (second % 2 ? 0.25 : -0.25);
             const current = Math.hypot(dx, dy);
@@ -67,8 +80,8 @@ export class BattleSimulation {
             const push = (minimum - current) * 0.5;
             const horizontal = dx / current * push;
             const vertical = dy / current * push * 0.42;
-            const minX = laneDefinition.centerX - laneDefinition.width / 2 + 7;
-            const maxX = laneDefinition.centerX + laneDefinition.width / 2 - 7;
+            const minX = laneDefinition.centerX - laneDefinition.width / 2 + 9;
+            const maxX = laneDefinition.centerX + laneDefinition.width / 2 - 9;
             left.x = Math.max(minX, Math.min(maxX, left.x - horizontal));
             right.x = Math.max(minX, Math.min(maxX, right.x + horizontal));
             left.y -= vertical;
@@ -87,7 +100,19 @@ export class BattleSimulation {
     unit.state = target ? (target.structureType ? UNIT_STATE.ATTACKING_STRUCTURE : UNIT_STATE.ENGAGING) : UNIT_STATE.ADVANCING;
     unit.fireCooldown = Math.max(0, unit.fireCooldown - dt);
     if (!target) {
-      unit.y += forwardDirection(unit.team) * definition.speed * dt;
+      const node = unit.unitType === "scout" ? [...this.state.nodes.values()].find((item) => item.laneId === unit.laneId) : null;
+      const nodeAhead = node && (node.y - unit.y) * forwardDirection(unit.team) >= -node.radius;
+      if (nodeAhead && node.ownerTeam !== unit.team) {
+        const dx = node.x - unit.x;
+        const dy = node.y - unit.y;
+        const magnitude = Math.hypot(dx, dy) || 1;
+        if (magnitude > node.radius * 0.42) {
+          const step = Math.min(definition.speed * dt, magnitude - node.radius * 0.38);
+          unit.x += dx / magnitude * step;
+          unit.y += dy / magnitude * step;
+        } else unit.state = UNIT_STATE.HOLDING;
+      } else unit.y += forwardDirection(unit.team) * definition.speed * dt;
+      this.constrainToLane(unit);
       return;
     }
     if (!inRange(unit, target, definition.attackRange)) {
@@ -97,9 +122,16 @@ export class BattleSimulation {
       const step = Math.min(definition.speed * dt, Math.max(0, magnitude - definition.attackRange));
       unit.x += (dx / magnitude) * step;
       unit.y += (dy / magnitude) * step;
+      this.constrainToLane(unit);
       return;
     }
     if (unit.fireCooldown === 0) this.fire(unit, target, definition);
+  }
+
+  constrainToLane(unit) {
+    const lane = this.state.map.lanes.find((item) => item.id === unit.laneId);
+    const inset = UNIT_DEFINITIONS[unit.unitType].collisionRadius + 5;
+    unit.x = clamp(unit.x, lane.centerX - lane.width / 2 + inset, lane.centerX + lane.width / 2 - inset);
   }
 
   updateStructure(structure, dt) {
@@ -124,12 +156,12 @@ export class BattleSimulation {
       id: this.state.ids.next(), ownerId: owner.id, ownerTeam: owner.team, laneId: owner.laneId ?? target.laneId,
       projectileType: projectileDefinition.id, x: owner.x, y: owner.y,
       vx: (dx / magnitude) * projectileDefinition.speed, vy: (dy / magnitude) * projectileDefinition.speed,
-      damage: this.damageFor(owner, definition), targetId: target.id,
+      damage: this.damageFor(owner, definition) * this.damageMultiplier(owner, target), targetId: target.id,
     });
     projectile.remainingLife = projectileDefinition.lifetime;
     addProjectileToState(this.state, projectile);
     owner.fireCooldown = definition.fireInterval;
-    this.state.events.push({ type: "shot", ownerId: owner.id, targetId: target.id });
+    this.state.events.push({ type: "shot", ownerId: owner.id, targetId: target.id, projectileType: projectile.projectileType, x: owner.x, y: owner.y, team: owner.team });
   }
 
   damageFor(owner, definition) {
@@ -138,18 +170,36 @@ export class BattleSimulation {
     return definition.damage * (1 + level * this.economy.balance.turretUpgradeDamageBonus);
   }
 
+  damageMultiplier(owner, target) {
+    if (owner.unitType === "fighter") return target.structureType || target.unitType === "frigate" ? 0.55 : 1.3;
+    if (owner.unitType === "bomber") return target.structureType || target.unitType === "frigate" ? 1.55 : 0.4;
+    if (owner.unitType === "scout" && (target.structureType || target.unitType === "frigate")) return 0.55;
+    return 1;
+  }
+
   updateProjectiles(dt) {
     const damageEvents = [];
     for (const projectile of [...this.state.projectiles.values()].sort((a, b) => a.id.localeCompare(b.id))) {
       if (!projectile.alive) continue;
+      projectile.previousX = projectile.x;
+      projectile.previousY = projectile.y;
+      projectile.age += dt;
+      const definition = PROJECTILE_DEFINITIONS[projectile.projectileType];
+      const target = getEntity(this.state, projectile.targetId);
+      if (definition.homing && target?.alive) {
+        const current = Math.atan2(projectile.vy, projectile.vx);
+        const desired = Math.atan2(target.y - projectile.y, target.x - projectile.x);
+        const next = current + clamp(angleDelta(current, desired), -definition.turnRate * dt, definition.turnRate * dt);
+        const speed = Math.hypot(projectile.vx, projectile.vy) + (definition.acceleration ?? 0) * dt;
+        projectile.vx = Math.cos(next) * speed;
+        projectile.vy = Math.sin(next) * speed;
+      }
       projectile.x += projectile.vx * dt;
       projectile.y += projectile.vy * dt;
       projectile.remainingLife -= dt;
-      const target = getEntity(this.state, projectile.targetId);
-      const definition = PROJECTILE_DEFINITIONS[projectile.projectileType];
       if (target?.alive && target.team !== projectile.ownerTeam && (target.laneId === null || target.laneId === projectile.laneId) && distance(projectile, target) <= definition.hitRadius + targetDefinition(target).collisionRadius) {
         projectile.alive = false;
-        damageEvents.push({ projectileId: projectile.id, targetId: target.id, damage: projectile.damage, ownerTeam: projectile.ownerTeam });
+        damageEvents.push({ projectileId: projectile.id, projectileType: projectile.projectileType, targetId: target.id, damage: projectile.damage, ownerTeam: projectile.ownerTeam });
       } else if (projectile.remainingLife <= 0) {
         projectile.alive = false;
       }
@@ -162,11 +212,12 @@ export class BattleSimulation {
       const target = getEntity(this.state, event.targetId);
       if (!target?.alive || target.team === event.ownerTeam) continue;
       target.hp = Math.max(0, target.hp - event.damage);
-      this.state.events.push({ type: "hit", ...event, x: target.x, y: target.y, team: target.team });
+      target.lastDamagedAt = this.state.time;
+      this.state.events.push({ type: "hit", ...event, x: target.x, y: target.y, team: target.team, entityType: target.structureType ?? target.unitType });
       if (target.hp !== 0) continue;
       target.alive = false;
       if (!target.structureType) target.state = UNIT_STATE.DEAD;
-      this.state.events.push({ type: "destroyed", entityId: target.id, x: target.x, y: target.y, team: target.team });
+      this.state.events.push({ type: "destroyed", entityId: target.id, x: target.x, y: target.y, team: target.team, entityType: target.structureType ?? target.unitType });
       if (target.structureType === "hq") this.state.terminalTeam = enemyOf(target.team);
     }
   }

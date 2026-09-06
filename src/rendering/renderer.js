@@ -17,7 +17,8 @@ export class Renderer {
     const { ctx, transform } = this;
     if (!transform) return;
     ctx.setTransform(transform.devicePixelRatio, 0, 0, transform.devicePixelRatio, 0, 0);
-    ctx.clearRect(0, 0, transform.viewportWidth, transform.viewportHeight);
+    ctx.fillStyle = "#101d35";
+    ctx.fillRect(0, 0, transform.viewportWidth, transform.viewportHeight);
     ctx.translate(transform.offsetX, transform.offsetY);
     ctx.scale(transform.scale, transform.scale);
     renderBackground(ctx, transform.designWidth, transform.designHeight, model.frameTime, model.assets);

@@ -59,7 +59,7 @@ assert.ok([...laneSimulation.state.units.values()].every((unit) => unit.laneId =
 assert.ok([...laneSimulation.state.projectiles.values()].every((projectile) => projectile.laneId === LANE.LEFT || projectile.laneId === LANE.RIGHT));
 
 const isolatedLanes = new BattleSimulation();
-const leftUnit = isolatedLanes.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 132, y: 330 });
+const leftUnit = isolatedLanes.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 132, y: 330 });
 const rightEnemy = isolatedLanes.spawnUnit(TEAM.ENEMY, LANE.RIGHT, "scout", { x: 288, y: 330 });
 isolatedLanes.step(1 / 60);
 assert.notEqual(leftUnit.targetId, rightEnemy.id);
@@ -68,6 +68,8 @@ assert.equal(leftUnit.targetId, "enemy-left-turret");
 assert.notEqual(UNIT_DEFINITIONS.scout.speed, UNIT_DEFINITIONS.frigate.speed);
 assert.ok(UNIT_DEFINITIONS.frigate.maxHp > UNIT_DEFINITIONS.fighter.maxHp);
 assert.ok(UNIT_DEFINITIONS.bomber.damage > UNIT_DEFINITIONS.fighter.damage);
+assert.ok(UNIT_DEFINITIONS.fighter.fireInterval < UNIT_DEFINITIONS.frigate.fireInterval);
+assert.equal(CONFIG.timing.battlePhaseSeconds, 22);
 assert.equal(UNIT_DEFINITIONS.battlecruiser.enabled, false);
 assert.equal(UNIT_DEFINITIONS.dreadnought.enabled, false);
 
@@ -139,9 +141,30 @@ assert.equal(manualCommandMatch.state, MATCH_STATE.BATTLE);
 
 const formationSimulation = new BattleSimulation();
 const formation = formationSimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["scout", "scout", "scout", "scout", "scout", "scout"]);
-assert.equal(new Set(formation.map((unit) => unit.y)).size, 2);
+assert.ok(new Set(formation.map((unit) => `${unit.x},${unit.y}`)).size >= 5);
 formationSimulation.step(1 / 60);
-assert.ok(formation.every((unit) => Math.abs(unit.x - 112) <= 47));
+assert.ok(formation.every((unit) => Math.abs(unit.x - 112) <= 70));
+
+const roleTargeting = new BattleSimulation();
+const fighterHunter = roleTargeting.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 112, y: 330 });
+roleTargeting.spawnUnit(TEAM.ENEMY, LANE.LEFT, "frigate", { x: 112, y: 280 });
+const priorityBomber = roleTargeting.spawnUnit(TEAM.ENEMY, LANE.LEFT, "bomber", { x: 145, y: 270 });
+roleTargeting.step(1 / 60);
+assert.equal(fighterHunter.targetId, priorityBomber.id, "fighters prioritize vulnerable bombers over the nearest heavy");
+const siegeTargeting = new BattleSimulation();
+const siegeBomber = siegeTargeting.spawnUnit(TEAM.PLAYER, LANE.LEFT, "bomber", { x: 112, y: 330 });
+siegeTargeting.spawnUnit(TEAM.ENEMY, LANE.LEFT, "fighter", { x: 112, y: 290 });
+siegeTargeting.step(1 / 60);
+assert.equal(siegeBomber.targetId, "enemy-left-turret", "bombers prioritize lane structures over light screens");
+assert.ok(roleTargeting.damageMultiplier(fighterHunter, priorityBomber) > 1);
+assert.ok(roleTargeting.damageMultiplier(fighterHunter, roleTargeting.state.structures.get("enemy-left-turret")) < 1);
+assert.ok(siegeTargeting.damageMultiplier(siegeBomber, siegeTargeting.state.structures.get("enemy-left-turret")) > 1);
+
+const laneBounds = new BattleSimulation();
+laneBounds.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["scout", "fighter", "bomber", "frigate", "fighter", "scout"]);
+laneBounds.spawnFormation(TEAM.ENEMY, LANE.RIGHT, ["scout", "fighter", "bomber", "frigate", "fighter", "scout"]);
+for (let index = 0; index < 300; index += 1) laneBounds.step(1 / 60);
+assert.ok([...laneBounds.state.units.values()].every((unit) => unit.laneId === LANE.LEFT ? unit.x >= 42 && unit.x <= 182 : unit.x >= 238 && unit.x <= 378));
 
 const economyMatch = new MatchDirector();
 economyMatch.start();
@@ -154,6 +177,18 @@ assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 210);
 const removed = economyMatch.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, queueEntryId: queued.entry.id });
 assert.deepEqual({ ok: removed.ok, refunded: removed.refunded }, { ok: true, refunded: 90 });
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
+
+const slotMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 1000 } } });
+slotMatch.start();
+for (const [laneId, unitType] of [[LANE.LEFT, "scout"], [LANE.RIGHT, "fighter"], [LANE.LEFT, "bomber"], [LANE.RIGHT, "frigate"]]) {
+  assert.equal(slotMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId, unitType }).ok, true);
+}
+const overSlotLimit = slotMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
+assert.deepEqual(overSlotLimit, { ok: false, reason: "REINFORCEMENT_LIMIT" });
+const rightQueue = slotMatch.queuedWaves.get(TEAM.PLAYER).get(LANE.RIGHT);
+const slotUndo = slotMatch.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.PLAYER, laneId: LANE.RIGHT, queueEntryId: rightQueue.at(-1).id });
+assert.equal(slotUndo.ok, true);
+assert.equal(slotMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" }).ok, true, "undo reopens a shared reinforcement slot");
 const economyUpgrade = economyMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" });
 assert.deepEqual({ ok: economyUpgrade.ok, cost: economyUpgrade.cost, level: economyUpgrade.level }, { ok: true, cost: 240, level: 1 });
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 60);
@@ -173,12 +208,22 @@ captureMatch.capture.advance(captureMatch.simulation.state, 1);
 assert.equal(leftNode.contested, true);
 assert.equal(leftNode.progress, 100);
 captureUnit.alive = false;
-captureMatch.capture.advance(captureMatch.simulation.state, 2.1);
+captureMatch.capture.advance(captureMatch.simulation.state, 1.1);
 assert.equal(leftNode.ownerTeam, null);
 assert.ok(leftNode.progress < 0);
 leftNode.ownerTeam = TEAM.PLAYER;
 leftNode.progress = 100;
 assert.equal(captureMatch.economy.incomePerSecond(captureMatch.simulation.state, TEAM.PLAYER, 120), 45);
+
+const scoutCapture = new MatchDirector();
+scoutCapture.start();
+scoutCapture.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 112, y: 332 });
+scoutCapture.capture.advance(scoutCapture.simulation.state, 0.5);
+const fighterCapture = new MatchDirector();
+fighterCapture.start();
+fighterCapture.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 112, y: 332 });
+fighterCapture.capture.advance(fighterCapture.simulation.state, 0.5);
+assert.ok(scoutCapture.simulation.state.nodes.get("left-node").progress > fighterCapture.simulation.state.nodes.get("left-node").progress, "scouts capture faster than fighters");
 
 const turretMatch = new MatchDirector();
 turretMatch.start();
@@ -202,8 +247,9 @@ assert.ok(aiMatch.lastAiDecision.spent <= 300);
 assert.ok(aiMatch.economy.get(TEAM.ENEMY).energy >= 0);
 const aiQueuedBeforeBattle = [LANE.LEFT, LANE.RIGHT].flatMap((laneId) => aiMatch.queuedWaves.get(TEAM.ENEMY).get(laneId));
 assert.equal(aiQueuedBeforeBattle.length, aiMatch.lastAiDecision.purchases.length);
+assert.ok(aiQueuedBeforeBattle.length <= CONFIG.balance.maxPurchasedReinforcementsPerDeployment);
 aiMatch.deployNow();
-for (let index = 0; index < 22 * 60; index += 1) aiMatch.advanceBattle(1 / 60);
+for (let index = 0; index < CONFIG.timing.battlePhaseSeconds * 60; index += 1) aiMatch.advanceBattle(1 / 60);
 assert.equal(aiMatch.state, MATCH_STATE.COMMAND);
 assert.equal(aiMatch.lastAiDecision.cycle, 2);
 assert.ok(aiMatch.economy.get(TEAM.ENEMY).energy >= 0);
@@ -215,8 +261,8 @@ assert.equal(effects.effects.length, 2);
 effects.update(1);
 assert.equal(effects.effects.length, 0);
 
-assert.deepEqual(commandActionAt({ x: 24, y: 224 }), { type: "SELECT_LANE", laneId: LANE.LEFT });
-assert.deepEqual(commandActionAt({ x: 344, y: 224 }), { type: "SELECT_LANE", laneId: LANE.RIGHT });
+assert.deepEqual(commandActionAt({ x: 24, y: 80 }), { type: "SELECT_LANE", laneId: LANE.LEFT });
+assert.deepEqual(commandActionAt({ x: 344, y: 80 }), { type: "SELECT_LANE", laneId: LANE.RIGHT });
 assert.deepEqual(commandActionAt({ x: 24, y: 662 }), { type: "QUEUE_UNIT", unitType: "scout" });
 assert.deepEqual(commandActionAt({ x: 160, y: 662 }), { type: "QUEUE_UNIT", unitType: "fighter" });
 assert.deepEqual(commandActionAt({ x: 300, y: 620 }), { type: "TOGGLE_MENU" });

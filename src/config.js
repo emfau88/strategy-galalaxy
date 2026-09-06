@@ -25,6 +25,7 @@ export const CONFIG = Object.freeze({
     baseIncomePerSecond: 20,
     nodeIncomePerSecond: 10,
     baseWaveScoutsPerLane: 2,
+    maxPurchasedReinforcementsPerDeployment: 4,
     nodeCaptureRatePerSecond: 50,
     economyUpgradeBaseCost: 240,
     economyUpgradeCostGrowth: 1.75,

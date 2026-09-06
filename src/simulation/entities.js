@@ -14,7 +14,7 @@ export const createUnit = ({ id, team, laneId, unitType, x, y, slotOffsetX = 0, 
   return {
     id, team, laneId, unitType, x, y, slotOffsetX, spawnCycle,
     hp: definition.maxHp, maxHp: definition.maxHp, fireCooldown: 0,
-    targetId: null, state: UNIT_STATE.ADVANCING, alive: true,
+    targetId: null, state: UNIT_STATE.ADVANCING, alive: true, lastDamagedAt: -Infinity,
   };
 };
 
@@ -24,11 +24,11 @@ export const createStructure = ({ id, team, laneId, structureType, x, y }) => {
   return {
     id, team, laneId, structureType, x, y,
     hp: definition.maxHp, maxHp: definition.maxHp, fireCooldown: 0,
-    targetId: null, alive: true,
+    targetId: null, alive: true, lastDamagedAt: -Infinity,
   };
 };
 
 export const createProjectile = ({ id, ownerId, ownerTeam, laneId, projectileType, x, y, vx, vy, damage, targetId }) => ({
   id, ownerId, ownerTeam, laneId, projectileType, x, y, vx, vy, damage, targetId,
-  remainingLife: 0, alive: true,
+  previousX: x, previousY: y, age: 0, remainingLife: 0, alive: true,
 });

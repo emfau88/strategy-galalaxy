@@ -18,6 +18,8 @@ export class CommandSystem {
     const definition = UNIT_DEFINITIONS[unitType];
     if (!definition || definition.enabled === false) return { ok: false, reason: "UNAVAILABLE_UNIT" };
     const queue = director.queuedWaves.get(team).get(laneId);
+    const purchased = [...director.queuedWaves.get(team).values()].reduce((sum, entries) => sum + entries.length, 0);
+    if (purchased >= director.config.balance.maxPurchasedReinforcementsPerDeployment) return { ok: false, reason: "REINFORCEMENT_LIMIT" };
     const active = director.simulation.state.lanes.get(laneId).unitIds.get(team).length;
     const reservedBase = director.baseWaveBacklog.get(team).get(laneId).length + director.config.balance.baseWaveScoutsPerLane;
     if (active + reservedBase + queue.length >= director.config.caps.unitsPerLaneTeam) return { ok: false, reason: "CAPACITY_RESERVED" };

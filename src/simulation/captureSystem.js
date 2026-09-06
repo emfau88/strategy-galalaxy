@@ -1,4 +1,5 @@
 import { TEAM } from "../core/constants.js";
+import { UNIT_DEFINITIONS } from "../data/definitions.js";
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -10,18 +11,20 @@ export class CaptureSystem {
   advance(state, delta) {
     for (const node of state.nodes.values()) {
       const lane = state.lanes.get(node.laneId);
-      const count = (team) => lane.unitIds.get(team)
+      const power = (team) => lane.unitIds.get(team)
         .map((id) => state.units.get(id))
-        .filter((unit) => unit?.alive && Math.hypot(unit.x - node.x, unit.y - node.y) <= node.radius).length;
-      const playerCount = count(TEAM.PLAYER);
-      const enemyCount = count(TEAM.ENEMY);
-      node.contested = playerCount > 0 && enemyCount > 0;
-      if (node.contested || (playerCount === 0 && enemyCount === 0)) continue;
+        .filter((unit) => unit?.alive && Math.hypot(unit.x - node.x, unit.y - node.y) <= node.radius)
+        .reduce((sum, unit) => sum + (UNIT_DEFINITIONS[unit.unitType].captureStrength ?? 1), 0);
+      const playerPower = power(TEAM.PLAYER);
+      const enemyPower = power(TEAM.ENEMY);
+      const netPower = playerPower - enemyPower;
+      node.capturePower = { [TEAM.PLAYER]: playerPower, [TEAM.ENEMY]: enemyPower };
+      node.contested = playerPower > 0 && enemyPower > 0 && Math.abs(netPower) < 0.1;
+      if (node.contested || Math.abs(netPower) < 0.1) continue;
 
-      const direction = playerCount > 0 ? 1 : -1;
       const previousProgress = node.progress;
       const previousOwner = node.ownerTeam;
-      node.progress = clamp(node.progress + direction * this.captureRatePerSecond * delta, -100, 100);
+      node.progress = clamp(node.progress + netPower * this.captureRatePerSecond * delta, -100, 100);
       if ((previousOwner === TEAM.PLAYER && node.progress <= 0) || (previousOwner === TEAM.ENEMY && node.progress >= 0)) {
         node.ownerTeam = null;
         state.events.push({ type: "NODE_NEUTRALIZED", nodeId: node.id });

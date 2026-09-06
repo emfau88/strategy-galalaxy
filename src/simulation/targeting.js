@@ -11,6 +11,30 @@ export const getEntity = (state, id) => state.units.get(id) ?? state.structures.
 
 const isHostileUnitAhead = (unit, candidate) => (candidate.y - unit.y) * forwardDirection(unit.team) >= -18;
 
+const rolePriority = (unit, candidate) => {
+  const type = candidate.unitType;
+  if (unit.unitType === "bomber") {
+    if (candidate.structureType === "turret") return 0;
+    if (candidate.structureType === "hq") return 1;
+    if (type === "frigate") return 2;
+    return 8;
+  }
+  if (unit.unitType === "fighter") {
+    if (type === "bomber") return 0;
+    if (type === "scout" || type === "fighter") return 1;
+    if (type === "frigate") return 4;
+    return 8;
+  }
+  if (unit.unitType === "scout") {
+    if (type === "scout" || type === "fighter" || type === "bomber") return 1;
+    if (type === "frigate") return 5;
+    return 8;
+  }
+  if (type === "frigate") return 0;
+  if (candidate.structureType) return 4;
+  return 2;
+};
+
 export const isValidUnitTarget = (state, unit, candidate) => (
   candidate?.alive
   && candidate.team !== unit.team
@@ -29,15 +53,24 @@ const nextStructureTarget = (state, unit) => {
 
 export const acquireUnitTarget = (state, unit) => {
   const current = getEntity(state, unit.targetId);
-  if (isValidUnitTarget(state, unit, current)) return current;
+  if (isValidUnitTarget(state, unit, current) && rolePriority(unit, current) <= 2) return current;
 
   const definition = UNIT_DEFINITIONS[unit.unitType];
   const hostileIds = laneFor(state, unit.laneId).unitIds.get(enemyOf(unit.team));
   const candidates = hostileIds
     .map((id) => state.units.get(id))
     .filter((candidate) => candidate?.alive && isHostileUnitAhead(unit, candidate) && inRange(unit, candidate, definition.aggroRange));
-  candidates.sort((a, b) => squaredDistance(unit, a) - squaredDistance(unit, b) || a.id.localeCompare(b.id));
-  return candidates[0] ?? nextStructureTarget(state, unit);
+  const structureTarget = nextStructureTarget(state, unit);
+  if (unit.unitType === "bomber" && structureTarget) candidates.push(structureTarget);
+  candidates.sort((a, b) => rolePriority(unit, a) - rolePriority(unit, b) || squaredDistance(unit, a) - squaredDistance(unit, b) || a.id.localeCompare(b.id));
+  if (candidates[0]) return candidates[0];
+
+  if (unit.unitType === "scout") {
+    const node = [...state.nodes.values()].find((item) => item.laneId === unit.laneId);
+    const nodeIsAhead = node && (node.y - unit.y) * forwardDirection(unit.team) >= -node.radius;
+    if (nodeIsAhead && node.ownerTeam !== unit.team) return null;
+  }
+  return structureTarget;
 };
 
 export const classifyUnitState = (unit, target) => {

@@ -1,10 +1,10 @@
 import { LANE } from "../core/constants.js";
 
 export const COMMAND_UI = Object.freeze({
-  fullscreen: Object.freeze({ x: 364, y: 12, width: 48, height: 40 }),
+  fullscreen: Object.freeze({ x: 378, y: 12, width: 34, height: 34 }),
   lanes: Object.freeze([
-    Object.freeze({ laneId: LANE.LEFT, x: 8, y: 218, width: 76, height: 58 }),
-    Object.freeze({ laneId: LANE.RIGHT, x: 336, y: 218, width: 76, height: 58 }),
+    Object.freeze({ laneId: LANE.LEFT, x: 8, y: 64, width: 196, height: 82 }),
+    Object.freeze({ laneId: LANE.RIGHT, x: 216, y: 64, width: 196, height: 82 }),
   ]),
   undo: Object.freeze({ x: 172, y: 612, width: 112, height: 34 }),
   menu: Object.freeze({ x: 292, y: 612, width: 112, height: 34 }),

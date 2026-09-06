@@ -24,7 +24,7 @@ export const createBattleState = ({ map = CLASSIC_LANES } = {}) => {
     });
     state.nodes.set(lane.node.id, {
       id: lane.node.id, laneId: lane.id, x: lane.node.x, y: lane.node.y, radius: lane.node.radius,
-      progress: 0, ownerTeam: null, contested: false,
+      progress: 0, ownerTeam: null, contested: false, capturePower: { [TEAM.PLAYER]: 0, [TEAM.ENEMY]: 0 },
     });
   }
   for (const structure of map.structures) state.structures.set(structure.id, createStructure(structure));

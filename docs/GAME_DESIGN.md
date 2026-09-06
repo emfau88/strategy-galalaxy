@@ -153,6 +153,7 @@ The player cannot interact with existing battlefield units.
 - Upgrade purchases take effect immediately and are not refundable.
 - Confirming deployment converts all queued entries into units without another charge.
 - An empty paid plan still deploys the free base wave.
+- Each side may queue at most four paid reinforcements per deployment across both lanes; free automatic Scouts do not consume these shared slots.
 
 ### Early confirmation
 
