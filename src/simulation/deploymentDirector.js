@@ -34,6 +34,12 @@ export class DeploymentDirector {
     return [...this.queuesFor(team).values()].reduce((sum, entries) => sum + entries.length, 0);
   }
 
+  baseWaveSize(simulationTime) {
+    const every = this.config.balance.baseWaveScoutEscalationEverySeconds;
+    const bonus = every > 0 ? Math.min(this.config.balance.baseWaveScoutEscalationMaximumBonus, Math.floor(simulationTime / every)) : 0;
+    return this.config.balance.baseWaveScoutsPerLane + bonus;
+  }
+
   advance(step) {
     this.timeUntilDeployment = Math.max(0, this.timeUntilDeployment - step);
     return this.timeUntilDeployment <= Number.EPSILON;
@@ -44,7 +50,7 @@ export class DeploymentDirector {
     for (const team of teams) {
       for (const laneId of laneIds) {
         const pendingBase = this.baseWaveBacklog.get(team).get(laneId);
-        const baseEntries = [...pendingBase, ...Array.from({ length: this.config.balance.baseWaveScoutsPerLane }, () => "scout")];
+        const baseEntries = [...pendingBase, ...Array.from({ length: this.baseWaveSize(simulation.state.time) }, () => "scout")];
         const paidEntries = this.queuesFor(team).get(laneId);
         const active = simulation.state.lanes.get(laneId).unitIds.get(team).length;
         const available = Math.max(0, this.config.caps.unitsPerLaneTeam - active);

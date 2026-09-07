@@ -1,17 +1,19 @@
 import { CONFIG } from "../config.js";
-import { MATCH_STATE, TEAM } from "../core/constants.js";
+import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
 import { createBattleState } from "./battleState.js";
 import { BattleSimulation } from "./battleSimulation.js";
 import { CaptureSystem } from "./captureSystem.js";
 import { CommandSystem } from "./commandSystem.js";
 import { DeploymentDirector } from "./deploymentDirector.js";
 import { EconomySystem } from "./economySystem.js";
-import { OpponentAi } from "./opponentAi.js";
+import { AI_PROFILES, OpponentAi } from "./opponentAi.js";
 
 /** Coordinates a continuous match; specialized systems own combat, economy, capture, and deployment. */
 export class MatchDirector {
-  constructor({ config = CONFIG } = {}) {
+  constructor({ config = CONFIG, aiProfile = AI_PROFILES.TACTICIAN, aiPreferredLane = LANE.LEFT } = {}) {
     this.config = config;
+    this.aiProfile = aiProfile;
+    this.aiPreferredLane = aiPreferredLane;
     this.state = MATCH_STATE.TITLE;
     this.resumeState = null;
     this.activeMatchSeconds = 0;
@@ -21,8 +23,9 @@ export class MatchDirector {
     this.commands = new CommandSystem();
     this.deployment = new DeploymentDirector({ config });
     this.events = [];
-    this.ai = new OpponentAi();
+    this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane });
     this.lastAiDecision = null;
+    this.aiReplannedForCycle = null;
   }
 
   start() {
@@ -33,8 +36,9 @@ export class MatchDirector {
     this.simulation = new BattleSimulation({ state: createBattleState(), economy: this.economy });
     this.deployment = new DeploymentDirector({ config: this.config });
     this.events = [{ type: "MATCH_STARTED", state: this.state }];
-    this.ai = new OpponentAi();
+    this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane });
     this.lastAiDecision = null;
+    this.aiReplannedForCycle = null;
 
     // Start with symmetric free pressure; the first paid planning window begins immediately.
     this.deployWaves();
@@ -54,12 +58,17 @@ export class MatchDirector {
     this.activeMatchSeconds += step;
 
     if (this.simulation.state.terminalTeam) {
-      this.state = this.simulation.state.terminalTeam === TEAM.PLAYER ? MATCH_STATE.VICTORY : MATCH_STATE.DEFEAT;
+      this.state = this.simulation.state.terminalTeam === TEAM.PLAYER
+        ? MATCH_STATE.VICTORY
+        : this.simulation.state.terminalTeam === TEAM.ENEMY ? MATCH_STATE.DEFEAT : MATCH_STATE.DRAW;
       this.events.push({ type: "MATCH_ENDED", state: this.state, cycle: this.cycle });
       return true;
     }
 
-    if (!this.deployment.advance(step)) return false;
+    if (!this.deployment.advance(step)) {
+      this.maybeReplanAi();
+      return false;
+    }
     this.economy.activatePendingUpgrades();
     this.deployWaves();
     this.planAi();
@@ -81,13 +90,37 @@ export class MatchDirector {
     return result;
   }
 
-  planAi() {
+  planAi({ revise = false } = {}) {
+    if (revise) {
+      for (const laneId of [LANE.LEFT, LANE.RIGHT]) {
+        for (const entry of [...this.queuedWaves.get(TEAM.ENEMY).get(laneId)].reverse()) {
+          this.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.ENEMY, laneId, queueEntryId: entry.id });
+        }
+      }
+    }
     const result = this.ai.plan(this);
     if (result.ok) {
       this.lastAiDecision = result.decision;
       this.events.push({ type: "AI_PLANNED", decision: result.decision });
     }
     return result;
+  }
+
+  maybeReplanAi() {
+    if (this.queueLocked || this.aiReplannedForCycle === this.cycle) return false;
+    if (this.phaseRemaining > this.config.timing.aiReplanSecondsBeforeDeployment) return false;
+    const result = this.planAi({ revise: true });
+    if (!result.ok) return false;
+    this.aiReplannedForCycle = this.cycle;
+    this.events.push({ type: "AI_REPLANNED", cycle: this.cycle, decision: result.decision });
+    return true;
+  }
+
+  setAiProfile(profile) {
+    if (!Object.values(AI_PROFILES).includes(profile) || this.state === MATCH_STATE.LIVE_MATCH) return false;
+    this.aiProfile = profile;
+    this.ai = new OpponentAi({ profile, preferredLane: this.aiPreferredLane });
+    return true;
   }
 
   pause() {
@@ -107,7 +140,7 @@ export class MatchDirector {
   }
 
   restart() {
-    if (this.state !== MATCH_STATE.VICTORY && this.state !== MATCH_STATE.DEFEAT) return false;
+    if (![MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(this.state)) return false;
     return this.start();
   }
 

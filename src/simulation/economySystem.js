@@ -36,19 +36,29 @@ export class EconomySystem {
   }
 
   advance(state, delta, activeBattleSeconds) {
-    for (const team of teams) this.get(team).energy += this.incomePerSecond(state, team, activeBattleSeconds) * delta;
+    for (const team of teams) {
+      const economy = this.get(team);
+      economy.energy = Math.min(this.balance.energyCap, economy.energy + this.incomePerSecond(state, team, activeBattleSeconds) * delta);
+    }
   }
 
   upgradeCost(team, upgradeId) {
     const economy = this.get(team);
-    if (upgradeId === "economy") return Math.ceil(this.balance.economyUpgradeBaseCost * this.balance.economyUpgradeCostGrowth ** (economy.economyLevel + economy.pendingEconomyLevels));
-    if (upgradeId === "turret") return Math.ceil(this.balance.turretUpgradeBaseCost * this.balance.turretUpgradeCostGrowth ** (economy.turretLevel + economy.pendingTurretLevels));
+    if (upgradeId === "economy") {
+      const level = economy.economyLevel + economy.pendingEconomyLevels;
+      return level >= this.balance.economyUpgradeMaxLevel ? null : Math.ceil(this.balance.economyUpgradeBaseCost * this.balance.economyUpgradeCostGrowth ** level);
+    }
+    if (upgradeId === "turret") {
+      const level = economy.turretLevel + economy.pendingTurretLevels;
+      return level >= this.balance.turretUpgradeMaxLevel ? null : Math.ceil(this.balance.turretUpgradeBaseCost * this.balance.turretUpgradeCostGrowth ** level);
+    }
     return null;
   }
 
   buyUpgrade(team, upgradeId) {
+    if (upgradeId !== "economy" && upgradeId !== "turret") return { ok: false, reason: "UNKNOWN_UPGRADE" };
     const cost = this.upgradeCost(team, upgradeId);
-    if (cost === null) return { ok: false, reason: "UNKNOWN_UPGRADE" };
+    if (cost === null) return { ok: false, reason: "MAX_LEVEL" };
     const economy = this.get(team);
     if (economy.energy < cost) return { ok: false, reason: "INSUFFICIENT_ENERGY" };
     economy.energy -= cost;

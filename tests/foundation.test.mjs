@@ -10,10 +10,12 @@ import { LANE, TEAM } from "../src/core/constants.js";
 import { CLASSIC_LANES, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../src/data/definitions.js";
 import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
+import { AI_PROFILES } from "../src/simulation/opponentAi.js";
 import { emitSimulationEvent } from "../src/simulation/battleState.js";
 import { ASSET_GROUPS } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
-import { commandActionAt, commandUiLayout, fullscreenActionAt } from "../src/ui/commandUi.js";
+import { SoundSystem } from "../src/audio/soundSystem.js";
+import { commandActionAt, commandUiLayout, fullscreenActionAt, titleActionAt, utilityActionAt } from "../src/ui/commandUi.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
@@ -149,6 +151,13 @@ terminalMatch.restart();
 assert.equal(terminalMatch.state, MATCH_STATE.LIVE_MATCH);
 assert.equal(terminalMatch.simulation.state.units.size, 8);
 
+const simultaneousHqLoss = new BattleSimulation();
+simultaneousHqLoss.applyDamage([
+  { projectileId: "p1", projectileType: "heavy_cannon", targetId: "player-hq", damage: 1800, ownerTeam: TEAM.ENEMY },
+  { projectileId: "p2", projectileType: "heavy_cannon", targetId: "enemy-hq", damage: 1800, ownerTeam: TEAM.PLAYER },
+]);
+assert.equal(simultaneousHqLoss.state.terminalTeam, TEAM.DRAW, "same-step HQ destruction is a draw rather than an update-order advantage");
+
 const lockMatch = new MatchDirector();
 lockMatch.start();
 lockMatch.deployment.timeUntilDeployment = CONFIG.timing.deploymentLockSeconds;
@@ -211,11 +220,19 @@ assert.deepEqual({ ok: economyUpgrade.ok, cost: economyUpgrade.cost, level: econ
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 60);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).economyLevel, 0);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).pendingEconomyLevels, 1);
-assert.equal(economyMatch.economy.incomePerSecond(economyMatch.simulation.state, TEAM.PLAYER, 0), 20);
+assert.equal(economyMatch.economy.incomePerSecond(economyMatch.simulation.state, TEAM.PLAYER, 0), 16);
 economyMatch.forceDeployment();
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).economyLevel, 1);
 economyMatch.advanceLive(1);
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 84);
+assert.ok(Math.abs(economyMatch.economy.get(TEAM.PLAYER).energy - 79.2) < 0.000001);
+economyMatch.economy.get(TEAM.PLAYER).energy = CONFIG.balance.energyCap - 1;
+economyMatch.advanceLive(1);
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, CONFIG.balance.energyCap, "passive income respects the energy cap");
+
+const escalatingWaveMatch = new MatchDirector();
+assert.equal(escalatingWaveMatch.deployment.baseWaveSize(0), 2);
+assert.equal(escalatingWaveMatch.deployment.baseWaveSize(120), 3);
+assert.equal(escalatingWaveMatch.deployment.baseWaveSize(999), 5, "free scout escalation is capped");
 
 const captureMatch = new MatchDirector();
 captureMatch.start();
@@ -233,7 +250,26 @@ assert.equal(leftNode.ownerTeam, null);
 assert.ok(leftNode.progress < 0);
 leftNode.ownerTeam = TEAM.PLAYER;
 leftNode.progress = 100;
-assert.equal(captureMatch.economy.incomePerSecond(captureMatch.simulation.state, TEAM.PLAYER, 120), 45);
+assert.equal(captureMatch.economy.incomePerSecond(captureMatch.simulation.state, TEAM.PLAYER, 120), 26.45);
+
+const cappedUpgradeMatch = new MatchDirector();
+cappedUpgradeMatch.start();
+cappedUpgradeMatch.economy.get(TEAM.PLAYER).energy = 3000;
+for (let level = 0; level < CONFIG.balance.economyUpgradeMaxLevel; level += 1) {
+  assert.equal(cappedUpgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" }).ok, true);
+}
+assert.deepEqual(cappedUpgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" }), { ok: false, reason: "MAX_LEVEL" });
+
+const replanMatch = new MatchDirector({ aiProfile: AI_PROFILES.ADMIRAL });
+replanMatch.start();
+const firstEnemyQueueIds = [LANE.LEFT, LANE.RIGHT].flatMap((laneId) => replanMatch.queuedWaves.get(TEAM.ENEMY).get(laneId).map((entry) => entry.id));
+replanMatch.deployment.timeUntilDeployment = CONFIG.timing.aiReplanSecondsBeforeDeployment + 0.01;
+replanMatch.advanceLive(1 / 60);
+const revisedEnemyQueueIds = [LANE.LEFT, LANE.RIGHT].flatMap((laneId) => replanMatch.queuedWaves.get(TEAM.ENEMY).get(laneId).map((entry) => entry.id));
+assert.equal(replanMatch.aiReplannedForCycle, replanMatch.cycle);
+assert.ok(revisedEnemyQueueIds.length > 0);
+assert.ok(revisedEnemyQueueIds.every((id) => !firstEnemyQueueIds.includes(id)), "AI revises through refunded public queue commands");
+assert.ok(replanMatch.economy.get(TEAM.ENEMY).energy >= 0);
 
 const scoutCapture = new MatchDirector();
 scoutCapture.start();
@@ -267,6 +303,10 @@ assert.equal(aiMatch.lastAiDecision.team, TEAM.ENEMY);
 assert.ok(aiMatch.lastAiDecision.purchases.length > 0);
 assert.ok(aiMatch.lastAiDecision.spent <= 300);
 assert.ok(aiMatch.economy.get(TEAM.ENEMY).energy >= 0);
+const cadetMatch = new MatchDirector({ aiProfile: AI_PROFILES.CADET });
+cadetMatch.start();
+assert.ok(cadetMatch.lastAiDecision.purchases.length <= 2);
+assert.equal(cadetMatch.lastAiDecision.upgrades.length, 0);
 const aiQueuedBeforeBattle = [LANE.LEFT, LANE.RIGHT].flatMap((laneId) => aiMatch.queuedWaves.get(TEAM.ENEMY).get(laneId));
 assert.equal(aiQueuedBeforeBattle.length, aiMatch.lastAiDecision.purchases.length);
 assert.ok(aiQueuedBeforeBattle.length <= CONFIG.balance.maxPurchasedReinforcementsPerDeployment);
@@ -291,12 +331,24 @@ assert.deepEqual(commandActionAt({ x: 300, y: 620 }), { type: "TOGGLE_MENU" });
 assert.deepEqual(commandActionAt({ x: 160, y: 662 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "turret" });
 assert.equal(commandActionAt({ x: 300, y: 662 }), null);
 const tallCommandUi = commandUiLayout(909);
-assert.equal(tallCommandUi.panel.y, 751);
-assert.equal(tallCommandUi.deploy.y + tallCommandUi.deploy.height, 893);
-assert.equal(tallCommandUi.lanes[0].y, 761);
+assert.equal(tallCommandUi.panel.y, 725);
+assert.equal(tallCommandUi.deploy.y + tallCommandUi.deploy.height, 895);
+assert.equal(tallCommandUi.lanes[0].y, 735);
 assert.deepEqual(commandActionAt({ x: 24, y: 803 }, "units", 909), { type: "QUEUE_UNIT", unitType: "scout" });
 assert.equal(commandActionAt({ x: 300, y: 811 }, "units", 909), null);
 assert.deepEqual(fullscreenActionAt({ x: 380, y: 26 }), { type: "TOGGLE_FULLSCREEN" });
 assert.equal(fullscreenActionAt({ x: 210, y: 26 }), null);
+assert.deepEqual(utilityActionAt({ x: 320, y: 26 }), { type: "TOGGLE_PAUSE" });
+assert.deepEqual(utilityActionAt({ x: 355, y: 26 }), { type: "TOGGLE_SOUND" });
+assert.deepEqual(titleActionAt({ x: 210, y: 424 }), { type: "CYCLE_DIFFICULTY" });
+assert.deepEqual(titleActionAt({ x: 210, y: 467 }), { type: "START_MATCH" });
+
+const sound = new SoundSystem();
+assert.equal(sound.userInteracted, false);
+assert.equal(sound.vibrate(10), false);
+assert.equal(sound.toggleMuted(), true);
+assert.equal(sound.enabled, false);
+assert.equal(sound.play("deploy"), false);
+assert.equal(sound.toggleMuted(), false);
 
 console.log(`Foundation, battle, match, and economy checks passed for ${targetViewports.length} target viewports.`);

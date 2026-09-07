@@ -10,7 +10,8 @@ The runtime never loads the complete development asset library. `src/assets.js` 
 
 ```text
 LOADING → TITLE → LIVE_MATCH → VICTORY
-                   │    └────→ DEFEAT
+                   │    ├────→ DEFEAT
+                   │    └────→ DRAW
                    ↓
                  PAUSED
                    │
@@ -42,6 +43,7 @@ No visual animation frame triggers a projectile, hit or damage event.
 | `src/simulation/battleSimulation.js` | Movement, formation separation, targeting, firing, projectile motion and damage |
 | `src/simulation/captureSystem.js` | Additive Node strength, contesting and ownership |
 | `src/simulation/opponentAi.js` | Deterministic, rule-bound planning through public commands |
+| `src/audio/soundSystem.js` | Gesture-gated Web Audio cues, mute persistence and optional haptics |
 | `src/rendering/battlefieldRenderer.js` | World, fleet layers, modular animated structures, projectile sprites and bounded trails |
 | `src/rendering/presentationEffects.js` | Event-driven short-lived presentation effects |
 | `src/rendering/uiRenderer.js` | HUD, queue and planning controls |
@@ -68,7 +70,7 @@ input or AI intent
 - Units, structures, projectiles and Nodes live in `BattleState` maps with stable IDs.
 - Formation spawns begin at the appropriate HQ hangar and traverse to their deterministic lane slots. Launching ships are excluded from targeting, capture and separation until traversal completes.
 - Units never change lanes.
-- Updates and damage events use deterministic ordering.
+- Movement and targeting read a per-step position snapshot; updates alternate their stable team order and damage resolves as a batch. This removes sequential side bias, and simultaneous HQ destruction produces `DRAW`.
 - Projectile behavior is defined in `src/data/definitions.js`; art metadata is defined separately in `src/data/visuals.js`.
 - Per-team/per-lane projectile budgets protect fairness; a global cap is a final memory guard.
 - Trails keep only a bounded position history.
@@ -107,6 +109,8 @@ Device pixel ratio is capped, with a lower coarse-pointer target, to control dec
 
 `npm.cmd run test:stress` runs a dense four-lane-side combat fixture and enforces unit, projectile, trail and event-history bounds.
 
-`npm.cmd run test:browser` drives a local Chromium browser through the DevTools protocol. It emulates all five target portrait viewports, asserts zero letterbox offsets, full Canvas dimensions, successful asset loading, touch access to the planning controls and no runtime/network errors. It also captures the 420×760 structures once during deployment and once with closed hangars plus severe damage. Screenshots are written only to ignored `tmp/browser-qa/` output.
+`npm.cmd run test:browser` drives a local Chromium browser through the DevTools protocol. It emulates all five target portrait viewports, asserts zero letterbox offsets, full Canvas dimensions, successful asset loading, title/difficulty/start behavior, touch access to the planning controls, pause/resume, sound toggling and no runtime/network errors. It also captures title, live play and closed-hangar damage states. Screenshots are written only to ignored `tmp/browser-qa/` output.
 
-`npm.cmd run balance:sim -- 100` runs rule-bound AI-vs-AI matches and reports wins, duration, deployment cycles, purchase mix, Node control, first turret loss and peak entity counts. A complete timeout set fails the command. Results are diagnostic balance evidence, not a substitute for real-phone playtests.
+`npm.cmd run balance:sim -- 100` runs rule-bound AI-vs-AI matches with team side and preferred lane mirrored across four configurations. It reports team and profile wins, duration, deployment cycles, purchase mix, Node control, first turret loss and peak entity counts. A complete timeout set fails the command. Results are diagnostic balance evidence, not a substitute for real-phone playtests.
+
+`npm.cmd run balance:experiments -- 30` repeats the simulation across lean, recommended and generous income/Node-income pairs. Environment overrides affect only the experiment process, so the shipped configuration remains centralized in `src/config.js`.

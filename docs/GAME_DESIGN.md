@@ -22,7 +22,7 @@ The primary match ends only when a Headquarters is destroyed.
 ## Deployment and queues
 
 - A match opens with a free symmetric base wave so the battlefield is active immediately.
-- Each later boundary adds two free Scouts per lane and team.
+- Each later boundary adds two free Scouts per lane and team. Every 120 active seconds this rises by one, capped at five, so late fronts cannot settle indefinitely.
 - A team may buy at most four reinforcements per deployment across both lanes combined.
 - Buying reserves the full Energy cost immediately.
 - Removing an entry before lock-in refunds its full cost.
@@ -34,17 +34,20 @@ The primary match ends only when a Headquarters is destroyed.
 
 ## Economy and upgrades
 
-Energy is generated continuously from base income and controlled Nodes. Escalation multipliers increase income after long matches to discourage stalemates. Economy and turret upgrades are purchased during the editable window, but their effects become active only at the next deployment boundary.
+Energy is generated continuously from base income and controlled Nodes and is capped so saving remains a choice rather than an unlimited stockpile. Gentle escalation multipliers and the late free-Scout ramp discourage stalemates. Economy and turret upgrades are purchased during the editable window, but their effects become active only at the next deployment boundary.
 
 Current data-driven defaults:
 
 | Rule | Value |
 | --- | ---: |
 | Starting Energy | 300 |
-| Base income | 20/s |
-| Controlled Node bonus | 10/s |
+| Energy cap | 1,200 |
+| Base income | 16/s |
+| Controlled Node bonus | 7/s |
 | Paid reinforcement slots | 4 |
-| Free Scouts | 2 per lane/deployment |
+| Free Scouts | 2 per lane/deployment, +1 every 120 s, max. 5 |
+| Economy upgrades | max. level 3 |
+| Turret upgrades | max. level 4 |
 | Deployment interval | 22 s |
 | Queue lock-in | final 2 s |
 
@@ -89,7 +92,15 @@ The canvas uses the full portrait viewport from 360×800 through 412×915 and th
 
 ## AI fairness
 
-The opponent uses the public command system, the same Energy, costs, four slots, lock window, capacity and upgrade timing. It evaluates pressure, units, Node control and turret health once per deployment cycle. It receives no permanent resource cheat and may not mutate queues after lock-in.
+The opponent uses the public command system, the same Energy, costs, four slots, lock window, capacity and upgrade timing. It evaluates pressure, composition, Node control and turret health at the start of a cycle and exactly once more with seven seconds remaining. That revision removes and refunds its old entries through the same public commands before rebuilding the queue. It receives no permanent resource cheat and may not mutate queues after lock-in.
+
+Three title-screen profiles expose understandable difficulty rather than hidden resource bonuses: Cadet buys at most two ships and skips upgrades, Tactician uses all systems conservatively, and Admiral invests and counters more aggressively.
+
+If both Headquarters are destroyed within the same fixed simulation step, the match is a draw. Snapshot-based targeting and stable alternating update order prevent a team or lane from winning merely because it was iterated first.
+
+## Feedback and onboarding
+
+The title screen teaches the loop in three actions and lets the player choose the AI profile before starting. Lane tabs contain a compact friendly-versus-enemy pressure bar, while unit cards state their role as well as their cost. Short synthesized cues distinguish selection, purchase, fire, missile, hit, destruction, Node capture and deployment. Sound can be muted persistently; vibration occurs only after a real user gesture.
 
 ## Quality gate
 

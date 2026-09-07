@@ -1,10 +1,25 @@
 import { CONFIG } from "../src/config.js";
 import { LANE, MATCH_STATE, TEAM } from "../src/core/constants.js";
-import { OpponentAi } from "../src/simulation/opponentAi.js";
+import { AI_PROFILES, OpponentAi } from "../src/simulation/opponentAi.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 
 const requestedMatches = Number.parseInt(process.argv[2] ?? "100", 10);
 const matchCount = Number.isFinite(requestedMatches) && requestedMatches > 0 ? requestedMatches : 100;
+const numericOverride = (name, fallback) => {
+  const value = Number.parseFloat(process.env[name] ?? "");
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+};
+const runConfig = Object.freeze({
+  ...CONFIG,
+  balance: Object.freeze({
+    ...CONFIG.balance,
+    baseIncomePerSecond: numericOverride("SG_BASE_INCOME", CONFIG.balance.baseIncomePerSecond),
+    nodeIncomePerSecond: numericOverride("SG_NODE_INCOME", CONFIG.balance.nodeIncomePerSecond),
+  }),
+});
+const validProfiles = new Set(Object.values(AI_PROFILES));
+const fixedPlayerProfile = validProfiles.has(process.env.SG_PLAYER_AI_PROFILE) ? process.env.SG_PLAYER_AI_PROFILE : null;
+const fixedEnemyProfile = validProfiles.has(process.env.SG_ENEMY_AI_PROFILE) ? process.env.SG_ENEMY_AI_PROFILE : null;
 const maximumSeconds = 8 * 60;
 const step = CONFIG.timing.fixedStepSeconds;
 const teams = [TEAM.PLAYER, TEAM.ENEMY];
@@ -12,10 +27,13 @@ const unitTypes = ["scout", "fighter", "bomber", "frigate"];
 
 const metrics = {
   matches: matchCount,
-  wins: { [TEAM.PLAYER]: 0, [TEAM.ENEMY]: 0, timeout: 0 },
+  wins: { [TEAM.PLAYER]: 0, [TEAM.ENEMY]: 0, draw: 0, timeout: 0 },
+  winsByProfile: { [AI_PROFILES.CADET]: 0, [AI_PROFILES.TACTICIAN]: 0, [AI_PROFILES.ADMIRAL]: 0, draw: 0, timeout: 0 },
   durations: [],
   cycles: [],
   purchases: Object.fromEntries(teams.map((team) => [team, Object.fromEntries(unitTypes.map((type) => [type, 0]))])),
+  upgrades: Object.fromEntries(teams.map((team) => [team, { economy: 0, turret: 0 }])),
+  finalEnergy: Object.fromEntries(teams.map((team) => [team, []])),
   nodeControlSeconds: Object.fromEntries(teams.map((team) => [team, 0])),
   firstTurretLossSeconds: [],
   peakUnits: 0,
@@ -25,21 +43,36 @@ const metrics = {
 const recordDecision = (decision) => {
   if (!decision) return;
   for (const purchase of decision.purchases) metrics.purchases[decision.team][purchase.unitType] += 1;
+  for (const upgrade of decision.upgrades) metrics.upgrades[decision.team][upgrade.upgradeId] += 1;
+};
+
+const clearQueue = (director, team) => {
+  for (const laneId of [LANE.LEFT, LANE.RIGHT]) {
+    for (const entry of [...director.queuedWaves.get(team).get(laneId)].reverse()) {
+      director.executeCommand({ type: "REMOVE_QUEUED_UNIT", team, laneId, queueEntryId: entry.id });
+    }
+  }
 };
 
 const runMatch = (index) => {
-  const director = new MatchDirector();
+  const playerProfile = fixedPlayerProfile ?? (index % 4 < 2 ? AI_PROFILES.ADMIRAL : AI_PROFILES.TACTICIAN);
+  const enemyProfile = fixedEnemyProfile ?? (index % 4 < 2 ? AI_PROFILES.TACTICIAN : AI_PROFILES.ADMIRAL);
+  const playerPreferredLane = index % 2 === 0 ? LANE.RIGHT : LANE.LEFT;
+  const enemyPreferredLane = playerPreferredLane === LANE.LEFT ? LANE.RIGHT : LANE.LEFT;
+  const director = new MatchDirector({ config: runConfig, aiProfile: enemyProfile, aiPreferredLane: enemyPreferredLane });
   director.start();
   const playerAi = new OpponentAi({
     team: TEAM.PLAYER,
-    preferredLane: index % 2 === 0 ? LANE.RIGHT : LANE.LEFT,
+    preferredLane: playerPreferredLane,
+    profile: playerProfile,
   });
-  recordDecision(director.lastAiDecision);
-  recordDecision(playerAi.plan(director).decision);
+  let playerDecision = playerAi.plan(director).decision;
+  let playerReplannedForCycle = null;
   let knownCycle = director.cycle;
   let firstTurretLoss = null;
 
   while (director.state === MATCH_STATE.LIVE_MATCH && director.activeMatchSeconds < maximumSeconds) {
+    const enemyDecisionBeforeStep = director.lastAiDecision;
     director.advanceLive(step);
     metrics.peakUnits = Math.max(metrics.peakUnits, director.simulation.state.units.size);
     metrics.peakProjectiles = Math.max(metrics.peakProjectiles, director.simulation.state.projectiles.size);
@@ -52,18 +85,38 @@ const runMatch = (index) => {
       if (turretLost) firstTurretLoss = director.activeMatchSeconds;
     }
     if (director.state === MATCH_STATE.LIVE_MATCH && director.cycle !== knownCycle) {
+      recordDecision(enemyDecisionBeforeStep);
+      recordDecision(playerDecision);
       knownCycle = director.cycle;
-      recordDecision(director.lastAiDecision);
-      recordDecision(playerAi.plan(director).decision);
+      playerDecision = playerAi.plan(director).decision;
+      playerReplannedForCycle = null;
+    } else if (director.state === MATCH_STATE.LIVE_MATCH
+      && !director.queueLocked
+      && playerReplannedForCycle !== director.cycle
+      && director.phaseRemaining <= director.config.timing.aiReplanSecondsBeforeDeployment) {
+      clearQueue(director, TEAM.PLAYER);
+      playerDecision = playerAi.plan(director).decision;
+      playerReplannedForCycle = director.cycle;
     }
   }
 
   metrics.durations.push(director.activeMatchSeconds);
   metrics.cycles.push(director.cycle);
   if (firstTurretLoss !== null) metrics.firstTurretLossSeconds.push(firstTurretLoss);
-  if (director.state === MATCH_STATE.VICTORY) metrics.wins[TEAM.PLAYER] += 1;
-  else if (director.state === MATCH_STATE.DEFEAT) metrics.wins[TEAM.ENEMY] += 1;
-  else metrics.wins.timeout += 1;
+  for (const team of teams) metrics.finalEnergy[team].push(director.economy.get(team).energy);
+  if (director.state === MATCH_STATE.VICTORY) {
+    metrics.wins[TEAM.PLAYER] += 1;
+    metrics.winsByProfile[playerProfile] += 1;
+  } else if (director.state === MATCH_STATE.DEFEAT) {
+    metrics.wins[TEAM.ENEMY] += 1;
+    metrics.winsByProfile[enemyProfile] += 1;
+  } else if (director.state === MATCH_STATE.DRAW) {
+    metrics.wins.draw += 1;
+    metrics.winsByProfile.draw += 1;
+  } else {
+    metrics.wins.timeout += 1;
+    metrics.winsByProfile.timeout += 1;
+  }
 };
 
 for (let index = 0; index < matchCount; index += 1) runMatch(index);
@@ -73,16 +126,24 @@ const rounded = (value) => value === null ? null : Math.round(value * 10) / 10;
 const report = {
   matches: metrics.matches,
   wins: metrics.wins,
+  winsByProfile: metrics.winsByProfile,
   averageDurationSeconds: rounded(average(metrics.durations)),
   averageDeploymentCycles: rounded(average(metrics.cycles)),
   averageFirstTurretLossSeconds: rounded(average(metrics.firstTurretLossSeconds)),
   purchases: metrics.purchases,
+  upgrades: metrics.upgrades,
+  averageFinalEnergy: Object.fromEntries(teams.map((team) => [team, rounded(average(metrics.finalEnergy[team]))])),
   nodeControlSeconds: Object.fromEntries(teams.map((team) => [team, rounded(metrics.nodeControlSeconds[team])])),
   peaks: { units: metrics.peakUnits, projectiles: metrics.peakProjectiles },
   configuration: {
     deploymentIntervalSeconds: CONFIG.timing.deploymentIntervalSeconds,
     lockSeconds: CONFIG.timing.deploymentLockSeconds,
     maximumMatchSeconds: maximumSeconds,
+    baseIncomePerSecond: runConfig.balance.baseIncomePerSecond,
+    nodeIncomePerSecond: runConfig.balance.nodeIncomePerSecond,
+    matchup: fixedPlayerProfile || fixedEnemyProfile
+      ? `${fixedPlayerProfile ?? AI_PROFILES.TACTICIAN} vs ${fixedEnemyProfile ?? AI_PROFILES.TACTICIAN}`
+      : "four-way side/lane-mirrored admiral vs tactician",
   },
 };
 

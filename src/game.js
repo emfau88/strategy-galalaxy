@@ -8,9 +8,11 @@ import { readLaunchOptions } from "./qa/matchTestMode.js";
 import { AssetLoader } from "./rendering/assetLoader.js";
 import { Renderer } from "./rendering/renderer.js";
 import { PresentationEffects } from "./rendering/presentationEffects.js";
+import { SoundSystem } from "./audio/soundSystem.js";
 import { MatchDirector } from "./simulation/matchDirector.js";
 import { InputRouter } from "./ui/inputRouter.js";
-import { commandActionAt, fullscreenActionAt } from "./ui/commandUi.js";
+import { commandActionAt, titleActionAt, utilityActionAt } from "./ui/commandUi.js";
+import { AI_PROFILES } from "./simulation/opponentAi.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
 
@@ -27,12 +29,15 @@ export class Game {
     this.loader = new AssetLoader(mergeAssetGroups(ASSET_GROUPS.boot, ASSET_GROUPS.ships, ASSET_GROUPS.effects));
     this.renderer = new Renderer(canvas, context);
     this.effects = new PresentationEffects();
+    this.sound = new SoundSystem();
     this.lastInput = null;
     this.selectedLaneId = LANE.LEFT;
     this.commandMenu = "units";
     this.commandFeedback = null;
+    this.commandFeedbackUntil = 0;
     this.fullscreenActive = false;
     this.match = new MatchDirector();
+    this.aiProfiles = [AI_PROFILES.CADET, AI_PROFILES.TACTICIAN, AI_PROFILES.ADMIRAL];
     this.lastFrameAt = null;
     this.running = false;
     this.transform = null;
@@ -108,60 +113,95 @@ export class Game {
   receiveInput(input) {
     this.lastInput = input;
     if (input.kind !== "down") return;
-    if (fullscreenActionAt(input)) {
+    this.sound.unlock().catch(() => {});
+    const utility = utilityActionAt(input);
+    if (utility?.type === "TOGGLE_FULLSCREEN") {
       this.toggleFullscreen();
       return;
     }
+    if (utility?.type === "TOGGLE_SOUND") {
+      this.sound.toggleMuted();
+      this.showFeedback(this.sound.enabled ? "SOUND ON" : "SOUND OFF");
+      return;
+    }
+    if (utility?.type === "TOGGLE_PAUSE") {
+      if (this.match.state === MATCH_STATE.PAUSED) this.match.resume();
+      else this.match.pause();
+      this.sound.play("select");
+      return;
+    }
     if (this.match.state === MATCH_STATE.TITLE) {
+      const action = titleActionAt(input, this.transform?.designHeight);
+      if (action?.type === "CYCLE_DIFFICULTY") {
+        const index = (this.aiProfiles.indexOf(this.match.aiProfile) + 1) % this.aiProfiles.length;
+        this.match.setAiProfile(this.aiProfiles[index]);
+        return;
+      }
+      if (action?.type !== "START_MATCH") return;
       this.match.start();
       this.effects.reset();
+      this.sound.reset();
+      this.sound.play("deploy");
+      this.sound.vibrate([12, 24, 18]);
     }
     else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight));
-    else if (this.match.state === MATCH_STATE.VICTORY || this.match.state === MATCH_STATE.DEFEAT) {
+    else if ([MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(this.match.state)) {
       this.match.restart();
       this.effects.reset();
+      this.sound.reset();
+      this.sound.play("deploy");
     }
     this.syncMatchState();
   }
 
   toggleFullscreen() {
     if (document.fullscreenElement) {
-      document.exitFullscreen?.().catch(() => { this.commandFeedback = "FULLSCREEN UNAVAILABLE"; });
+      document.exitFullscreen?.().catch(() => this.showFeedback("FULLSCREEN UNAVAILABLE"));
       return;
     }
     const target = this.canvas.parentElement ?? this.canvas;
     if (!target.requestFullscreen) {
-      this.commandFeedback = "FULLSCREEN UNAVAILABLE";
+      this.showFeedback("FULLSCREEN UNAVAILABLE");
       return;
     }
-    target.requestFullscreen().catch(() => { this.commandFeedback = "FULLSCREEN UNAVAILABLE"; });
+    target.requestFullscreen().catch(() => this.showFeedback("FULLSCREEN UNAVAILABLE"));
+  }
+
+  showFeedback(message, seconds = 1.45) {
+    this.commandFeedback = message;
+    this.commandFeedbackUntil = this.clock.frameTime + seconds;
   }
 
   executeCommandAction(action) {
     if (!action) return;
     if (action.type === "SELECT_LANE") {
       this.selectedLaneId = action.laneId;
-      this.commandFeedback = `${action.laneId === LANE.LEFT ? "LEFT" : "RIGHT"} LANE SELECTED`;
+      this.showFeedback(`${action.laneId === LANE.LEFT ? "LEFT" : "RIGHT"} LANE SELECTED`);
+      this.sound.play("select");
       return;
     }
     if (action.type === "TOGGLE_MENU") {
       this.commandMenu = this.commandMenu === "units" ? "upgrades" : "units";
-      this.commandFeedback = this.commandMenu === "units" ? "SHIP REINFORCEMENTS" : "UPGRADES";
+      this.showFeedback(this.commandMenu === "units" ? "SHIP REINFORCEMENTS" : "UPGRADES");
+      this.sound.play("select");
       return;
     }
     if (action.type === "REMOVE_LAST_UNIT") {
       const queue = this.match.queuedWaves.get(TEAM.PLAYER).get(this.selectedLaneId);
       const entry = queue.at(-1);
       const result = entry ? this.match.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.PLAYER, laneId: this.selectedLaneId, queueEntryId: entry.id }) : { ok: false };
-      this.commandFeedback = result.ok ? `REFUNDED ${result.refunded} ENERGY` : "NOTHING TO UNDO";
+      this.showFeedback(result.ok ? `REFUNDED ${result.refunded} ENERGY` : "NOTHING TO UNDO");
+      this.sound.play(result.ok ? "select" : "error");
       return;
     }
     const result = this.match.executeCommand({ ...action, team: TEAM.PLAYER, laneId: this.selectedLaneId });
-    this.commandFeedback = result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE READY NEXT DEPLOYMENT" : `${action.unitType.toUpperCase()} QUEUED`) : this.commandFailureLabel(result.reason);
+    this.showFeedback(result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE READY NEXT DEPLOYMENT" : `${action.unitType.toUpperCase()} QUEUED`) : this.commandFailureLabel(result.reason));
+    this.sound.play(result.ok ? "purchase" : "error");
+    if (result.ok) this.sound.vibrate(9);
   }
 
   commandFailureLabel(reason) {
-    return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", CAPACITY_RESERVED: "LANE CAPACITY RESERVED", REINFORCEMENT_LIMIT: "ALL 4 REINFORCEMENT SLOTS USED", QUEUE_LOCKED: "DEPLOYMENT LOCKED", WRONG_PHASE: "PLANNING UNAVAILABLE" })[reason] ?? "COMMAND UNAVAILABLE";
+    return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", CAPACITY_RESERVED: "LANE CAPACITY RESERVED", REINFORCEMENT_LIMIT: "ALL 4 REINFORCEMENT SLOTS USED", QUEUE_LOCKED: "DEPLOYMENT LOCKED", WRONG_PHASE: "PLANNING UNAVAILABLE", MAX_LEVEL: "UPGRADE ALREADY MAXED" })[reason] ?? "COMMAND UNAVAILABLE";
   }
 
   handleKeyDown(event) {
@@ -182,6 +222,7 @@ export class Game {
     const delta = this.lastFrameAt === null ? 0 : (now - this.lastFrameAt) / 1000;
     this.lastFrameAt = now;
     const previousState = this.match.state;
+    const previousCycle = this.match.cycle;
     this.clock.advance(delta, previousState, {
       onSimulationStep: (step) => {
         this.match.advanceLive(step);
@@ -189,6 +230,11 @@ export class Game {
       },
     });
     this.effects.update(delta);
+    this.sound.observe(this.match.simulation?.state.events ?? []);
+    if (this.match.cycle > previousCycle) {
+      this.sound.play("deploy");
+      this.sound.vibrate([12, 24, 18]);
+    }
     this.syncMatchState();
     this.renderer.render({
       state: this.state,
@@ -202,12 +248,14 @@ export class Game {
       activeBattleSeconds: this.match.activeBattleSeconds,
       economy: this.match.simulation ? this.match.economy : null,
       director: this.match,
+      aiProfile: this.match.aiProfile,
       lastAiDecision: this.match.lastAiDecision,
       selectedLaneId: this.selectedLaneId,
       commandMenu: this.commandMenu,
       fullscreenActive: this.fullscreenActive,
+      soundEnabled: this.sound.enabled,
       queueLocked: this.match.queueLocked,
-      commandFeedback: this.commandFeedback,
+      commandFeedback: this.clock.frameTime < this.commandFeedbackUntil ? this.commandFeedback : null,
       assets: this.loader,
       effects: this.effects.effects,
     });

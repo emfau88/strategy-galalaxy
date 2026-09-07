@@ -21,7 +21,8 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Zwei vollständig sichtbare, nur noch dezent markierte Lanes mit persistenten Schiffen, Turrets, HQ-Schaden und Energy Nodes.
 - Zwei kostenlose Scouts pro Lane und Deployment sowie vier gemeinsame, gekaufte Verstärkungsslots.
 - Sofortige Energiereservierung, vollständige Rückerstattung vor Lock-in und Upgrade-Aktivierung am nächsten Deployment.
-- Regelgebundene KI mit denselben Kosten, Slots, Timern, Kapazitäten und Upgrade-Regeln wie der Spieler.
+- Gedeckelte, entschärfte Economy mit 300 Startenergie, 16 Basisenergie/s, 7 Energie/s pro Node, maximal 1.200 gespeicherter Energie und begrenzten Upgrade-Stufen.
+- Regelgebundene KI mit denselben Kosten, Slots, Timern, Kapazitäten und Upgrade-Regeln wie der Spieler, drei wählbaren Profilen und genau einer Neubewertung kurz vor dem Lock-in.
 - Scout, Fighter, Bomber und Frigate mit eigenen Rollen, Formationen, Zielprioritäten und Capture-Stärken.
 - Nairan- und Kla'ed-Flotten mit animierten Engines, Weapon-, Shield- und Destruction-Layern.
 - Rollen- und fraktionsabhängige animierte Projektile, bounded Homing, begrenzte Trails, Muzzle Flashes, Treffer- und Explosionseffekte.
@@ -29,6 +30,8 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Keine großflächigen Team-Neonringe oder dekorativen Orbit-Ellipsen; Nodes zeigen Capture-Fortschritt kompakt unterhalb des Sprites.
 - Faire Projektilbudgets pro Team und Lane sowie globale Sicherheitsgrenzen für mobile Geräte.
 - Responsive Canvas-Höhe, die Tall-Screen-Smartphones im Fullscreen ohne große ungenutzte Flächen ausfüllt.
+- Größere Mobile-Touchflächen, direkt in den Lane-Tabs sichtbarer Druckvergleich sowie ein kurzer Drei-Schritte-Einstieg auf dem Startbildschirm.
+- Schaltbare, synthetisierte Combat-Sounds und an echte Nutzergesten gebundenes Haptik-Feedback ohne zusätzliche Audio-Lizenzabhängigkeit.
 - Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt nur den kuratierten aktuellen Ausschnitt.
 
 ## Einheiten
@@ -71,9 +74,10 @@ npm.cmd run check
 npm.cmd run test:stress
 npm.cmd run test:browser
 npm.cmd run balance:sim -- 100
+npm.cmd run balance:experiments -- 30
 ```
 
-Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Capture, Targeting, gespiegelte Kartengeometrie, dichte Flotten, Projektile, alle Runtime-Manifeste und die 516 Dateien der importierten Bibliothek ab. Der Browserlauf emuliert fünf echte Mobile-Viewports, testet Touch, vollständige Canvas-Nutzung sowie Console-/Netzwerkfehler und legt Screenshots im ignorierten `tmp`-Ordner ab. Die Balance-Simulation meldet Siege, Matchdauer, Deployment-Zyklen, Käufe, Nodekontrolle, ersten Turretverlust und Spitzenlast.
+Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Capture, Targeting, gespiegelte Kartengeometrie, dichte Flotten, Projektile, alle Runtime-Manifeste und die 516 Dateien der importierten Bibliothek ab. Der Browserlauf emuliert fünf echte Mobile-Viewports und prüft Start, Schwierigkeitswahl, Touch, Pause, Sound, vollständige Canvas-Nutzung sowie Console-/Netzwerkfehler. Die Balance-Simulation spiegelt Teamseite und bevorzugte Lane, meldet zusätzlich Siege pro KI-Profil, Matchdauer, Deployment-Zyklen, Käufe, Nodekontrolle, ersten Turretverlust und Spitzenlast; der Experimentlauf vergleicht drei Economy-Konfigurationen reproduzierbar.
 
 ## Dokumentation
 
@@ -87,4 +91,4 @@ Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Capture, Targeti
 
 ## Status
 
-Der kontinuierliche Kern-Loop, die mobile Vollbildskalierung, die vier Kernrollen, die Original-Animations-/Projektilintegration, animierte modulare Strukturen und die automatisierten technischen Gates sind umgesetzt. Als nächster Schwerpunkt folgt echtes Smartphone-Playtesting: Lesbarkeit dichter Pushes, Touchkomfort, 22-Sekunden-Entscheidungsrhythmus und datengetriebene Balance. Battlecruiser und Dreadnought bleiben bis zum bestandenen Spielspaß-Gate deaktiviert.
+Der kontinuierliche Kern-Loop, die mobile Vollbildskalierung, die vier Kernrollen, die Original-Animations-/Projektilintegration, animierte modulare Strukturen, drei KI-Stufen, Sound/Haptik und die automatisierten technischen Gates sind umgesetzt. In der aktuellen vollständig gespiegelten 100-Match-Referenzserie endeten alle Matches durch HQ-Zerstörung, mit 50:50 Siegen und durchschnittlich 167 Sekunden Laufzeit. Das ist ein technisches Fairnesssignal, kein Nachweis für Spielspaß. Als nächster Schwerpunkt folgt echtes Smartphone-Playtesting: Lesbarkeit dichter Pushes, Touchkomfort, 22-Sekunden-Entscheidungsrhythmus und datengetriebene Balance. Battlecruiser und Dreadnought bleiben bis zum bestandenen Spielspaß-Gate deaktiviert.

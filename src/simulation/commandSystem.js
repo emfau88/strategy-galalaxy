@@ -22,7 +22,7 @@ export class CommandSystem {
     const purchased = [...director.queuedWaves.get(team).values()].reduce((sum, entries) => sum + entries.length, 0);
     if (purchased >= director.config.balance.maxPurchasedReinforcementsPerDeployment) return { ok: false, reason: "REINFORCEMENT_LIMIT" };
     const active = director.simulation.state.lanes.get(laneId).unitIds.get(team).length;
-    const reservedBase = director.baseWaveBacklog.get(team).get(laneId).length + director.config.balance.baseWaveScoutsPerLane;
+    const reservedBase = director.baseWaveBacklog.get(team).get(laneId).length + director.deployment.baseWaveSize(director.simulation.state.time);
     if (active + reservedBase + queue.length >= director.config.caps.unitsPerLaneTeam) return { ok: false, reason: "CAPACITY_RESERVED" };
     const economy = director.economy.get(team);
     if (economy.energy < definition.cost) return { ok: false, reason: "INSUFFICIENT_ENERGY" };

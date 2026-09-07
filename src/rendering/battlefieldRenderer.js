@@ -40,7 +40,7 @@ const drawTimedStrip = (ctx, image, layer, frameSize, elapsed, displaySize, dura
 const battlefieldProjection = (height) => {
   const sourceTop = 102;
   const sourceBottom = 590;
-  const targetBottom = height - 170;
+  const targetBottom = height - 210;
   const scaleY = (targetBottom - sourceTop) / (sourceBottom - sourceTop);
   return Object.freeze({
     y: (value) => sourceTop + (value - sourceTop) * scaleY,

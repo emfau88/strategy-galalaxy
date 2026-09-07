@@ -99,17 +99,43 @@ try {
   onEvent("Network.responseReceived", ({ response }) => { if (response.status >= 400 && !response.url.endsWith("favicon.ico")) failures.push(`HTTP ${response.status}: ${response.url}`); });
   await Promise.all([send("Page.enable"), send("Runtime.enable"), send("Log.enable"), send("Network.enable")]);
 
+  const touch = async (x, y) => {
+    await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await delay(40);
+  };
+  const waitForGame = async () => {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const ready = await send("Runtime.evaluate", { expression: "Boolean(window.__strategyGalalaxy?.running && window.__strategyGalalaxy?.loader?.isSettled)", returnByValue: true });
+      if (ready.result.value) return;
+      await delay(50);
+    }
+    throw new Error("Game did not finish loading");
+  };
+
+  await send("Emulation.setDeviceMetricsOverride", { width: 420, height: 760, deviceScaleFactor: 1, mobile: true, screenWidth: 420, screenHeight: 760 });
+  let loaded = waitEvent("Page.loadEventFired");
+  await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?debug=1&seed=1180` });
+  await loaded;
+  await waitForGame();
+  let titleState = await send("Runtime.evaluate", { expression: "({ state: window.__strategyGalalaxy.state, difficulty: window.__strategyGalalaxy.match.aiProfile })", returnByValue: true });
+  assert.deepEqual(titleState.result.value, { state: "TITLE", difficulty: "tactician" });
+  const titleScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "title-420x760.png"), Buffer.from(titleScreenshot.data, "base64"));
+  await touch(210, 424);
+  titleState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.aiProfile", returnByValue: true });
+  assert.equal(titleState.result.value, "admiral", "difficulty selector is touch-operable");
+  await touch(210, 467);
+  titleState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.state", returnByValue: true });
+  assert.equal(titleState.result.value, "LIVE_MATCH", "start button begins a live match");
+
   const reports = [];
   for (const [width, height] of viewports) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: true, screenWidth: width, screenHeight: height });
-    const loaded = waitEvent("Page.loadEventFired");
+    loaded = waitEvent("Page.loadEventFired");
     await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&seed=${width + height}` });
     await loaded;
-    for (let attempt = 0; attempt < 100; attempt += 1) {
-      const ready = await send("Runtime.evaluate", { expression: "Boolean(window.__strategyGalalaxy?.running && window.__strategyGalalaxy?.loader?.isSettled)", returnByValue: true });
-      if (ready.result.value) break;
-      await delay(50);
-    }
+    await waitForGame();
 
     const snapshotResult = await send("Runtime.evaluate", {
       expression: `(() => { const g = window.__strategyGalalaxy; const r = g.canvas.getBoundingClientRect(); return { innerWidth, innerHeight, state: g.state, transform: g.getViewportSnapshot(), canvas: { x: r.x, y: r.y, width: r.width, height: r.height }, assetFailures: g.loader.errors.length, playerQueue: [...g.match.queuedWaves.get('TEAM_PLAYER').values()].flat().length }; })()`,
@@ -131,11 +157,25 @@ try {
     const lowerOffset = Math.max(0, designHeight - 760);
     const touchX = 70 * snapshot.transform.scale;
     const touchY = (675 + lowerOffset) * snapshot.transform.scale;
-    await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: touchX, y: touchY }] });
-    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await delay(40);
+    await touch(touchX, touchY);
     const queueResult = await send("Runtime.evaluate", { expression: "[...window.__strategyGalalaxy.match.queuedWaves.get('TEAM_PLAYER').values()].flat().length", returnByValue: true });
     assert.equal(queueResult.result.value, 1, `${width}x${height} touch reaches Scout control`);
+
+    if (width === 420 && height === 760) {
+      await touch(323, 29);
+      let utilityState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.state", returnByValue: true });
+      assert.equal(utilityState.result.value, "PAUSED", "pause control freezes the live match");
+      await touch(323, 29);
+      utilityState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.state", returnByValue: true });
+      assert.equal(utilityState.result.value, "LIVE_MATCH", "pause control resumes the match");
+      const soundBefore = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.sound.enabled", returnByValue: true });
+      await touch(358, 29);
+      const soundMuted = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.sound.enabled", returnByValue: true });
+      assert.equal(soundMuted.result.value, !soundBefore.result.value, "sound control toggles audio");
+      await touch(358, 29);
+      const soundRestored = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.sound.enabled", returnByValue: true });
+      assert.equal(soundRestored.result.value, soundBefore.result.value, "sound control restores its prior state");
+    }
 
     const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
     await writeFile(resolve(output, `match-${width}x${height}.png`), Buffer.from(screenshot.data, "base64"));

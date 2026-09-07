@@ -4,12 +4,14 @@ export const MATCH_STATE = Object.freeze({
   LIVE_MATCH: "LIVE_MATCH",
   VICTORY: "VICTORY",
   DEFEAT: "DEFEAT",
+  DRAW: "DRAW",
   PAUSED: "PAUSED",
 });
 
 export const TEAM = Object.freeze({
   PLAYER: "TEAM_PLAYER",
   ENEMY: "TEAM_ENEMY",
+  DRAW: "TEAM_DRAW",
 });
 
 export const LANE = Object.freeze({

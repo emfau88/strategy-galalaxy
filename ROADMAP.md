@@ -428,9 +428,13 @@ Der Kern ist erst bestanden, wenn:
 
 ## Umsetzungsstand 7. September 2026
 
-Die technische Grundlage der Pakete 0 bis 9 ist umgesetzt: kontinuierlicher `LIVE_MATCH`, automatische 22-Sekunden-Deployments, Lock-in, persistente Queues und Upgrades, regelgleiche KI, permanentes Mobile-Planungs-UI, vollständige lizenzierte Assetbibliothek, Nairan/Kla'ed-Layeranimationen, Originalprojektilprofile, begrenzte FX sowie Headless-, Stress-, Asset- und echte emulierte Browserprüfungen.
+Die technische Grundlage der Pakete 0 bis 9 ist umgesetzt: kontinuierlicher `LIVE_MATCH`, automatische 22-Sekunden-Deployments, Lock-in, persistente Queues und Upgrades, regelgleiche KI, permanentes Mobile-Planungs-UI, vollständige lizenzierte Assetbibliothek, Nairan/Kla'ed-Layeranimationen, Originalprojektilprofile, begrenzte FX sowie Headless-, Stress-, Asset- und echte emulierte Browserprüfungen. Schiffe starten nun aus den lane-seitigen HQ-Hangars; die Tore reagieren auf tatsächliche Auslieferungen. Turrets bestehen aus Plattform und nachgeführtem Geschützkopf mit korrektem Laufmündungsursprung.
 
-Für Paket 10 steht nun eine reproduzierbare AI-vs-AI-Auswertung zur Verfügung. Ihre erste Stichprobe hat eine unsymmetrische Kartenachse aufgedeckt; HQ, Turrets, Spawns und Nodes sind inzwischen exakt gespiegelt. Das eigentliche Spielspaß-Gate bleibt bewusst offen, bis reale Smartphone-Sessions Lesbarkeit, Touchkomfort, Kompositionsvielfalt und den 22-Sekunden-Rhythmus bestätigen. Capital Ships bleiben bis dahin deaktiviert.
+Für Paket 10 stehen nun reproduzierbare AI-vs-AI-Auswertung und Economy-Variantenläufe zur Verfügung. Ihre erste Stichprobe hat eine unsymmetrische Kartenachse und eine subtile Gleitkomma-Reichweitenbevorzugung aufgedeckt; Geometrie, Zielprüfung und Projektiltreffer sind inzwischen gespiegelt bzw. toleranzstabil. Ein Energie-Cap, sanftere Einkommen-Eskalation, begrenzte Upgrades und zusätzliche späte Basisscouts reduzieren sowohl unbrauchbare Vorräte als auch Endlosfronten. Die drei fairen KI-Profile `Cadet`, `Tactician` und `Admiral` planen über öffentliche Kommandos und dürfen einmal kurz vor Lock-in neu bewerten. Eine über Teamseite und bevorzugte Lane gespiegelte 100-Match-Referenz endete ohne Timeouts 50:50 bei durchschnittlich 167 Sekunden.
+
+Das Mobile-UI nutzt den gesamten Portrait-Viewport, besitzt größere Karten und Lane-Touchflächen, zeigt Lane Pressure direkt in der Auswahl und prüft nun auch Titel, Schwierigkeitswahl, Pause sowie Sound im echten Browser. Ein kurzer Einstieg, synthetisierte Sounds und gesture-gated Haptik sind integriert.
+
+Das eigentliche Spielspaß-Gate bleibt bewusst offen, bis reale Smartphone-Sessions Lesbarkeit, Touchkomfort, Kompositionsvielfalt und den 22-Sekunden-Rhythmus bestätigen. Capital Ships bleiben bis dahin deaktiviert.
 
 ## Nächster ausführbarer Schritt
 

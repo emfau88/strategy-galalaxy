@@ -3,6 +3,7 @@ import { STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js"
 
 const lanes = Object.freeze([LANE.LEFT, LANE.RIGHT]);
 const opponentOf = (team) => (team === TEAM.PLAYER ? TEAM.ENEMY : TEAM.PLAYER);
+export const AI_PROFILES = Object.freeze({ CADET: "cadet", TACTICIAN: "tactician", ADMIRAL: "admiral" });
 
 const unitStrength = (unit) => {
   const definition = UNIT_DEFINITIONS[unit.unitType];
@@ -22,9 +23,10 @@ const turretStrength = (state, team, laneId) => {
  * identical budget, costs, capacity, and phase restrictions as player commands.
  */
 export class OpponentAi {
-  constructor({ team = TEAM.ENEMY, preferredLane = LANE.LEFT } = {}) {
+  constructor({ team = TEAM.ENEMY, preferredLane = LANE.LEFT, profile = AI_PROFILES.TACTICIAN } = {}) {
     this.team = team;
     this.preferredLane = preferredLane;
+    this.profile = Object.values(AI_PROFILES).includes(profile) ? profile : AI_PROFILES.TACTICIAN;
     this.lastDecision = null;
   }
 
@@ -43,6 +45,12 @@ export class OpponentAi {
     const friendlyTurret = turretStrength(state, this.team, laneId);
     const enemyTurret = turretStrength(state, enemyTeam, laneId);
     const node = [...state.nodes.values()].find((value) => value.laneId === laneId);
+    const composition = (ids) => ids.map((id) => state.units.get(id)).filter((unit) => unit?.alive).reduce((counts, unit) => {
+      counts[unit.unitType] = (counts[unit.unitType] ?? 0) + 1;
+      return counts;
+    }, { scout: 0, fighter: 0, bomber: 0, frigate: 0 });
+    const friendlyComposition = composition(lane.unitIds.get(this.team));
+    const enemyComposition = composition(lane.unitIds.get(enemyTeam));
     const nodePressure = node?.ownerTeam === enemyTeam ? 42 : node?.ownerTeam === this.team ? -18 : 0;
     return {
       laneId,
@@ -51,6 +59,8 @@ export class OpponentAi {
       friendlyTurret: Math.round(friendlyTurret),
       enemyTurret: Math.round(enemyTurret),
       nodeOwner: node?.ownerTeam ?? null,
+      friendlyComposition,
+      enemyComposition,
       threat: Math.round(enemyUnits + nodePressure - friendlyUnits - friendlyTurret * 0.35),
       opportunity: Math.round(friendlyUnits + friendlyTurret * 0.55 - enemyUnits - enemyTurret * 0.35 - nodePressure),
     };
@@ -64,6 +74,7 @@ export class OpponentAi {
     const purchases = [];
     const upgrades = [];
     const economy = director.economy.get(this.team);
+    const purchaseLimit = this.profile === AI_PROFILES.CADET ? 2 : 4;
     const buy = (upgradeId, reserve) => {
       const cost = director.economy.upgradeCost(this.team, upgradeId);
       if (cost !== null && economy.energy >= cost + reserve) {
@@ -72,6 +83,7 @@ export class OpponentAi {
       }
     };
     const queue = (laneId, unitType) => {
+      if (purchases.length >= purchaseLimit) return false;
       const result = director.executeCommand({ type: "QUEUE_UNIT", team: this.team, laneId, unitType });
       if (result.ok) purchases.push({ laneId, unitType, cost: result.entry.paidCost });
       return result.ok;
@@ -79,18 +91,29 @@ export class OpponentAi {
 
     // Economy is preferred while the match is still open; immediate defense is
     // preferred when a lane is actually under pressure.
-    if (defense.threat > 70) buy("turret", 110);
-    else if (economy.economyLevel < 2) buy("economy", 150);
+    if (this.profile !== AI_PROFILES.CADET) {
+      if (defense.threat > 70) buy("turret", 110);
+      else if (economy.economyLevel < 2) buy("economy", this.profile === AI_PROFILES.ADMIRAL ? 100 : 150);
+    }
 
-    queue(defense.laneId, economy.energy >= UNIT_DEFINITIONS.frigate.cost + 110 && defense.threat > 35 ? "frigate" : "fighter");
-    queue(push.laneId, economy.energy >= UNIT_DEFINITIONS.bomber.cost ? "bomber" : "scout");
+    const defenseChoice = defense.enemyComposition.bomber > defense.friendlyComposition.fighter
+      ? "fighter"
+      : defense.enemyComposition.frigate > defense.friendlyComposition.bomber && economy.energy >= UNIT_DEFINITIONS.bomber.cost + 80
+        ? "bomber"
+        : economy.energy >= UNIT_DEFINITIONS.frigate.cost + 90 && defense.threat > 35 ? "frigate" : "fighter";
+    const pushChoice = push.nodeOwner === opponentOf(this.team) && push.friendlyComposition.scout === 0
+      ? "scout"
+      : economy.energy >= UNIT_DEFINITIONS.bomber.cost ? "bomber" : "scout";
+    queue(defense.laneId, defenseChoice);
+    queue(push.laneId, pushChoice);
     if (push.laneId !== defense.laneId && economy.energy >= UNIT_DEFINITIONS.fighter.cost) queue(push.laneId, "fighter");
-    if (economy.energy >= UNIT_DEFINITIONS.scout.cost + 70) queue(defense.laneId, "scout");
+    if (economy.energy >= UNIT_DEFINITIONS.scout.cost + 70) queue(this.profile === AI_PROFILES.ADMIRAL ? push.laneId : defense.laneId, this.profile === AI_PROFILES.ADMIRAL ? "bomber" : "scout");
 
     const spent = purchases.reduce((total, purchase) => total + purchase.cost, 0) + upgrades.reduce((total, upgrade) => total + upgrade.cost, 0);
     this.lastDecision = {
       cycle: director.cycle + 1,
       team: this.team,
+      profile: this.profile,
       defenseLane: defense.laneId,
       pushLane: push.laneId,
       assessments,
