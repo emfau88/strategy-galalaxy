@@ -426,6 +426,12 @@ Der Kern ist erst bestanden, wenn:
 - Shield-Gameplay nur weil Shield-Assets vorhanden sind,
 - neue Fraktionsmechaniken nur weil Nautolan-Assets importiert wurden.
 
+## Umsetzungsstand 7. September 2026
+
+Die technische Grundlage der Pakete 0 bis 9 ist umgesetzt: kontinuierlicher `LIVE_MATCH`, automatische 22-Sekunden-Deployments, Lock-in, persistente Queues und Upgrades, regelgleiche KI, permanentes Mobile-Planungs-UI, vollständige lizenzierte Assetbibliothek, Nairan/Kla'ed-Layeranimationen, Originalprojektilprofile, begrenzte FX sowie Headless-, Stress-, Asset- und echte emulierte Browserprüfungen.
+
+Für Paket 10 steht nun eine reproduzierbare AI-vs-AI-Auswertung zur Verfügung. Ihre erste Stichprobe hat eine unsymmetrische Kartenachse aufgedeckt; HQ, Turrets, Spawns und Nodes sind inzwischen exakt gespiegelt. Das eigentliche Spielspaß-Gate bleibt bewusst offen, bis reale Smartphone-Sessions Lesbarkeit, Touchkomfort, Kompositionsvielfalt und den 22-Sekunden-Rhythmus bestätigen. Capital Ships bleiben bis dahin deaktiviert.
+
 ## Nächster ausführbarer Schritt
 
-Als nächstes wird Paket 0 abgeschlossen und unmittelbar danach Paket 1 implementiert. Die Assetbibliothek kann währenddessen importiert und verifiziert werden; ihre Runtime-Integration beginnt erst, wenn der kontinuierliche Live-Loop stabil ist.
+Als nächstes folgen echte Smartphone-Playtests und datengetriebene Balanceiterationen. Neue Einheiten oder Modi werden erst begonnen, wenn der kontinuierliche Kern auf Hardware lesbar und taktisch interessant ist.

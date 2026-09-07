@@ -22,9 +22,16 @@ const turretStrength = (state, team, laneId) => {
  * identical budget, costs, capacity, and phase restrictions as player commands.
  */
 export class OpponentAi {
-  constructor({ team = TEAM.ENEMY } = {}) {
+  constructor({ team = TEAM.ENEMY, preferredLane = LANE.LEFT } = {}) {
     this.team = team;
+    this.preferredLane = preferredLane;
     this.lastDecision = null;
+  }
+
+  laneTieBreak(left, right) {
+    if (left.laneId === this.preferredLane && right.laneId !== this.preferredLane) return -1;
+    if (right.laneId === this.preferredLane && left.laneId !== this.preferredLane) return 1;
+    return left.laneId.localeCompare(right.laneId);
   }
 
   laneAssessment(director, laneId) {
@@ -50,10 +57,10 @@ export class OpponentAi {
   }
 
   plan(director) {
-    if (director.state !== MATCH_STATE.COMMAND || !director.simulation) return { ok: false, reason: "WRONG_PHASE" };
+    if (director.state !== MATCH_STATE.LIVE_MATCH || director.queueLocked || !director.simulation) return { ok: false, reason: "WRONG_PHASE" };
     const assessments = lanes.map((laneId) => this.laneAssessment(director, laneId));
-    const defense = [...assessments].sort((left, right) => right.threat - left.threat || left.laneId.localeCompare(right.laneId))[0];
-    const push = [...assessments].sort((left, right) => right.opportunity - left.opportunity || left.laneId.localeCompare(right.laneId))[0];
+    const defense = [...assessments].sort((left, right) => right.threat - left.threat || this.laneTieBreak(left, right))[0];
+    const push = [...assessments].sort((left, right) => right.opportunity - left.opportunity || this.laneTieBreak(left, right))[0];
     const purchases = [];
     const upgrades = [];
     const economy = director.economy.get(this.team);

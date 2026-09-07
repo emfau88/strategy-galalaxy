@@ -3,8 +3,8 @@ import { LANE } from "../core/constants.js";
 export const COMMAND_UI = Object.freeze({
   fullscreen: Object.freeze({ x: 378, y: 12, width: 34, height: 34 }),
   lanes: Object.freeze([
-    Object.freeze({ laneId: LANE.LEFT, x: 8, y: 64, width: 196, height: 82 }),
-    Object.freeze({ laneId: LANE.RIGHT, x: 216, y: 64, width: 196, height: 82 }),
+    Object.freeze({ laneId: LANE.LEFT, x: 16, y: 612, width: 70, height: 34 }),
+    Object.freeze({ laneId: LANE.RIGHT, x: 92, y: 612, width: 70, height: 34 }),
   ]),
   undo: Object.freeze({ x: 172, y: 612, width: 112, height: 34 }),
   menu: Object.freeze({ x: 292, y: 612, width: 112, height: 34 }),
@@ -27,7 +27,7 @@ export const commandUiLayout = (height = 760) => {
   const lowerOffset = Math.max(0, height - 760);
   return Object.freeze({
     fullscreen: COMMAND_UI.fullscreen,
-    lanes: COMMAND_UI.lanes,
+    lanes: Object.freeze(COMMAND_UI.lanes.map((rect) => shiftVertically(rect, lowerOffset))),
     panel: Object.freeze({ x: 8, y: 602 + lowerOffset, width: 404, height: 150 }),
     feedbackY: 588 + lowerOffset,
     pressure: Object.freeze({ x: 52, y: 562 + lowerOffset, width: 316, height: 32 }),
@@ -55,7 +55,6 @@ export const commandActionAt = (point, menu = "units", height = 760) => {
   }
   if (containsPoint(layout.undo, point)) return { type: "REMOVE_LAST_UNIT" };
   if (containsPoint(layout.menu, point)) return { type: "TOGGLE_MENU" };
-  if (containsPoint(layout.deploy, point)) return { type: "DEPLOY" };
   return null;
 };
 

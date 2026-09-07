@@ -1,4 +1,4 @@
-import { ACTIVE_PHASES, MATCH_STATE } from "./constants.js";
+import { ACTIVE_PHASES } from "./constants.js";
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -16,7 +16,7 @@ export class GameClock {
     this.frameTime = 0;
     this.phaseElapsed = 0;
     this.simulationTime = 0;
-    this.battleElapsed = 0;
+    this.liveElapsed = 0;
     this.accumulator = 0;
   }
 
@@ -36,16 +36,12 @@ export class GameClock {
     this.phaseElapsed += delta;
     onPhaseTick?.(delta, this.phaseElapsed);
 
-    if (matchState !== MATCH_STATE.BATTLE) {
-      return { delta, simulationSteps: 0 };
-    }
-
     this.accumulator += delta;
     let simulationSteps = 0;
     while (this.accumulator >= this.timing.fixedStepSeconds && simulationSteps < this.timing.maxCatchUpSteps) {
       this.accumulator -= this.timing.fixedStepSeconds;
       this.simulationTime += this.timing.fixedStepSeconds;
-      this.battleElapsed += this.timing.fixedStepSeconds;
+      this.liveElapsed += this.timing.fixedStepSeconds;
       simulationSteps += 1;
       onSimulationStep?.(this.timing.fixedStepSeconds, this.simulationTime);
     }

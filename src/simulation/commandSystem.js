@@ -13,7 +13,8 @@ export class CommandSystem {
   }
 
   queueUnit(director, { team, laneId, unitType }) {
-    if (director.state !== MATCH_STATE.COMMAND) return { ok: false, reason: "WRONG_PHASE" };
+    if (director.state !== MATCH_STATE.LIVE_MATCH) return { ok: false, reason: "WRONG_PHASE" };
+    if (director.queueLocked) return { ok: false, reason: "QUEUE_LOCKED" };
     if (!validTeams.has(team) || !validLanes.has(laneId)) return { ok: false, reason: "INVALID_TEAM_OR_LANE" };
     const definition = UNIT_DEFINITIONS[unitType];
     if (!definition || definition.enabled === false) return { ok: false, reason: "UNAVAILABLE_UNIT" };
@@ -33,7 +34,8 @@ export class CommandSystem {
   }
 
   removeQueuedUnit(director, { team, laneId, queueEntryId }) {
-    if (director.state !== MATCH_STATE.COMMAND) return { ok: false, reason: "WRONG_PHASE" };
+    if (director.state !== MATCH_STATE.LIVE_MATCH) return { ok: false, reason: "WRONG_PHASE" };
+    if (director.queueLocked) return { ok: false, reason: "QUEUE_LOCKED" };
     if (!validTeams.has(team) || !validLanes.has(laneId)) return { ok: false, reason: "INVALID_TEAM_OR_LANE" };
     const queue = director.queuedWaves.get(team).get(laneId);
     const index = queue.findIndex((entry) => entry.id === queueEntryId);
@@ -44,7 +46,8 @@ export class CommandSystem {
   }
 
   buyUpgrade(director, { team, upgradeId }) {
-    if (director.state !== MATCH_STATE.COMMAND) return { ok: false, reason: "WRONG_PHASE" };
+    if (director.state !== MATCH_STATE.LIVE_MATCH) return { ok: false, reason: "WRONG_PHASE" };
+    if (director.queueLocked) return { ok: false, reason: "QUEUE_LOCKED" };
     if (!validTeams.has(team)) return { ok: false, reason: "INVALID_TEAM_OR_LANE" };
     return director.economy.buyUpgrade(team, upgradeId);
   }

@@ -3,6 +3,8 @@ import { LANE, TEAM } from "../core/constants.js";
 import { createIdFactory } from "../core/ids.js";
 import { createStructure } from "./entities.js";
 
+const MAX_SIMULATION_EVENTS = 1024;
+
 export const createBattleState = ({ map = CLASSIC_LANES } = {}) => {
   const state = {
     map,
@@ -13,6 +15,7 @@ export const createBattleState = ({ map = CLASSIC_LANES } = {}) => {
     nodes: new Map(),
     lanes: new Map(),
     events: [],
+    nextEventSequence: 1,
     terminalTeam: null,
     ids: createIdFactory("entity"),
   };
@@ -29,6 +32,12 @@ export const createBattleState = ({ map = CLASSIC_LANES } = {}) => {
   }
   for (const structure of map.structures) state.structures.set(structure.id, createStructure(structure));
   return state;
+};
+
+export const emitSimulationEvent = (state, event) => {
+  state.events.push({ ...event, sequence: state.nextEventSequence });
+  state.nextEventSequence += 1;
+  if (state.events.length > MAX_SIMULATION_EVENTS) state.events.splice(0, state.events.length - MAX_SIMULATION_EVENTS);
 };
 
 export const laneFor = (state, laneId) => {

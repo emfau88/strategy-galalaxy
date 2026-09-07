@@ -1,8 +1,7 @@
 export const MATCH_STATE = Object.freeze({
   LOADING: "LOADING",
   TITLE: "TITLE",
-  COMMAND: "COMMAND",
-  BATTLE: "BATTLE",
+  LIVE_MATCH: "LIVE_MATCH",
   VICTORY: "VICTORY",
   DEFEAT: "DEFEAT",
   PAUSED: "PAUSED",
@@ -18,4 +17,4 @@ export const LANE = Object.freeze({
   RIGHT: "LANE_RIGHT",
 });
 
-export const ACTIVE_PHASES = new Set([MATCH_STATE.COMMAND, MATCH_STATE.BATTLE]);
+export const ACTIVE_PHASES = new Set([MATCH_STATE.LIVE_MATCH]);

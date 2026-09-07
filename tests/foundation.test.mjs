@@ -7,10 +7,10 @@ import { computeViewportTransform, responsivePortraitDesignHeight, toDesignPoint
 import { AssetLoader } from "../src/rendering/assetLoader.js";
 import { BattleSimulation, createDemoBattle } from "../src/simulation/battleSimulation.js";
 import { LANE, TEAM } from "../src/core/constants.js";
-import { UNIT_DEFINITIONS } from "../src/data/definitions.js";
-import { STRUCTURE_DEFINITIONS } from "../src/data/definitions.js";
+import { CLASSIC_LANES, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../src/data/definitions.js";
 import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
+import { emitSimulationEvent } from "../src/simulation/battleState.js";
 import { ASSET_GROUPS } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { commandActionAt, commandUiLayout, fullscreenActionAt } from "../src/ui/commandUi.js";
@@ -33,17 +33,15 @@ for (const [viewportWidth, viewportHeight] of targetViewports) {
 }
 
 const clock = new GameClock(timing);
-clock.advance(1, MATCH_STATE.COMMAND);
+clock.advance(0.1, MATCH_STATE.LIVE_MATCH);
 assert.equal(clock.phaseElapsed, 0.1);
-assert.equal(clock.simulationTime, 0);
-clock.advance(0.05, MATCH_STATE.BATTLE);
-assert.equal(clock.simulationTime, 0.05);
+assert.ok(Math.abs(clock.simulationTime - 0.1) < 0.000001);
 const frozenSimulation = clock.simulationTime;
 const frozenPhase = clock.phaseElapsed;
 clock.advance(0.05, MATCH_STATE.PAUSED);
 assert.equal(clock.simulationTime, frozenSimulation);
 assert.equal(clock.phaseElapsed, frozenPhase);
-assert.equal(clock.frameTime, 0.2);
+assert.ok(Math.abs(clock.frameTime - 0.15) < 0.000001);
 
 const first = new SeededRng(77);
 const second = new SeededRng(77);
@@ -74,7 +72,10 @@ assert.notEqual(UNIT_DEFINITIONS.scout.speed, UNIT_DEFINITIONS.frigate.speed);
 assert.ok(UNIT_DEFINITIONS.frigate.maxHp > UNIT_DEFINITIONS.fighter.maxHp);
 assert.ok(UNIT_DEFINITIONS.bomber.damage > UNIT_DEFINITIONS.fighter.damage);
 assert.ok(UNIT_DEFINITIONS.fighter.fireInterval < UNIT_DEFINITIONS.frigate.fireInterval);
-assert.equal(CONFIG.timing.battlePhaseSeconds, 22);
+assert.equal(CONFIG.timing.deploymentIntervalSeconds, 22);
+assert.equal(CONFIG.timing.deploymentLockSeconds, 2);
+assert.equal(CONFIG.caps.projectilesPerLaneTeam, 48);
+assert.equal((CLASSIC_LANES.structures.find((structure) => structure.id === "player-hq").y + CLASSIC_LANES.structures.find((structure) => structure.id === "enemy-hq").y) / 2, CLASSIC_LANES.lanes[0].node.y);
 assert.equal(UNIT_DEFINITIONS.battlecruiser.enabled, false);
 assert.equal(UNIT_DEFINITIONS.dreadnought.enabled, false);
 
@@ -102,47 +103,53 @@ for (let index = 0; index < 480; index += 1) {
 }
 assert.deepEqual(firstBattle.snapshot(), secondBattle.snapshot());
 
-const match = new MatchDirector({ config: { ...CONFIG, timing: { ...CONFIG.timing, commandPhaseSeconds: 0.1, battlePhaseSeconds: 0.2 } } });
+const projectileBudget = new BattleSimulation();
+const budgetOwner = projectileBudget.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 112, y: 330 });
+const budgetTarget = projectileBudget.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 112, y: 280 });
+for (let index = 0; index < CONFIG.caps.projectilesPerLaneTeam + 5; index += 1) {
+  projectileBudget.fire(budgetOwner, budgetTarget, UNIT_DEFINITIONS.fighter);
+}
+assert.equal(projectileBudget.state.projectiles.size, CONFIG.caps.projectilesPerLaneTeam);
+assert.ok(projectileBudget.state.events.some((event) => event.type === "projectile_rejected" && event.reason === "lane_team_budget"));
+
+const boundedEvents = new BattleSimulation();
+for (let index = 0; index < 1100; index += 1) emitSimulationEvent(boundedEvents.state, { type: "stress_event" });
+assert.equal(boundedEvents.state.events.length, 1024);
+assert.equal(boundedEvents.state.events[0].sequence, 77);
+assert.equal(boundedEvents.state.events.at(-1).sequence, 1100);
+
+const match = new MatchDirector({ config: { ...CONFIG, timing: { ...CONFIG.timing, deploymentIntervalSeconds: 0.2, deploymentLockSeconds: 0.05 } } });
 match.start();
-assert.equal(match.state, MATCH_STATE.COMMAND);
-assert.equal(match.simulation.state.units.size, 0);
-match.advanceCommand(0.1);
-assert.equal(match.state, MATCH_STATE.BATTLE);
+assert.equal(match.state, MATCH_STATE.LIVE_MATCH);
 assert.equal(match.cycle, 1);
 assert.ok(match.simulation.state.units.size >= 8);
 assert.equal(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.PLAYER).length, 2);
 assert.ok(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.ENEMY).length >= 2);
 const positionsBeforePause = match.simulation.snapshot();
 match.pause();
-assert.equal(match.advanceBattle(1 / 60), false);
+assert.equal(match.advanceLive(1 / 60), false);
 assert.deepEqual(match.simulation.snapshot(), positionsBeforePause);
 match.resume();
-for (let index = 0; index < 12; index += 1) match.advanceBattle(1 / 60);
-assert.equal(match.state, MATCH_STATE.COMMAND);
-assert.equal(match.cycle, 1);
 const survivorIds = new Set(match.simulation.snapshot().units.map((unit) => unit.id));
-match.deployNow();
-assert.equal(match.state, MATCH_STATE.BATTLE);
+for (let index = 0; index < 12; index += 1) match.advanceLive(1 / 60);
+assert.equal(match.state, MATCH_STATE.LIVE_MATCH);
 assert.equal(match.cycle, 2);
 assert.ok([...survivorIds].every((id) => match.simulation.state.units.has(id)));
 
 const terminalMatch = new MatchDirector();
 terminalMatch.start();
-terminalMatch.deployNow();
 terminalMatch.simulation.state.terminalTeam = TEAM.PLAYER;
-terminalMatch.advanceBattle(1 / 60);
+terminalMatch.advanceLive(1 / 60);
 assert.equal(terminalMatch.state, MATCH_STATE.VICTORY);
 terminalMatch.restart();
-assert.equal(terminalMatch.state, MATCH_STATE.COMMAND);
-assert.equal(terminalMatch.simulation.state.units.size, 0);
+assert.equal(terminalMatch.state, MATCH_STATE.LIVE_MATCH);
+assert.equal(terminalMatch.simulation.state.units.size, 8);
 
-const manualCommandMatch = new MatchDirector();
-manualCommandMatch.start();
-assert.equal(manualCommandMatch.phaseRemaining, null);
-assert.equal(manualCommandMatch.advanceCommand(999), false);
-assert.equal(manualCommandMatch.state, MATCH_STATE.COMMAND);
-manualCommandMatch.deployNow();
-assert.equal(manualCommandMatch.state, MATCH_STATE.BATTLE);
+const lockMatch = new MatchDirector();
+lockMatch.start();
+lockMatch.deployment.timeUntilDeployment = CONFIG.timing.deploymentLockSeconds;
+assert.equal(lockMatch.queueLocked, true);
+assert.deepEqual(lockMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" }), { ok: false, reason: "QUEUE_LOCKED" });
 
 const formationSimulation = new BattleSimulation();
 const formation = formationSimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["scout", "scout", "scout", "scout", "scout", "scout"]);
@@ -174,8 +181,6 @@ assert.ok([...laneBounds.state.units.values()].every((unit) => unit.laneId === L
 const economyMatch = new MatchDirector();
 economyMatch.start();
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
-economyMatch.advanceCommand(1);
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
 const queued = economyMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "fighter" });
 assert.equal(queued.ok, true);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 210);
@@ -197,9 +202,12 @@ assert.equal(slotMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, l
 const economyUpgrade = economyMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" });
 assert.deepEqual({ ok: economyUpgrade.ok, cost: economyUpgrade.cost, level: economyUpgrade.level }, { ok: true, cost: 240, level: 1 });
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 60);
-assert.equal(economyMatch.economy.incomePerSecond(economyMatch.simulation.state, TEAM.PLAYER, 0), 24);
-economyMatch.deployNow();
-economyMatch.advanceBattle(1);
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).economyLevel, 0);
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).pendingEconomyLevels, 1);
+assert.equal(economyMatch.economy.incomePerSecond(economyMatch.simulation.state, TEAM.PLAYER, 0), 20);
+economyMatch.forceDeployment();
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).economyLevel, 1);
+economyMatch.advanceLive(1);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 84);
 
 const captureMatch = new MatchDirector();
@@ -235,6 +243,8 @@ turretMatch.start();
 const turretUpgrade = turretMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "turret" });
 assert.equal(turretUpgrade.ok, true);
 const playerTurret = turretMatch.simulation.state.structures.get("player-left-turret");
+assert.equal(turretMatch.simulation.damageFor(playerTurret, STRUCTURE_DEFINITIONS.turret), STRUCTURE_DEFINITIONS.turret.damage);
+turretMatch.forceDeployment();
 assert.equal(turretMatch.simulation.damageFor(playerTurret, STRUCTURE_DEFINITIONS.turret), STRUCTURE_DEFINITIONS.turret.damage * 1.2);
 
 const capacityMatch = new MatchDirector({ config: { ...CONFIG, caps: { ...CONFIG.caps, unitsPerLaneTeam: 2 } } });
@@ -253,10 +263,10 @@ assert.ok(aiMatch.economy.get(TEAM.ENEMY).energy >= 0);
 const aiQueuedBeforeBattle = [LANE.LEFT, LANE.RIGHT].flatMap((laneId) => aiMatch.queuedWaves.get(TEAM.ENEMY).get(laneId));
 assert.equal(aiQueuedBeforeBattle.length, aiMatch.lastAiDecision.purchases.length);
 assert.ok(aiQueuedBeforeBattle.length <= CONFIG.balance.maxPurchasedReinforcementsPerDeployment);
-aiMatch.deployNow();
-for (let index = 0; index < CONFIG.timing.battlePhaseSeconds * 60; index += 1) aiMatch.advanceBattle(1 / 60);
-assert.equal(aiMatch.state, MATCH_STATE.COMMAND);
-assert.equal(aiMatch.lastAiDecision.cycle, 2);
+for (let index = 0; index < CONFIG.timing.deploymentIntervalSeconds * 60; index += 1) aiMatch.advanceLive(1 / 60);
+assert.equal(aiMatch.state, MATCH_STATE.LIVE_MATCH);
+assert.equal(aiMatch.cycle, 2);
+assert.equal(aiMatch.lastAiDecision.cycle, 3);
 assert.ok(aiMatch.economy.get(TEAM.ENEMY).energy >= 0);
 
 for (const path of Object.values(ASSET_GROUPS.boot)) await access(new URL(`../${path}`, import.meta.url));
@@ -266,18 +276,19 @@ assert.equal(effects.effects.length, 2);
 effects.update(1);
 assert.equal(effects.effects.length, 0);
 
-assert.deepEqual(commandActionAt({ x: 24, y: 80 }), { type: "SELECT_LANE", laneId: LANE.LEFT });
-assert.deepEqual(commandActionAt({ x: 344, y: 80 }), { type: "SELECT_LANE", laneId: LANE.RIGHT });
+assert.deepEqual(commandActionAt({ x: 50, y: 628 }), { type: "SELECT_LANE", laneId: LANE.LEFT });
+assert.deepEqual(commandActionAt({ x: 126, y: 628 }), { type: "SELECT_LANE", laneId: LANE.RIGHT });
 assert.deepEqual(commandActionAt({ x: 24, y: 662 }), { type: "QUEUE_UNIT", unitType: "scout" });
 assert.deepEqual(commandActionAt({ x: 160, y: 662 }), { type: "QUEUE_UNIT", unitType: "fighter" });
 assert.deepEqual(commandActionAt({ x: 300, y: 620 }), { type: "TOGGLE_MENU" });
 assert.deepEqual(commandActionAt({ x: 160, y: 662 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "turret" });
-assert.deepEqual(commandActionAt({ x: 300, y: 662 }), { type: "DEPLOY" });
+assert.equal(commandActionAt({ x: 300, y: 662 }), null);
 const tallCommandUi = commandUiLayout(909);
 assert.equal(tallCommandUi.panel.y, 751);
 assert.equal(tallCommandUi.deploy.y + tallCommandUi.deploy.height, 893);
+assert.equal(tallCommandUi.lanes[0].y, 761);
 assert.deepEqual(commandActionAt({ x: 24, y: 803 }, "units", 909), { type: "QUEUE_UNIT", unitType: "scout" });
-assert.deepEqual(commandActionAt({ x: 300, y: 811 }, "units", 909), { type: "DEPLOY" });
+assert.equal(commandActionAt({ x: 300, y: 811 }, "units", 909), null);
 assert.deepEqual(fullscreenActionAt({ x: 380, y: 26 }), { type: "TOGGLE_FULLSCREEN" });
 assert.equal(fullscreenActionAt({ x: 210, y: 26 }), null);
 

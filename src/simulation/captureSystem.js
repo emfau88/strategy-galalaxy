@@ -1,5 +1,6 @@
 import { TEAM } from "../core/constants.js";
 import { UNIT_DEFINITIONS } from "../data/definitions.js";
+import { emitSimulationEvent } from "./battleState.js";
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -27,17 +28,17 @@ export class CaptureSystem {
       node.progress = clamp(node.progress + netPower * this.captureRatePerSecond * delta, -100, 100);
       if ((previousOwner === TEAM.PLAYER && node.progress <= 0) || (previousOwner === TEAM.ENEMY && node.progress >= 0)) {
         node.ownerTeam = null;
-        state.events.push({ type: "NODE_NEUTRALIZED", nodeId: node.id });
+        emitSimulationEvent(state, { type: "NODE_NEUTRALIZED", nodeId: node.id });
       }
       if (node.progress === 100 && node.ownerTeam !== TEAM.PLAYER) {
         node.ownerTeam = TEAM.PLAYER;
-        state.events.push({ type: "NODE_CAPTURED", nodeId: node.id, team: TEAM.PLAYER });
+        emitSimulationEvent(state, { type: "NODE_CAPTURED", nodeId: node.id, team: TEAM.PLAYER });
       }
       if (node.progress === -100 && node.ownerTeam !== TEAM.ENEMY) {
         node.ownerTeam = TEAM.ENEMY;
-        state.events.push({ type: "NODE_CAPTURED", nodeId: node.id, team: TEAM.ENEMY });
+        emitSimulationEvent(state, { type: "NODE_CAPTURED", nodeId: node.id, team: TEAM.ENEMY });
       }
-      if (node.progress !== previousProgress && node.ownerTeam !== previousOwner) state.events.push({ type: "NODE_OWNER_CHANGED", nodeId: node.id, team: node.ownerTeam });
+      if (node.progress !== previousProgress && node.ownerTeam !== previousOwner) emitSimulationEvent(state, { type: "NODE_OWNER_CHANGED", nodeId: node.id, team: node.ownerTeam });
     }
   }
 }

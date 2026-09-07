@@ -17,7 +17,6 @@ const box = (ctx, rect, fill = C.panel, stroke = C.outline, radius = 8) => {
 };
 const laneName = (laneId) => (laneId === LANE.LEFT ? "LEFT" : "RIGHT");
 const queue = (model, laneId, team = TEAM.PLAYER) => model.director?.queuedWaves.get(team).get(laneId) ?? [];
-const plannedCost = (entries) => entries.reduce((total, entry) => total + entry.paidCost, 0);
 const purchasedCount = (model, team = TEAM.PLAYER) => [LANE.LEFT, LANE.RIGHT].reduce((sum, laneId) => sum + queue(model, laneId, team).length, 0);
 const structure = (simulation, id) => simulation?.state.structures.get(id);
 const ratio = (target) => target?.alive ? Math.max(0, target.hp / target.maxHp) : 0;
@@ -40,12 +39,11 @@ const header = (ctx, model, ui) => {
   text(ctx, `YOU  ${Math.round(ratio(playerHq) * 100)}%`, 18, 22, 11, C.player);
   miniBar(ctx, 18, 31, 102, ratio(playerHq), C.player);
   text(ctx, `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E  ·  +${income}/s`, 18, 44, 10, C.text);
-  const phase = model.state === MATCH_STATE.COMMAND ? "COMMAND" : model.state === MATCH_STATE.BATTLE ? "BATTLE" : model.state;
-  text(ctx, phase, model.width / 2, 22, 11, model.state === MATCH_STATE.COMMAND ? C.gold : C.text, "center");
-  text(ctx, model.manualCommand ? "READY" : `${Math.ceil(model.phaseRemaining ?? 0)}s`, model.width / 2, 42, 14, model.manualCommand ? C.gold : C.text, "center");
+  text(ctx, model.queueLocked ? "DEPLOYMENT LOCKED" : "NEXT DEPLOYMENT", model.width / 2, 22, model.queueLocked ? 9 : 10, model.queueLocked ? C.gold : C.text, "center");
+  text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, model.width / 2, 42, 14, model.queueLocked ? C.gold : C.text, "center");
   text(ctx, `${Math.round(ratio(enemyHq) * 100)}%  RIVAL`, 366, 22, 11, C.enemy, "right");
   miniBar(ctx, 366, 31, 102, ratio(enemyHq), C.enemy, "right");
-  text(ctx, "HEADQUARTERS", 366, 44, 9, C.muted, "right", 600);
+  text(ctx, `RIVAL +${purchasedCount(model, TEAM.ENEMY)}`, 366, 44, 9, C.muted, "right", 600);
   box(ctx, ui.fullscreen, "rgba(36, 68, 91, 0.82)", "rgba(190,229,239,0.4)", 7);
   text(ctx, model.fullscreenActive ? "×" : "□", 395, 29, 16, C.text, "center");
 };
@@ -57,29 +55,25 @@ const drawShipIcon = (ctx, model, unitType, x, y, size = 22) => {
   else { ctx.fillStyle = UNIT_DEFINITIONS[unitType]?.color ?? C.player; ctx.beginPath(); ctx.arc(x, y, size * 0.3, 0, Math.PI * 2); ctx.fill(); }
 };
 
-const iconRow = (ctx, model, entries, startX, y, maxWidth, fallbackTypes = []) => {
+const iconRow = (ctx, model, entries, startX, y, maxWidth, fallbackTypes = [], gap = 24, size = 21) => {
   const types = entries.length ? entries.map((entry) => entry.unitType ?? entry) : fallbackTypes;
-  const gap = 24;
   const visible = types.slice(0, Math.max(1, Math.floor(maxWidth / gap)));
-  visible.forEach((unitType, index) => drawShipIcon(ctx, model, unitType, startX + index * gap, y, 21));
+  visible.forEach((unitType, index) => drawShipIcon(ctx, model, unitType, startX + index * gap, y, size));
   if (!types.length) text(ctx, "—", startX, y, 11, C.muted);
 };
 
 const laneSelector = (ctx, model, rect) => {
   const selected = model.selectedLaneId === rect.laneId;
   const entries = queue(model, rect.laneId);
-  box(ctx, rect, selected ? C.select : "rgba(19, 39, 64, 0.7)", selected ? C.player : "rgba(171, 217, 231, 0.24)", 9);
-  text(ctx, laneName(rect.laneId), rect.x + 10, rect.y + 14, 11, selected ? C.text : C.muted);
-  text(ctx, "AUTO", rect.x + 10, rect.y + 37, 8, C.muted, "left", 600);
-  iconRow(ctx, model, [], rect.x + 53, rect.y + 37, 118, ["scout", "scout"]);
-  text(ctx, `+ WAVE  ${entries.length}`, rect.x + 10, rect.y + 64, 8, entries.length ? C.gold : C.muted, "left", 600);
-  iconRow(ctx, model, entries, rect.x + 70, rect.y + 64, 108);
+  box(ctx, rect, selected ? C.select : "rgba(19, 39, 64, 0.7)", selected ? C.player : "rgba(171, 217, 231, 0.24)", 8);
+  text(ctx, laneName(rect.laneId), rect.x + 7, rect.y + 9, 8, selected ? C.text : C.muted);
+  iconRow(ctx, model, entries, rect.x + 11, rect.y + 24, 52, [], 14, 12);
 };
 
 const unitCard = (ctx, model, rect) => {
   const def = UNIT_DEFINITIONS[rect.unitType];
   const slotsOpen = purchasedCount(model) < model.director.config.balance.maxPurchasedReinforcementsPerDeployment;
-  const affordable = model.economy.get(TEAM.PLAYER).energy >= def.cost && slotsOpen;
+  const affordable = model.economy.get(TEAM.PLAYER).energy >= def.cost && slotsOpen && !model.queueLocked;
   box(ctx, rect, affordable ? C.card : "rgba(35, 45, 58, 0.76)", affordable ? C.outline : null, 8);
   drawShipIcon(ctx, model, rect.unitType, rect.x + 22, rect.y + 21, 29);
   text(ctx, def.id.toUpperCase(), rect.x + 42, rect.y + 14, 11, affordable ? C.text : C.muted);
@@ -88,11 +82,14 @@ const unitCard = (ctx, model, rect) => {
 
 const upgradeCard = (ctx, model, rect) => {
   const cost = model.economy.upgradeCost(TEAM.PLAYER, rect.upgradeId);
-  const affordable = model.economy.get(TEAM.PLAYER).energy >= cost;
-  const level = model.economy.get(TEAM.PLAYER)[rect.upgradeId === "economy" ? "economyLevel" : "turretLevel"];
+  const affordable = model.economy.get(TEAM.PLAYER).energy >= cost && !model.queueLocked;
+  const economy = model.economy.get(TEAM.PLAYER);
+  const activeKey = rect.upgradeId === "economy" ? "economyLevel" : "turretLevel";
+  const pendingKey = rect.upgradeId === "economy" ? "pendingEconomyLevels" : "pendingTurretLevels";
+  const level = economy[activeKey] + economy[pendingKey];
   box(ctx, rect, affordable ? "rgba(44, 82, 84, 0.8)" : "rgba(35, 45, 58, 0.76)", affordable ? C.outline : null, 8);
   text(ctx, rect.upgradeId === "economy" ? "ECONOMY" : "TURRETS", rect.x + 11, rect.y + 14, 11, affordable ? C.text : C.muted);
-  text(ctx, `LV ${level} · ${cost} E`, rect.x + 11, rect.y + 30, 10, affordable ? C.gold : C.muted);
+  text(ctx, `${economy[pendingKey] ? "NEXT " : ""}LV ${level} · ${cost} E`, rect.x + 11, rect.y + 30, 10, affordable ? C.gold : C.muted);
 };
 
 const commandPanel = (ctx, model, ui) => {
@@ -100,18 +97,17 @@ const commandPanel = (ctx, model, ui) => {
   const total = purchasedCount(model);
   const limit = model.director.config.balance.maxPurchasedReinforcementsPerDeployment;
   box(ctx, ui.panel, "rgba(13, 27, 50, 0.82)", "rgba(180, 222, 235, 0.34)", 10);
-  text(ctx, `${laneName(model.selectedLaneId)} WAVE`, 18, ui.panel.y + 19, 12, C.text);
-  text(ctx, `REINFORCEMENTS  ${total} / ${limit}  ·  ${plannedCost(entries)} E HERE`, 18, ui.panel.y + 38, 10, total >= limit ? C.gold : C.muted);
+  for (const rect of ui.lanes) laneSelector(ctx, model, rect);
   box(ctx, ui.undo, entries.length ? "rgba(99, 67, 91, 0.82)" : "rgba(38, 47, 60, 0.68)", null);
   text(ctx, "UNDO", ui.undo.x + 56, ui.undo.y + 17, 11, entries.length ? "#f3d6df" : C.muted, "center");
   box(ctx, ui.menu, "rgba(37, 72, 93, 0.8)", null);
   text(ctx, model.commandMenu === "units" ? "UPGRADES" : "SHIPS", ui.menu.x + 56, ui.menu.y + 17, 10, C.text, "center");
   const cards = model.commandMenu === "units" ? ui.units : ui.upgrades;
   for (const rect of cards) model.commandMenu === "units" ? unitCard(ctx, model, rect) : upgradeCard(ctx, model, rect);
-  box(ctx, ui.deploy, "rgba(54, 139, 145, 0.88)", "#b8edf0", 9);
-  text(ctx, "DEPLOY", ui.deploy.x + 55, ui.deploy.y + 31, 15, C.text, "center");
-  text(ctx, "FLEETS", ui.deploy.x + 55, ui.deploy.y + 51, 14, C.text, "center");
-  text(ctx, "MANUAL", ui.deploy.x + 55, ui.deploy.y + 72, 8, "#d7f2f2", "center");
+  box(ctx, ui.deploy, model.queueLocked ? "rgba(113, 76, 82, 0.88)" : "rgba(54, 119, 139, 0.88)", model.queueLocked ? C.gold : "#b8edf0", 9);
+  text(ctx, "NEXT", ui.deploy.x + 55, ui.deploy.y + 21, 10, C.muted, "center");
+  text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, ui.deploy.x + 55, ui.deploy.y + 47, 22, model.queueLocked ? C.gold : C.text, "center");
+  text(ctx, model.queueLocked ? "LOCKED" : `SLOTS ${total}/${limit}`, ui.deploy.x + 55, ui.deploy.y + 72, 9, model.queueLocked || total >= limit ? C.gold : "#d7f2f2", "center");
   if (model.commandFeedback) text(ctx, model.commandFeedback, model.width / 2, ui.feedbackY, 10, C.gold, "center");
 };
 
@@ -159,14 +155,20 @@ const endState = (ctx, model) => {
   text(ctx, "TAP FOR A NEW MATCH", model.width / 2, 408 + offsetY, 11, C.text, "center");
 };
 
+const paused = (ctx, model) => {
+  const y = model.height / 2;
+  box(ctx, { x: 112, y: y - 42, width: 196, height: 84 }, "rgba(10,22,42,0.9)", C.gold, 12);
+  text(ctx, "PAUSED", model.width / 2, y - 10, 22, C.gold, "center");
+  text(ctx, "PRESS P TO RESUME", model.width / 2, y + 20, 10, C.text, "center");
+};
+
 export const renderUiLayer = (ctx, model) => {
   if (model.state === MATCH_STATE.TITLE) return title(ctx, model);
   const ui = commandUiLayout(model.height);
   header(ctx, model, ui);
-  if (model.state === MATCH_STATE.COMMAND && model.simulation) {
-    for (const rect of ui.lanes) laneSelector(ctx, model, rect);
+  if ((model.state === MATCH_STATE.LIVE_MATCH || model.state === MATCH_STATE.PAUSED) && model.simulation) {
     commandPanel(ctx, model, ui);
-  } else if (model.state === MATCH_STATE.BATTLE) lanePressure(ctx, model, ui);
-  else if (model.state === MATCH_STATE.VICTORY || model.state === MATCH_STATE.DEFEAT) endState(ctx, model);
+    if (model.state === MATCH_STATE.PAUSED) paused(ctx, model);
+  } else if (model.state === MATCH_STATE.VICTORY || model.state === MATCH_STATE.DEFEAT) endState(ctx, model);
   if (model.debugEnabled && model.lastAiDecision) text(ctx, `AI: ${laneName(model.lastAiDecision.defenseLane)} DEFEND · ${laneName(model.lastAiDecision.pushLane)} PUSH`, model.width / 2, ui.debugY, 9, "#d6c8ec", "center");
 };

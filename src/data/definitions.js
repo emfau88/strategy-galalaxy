@@ -29,8 +29,8 @@ export const CLASSIC_LANES = freeze({
   id: "classic_lanes",
   bounds: freeze({ width: 420, height: 760 }),
   lanes: freeze([
-    freeze({ id: LANE.LEFT, centerX: 112, width: 140, node: freeze({ id: "left-node", x: 112, y: 332, radius: 38 }), playerSpawn: freeze({ x: 112, y: 526 }), enemySpawn: freeze({ x: 112, y: 138 }) }),
-    freeze({ id: LANE.RIGHT, centerX: 308, width: 140, node: freeze({ id: "right-node", x: 308, y: 332, radius: 38 }), playerSpawn: freeze({ x: 308, y: 526 }), enemySpawn: freeze({ x: 308, y: 138 }) }),
+    freeze({ id: LANE.LEFT, centerX: 112, width: 140, node: freeze({ id: "left-node", x: 112, y: 323, radius: 38 }), playerSpawn: freeze({ x: 112, y: 508 }), enemySpawn: freeze({ x: 112, y: 138 }) }),
+    freeze({ id: LANE.RIGHT, centerX: 308, width: 140, node: freeze({ id: "right-node", x: 308, y: 323, radius: 38 }), playerSpawn: freeze({ x: 308, y: 508 }), enemySpawn: freeze({ x: 308, y: 138 }) }),
   ]),
   structures: freeze([
     freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 552 }),

@@ -21,10 +21,11 @@ export class Renderer {
     ctx.fillRect(0, 0, transform.viewportWidth, transform.viewportHeight);
     ctx.translate(transform.offsetX, transform.offsetY);
     ctx.scale(transform.scale, transform.scale);
+    const sceneModel = { ...model, width: transform.designWidth, height: transform.designHeight };
     renderBackground(ctx, transform.designWidth, transform.designHeight, model.frameTime, model.assets);
     renderBattlefieldLayer(ctx, transform.designWidth, transform.designHeight);
-    renderEntityLayer(ctx, model);
-    renderEffectsLayer(ctx, model);
-    renderUiLayer(ctx, { ...model, width: transform.designWidth, height: transform.designHeight });
+    renderEntityLayer(ctx, sceneModel);
+    renderEffectsLayer(ctx, sceneModel);
+    renderUiLayer(ctx, sceneModel);
   }
 }

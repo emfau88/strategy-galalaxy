@@ -5,6 +5,10 @@
   "type": "module",
   "scripts": {
     "test": "node tests/foundation.test.mjs",
-    "check": "node scripts/foundation-check.mjs"
+    "check": "node scripts/foundation-check.mjs && node scripts/verify-assets.mjs",
+    "verify:assets": "node scripts/verify-assets.mjs",
+    "balance:sim": "node scripts/balance-sim.mjs",
+    "test:browser": "node scripts/browser-check.mjs",
+    "test:stress": "node scripts/stress-check.mjs"
   }
 }

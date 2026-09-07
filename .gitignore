@@ -5,9 +5,9 @@
 node_modules/
 dist/
 coverage/
+tmp/
 
 # Local editor and operating-system files
 .DS_Store
 Thumbs.db
 *.log
-

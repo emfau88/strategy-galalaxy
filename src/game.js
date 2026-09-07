@@ -1,4 +1,4 @@
-import { ASSET_GROUPS } from "./assets.js";
+import { ASSET_GROUPS, mergeAssetGroups } from "./assets.js";
 import { CONFIG } from "./config.js";
 import { GameClock } from "./core/clock.js";
 import { LANE, MATCH_STATE, TEAM } from "./core/constants.js";
@@ -24,7 +24,7 @@ export class Game {
     this.clock = new GameClock(CONFIG.timing);
     this.simulationRng = new SeededRng(options.seed);
     this.visualRng = new SeededRng(options.seed ^ 0x9e3779b9);
-    this.loader = new AssetLoader(ASSET_GROUPS.boot);
+    this.loader = new AssetLoader(mergeAssetGroups(ASSET_GROUPS.boot, ASSET_GROUPS.ships, ASSET_GROUPS.effects));
     this.renderer = new Renderer(canvas, context);
     this.effects = new PresentationEffects();
     this.lastInput = null;
@@ -53,7 +53,6 @@ export class Game {
     await this.loader.load();
     if (this.options.testMode) {
       this.match.start();
-      this.match.deployNow();
       this.effects.reset();
     }
     this.syncMatchState();
@@ -117,7 +116,7 @@ export class Game {
       this.match.start();
       this.effects.reset();
     }
-    else if (this.match.state === MATCH_STATE.COMMAND) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight));
+    else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight));
     else if (this.match.state === MATCH_STATE.VICTORY || this.match.state === MATCH_STATE.DEFEAT) {
       this.match.restart();
       this.effects.reset();
@@ -150,11 +149,6 @@ export class Game {
       this.commandFeedback = this.commandMenu === "units" ? "SHIP REINFORCEMENTS" : "UPGRADES";
       return;
     }
-    if (action.type === "DEPLOY") {
-      this.match.deployNow();
-      this.commandFeedback = "WAVES DEPLOYED";
-      return;
-    }
     if (action.type === "REMOVE_LAST_UNIT") {
       const queue = this.match.queuedWaves.get(TEAM.PLAYER).get(this.selectedLaneId);
       const entry = queue.at(-1);
@@ -163,11 +157,11 @@ export class Game {
       return;
     }
     const result = this.match.executeCommand({ ...action, team: TEAM.PLAYER, laneId: this.selectedLaneId });
-    this.commandFeedback = result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE INSTALLED" : `${action.unitType.toUpperCase()} QUEUED`) : this.commandFailureLabel(result.reason);
+    this.commandFeedback = result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE READY NEXT DEPLOYMENT" : `${action.unitType.toUpperCase()} QUEUED`) : this.commandFailureLabel(result.reason);
   }
 
   commandFailureLabel(reason) {
-    return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", CAPACITY_RESERVED: "LANE CAPACITY RESERVED", REINFORCEMENT_LIMIT: "ALL 4 REINFORCEMENT SLOTS USED", WRONG_PHASE: "COMMAND PHASE ONLY" })[reason] ?? "COMMAND UNAVAILABLE";
+    return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", CAPACITY_RESERVED: "LANE CAPACITY RESERVED", REINFORCEMENT_LIMIT: "ALL 4 REINFORCEMENT SLOTS USED", QUEUE_LOCKED: "DEPLOYMENT LOCKED", WRONG_PHASE: "PLANNING UNAVAILABLE" })[reason] ?? "COMMAND UNAVAILABLE";
   }
 
   handleKeyDown(event) {
@@ -189,16 +183,12 @@ export class Game {
     this.lastFrameAt = now;
     const previousState = this.match.state;
     this.clock.advance(delta, previousState, {
-      onPhaseTick: (phaseDelta) => {
-        if (previousState === MATCH_STATE.COMMAND && this.match.advanceCommand(phaseDelta)) this.clock.beginPhase();
-      },
       onSimulationStep: (step) => {
-        if (this.match.advanceBattle(step)) this.clock.beginPhase();
+        this.match.advanceLive(step);
         this.effects.observe(this.match.simulation?.state.events ?? []);
       },
     });
     this.effects.update(delta);
-    if (this.options.testMode && this.match.state === MATCH_STATE.COMMAND) this.match.deployNow();
     this.syncMatchState();
     this.renderer.render({
       state: this.state,
@@ -216,7 +206,7 @@ export class Game {
       selectedLaneId: this.selectedLaneId,
       commandMenu: this.commandMenu,
       fullscreenActive: this.fullscreenActive,
-      manualCommand: this.match.state === MATCH_STATE.COMMAND && this.match.phaseRemaining === null,
+      queueLocked: this.match.queueLocked,
       commandFeedback: this.commandFeedback,
       assets: this.loader,
       effects: this.effects.effects,

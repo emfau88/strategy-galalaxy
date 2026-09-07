@@ -1,28 +1,33 @@
+import { fleetVisualFor } from "../data/visuals.js";
+
 const MAX_EFFECTS = 80;
 
 export class PresentationEffects {
   constructor() {
     this.effects = [];
-    this.eventCount = 0;
+    this.lastEventSequence = 0;
   }
 
   reset() {
     this.effects = [];
-    this.eventCount = 0;
+    this.lastEventSequence = 0;
   }
 
   observe(events) {
-    if (events.length < this.eventCount) this.eventCount = 0;
-    for (const event of events.slice(this.eventCount)) {
-      const seed = this.eventCount + this.effects.length + 1;
+    const sequenced = events.some((event) => Number.isFinite(event.sequence));
+    const freshEvents = sequenced ? events.filter((event) => event.sequence > this.lastEventSequence) : events;
+    for (const event of freshEvents) {
+      const seed = (event.sequence ?? this.effects.length + 1) + this.effects.length;
       if (event.type === "shot") this.add({ type: "muzzle", x: event.x, y: event.y, team: event.team, projectileType: event.projectileType, seed, life: 0.12, maxLife: 0.12 });
       if (event.type === "hit") this.add({ type: "hit", x: event.x, y: event.y, team: event.team, projectileType: event.projectileType, seed, life: event.projectileType === "siege_missile" ? 0.38 : 0.2, maxLife: event.projectileType === "siege_missile" ? 0.38 : 0.2 });
       if (event.type === "destroyed") {
         const scale = event.entityType === "hq" ? 2.2 : event.entityType === "turret" ? 1.65 : event.entityType === "frigate" ? 1.35 : 0.85;
-        this.add({ type: "destroyed", x: event.x, y: event.y, team: event.team, entityType: event.entityType, seed, scale, life: 0.66 * scale, maxLife: 0.66 * scale });
+        const destruction = fleetVisualFor(event.team, event.entityType)?.destruction;
+        const duration = destruction ? destruction.frameCount / destruction.fps : 0.66 * scale;
+        this.add({ type: "destroyed", x: event.x, y: event.y, team: event.team, entityType: event.entityType, seed, scale, life: duration, maxLife: duration });
       }
     }
-    this.eventCount = events.length;
+    if (sequenced && events.length) this.lastEventSequence = Math.max(this.lastEventSequence, events.at(-1).sequence);
   }
 
   add(effect) {

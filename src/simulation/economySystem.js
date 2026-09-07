@@ -5,7 +5,13 @@ const teams = Object.freeze([TEAM.PLAYER, TEAM.ENEMY]);
 export class EconomySystem {
   constructor({ balance }) {
     this.balance = balance;
-    this.teams = new Map(teams.map((team) => [team, { energy: balance.startingEnergy, economyLevel: 0, turretLevel: 0 }]));
+    this.teams = new Map(teams.map((team) => [team, {
+      energy: balance.startingEnergy,
+      economyLevel: 0,
+      turretLevel: 0,
+      pendingEconomyLevels: 0,
+      pendingTurretLevels: 0,
+    }]));
   }
 
   get(team) {
@@ -35,8 +41,8 @@ export class EconomySystem {
 
   upgradeCost(team, upgradeId) {
     const economy = this.get(team);
-    if (upgradeId === "economy") return Math.ceil(this.balance.economyUpgradeBaseCost * this.balance.economyUpgradeCostGrowth ** economy.economyLevel);
-    if (upgradeId === "turret") return Math.ceil(this.balance.turretUpgradeBaseCost * this.balance.turretUpgradeCostGrowth ** economy.turretLevel);
+    if (upgradeId === "economy") return Math.ceil(this.balance.economyUpgradeBaseCost * this.balance.economyUpgradeCostGrowth ** (economy.economyLevel + economy.pendingEconomyLevels));
+    if (upgradeId === "turret") return Math.ceil(this.balance.turretUpgradeBaseCost * this.balance.turretUpgradeCostGrowth ** (economy.turretLevel + economy.pendingTurretLevels));
     return null;
   }
 
@@ -46,8 +52,26 @@ export class EconomySystem {
     const economy = this.get(team);
     if (economy.energy < cost) return { ok: false, reason: "INSUFFICIENT_ENERGY" };
     economy.energy -= cost;
-    if (upgradeId === "economy") economy.economyLevel += 1;
-    else economy.turretLevel += 1;
-    return { ok: true, cost, level: upgradeId === "economy" ? economy.economyLevel : economy.turretLevel };
+    if (upgradeId === "economy") economy.pendingEconomyLevels += 1;
+    else economy.pendingTurretLevels += 1;
+    const level = upgradeId === "economy"
+      ? economy.economyLevel + economy.pendingEconomyLevels
+      : economy.turretLevel + economy.pendingTurretLevels;
+    return { ok: true, cost, level, activatesNextDeployment: true };
+  }
+
+  activatePendingUpgrades() {
+    const activated = [];
+    for (const team of teams) {
+      const economy = this.get(team);
+      if (economy.pendingEconomyLevels || economy.pendingTurretLevels) {
+        activated.push({ team, economy: economy.pendingEconomyLevels, turret: economy.pendingTurretLevels });
+      }
+      economy.economyLevel += economy.pendingEconomyLevels;
+      economy.turretLevel += economy.pendingTurretLevels;
+      economy.pendingEconomyLevels = 0;
+      economy.pendingTurretLevels = 0;
+    }
+    return activated;
   }
 }

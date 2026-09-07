@@ -1,40 +1,41 @@
 # Source Provenance
 
-This log records every source file or asset later reused from the read-only Galalaxy reference repository.
+This log records concrete reuse from the read-only Galalaxy reference.
 
-## Reference baseline
+## Reference
 
 | Field | Value |
 | --- | --- |
 | Repository | `https://github.com/emfau88/galalaxy.git` |
-| Branch at initial clone | `main` |
-| Initial audited commit | `d2c3a7bd1d8b5657b27b39bd7ce9a6414c770739` |
-| Commit date | `2026-09-06T10:52:24+02:00` |
-| Local location | `.reference/galalaxy/` (Git-ignored) |
-| Policy | Read-only; fetch permitted, commits and pushes forbidden |
+| Initial audit | `d2c3a7bd1d8b5657b27b39bd7ce9a6414c770739` |
+| Asset import and animation audit | `7f90d17a063967f9978e74f6519c450a2b0e4f85` |
+| Policy | Read-only; no edits, commits or pushes |
 
-If the reference is updated before or during an audit, record the exact newer commit in the relevant entry rather than silently replacing this baseline.
+The imported Foozle pack readmes identify the artwork as CC0. They remain next to the source material inside the library. Galalaxy's `assets/music/track1.ogg` is not included because its distribution license is not documented.
 
 ## Reuse log
 
-The following concrete technical adaptation has been copied from the reference:
+| Reference path | Commit | Destination | Type and adaptation |
+| --- | --- | --- | --- |
+| `src/assetLoader.js` | `d2c3a7b…` | `src/rendering/assetLoader.js` | Adapted into semantic manifests with maps, timeout handling and visible failures. |
+| `assets/Foozle_2DS0011_Void_MainShip/` | `7f90d17…` | `assets/library/galalaxy/Foozle_2DS0011_Void_MainShip/` | Complete direct copy including PNG, Aseprite, GIF and readme sources. |
+| `assets/Foozle_2DS0012_Void_EnemyFleet_1/` | `7f90d17…` | `assets/library/galalaxy/Foozle_2DS0012_Void_EnemyFleet_1/` | Complete direct Kla'ed fleet copy. |
+| `assets/Foozle_2DS0013_Void_EnemyFleet_2/` | `7f90d17…` | `assets/library/galalaxy/Foozle_2DS0013_Void_EnemyFleet_2/` | Complete direct Nairan fleet copy. |
+| `assets/Foozle_2DS0014_Void_EnemyFleet_3/` | `7f90d17…` | `assets/library/galalaxy/Foozle_2DS0014_Void_EnemyFleet_3/` | Complete direct Nautolan fleet copy, reserved for later use. |
+| `assets/Foozle_2DS0015_Void_EnvironmentPack/` | `7f90d17…` | `assets/library/galalaxy/Foozle_2DS0015_Void_EnvironmentPack/` | Complete direct environment source copy. |
+| `assets/Foozle_2DS0016_Void_PickupsPack/` | `7f90d17…` | `assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/` | Complete direct pickup source copy. |
+| `assets/ui/` | `7f90d17…` | `assets/library/galalaxy/ui/` | Complete direct optional UI library copy; not loaded by the current match. |
+| Kla'ed and Nairan core-four base, engine, weapon, shield and destruction PNGs | `7f90d17…` | `assets/factions/klaed/`, `assets/factions/nairan/` | Direct files normalized to stable lowercase runtime aliases. Bomber has no weapon strip and falls back to projectile/muzzle presentation. |
+| Kla'ed `Bullet`, `Big Bullet`, `Ray`, `Torpedo`, `Wave`; Nairan `Bolt`, `Ray`, `Rocket`, `Torpedo` | `7f90d17…` | `assets/projectiles/` | Direct files normalized as runtime aliases and mapped through visual profiles. |
+| Fleet and projectile metadata in reference data modules | `7f90d17…` | `src/data/visuals.js` | Adapted frame size/count, FPS, release-frame and orientation metadata to renderer-only profiles. |
+| `src/entities/projectile.js`, projectile data and FX systems | `7f90d17…` | `src/simulation/battleSimulation.js`, `src/data/definitions.js`, `src/rendering/` | Adapted bounded homing, acceleration and presentation vocabulary to deterministic lane combat; damage remains simulation-owned. |
 
-Add one row per logical file or tightly related asset group:
+The portrait background and three structure images outside `assets/library/galalaxy/` were generated specifically for Strategy Galalaxy and are not Galalaxy reference assets.
 
-| Reference path | Reference commit | Destination path | Reuse type | Adaptation | Reason |
-| --- | --- | --- | --- | --- | --- |
-| `src/assetLoader.js` | `d2c3a7bd1d8b5657b27b39bd7ce9a6414c770739` | `src/rendering/assetLoader.js` | Adapted | Replaced mutable object registries with maps, added semantic manifests and retained timeout/error visibility; no reference assets are loaded yet. | It is a small, isolated browser image-loading primitive compatible with the new asset boundary. |
-| `assets/Foozle_2DS0013_Void_EnemyFleet_2/Nairan/Designs - Base/PNGs/{Scout,Fighter,Bomber,Frigate}` | `d2c3a7bd1d8b5657b27b39bd7ce9a6414c770739` | `assets/factions/nairan/` | Direct | Renamed to role-based lowercase filenames; selected runtime base PNGs only. CC0 notice copied to `assets/licenses/FOOZLE_NAIRAN_CC0.txt`. | Player fleet silhouettes for the four V1 unit roles. |
-| `assets/Foozle_2DS0012_Void_EnemyFleet_1/Kla'ed/{Base,Projectiles}/PNGs/{Scout,Fighter,Bomber,Frigate,Bullet}` | `d2c3a7bd1d8b5657b27b39bd7ce9a6414c770739` | `assets/factions/klaed/`, `assets/projectiles/klaed-bullet.png` | Direct | Renamed runtime PNGs only. CC0 notice copied to `assets/licenses/FOOZLE_KLAED_CC0.txt`. | Enemy fleet silhouettes and its projectile vocabulary. |
-| `assets/Foozle_2DS0013_Void_EnemyFleet_2/Nairan/Weapon Effects - Projectiles/PNGs/Nairan - Bolt.png`; `assets/Foozle_2DS0015_Void_EnvironmentPack/{Backgrounds,Planets,Asteroids}/PNGs` | `d2c3a7bd1d8b5657b27b39bd7ce9a6414c770739` | `assets/projectiles/nairan-bolt.png`, `assets/environment/` | Direct | Curated and renamed Nairan bolt plus void, stars, planet, and asteroid runtime PNGs. CC0 notice copied to `assets/licenses/FOOZLE_ENVIRONMENT_CC0.txt`. | Team-readable projectiles and a subdued space backdrop. |
-| `src/entities/projectile.js`; `src/data/projectiles.js`; `src/systems/fx.js` | `d2c3a7bd1d8b5657b27b39bd7ce9a6414c770739` | `src/simulation/battleSimulation.js`; `src/data/definitions.js`; `src/rendering/presentationEffects.js`; `src/rendering/battlefieldRenderer.js` | Adapted | Generalized bounded-angle homing and acceleration to lane-owned projectiles; rebuilt trails, muzzle flashes, hit sparks, and scaled death bursts as deterministic Canvas effects. | Distinct weapon behavior makes Scout, Fighter, Bomber, and Frigate combat roles readable without importing the reference game's player-centric combat loop. |
-| _Example: `src/example.js`_ | _full commit SHA_ | _`src/example.js`_ | _Direct / Adapted / Concept only_ | _Summary of changes_ | _Why reuse is appropriate_ |
+## Rules for future reuse
 
-## Reuse rules
-
-- Record the source commit that was actually inspected or copied.
-- Prefer explicit file paths over broad directory claims.
-- Describe meaningful modifications rather than using a generic “adapted” label alone.
-- Record derived assets as well as byte-for-byte copies.
-- Keep conceptual inspiration in the audit document; use this file for concrete code and asset lineage.
-- Verify licensing and attribution requirements during the reference audit before distributing reused material.
+- Record the exact inspected commit and explicit source/destination paths.
+- Keep copied licenses/readmes with their source groups.
+- Separate byte-for-byte copies, normalized aliases, adapted code and conceptual inspiration.
+- Register only assets used by the current runtime; library presence never implies automatic loading.
+- Verify licensing before distribution and continue excluding material with unclear rights.

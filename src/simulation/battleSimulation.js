@@ -1,7 +1,7 @@
 import { CONFIG } from "../config.js";
 import { PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
 import { LANE, TEAM } from "../core/constants.js";
-import { addProjectileToState, addUnitToState, createBattleState, enemyOf, laneFor, removeDeadEntities } from "./battleState.js";
+import { addProjectileToState, addUnitToState, createBattleState, emitSimulationEvent, enemyOf, laneFor, removeDeadEntities } from "./battleState.js";
 import { createProjectile, createUnit, UNIT_STATE } from "./entities.js";
 import { acquireStructureTarget, acquireUnitTarget, getEntity, inRange } from "./targeting.js";
 
@@ -144,8 +144,18 @@ export class BattleSimulation {
   }
 
   fire(owner, target, definition) {
-    if (this.state.projectiles.size >= CONFIG.caps.projectiles) {
-      this.state.events.push({ type: "projectile_rejected", ownerId: owner.id });
+    const laneId = owner.laneId ?? target.laneId;
+    const laneTeamProjectiles = [...this.state.projectiles.values()].reduce((count, projectile) => (
+      projectile.alive && projectile.ownerTeam === owner.team && projectile.laneId === laneId ? count + 1 : count
+    ), 0);
+    if (laneTeamProjectiles >= CONFIG.caps.projectilesPerLaneTeam || this.state.projectiles.size >= CONFIG.caps.projectiles) {
+      emitSimulationEvent(this.state, {
+        type: "projectile_rejected",
+        ownerId: owner.id,
+        team: owner.team,
+        laneId,
+        reason: laneTeamProjectiles >= CONFIG.caps.projectilesPerLaneTeam ? "lane_team_budget" : "global_safety_budget",
+      });
       return;
     }
     const projectileDefinition = PROJECTILE_DEFINITIONS[definition.projectileId];
@@ -153,7 +163,7 @@ export class BattleSimulation {
     const dy = target.y - owner.y;
     const magnitude = Math.hypot(dx, dy) || 1;
     const projectile = createProjectile({
-      id: this.state.ids.next(), ownerId: owner.id, ownerTeam: owner.team, laneId: owner.laneId ?? target.laneId,
+      id: this.state.ids.next(), ownerId: owner.id, ownerTeam: owner.team, laneId,
       projectileType: projectileDefinition.id, x: owner.x, y: owner.y,
       vx: (dx / magnitude) * projectileDefinition.speed, vy: (dy / magnitude) * projectileDefinition.speed,
       damage: this.damageFor(owner, definition) * this.damageMultiplier(owner, target), targetId: target.id,
@@ -161,7 +171,8 @@ export class BattleSimulation {
     projectile.remainingLife = projectileDefinition.lifetime;
     addProjectileToState(this.state, projectile);
     owner.fireCooldown = definition.fireInterval;
-    this.state.events.push({ type: "shot", ownerId: owner.id, targetId: target.id, projectileType: projectile.projectileType, x: owner.x, y: owner.y, team: owner.team });
+    owner.lastShotAt = this.state.time;
+    emitSimulationEvent(this.state, { type: "shot", ownerId: owner.id, targetId: target.id, projectileType: projectile.projectileType, x: owner.x, y: owner.y, team: owner.team });
   }
 
   damageFor(owner, definition) {
@@ -183,6 +194,8 @@ export class BattleSimulation {
       if (!projectile.alive) continue;
       projectile.previousX = projectile.x;
       projectile.previousY = projectile.y;
+      projectile.trail.push({ x: projectile.x, y: projectile.y });
+      if (projectile.trail.length > 10) projectile.trail.shift();
       projectile.age += dt;
       const definition = PROJECTILE_DEFINITIONS[projectile.projectileType];
       const target = getEntity(this.state, projectile.targetId);
@@ -213,11 +226,11 @@ export class BattleSimulation {
       if (!target?.alive || target.team === event.ownerTeam) continue;
       target.hp = Math.max(0, target.hp - event.damage);
       target.lastDamagedAt = this.state.time;
-      this.state.events.push({ type: "hit", ...event, x: target.x, y: target.y, team: target.team, entityType: target.structureType ?? target.unitType });
+      emitSimulationEvent(this.state, { type: "hit", ...event, x: target.x, y: target.y, team: target.team, entityType: target.structureType ?? target.unitType });
       if (target.hp !== 0) continue;
       target.alive = false;
       if (!target.structureType) target.state = UNIT_STATE.DEAD;
-      this.state.events.push({ type: "destroyed", entityId: target.id, x: target.x, y: target.y, team: target.team, entityType: target.structureType ?? target.unitType });
+      emitSimulationEvent(this.state, { type: "destroyed", entityId: target.id, x: target.x, y: target.y, team: target.team, entityType: target.structureType ?? target.unitType });
       if (target.structureType === "hq") this.state.terminalTeam = enemyOf(target.team);
     }
   }

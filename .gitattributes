@@ -1,0 +1,2 @@
+# Preserve third-party source packs byte-for-byte, including their original readme formatting.
+assets/library/galalaxy/** -whitespace

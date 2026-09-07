@@ -1,4 +1,5 @@
 import { PROJECTILE_DEFINITIONS } from "../data/definitions.js";
+import { fleetVisualFor, projectileVisualFor } from "../data/visuals.js";
 
 const stars = Object.freeze([
   [28, 74, 1.2], [96, 122, 0.7], [178, 56, 1], [238, 176, 0.8], [362, 98, 1.3],
@@ -14,6 +15,26 @@ const shipCrop = (unitType) => ({
   scout: { x: 20, y: 23, width: 24, height: 22 }, fighter: { x: 17, y: 20, width: 30, height: 27 },
   bomber: { x: 16, y: 18, width: 32, height: 30 }, frigate: { x: 11, y: 9, width: 42, height: 42 },
 }[unitType] ?? { x: 0, y: 0, width: 64, height: 64 });
+
+const shipCellSize = (unitType, frameSize = 64) => {
+  const crop = shipCrop(unitType);
+  return unitSize(unitType) * frameSize / Math.max(crop.width, crop.height);
+};
+
+const drawStripFrame = (ctx, image, layer, frameSize, elapsed, displaySize, loop = true) => {
+  if (!image || !layer) return false;
+  const rawFrame = Math.max(0, Math.floor(elapsed * layer.fps));
+  const frame = loop ? rawFrame % layer.frameCount : Math.min(layer.frameCount - 1, rawFrame);
+  ctx.drawImage(image, frame * frameSize, 0, frameSize, frameSize, -displaySize / 2, -displaySize / 2, displaySize, displaySize);
+  return true;
+};
+
+const drawTimedStrip = (ctx, image, layer, frameSize, elapsed, displaySize, duration) => {
+  if (!image || !layer || elapsed < 0 || elapsed >= duration) return false;
+  const frame = Math.min(layer.frameCount - 1, Math.floor(elapsed / duration * layer.frameCount));
+  ctx.drawImage(image, frame * frameSize, 0, frameSize, frameSize, -displaySize / 2, -displaySize / 2, displaySize, displaySize);
+  return true;
+};
 
 const battlefieldProjection = (height) => {
   const sourceTop = 102;
@@ -179,22 +200,36 @@ const drawNode = (ctx, node, frameTime, assets, projection) => {
   ctx.restore();
 };
 
-const drawProjectile = (ctx, projectile, projection) => {
+const drawProjectile = (ctx, projectile, projection, assets) => {
   const definition = PROJECTILE_DEFINITIONS[projectile.projectileType] ?? PROJECTILE_DEFINITIONS.light_bolt;
+  const visual = projectileVisualFor(projectile.ownerTeam, projectile.projectileType);
   const x = projectile.x;
   const y = projection.y(projectile.y);
   const angle = Math.atan2(projection.velocityY(projectile.vy), projectile.vx);
   const color = projectile.ownerTeam === "TEAM_PLAYER" ? definition.color : (definition.visual === "missile" ? "#f5a17e" : "#f3a28d");
   ctx.save();
   ctx.lineCap = "round";
-  if (definition.visual === "missile") {
-    ctx.globalAlpha = 0.38;
-    ctx.strokeStyle = projectile.ownerTeam === "TEAM_PLAYER" ? "#9edce8" : "#edb09e";
-    ctx.lineWidth = 3;
+  if (visual?.trail && projectile.trail?.length) {
+    ctx.strokeStyle = projectile.ownerTeam === "TEAM_PLAYER" ? "#a8eaf3" : "#f0ad95";
+    ctx.lineWidth = visual.trail === "heavy" ? 2.4 : 3;
+    ctx.globalAlpha = visual.trail === "heavy" ? 0.26 : 0.42;
     ctx.beginPath();
-    ctx.moveTo(x - Math.cos(angle) * 18, y - Math.sin(angle) * 18);
+    projectile.trail.forEach((point, index) => {
+      const pointY = projection.y(point.y);
+      if (index === 0) ctx.moveTo(point.x, pointY); else ctx.lineTo(point.x, pointY);
+    });
     ctx.lineTo(x, y);
     ctx.stroke();
+  }
+  const sprite = visual ? asset(assets, visual.assetKey) : null;
+  if (visual && sprite) {
+    const frame = Math.floor(projectile.age * visual.fps) % visual.frameCount;
+    ctx.translate(x, y);
+    ctx.rotate(angle + visual.rotationOffset);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "screen";
+    ctx.drawImage(sprite, frame * visual.frameWidth, 0, visual.frameWidth, visual.frameHeight, -visual.width / 2, -visual.height / 2, visual.width, visual.height);
+  } else if (definition.visual === "missile") {
     ctx.globalAlpha = 1;
     ctx.translate(x, y);
     ctx.rotate(angle);
@@ -229,6 +264,9 @@ export const renderEntityLayer = (ctx, model) => {
   for (const unit of units.values()) {
     const size = unitSize(unit.unitType);
     const sprite = asset(model.assets, factionKey(unit));
+    const visual = fleetVisualFor(unit.team, unit.unitType);
+    const frameSize = visual?.frameSize ?? 64;
+    const displaySize = shipCellSize(unit.unitType, frameSize);
     const engineDirection = unit.team === "TEAM_PLAYER" ? 1 : -1;
     const pulse = 0.8 + Math.sin(model.frameTime * 7 + unit.x) * 0.12;
     const y = projection.y(unit.y);
@@ -243,18 +281,20 @@ export const renderEntityLayer = (ctx, model) => {
     ctx.translate(unit.x, y);
     if (unit.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
     if (simulation.state.time - unit.lastDamagedAt < 0.12) ctx.filter = "brightness(2.2) saturate(0.35)";
+    ctx.globalCompositeOperation = "screen";
+    if (visual?.engine) drawStripFrame(ctx, asset(model.assets, visual.engine.assetKey), visual.engine, frameSize, simulation.state.time, displaySize);
     if (sprite) {
-      const crop = shipCrop(unit.unitType);
-      ctx.globalCompositeOperation = "screen";
-      ctx.drawImage(sprite, crop.x, crop.y, crop.width, crop.height, -size / 2, -size / 2, size, size);
-      ctx.globalCompositeOperation = "source-over";
+      ctx.drawImage(sprite, 0, 0, frameSize, frameSize, -displaySize / 2, -displaySize / 2, displaySize, displaySize);
     }
     else { ctx.fillStyle = teamColor(unit.team); ctx.beginPath(); ctx.arc(0, 0, size * 0.3, 0, Math.PI * 2); ctx.fill(); }
+    if (visual?.weapon) drawTimedStrip(ctx, asset(model.assets, visual.weapon.assetKey), visual.weapon, frameSize, simulation.state.time - unit.lastShotAt, displaySize, 0.42);
+    if (visual?.shield) drawTimedStrip(ctx, asset(model.assets, visual.shield.assetKey), visual.shield, frameSize, simulation.state.time - unit.lastDamagedAt, displaySize, 0.5);
+    ctx.globalCompositeOperation = "source-over";
     ctx.restore();
     const hpRatio = unit.hp / unit.maxHp;
     if (hpRatio < 0.75 || simulation.state.time - unit.lastDamagedAt < 1.8) drawBar(ctx, unit.x, y + size * 0.52, size * 0.82, hpRatio, teamColor(unit.team));
   }
-  for (const projectile of projectiles.values()) drawProjectile(ctx, projectile, projection);
+  for (const projectile of projectiles.values()) drawProjectile(ctx, projectile, projection, model.assets);
 };
 
 const seededAngle = (seed, index) => ((seed * 2.17 + index * 2.399) % (Math.PI * 2));
@@ -295,6 +335,17 @@ export const renderEffectsLayer = (ctx, model) => {
       }
     } else {
       const radius = effect.scale * (6 + progress * 24);
+      const visual = fleetVisualFor(effect.team, effect.entityType);
+      const destructionImage = visual?.destruction ? asset(model.assets, visual.destruction.assetKey) : null;
+      if (destructionImage) {
+        const displaySize = shipCellSize(effect.entityType, visual.frameSize);
+        ctx.save();
+        ctx.translate(effect.x, y);
+        if (effect.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
+        ctx.globalCompositeOperation = "screen";
+        drawStripFrame(ctx, destructionImage, visual.destruction, visual.frameSize, effect.maxLife - effect.life, displaySize, false);
+        ctx.restore();
+      }
       const gradient = ctx.createRadialGradient(effect.x, y, 0, effect.x, y, radius);
       gradient.addColorStop(0, "rgba(255,247,207,0.95)");
       gradient.addColorStop(0.3, effect.entityType === "frigate" || effect.entityType === "hq" || effect.entityType === "turret" ? "rgba(244,164,111,0.72)" : `${color}aa`);
