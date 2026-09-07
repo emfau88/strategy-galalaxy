@@ -17,7 +17,7 @@ export class CommandSystem {
     if (director.queueLocked) return { ok: false, reason: "QUEUE_LOCKED" };
     if (!validTeams.has(team) || !validLanes.has(laneId)) return { ok: false, reason: "INVALID_TEAM_OR_LANE" };
     const definition = UNIT_DEFINITIONS[unitType];
-    if (!definition || definition.enabled === false) return { ok: false, reason: "UNAVAILABLE_UNIT" };
+    if (!definition || definition.enabled === false || definition.purchasable === false) return { ok: false, reason: "UNAVAILABLE_UNIT" };
     const queue = director.queuedWaves.get(team).get(laneId);
     const purchased = [...director.queuedWaves.get(team).values()].reduce((sum, entries) => sum + entries.length, 0);
     if (purchased >= director.config.balance.maxPurchasedReinforcementsPerDeployment) return { ok: false, reason: "REINFORCEMENT_LIMIT" };

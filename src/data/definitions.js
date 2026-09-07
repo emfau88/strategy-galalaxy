@@ -3,6 +3,7 @@ import { LANE, TEAM } from "../core/constants.js";
 const freeze = (value) => Object.freeze(value);
 
 export const UNIT_DEFINITIONS = freeze({
+  drone: freeze({ id: "drone", role: "skirmisher", cost: 0, purchasable: false, maxHp: 28, speed: 64, acceleration: 160, turnRate: 6.2, collisionRadius: 5, spacingRadius: 9, attackRange: 68, aggroRange: 110, targetLeash: 142, damage: 2, fireInterval: 1.45, projectileId: "scout_pulse", captureStrength: 0.2, color: "#b8f4ff" }),
   scout: freeze({ id: "scout", role: "screen", cost: 50, maxHp: 62, speed: 70, acceleration: 150, turnRate: 5.4, collisionRadius: 7, spacingRadius: 12, attackRange: 76, aggroRange: 130, targetLeash: 166, damage: 4, fireInterval: 1.2, projectileId: "scout_pulse", captureStrength: 2, color: "#9cecff" }),
   fighter: freeze({ id: "fighter", role: "escort", cost: 90, maxHp: 112, speed: 56, acceleration: 112, turnRate: 4.4, collisionRadius: 9, spacingRadius: 15, attackRange: 105, aggroRange: 170, targetLeash: 210, damage: 7, fireInterval: 0.58, projectileId: "fighter_laser", captureStrength: 1, color: "#c7e8ff" }),
   bomber: freeze({ id: "bomber", role: "siege", cost: 140, maxHp: 96, speed: 34, acceleration: 58, turnRate: 2.6, collisionRadius: 11, spacingRadius: 18, attackRange: 148, aggroRange: 215, targetLeash: 260, damage: 34, fireInterval: 2.25, projectileId: "siege_missile", captureStrength: 0.5, color: "#ffd5a0" }),

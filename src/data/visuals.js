@@ -41,5 +41,8 @@ export const PROJECTILE_VISUALS = freeze({
   }),
 });
 
-export const fleetVisualFor = (team, unitType) => FLEET_VISUALS[team === TEAM.PLAYER ? "nairan" : "klaed"]?.[unitType] ?? null;
+export const fleetVisualFor = (team, unitType) => {
+  const visualType = unitType === "drone" ? "scout" : unitType;
+  return FLEET_VISUALS[team === TEAM.PLAYER ? "nairan" : "klaed"]?.[visualType] ?? null;
+};
 export const projectileVisualFor = (team, projectileType) => PROJECTILE_VISUALS[projectileType]?.[team] ?? null;

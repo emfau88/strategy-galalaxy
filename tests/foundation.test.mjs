@@ -152,9 +152,9 @@ assert.equal(match.cycle, 1);
 assert.equal(match.lastDeploymentAt, 0);
 assert.equal(match.lastDeploymentAtFor(TEAM.PLAYER, LANE.LEFT), 0);
 assert.equal(match.lastDeploymentAtFor(TEAM.ENEMY, LANE.RIGHT), 0);
-assert.ok(match.simulation.state.units.size >= 8);
-assert.equal(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.PLAYER).length, 2);
-assert.ok(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.ENEMY).length >= 2);
+assert.equal(match.simulation.state.units.size, 12);
+assert.equal(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.PLAYER).length, 3);
+assert.ok([...match.simulation.state.units.values()].every((unit) => unit.unitType === "drone"), "the automatic opening wave contains only skirmisher drones");
 const positionsBeforePause = match.simulation.snapshot();
 match.pause();
 assert.equal(match.advanceLive(1 / 60), false);
@@ -174,7 +174,7 @@ terminalMatch.advanceLive(1 / 60);
 assert.equal(terminalMatch.state, MATCH_STATE.VICTORY);
 terminalMatch.restart();
 assert.equal(terminalMatch.state, MATCH_STATE.LIVE_MATCH);
-assert.equal(terminalMatch.simulation.state.units.size, 8);
+assert.equal(terminalMatch.simulation.state.units.size, 12);
 
 const simultaneousHqLoss = new BattleSimulation();
 simultaneousHqLoss.applyDamage([
@@ -185,6 +185,7 @@ assert.equal(simultaneousHqLoss.state.terminalTeam, TEAM.DRAW, "same-step HQ des
 
 const lockMatch = new MatchDirector();
 lockMatch.start();
+assert.deepEqual(lockMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "drone" }), { ok: false, reason: "UNAVAILABLE_UNIT" });
 lockMatch.deployment.timeUntilDeployment = CONFIG.timing.deploymentLockSeconds;
 assert.equal(lockMatch.queueLocked, true);
 assert.deepEqual(lockMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" }), { ok: false, reason: "QUEUE_LOCKED" });
@@ -286,9 +287,10 @@ economyMatch.advanceLive(1);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, CONFIG.balance.energyCap, "passive income respects the energy cap");
 
 const escalatingWaveMatch = new MatchDirector();
-assert.equal(escalatingWaveMatch.deployment.baseWaveSize(0), 2);
+assert.equal(escalatingWaveMatch.deployment.baseWaveSize(0), 3);
 assert.equal(escalatingWaveMatch.deployment.baseWaveSize(120), 3);
-assert.equal(escalatingWaveMatch.deployment.baseWaveSize(999), 5, "free scout escalation is capped");
+assert.equal(escalatingWaveMatch.deployment.baseWaveSize(150), 4);
+assert.equal(escalatingWaveMatch.deployment.baseWaveSize(999), 5, "free drone escalation is capped");
 
 const captureMatch = new MatchDirector();
 captureMatch.start();

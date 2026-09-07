@@ -10,9 +10,10 @@ const stars = Object.freeze([
 
 const asset = (assets, key) => assets?.get(key) ?? null;
 const teamColor = (team) => (team === "TEAM_PLAYER" ? "#86dff2" : "#f29a83");
-const factionKey = (unit) => `${unit.team === "TEAM_PLAYER" ? "nairan" : "klaed"}-${unit.unitType}`;
-const unitSize = (unitType) => ({ scout: 29, fighter: 35, bomber: 43, frigate: 55, battlecruiser: 70, dreadnought: 88 }[unitType] ?? 35);
+const factionKey = (unit) => `${unit.team === "TEAM_PLAYER" ? "nairan" : "klaed"}-${unit.unitType === "drone" ? "scout" : unit.unitType}`;
+const unitSize = (unitType) => ({ drone: 21, scout: 29, fighter: 35, bomber: 43, frigate: 55, battlecruiser: 70, dreadnought: 88 }[unitType] ?? 35);
 const shipCrop = (unitType) => ({
+  drone: { x: 20, y: 23, width: 24, height: 22 },
   scout: { x: 20, y: 23, width: 24, height: 22 }, fighter: { x: 17, y: 20, width: 30, height: 27 },
   bomber: { x: 16, y: 18, width: 32, height: 30 }, frigate: { x: 11, y: 9, width: 42, height: 42 },
 }[unitType] ?? { x: 0, y: 0, width: 64, height: 64 });

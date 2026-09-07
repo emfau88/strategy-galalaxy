@@ -20,7 +20,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Kontinuierlicher `LIVE_MATCH` mit 22-Sekunden-Deployment und Zwei-Sekunden-Lock-in.
 - Zwei nebeneinander sichtbare Lanes auf einem höheren Schlachtfeld mit direktem vertikalem Touch-Panning.
 - Eine schmale strategische Kartenleiste zeigt Fronten, Strukturen, Nodes und den aktuellen Kameraausschnitt.
-- Zwei kostenlose Scouts pro Lane und Deployment sowie vier gemeinsame, gekaufte Verstärkungsslots.
+- Drei schwache automatische Drones pro Lane und Deployment sowie vier gemeinsame, gekaufte Verstärkungsslots; Scouts bleiben wertvolle Capture-Spezialisten.
 - Sofortige Energiereservierung, vollständige Rückerstattung vor Lock-in und Upgrade-Aktivierung am nächsten Deployment.
 - Gedeckelte, entschärfte Economy mit 300 Startenergie, 16 Basisenergie/s, 7 Energie/s pro Node, maximal 1.200 gespeicherter Energie und begrenzten Upgrade-Stufen.
 - Regelgebundene KI mit denselben Kosten, Slots, Timern, Kapazitäten und Upgrade-Regeln wie der Spieler, drei wählbaren Profilen und genau einer Neubewertung kurz vor dem Lock-in.
@@ -39,6 +39,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 
 | Schiff | Rolle | Waffenbild | Capture |
 | --- | --- | --- | ---: |
+| Drone | automatische, fragile Grundwelle | kleiner Pulse/Bullet | 0,2 |
 | Scout | schneller Node- und Map-Control-Spezialist | leichter Pulse/Bullet | 2,0 |
 | Fighter | Anti-Light- und Anti-Bomber-Escort | schnelle Bolt-/Ray-Salve | 1,0 |
 | Bomber | verwundbarer Siege- und Anti-Heavy-Angreifer | sichtbare Homing-Rakete/Torpedo | 0,5 |

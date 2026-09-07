@@ -24,12 +24,12 @@ const rolePriority = (unit, candidate) => {
   }
   if (unit.unitType === "fighter") {
     if (type === "bomber") return 0;
-    if (type === "scout" || type === "fighter") return 1;
+    if (type === "drone" || type === "scout" || type === "fighter") return 1;
     if (type === "frigate") return 4;
     return 8;
   }
-  if (unit.unitType === "scout") {
-    if (type === "scout" || type === "fighter" || type === "bomber") return 1;
+  if (unit.unitType === "scout" || unit.unitType === "drone") {
+    if (type === "drone" || type === "scout" || type === "fighter" || type === "bomber") return 1;
     if (type === "frigate") return 5;
     return 8;
   }

@@ -13,6 +13,7 @@ const angleDelta = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - f
 const LAUNCH_DURATION_SECONDS = 0.62;
 
 const FORMATION = Object.freeze({
+  drone: Object.freeze({ forward: 86, lateral: [0, -42, 42, -21, 21, -60, 60] }),
   scout: Object.freeze({ forward: 70, lateral: [0, -56, 56, -28, 28] }),
   frigate: Object.freeze({ forward: 30, lateral: [0, -40, 40] }),
   fighter: Object.freeze({ forward: 4, lateral: [-52, 52, -20, 20] }),
@@ -333,6 +334,7 @@ export class BattleSimulation {
   }
 
   damageMultiplier(owner, target) {
+    if (owner.unitType === "drone" && (target.structureType || target.unitType === "frigate")) return 0.25;
     if (owner.unitType === "fighter") return target.structureType || target.unitType === "frigate" ? 0.55 : 1.3;
     if (owner.unitType === "bomber") return target.structureType || target.unitType === "frigate" ? 1.55 : 0.4;
     if (owner.unitType === "scout" && (target.structureType || target.unitType === "frigate")) return 0.55;

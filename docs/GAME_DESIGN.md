@@ -23,7 +23,7 @@ The primary match ends only when a Headquarters is destroyed.
 ## Deployment and queues
 
 - A match opens with a free symmetric base wave so the battlefield is active immediately.
-- Each later boundary adds two free Scouts per lane and team. Every 120 active seconds this rises by one, capped at five, so late fronts cannot settle indefinitely.
+- Each later boundary adds three free Drones per lane and team. Every 150 active seconds this rises by one, capped at five. Drones keep the front active but are deliberately fragile and weak against structures; Scouts remain purchased capture specialists.
 - A team may buy at most four reinforcements per deployment across both lanes combined.
 - Buying reserves the full Energy cost immediately.
 - Removing an entry before lock-in refunds its full cost.
@@ -46,7 +46,7 @@ Current data-driven defaults:
 | Base income | 16/s |
 | Controlled Node bonus | 7/s |
 | Paid reinforcement slots | 4 |
-| Free Scouts | 2 per lane/deployment, +1 every 120 s, max. 5 |
+| Free Drones | 3 per lane/deployment, +1 every 150 s, max. 5 |
 | Economy upgrades | max. level 3 |
 | Turret upgrades | max. level 4 |
 | Deployment interval | 22 s |
@@ -56,6 +56,7 @@ Current data-driven defaults:
 
 | Ship | Purpose | Targeting and weapon identity | Capture |
 | --- | --- | --- | ---: |
+| Drone | Automatic skirmish screen | Tiny pulse; poor against heavy ships and structures | 0.2 |
 | Scout | Fast map control | Light pulse; avoids wasting time on heavies when the Node is open | 2.0 |
 | Fighter | Anti-light escort | Rapid bolt/ray; prioritizes Bombers and light craft | 1.0 |
 | Bomber | Siege and anti-heavy | Visible accelerating homing missile; prefers turrets, HQ and Frigates | 0.5 |

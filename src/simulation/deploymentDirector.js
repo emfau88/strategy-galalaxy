@@ -35,9 +35,9 @@ export class DeploymentDirector {
   }
 
   baseWaveSize(simulationTime) {
-    const every = this.config.balance.baseWaveScoutEscalationEverySeconds;
-    const bonus = every > 0 ? Math.min(this.config.balance.baseWaveScoutEscalationMaximumBonus, Math.floor(simulationTime / every)) : 0;
-    return this.config.balance.baseWaveScoutsPerLane + bonus;
+    const every = this.config.balance.baseWaveDroneEscalationEverySeconds;
+    const bonus = every > 0 ? Math.min(this.config.balance.baseWaveDroneEscalationMaximumBonus, Math.floor(simulationTime / every)) : 0;
+    return this.config.balance.baseWaveDronesPerLane + bonus;
   }
 
   advance(step) {
@@ -50,7 +50,7 @@ export class DeploymentDirector {
     for (const team of teams) {
       for (const laneId of laneIds) {
         const pendingBase = this.baseWaveBacklog.get(team).get(laneId);
-        const baseEntries = [...pendingBase, ...Array.from({ length: this.baseWaveSize(simulation.state.time) }, () => "scout")];
+        const baseEntries = [...pendingBase, ...Array.from({ length: this.baseWaveSize(simulation.state.time) }, () => "drone")];
         const paidEntries = this.queuesFor(team).get(laneId);
         const active = simulation.state.lanes.get(laneId).unitIds.get(team).length;
         const available = Math.max(0, this.config.caps.unitsPerLaneTeam - active);

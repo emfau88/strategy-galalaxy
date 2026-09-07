@@ -48,7 +48,7 @@ export class OpponentAi {
     const composition = (ids) => ids.map((id) => state.units.get(id)).filter((unit) => unit?.alive).reduce((counts, unit) => {
       counts[unit.unitType] = (counts[unit.unitType] ?? 0) + 1;
       return counts;
-    }, { scout: 0, fighter: 0, bomber: 0, frigate: 0 });
+    }, { drone: 0, scout: 0, fighter: 0, bomber: 0, frigate: 0 });
     const friendlyComposition = composition(lane.unitIds.get(this.team));
     const enemyComposition = composition(lane.unitIds.get(enemyTeam));
     const nodePressure = node?.ownerTeam === enemyTeam ? 42 : node?.ownerTeam === this.team ? -18 : 0;

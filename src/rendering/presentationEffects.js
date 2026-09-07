@@ -21,7 +21,7 @@ export class PresentationEffects {
       if (event.type === "shot") this.add({ type: "muzzle", x: event.x, y: event.y, team: event.team, projectileType: event.projectileType, seed, life: 0.12, maxLife: 0.12 });
       if (event.type === "hit") this.add({ type: "hit", x: event.x, y: event.y, team: event.team, projectileType: event.projectileType, seed, life: event.projectileType === "siege_missile" ? 0.38 : 0.2, maxLife: event.projectileType === "siege_missile" ? 0.38 : 0.2 });
       if (event.type === "destroyed") {
-        const scale = event.entityType === "hq" ? 2.2 : event.entityType === "turret" ? 1.65 : event.entityType === "frigate" ? 1.35 : 0.85;
+        const scale = event.entityType === "hq" ? 2.2 : event.entityType === "turret" ? 1.65 : event.entityType === "frigate" ? 1.35 : event.entityType === "drone" ? 0.62 : 0.85;
         const destruction = fleetVisualFor(event.team, event.entityType)?.destruction;
         const duration = destruction ? destruction.frameCount / destruction.fps : 0.66 * scale;
         this.add({ type: "destroyed", x: event.x, y: event.y, team: event.team, entityType: event.entityType, seed, scale, life: duration, maxLife: duration });

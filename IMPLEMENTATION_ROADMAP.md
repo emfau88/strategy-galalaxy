@@ -45,17 +45,17 @@ committet und gepusht, damit er direkt getestet werden kann.
 - [x] Reichweite und Feuermomente an die langsamere Bewegung anpassen.
 - [x] Determinismus-, Symmetrie-, Lane- und Stresstests erweitern.
 - [x] Auf fünf Mobile-Screens Sichtkontrolle für dichte Begegnungen durchführen.
-- [ ] Meilenstein committen und pushen.
+- [x] Meilenstein committen und pushen (`ed4989f`).
 
 ## Meilenstein 3 – automatische Skirmisher-Grundwelle
 
-- [ ] Neue schwache automatische Einheit als `Skirmisher`/`Drone` definieren.
-- [ ] Zwei kostenlose Standard-Scouts pro Lane durch eine kleine Drone-Grundwelle ersetzen.
-- [ ] Scout als kaufbare Capture- und Aufklärungseinheit profilieren.
-- [ ] Drone mit niedriger Haltbarkeit, niedriger Strukturwirkung und einfacher Waffe ausstatten.
-- [ ] Spawnzahl und spätes Wachstum so begrenzen, dass Projektil- und Unit-Budgets halten.
-- [ ] Passendes vorhandenes Factionsprite und kleine Projektilvariante auswählen.
-- [ ] KI, Queue-Anzeige, Tests und Balance-Telemetrie um die neue Rolle erweitern.
+- [x] Neue schwache automatische Einheit als `Skirmisher`/`Drone` definieren.
+- [x] Zwei kostenlose Standard-Scouts pro Lane durch eine kleine Drone-Grundwelle ersetzen.
+- [x] Scout als kaufbare Capture- und Aufklärungseinheit profilieren.
+- [x] Drone mit niedriger Haltbarkeit, niedriger Strukturwirkung und einfacher Waffe ausstatten.
+- [x] Spawnzahl und spätes Wachstum so begrenzen, dass Projektil- und Unit-Budgets halten.
+- [x] Vorhandene kleine Scout-Layer in eigener Drone-Größe wiederverwenden.
+- [x] KI, Tests und Lane-Telemetrie um die neue Rolle erweitern.
 - [ ] Meilenstein committen und pushen.
 
 ## Meilenstein 4 – echte Flotte/Economy/Forschung-Abwägung
@@ -105,8 +105,8 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 
 ## Aktueller nächster Schritt
 
-Meilenstein 2 committen und pushen. Danach beginnt Meilenstein 3 mit der schwachen
-automatischen Drone-Grundwelle und der klareren kaufbaren Scout-Rolle.
+Meilenstein 3 gezielt prüfen, committen und pushen. Danach beginnt Meilenstein 4
+mit getrennten Flotten-, Economy- und Forschungsinvestitionen.
 
 ## Letzte verifizierte Messung
 
