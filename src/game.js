@@ -3,7 +3,7 @@ import { CONFIG } from "./config.js";
 import { GameClock } from "./core/clock.js";
 import { LANE, MATCH_STATE, TEAM } from "./core/constants.js";
 import { SeededRng } from "./core/rng.js";
-import { computeViewportTransform } from "./core/viewport.js";
+import { computeViewportTransform, responsivePortraitDesignHeight } from "./core/viewport.js";
 import { readLaunchOptions } from "./qa/matchTestMode.js";
 import { AssetLoader } from "./rendering/assetLoader.js";
 import { Renderer } from "./rendering/renderer.js";
@@ -75,19 +75,33 @@ export class Game {
     const styles = window.getComputedStyle(document.documentElement);
     const width = Math.round(viewport?.width ?? window.innerWidth);
     const height = Math.round(viewport?.height ?? window.innerHeight);
+    const safeTop = parseCssPixels(styles.getPropertyValue("--safe-top"));
+    const safeRight = parseCssPixels(styles.getPropertyValue("--safe-right"));
+    const safeBottom = parseCssPixels(styles.getPropertyValue("--safe-bottom"));
+    const safeLeft = parseCssPixels(styles.getPropertyValue("--safe-left"));
+    const designHeight = responsivePortraitDesignHeight({
+      viewportWidth: width,
+      viewportHeight: height,
+      safeTop,
+      safeRight,
+      safeBottom,
+      safeLeft,
+      designWidth: CONFIG.app.designWidth,
+      minimumDesignHeight: CONFIG.app.designHeight,
+    });
     const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches;
     const dprCap = coarsePointer ? CONFIG.viewport.coarsePointerPixelRatio : CONFIG.viewport.maxDevicePixelRatio;
     this.transform = computeViewportTransform({
       viewportWidth: width,
       viewportHeight: height,
-      safeTop: parseCssPixels(styles.getPropertyValue("--safe-top")),
-      safeRight: parseCssPixels(styles.getPropertyValue("--safe-right")),
-      safeBottom: parseCssPixels(styles.getPropertyValue("--safe-bottom")),
-      safeLeft: parseCssPixels(styles.getPropertyValue("--safe-left")),
+      safeTop,
+      safeRight,
+      safeBottom,
+      safeLeft,
       devicePixelRatio: window.devicePixelRatio || 1,
       maxDevicePixelRatio: dprCap,
       designWidth: CONFIG.app.designWidth,
-      designHeight: CONFIG.app.designHeight,
+      designHeight,
     });
     this.renderer.resize(this.transform);
   }
@@ -103,7 +117,7 @@ export class Game {
       this.match.start();
       this.effects.reset();
     }
-    else if (this.match.state === MATCH_STATE.COMMAND) this.executeCommandAction(commandActionAt(input, this.commandMenu));
+    else if (this.match.state === MATCH_STATE.COMMAND) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight));
     else if (this.match.state === MATCH_STATE.VICTORY || this.match.state === MATCH_STATE.DEFEAT) {
       this.match.restart();
       this.effects.reset();

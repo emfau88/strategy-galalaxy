@@ -1,5 +1,20 @@
 const finiteNonNegative = (value) => Math.max(0, Number.isFinite(value) ? value : 0);
 
+export const responsivePortraitDesignHeight = ({
+  viewportWidth,
+  viewportHeight,
+  safeTop = 0,
+  safeRight = 0,
+  safeBottom = 0,
+  safeLeft = 0,
+  designWidth,
+  minimumDesignHeight,
+}) => {
+  const availableWidth = Math.max(1, finiteNonNegative(viewportWidth) - finiteNonNegative(safeLeft) - finiteNonNegative(safeRight));
+  const availableHeight = Math.max(1, finiteNonNegative(viewportHeight) - finiteNonNegative(safeTop) - finiteNonNegative(safeBottom));
+  return Math.max(finiteNonNegative(minimumDesignHeight), availableHeight * finiteNonNegative(designWidth) / availableWidth);
+};
+
 export const computeViewportTransform = ({
   viewportWidth,
   viewportHeight,

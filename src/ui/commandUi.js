@@ -21,21 +21,41 @@ export const COMMAND_UI = Object.freeze({
   deploy: Object.freeze({ x: 294, y: 654, width: 110, height: 90 }),
 });
 
+const shiftVertically = (rect, offsetY) => Object.freeze({ ...rect, y: rect.y + offsetY });
+
+export const commandUiLayout = (height = 760) => {
+  const lowerOffset = Math.max(0, height - 760);
+  return Object.freeze({
+    fullscreen: COMMAND_UI.fullscreen,
+    lanes: COMMAND_UI.lanes,
+    panel: Object.freeze({ x: 8, y: 602 + lowerOffset, width: 404, height: 150 }),
+    feedbackY: 588 + lowerOffset,
+    pressure: Object.freeze({ x: 52, y: 562 + lowerOffset, width: 316, height: 32 }),
+    debugY: 550 + lowerOffset,
+    undo: shiftVertically(COMMAND_UI.undo, lowerOffset),
+    menu: shiftVertically(COMMAND_UI.menu, lowerOffset),
+    units: Object.freeze(COMMAND_UI.units.map((rect) => shiftVertically(rect, lowerOffset))),
+    upgrades: Object.freeze(COMMAND_UI.upgrades.map((rect) => shiftVertically(rect, lowerOffset))),
+    deploy: shiftVertically(COMMAND_UI.deploy, lowerOffset),
+  });
+};
+
 export const containsPoint = (rect, point) => point.x >= rect.x && point.x <= rect.x + rect.width && point.y >= rect.y && point.y <= rect.y + rect.height;
 
-export const commandActionAt = (point, menu = "units") => {
-  const lane = COMMAND_UI.lanes.find((rect) => containsPoint(rect, point));
+export const commandActionAt = (point, menu = "units", height = 760) => {
+  const layout = commandUiLayout(height);
+  const lane = layout.lanes.find((rect) => containsPoint(rect, point));
   if (lane) return { type: "SELECT_LANE", laneId: lane.laneId };
   if (menu === "units") {
-    const unit = COMMAND_UI.units.find((rect) => containsPoint(rect, point));
+    const unit = layout.units.find((rect) => containsPoint(rect, point));
     if (unit) return { type: "QUEUE_UNIT", unitType: unit.unitType };
   } else {
-    const upgrade = COMMAND_UI.upgrades.find((rect) => containsPoint(rect, point));
+    const upgrade = layout.upgrades.find((rect) => containsPoint(rect, point));
     if (upgrade) return { type: "BUY_UPGRADE", upgradeId: upgrade.upgradeId };
   }
-  if (containsPoint(COMMAND_UI.undo, point)) return { type: "REMOVE_LAST_UNIT" };
-  if (containsPoint(COMMAND_UI.menu, point)) return { type: "TOGGLE_MENU" };
-  if (containsPoint(COMMAND_UI.deploy, point)) return { type: "DEPLOY" };
+  if (containsPoint(layout.undo, point)) return { type: "REMOVE_LAST_UNIT" };
+  if (containsPoint(layout.menu, point)) return { type: "TOGGLE_MENU" };
+  if (containsPoint(layout.deploy, point)) return { type: "DEPLOY" };
   return null;
 };
 

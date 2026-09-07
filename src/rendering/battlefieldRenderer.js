@@ -15,6 +15,17 @@ const shipCrop = (unitType) => ({
   bomber: { x: 16, y: 18, width: 32, height: 30 }, frigate: { x: 11, y: 9, width: 42, height: 42 },
 }[unitType] ?? { x: 0, y: 0, width: 64, height: 64 });
 
+const battlefieldProjection = (height) => {
+  const sourceTop = 102;
+  const sourceBottom = 590;
+  const targetBottom = height - 170;
+  const scaleY = (targetBottom - sourceTop) / (sourceBottom - sourceTop);
+  return Object.freeze({
+    y: (value) => sourceTop + (value - sourceTop) * scaleY,
+    velocityY: (value) => value * scaleY,
+  });
+};
+
 const radialWash = (ctx, x, y, radius, inner, outer = "rgba(0,0,0,0)") => {
   const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
   gradient.addColorStop(0, inner);
@@ -42,14 +53,15 @@ export const renderBackground = (ctx, width, height, frameTime, assets) => {
   radialWash(ctx, 212, 90, 210, "rgba(90,153,199,0.12)");
   ctx.restore();
 
-  const horizon = ctx.createRadialGradient(368, 718, 42, 368, 718, 164);
+  const horizonY = height - 42;
+  const horizon = ctx.createRadialGradient(368, horizonY, 42, 368, horizonY, 164);
   horizon.addColorStop(0, "rgba(244,177,123,0.22)");
   horizon.addColorStop(0.48, "rgba(126,133,191,0.12)");
   horizon.addColorStop(0.54, "rgba(33,42,78,0.08)");
   horizon.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = horizon;
   ctx.beginPath();
-  ctx.arc(368, 718, 164, Math.PI, Math.PI * 2);
+  ctx.arc(368, horizonY, 164, Math.PI, Math.PI * 2);
   ctx.fill();
 
   for (const [x, y, radius] of stars) {
@@ -95,14 +107,15 @@ const drawBar = (ctx, x, y, width, ratio, color, height = 3) => {
   ctx.fillRect(x - width / 2, y, width * Math.max(0, ratio), height);
 };
 
-const drawStructure = (ctx, structure, state, assets) => {
+const drawStructure = (ctx, structure, state, assets, projection) => {
   const isHq = structure.structureType === "hq";
   const size = isHq ? 112 : 60;
   const color = teamColor(structure.team);
   const sprite = asset(assets, isHq ? "structure-hq" : "structure-turret");
   const damaged = state.time - structure.lastDamagedAt < 0.13;
+  const y = projection.y(structure.y);
   ctx.save();
-  ctx.translate(structure.x, structure.y);
+  ctx.translate(structure.x, y);
   ctx.fillStyle = `${color}18`;
   ctx.beginPath();
   ctx.arc(0, 0, size * 0.47, 0, Math.PI * 2);
@@ -122,7 +135,7 @@ const drawStructure = (ctx, structure, state, assets) => {
   }
   if (!isHq) {
     const target = state.units.get(structure.targetId);
-    const angle = target ? Math.atan2(target.y - structure.y, target.x - structure.x) : (structure.team === "TEAM_PLAYER" ? -Math.PI / 2 : Math.PI / 2);
+    const angle = target ? Math.atan2(projection.y(target.y) - y, target.x - structure.x) : (structure.team === "TEAM_PLAYER" ? -Math.PI / 2 : Math.PI / 2);
     ctx.rotate(angle - (structure.team !== "TEAM_PLAYER" ? Math.PI : 0));
     ctx.strokeStyle = color;
     ctx.lineWidth = 4;
@@ -133,15 +146,16 @@ const drawStructure = (ctx, structure, state, assets) => {
     ctx.stroke();
   }
   ctx.restore();
-  drawBar(ctx, structure.x, structure.y + size * 0.45, isHq ? 82 : 48, structure.hp / structure.maxHp, color, isHq ? 5 : 4);
+  drawBar(ctx, structure.x, y + size * 0.45, isHq ? 82 : 48, structure.hp / structure.maxHp, color, isHq ? 5 : 4);
 };
 
-const drawNode = (ctx, node, frameTime, assets) => {
+const drawNode = (ctx, node, frameTime, assets, projection) => {
   const color = node.ownerTeam === "TEAM_PLAYER" ? "#a6e6f2" : node.ownerTeam === "TEAM_ENEMY" ? "#f3a58e" : "#d9d5ee";
   const ring = node.contested ? "#f2cd83" : color;
   const sprite = asset(assets, "structure-node");
+  const y = projection.y(node.y);
   ctx.save();
-  ctx.translate(node.x, node.y);
+  ctx.translate(node.x, y);
   ctx.globalAlpha = 0.16;
   ctx.fillStyle = ring;
   ctx.beginPath();
@@ -165,9 +179,11 @@ const drawNode = (ctx, node, frameTime, assets) => {
   ctx.restore();
 };
 
-const drawProjectile = (ctx, projectile) => {
+const drawProjectile = (ctx, projectile, projection) => {
   const definition = PROJECTILE_DEFINITIONS[projectile.projectileType] ?? PROJECTILE_DEFINITIONS.light_bolt;
-  const angle = Math.atan2(projectile.vy, projectile.vx);
+  const x = projectile.x;
+  const y = projection.y(projectile.y);
+  const angle = Math.atan2(projection.velocityY(projectile.vy), projectile.vx);
   const color = projectile.ownerTeam === "TEAM_PLAYER" ? definition.color : (definition.visual === "missile" ? "#f5a17e" : "#f3a28d");
   ctx.save();
   ctx.lineCap = "round";
@@ -176,11 +192,11 @@ const drawProjectile = (ctx, projectile) => {
     ctx.strokeStyle = projectile.ownerTeam === "TEAM_PLAYER" ? "#9edce8" : "#edb09e";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(projectile.x - Math.cos(angle) * 18, projectile.y - Math.sin(angle) * 18);
-    ctx.lineTo(projectile.x, projectile.y);
+    ctx.moveTo(x - Math.cos(angle) * 18, y - Math.sin(angle) * 18);
+    ctx.lineTo(x, y);
     ctx.stroke();
     ctx.globalAlpha = 1;
-    ctx.translate(projectile.x, projectile.y);
+    ctx.translate(x, y);
     ctx.rotate(angle);
     ctx.fillStyle = color;
     ctx.beginPath();
@@ -192,8 +208,8 @@ const drawProjectile = (ctx, projectile) => {
     ctx.lineWidth = definition.visual === "heavy" ? 4 : 2.4;
     ctx.globalAlpha = 0.9;
     ctx.beginPath();
-    ctx.moveTo(projectile.x - Math.cos(angle) * length, projectile.y - Math.sin(angle) * length);
-    ctx.lineTo(projectile.x + Math.cos(angle) * 2, projectile.y + Math.sin(angle) * 2);
+    ctx.moveTo(x - Math.cos(angle) * length, y - Math.sin(angle) * length);
+    ctx.lineTo(x + Math.cos(angle) * 2, y + Math.sin(angle) * 2);
     ctx.stroke();
   }
   ctx.restore();
@@ -203,10 +219,11 @@ export const renderEntityLayer = (ctx, model) => {
   const simulation = model.simulation;
   if (!simulation) return;
   const { nodes, structures, units, projectiles } = simulation.state;
-  for (const node of nodes.values()) drawNode(ctx, node, model.frameTime, model.assets);
+  const projection = battlefieldProjection(model.height);
+  for (const node of nodes.values()) drawNode(ctx, node, model.frameTime, model.assets, projection);
   for (const structure of structures.values()) {
     ctx.globalAlpha = structure.alive ? 1 : 0.16;
-    drawStructure(ctx, structure, simulation.state, model.assets);
+    drawStructure(ctx, structure, simulation.state, model.assets, projection);
   }
   ctx.globalAlpha = 1;
   for (const unit of units.values()) {
@@ -214,15 +231,16 @@ export const renderEntityLayer = (ctx, model) => {
     const sprite = asset(model.assets, factionKey(unit));
     const engineDirection = unit.team === "TEAM_PLAYER" ? 1 : -1;
     const pulse = 0.8 + Math.sin(model.frameTime * 7 + unit.x) * 0.12;
+    const y = projection.y(unit.y);
     ctx.save();
     ctx.globalAlpha = 0.28 * pulse;
     ctx.fillStyle = teamColor(unit.team);
     ctx.beginPath();
-    ctx.ellipse(unit.x, unit.y + engineDirection * size * 0.37, Math.max(2, size * 0.1), size * 0.28 * pulse, 0, 0, Math.PI * 2);
+    ctx.ellipse(unit.x, y + engineDirection * size * 0.37, Math.max(2, size * 0.1), size * 0.28 * pulse, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     ctx.save();
-    ctx.translate(unit.x, unit.y);
+    ctx.translate(unit.x, y);
     if (unit.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
     if (simulation.state.time - unit.lastDamagedAt < 0.12) ctx.filter = "brightness(2.2) saturate(0.35)";
     if (sprite) {
@@ -234,24 +252,26 @@ export const renderEntityLayer = (ctx, model) => {
     else { ctx.fillStyle = teamColor(unit.team); ctx.beginPath(); ctx.arc(0, 0, size * 0.3, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
     const hpRatio = unit.hp / unit.maxHp;
-    if (hpRatio < 0.75 || simulation.state.time - unit.lastDamagedAt < 1.8) drawBar(ctx, unit.x, unit.y + size * 0.52, size * 0.82, hpRatio, teamColor(unit.team));
+    if (hpRatio < 0.75 || simulation.state.time - unit.lastDamagedAt < 1.8) drawBar(ctx, unit.x, y + size * 0.52, size * 0.82, hpRatio, teamColor(unit.team));
   }
-  for (const projectile of projectiles.values()) drawProjectile(ctx, projectile);
+  for (const projectile of projectiles.values()) drawProjectile(ctx, projectile, projection);
 };
 
 const seededAngle = (seed, index) => ((seed * 2.17 + index * 2.399) % (Math.PI * 2));
 
 export const renderEffectsLayer = (ctx, model) => {
+  const projection = battlefieldProjection(model.height);
   for (const effect of model.effects ?? []) {
     const progress = 1 - effect.life / effect.maxLife;
     const alpha = Math.max(0, 1 - progress);
     const color = teamColor(effect.team);
+    const y = projection.y(effect.y);
     ctx.save();
     ctx.globalAlpha = alpha;
     if (effect.type === "muzzle") {
       ctx.fillStyle = "#fff4cf";
       ctx.beginPath();
-      ctx.arc(effect.x, effect.y, 2 + progress * 5, 0, Math.PI * 2);
+      ctx.arc(effect.x, y, 2 + progress * 5, 0, Math.PI * 2);
       ctx.fill();
     } else if (effect.type === "hit") {
       ctx.strokeStyle = effect.projectileType === "siege_missile" ? "#ffd096" : "#f7f4d7";
@@ -262,31 +282,31 @@ export const renderEffectsLayer = (ctx, model) => {
         const inner = 2 + progress * 3;
         const outer = inner + 5 + progress * (effect.projectileType === "siege_missile" ? 12 : 6);
         ctx.beginPath();
-        ctx.moveTo(effect.x + Math.cos(angle) * inner, effect.y + Math.sin(angle) * inner);
-        ctx.lineTo(effect.x + Math.cos(angle) * outer, effect.y + Math.sin(angle) * outer);
+        ctx.moveTo(effect.x + Math.cos(angle) * inner, y + Math.sin(angle) * inner);
+        ctx.lineTo(effect.x + Math.cos(angle) * outer, y + Math.sin(angle) * outer);
         ctx.stroke();
       }
       if (effect.projectileType === "siege_missile") {
         ctx.strokeStyle = "#f2aa7c";
         ctx.lineWidth = 2.4;
         ctx.beginPath();
-        ctx.arc(effect.x, effect.y, 5 + progress * 18, 0, Math.PI * 2);
+        ctx.arc(effect.x, y, 5 + progress * 18, 0, Math.PI * 2);
         ctx.stroke();
       }
     } else {
       const radius = effect.scale * (6 + progress * 24);
-      const gradient = ctx.createRadialGradient(effect.x, effect.y, 0, effect.x, effect.y, radius);
+      const gradient = ctx.createRadialGradient(effect.x, y, 0, effect.x, y, radius);
       gradient.addColorStop(0, "rgba(255,247,207,0.95)");
       gradient.addColorStop(0.3, effect.entityType === "frigate" || effect.entityType === "hq" || effect.entityType === "turret" ? "rgba(244,164,111,0.72)" : `${color}aa`);
       gradient.addColorStop(1, "rgba(255,255,255,0)");
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(effect.x, effect.y, radius, 0, Math.PI * 2);
+      ctx.arc(effect.x, y, radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = `${color}aa`;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(effect.x, effect.y, radius * 0.72, 0, Math.PI * 2);
+      ctx.arc(effect.x, y, radius * 0.72, 0, Math.PI * 2);
       ctx.stroke();
     }
     ctx.restore();

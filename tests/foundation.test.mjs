@@ -3,7 +3,7 @@ import { access } from "node:fs/promises";
 import { GameClock } from "../src/core/clock.js";
 import { MATCH_STATE } from "../src/core/constants.js";
 import { SeededRng } from "../src/core/rng.js";
-import { computeViewportTransform, toDesignPoint } from "../src/core/viewport.js";
+import { computeViewportTransform, responsivePortraitDesignHeight, toDesignPoint } from "../src/core/viewport.js";
 import { AssetLoader } from "../src/rendering/assetLoader.js";
 import { BattleSimulation, createDemoBattle } from "../src/simulation/battleSimulation.js";
 import { LANE, TEAM } from "../src/core/constants.js";
@@ -13,7 +13,7 @@ import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 import { ASSET_GROUPS } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
-import { commandActionAt, fullscreenActionAt } from "../src/ui/commandUi.js";
+import { commandActionAt, commandUiLayout, fullscreenActionAt } from "../src/ui/commandUi.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
@@ -25,6 +25,11 @@ for (const [viewportWidth, viewportHeight] of targetViewports) {
   const center = toDesignPoint(transform.offsetX + 210 * transform.scale, transform.offsetY + 380 * transform.scale, { left: 0, top: 0 }, transform);
   assert.ok(Math.abs(center.x - 210) < 0.0001);
   assert.ok(Math.abs(center.y - 380) < 0.0001);
+
+  const responsiveHeight = responsivePortraitDesignHeight({ viewportWidth, viewportHeight, designWidth: 420, minimumDesignHeight: 760 });
+  const responsiveTransform = computeViewportTransform({ viewportWidth, viewportHeight, designWidth: 420, designHeight: responsiveHeight, devicePixelRatio: 2, maxDevicePixelRatio: 1.5 });
+  assert.ok(Math.abs(responsiveTransform.contentHeight - viewportHeight) < 0.001, `${viewportWidth}x${viewportHeight} uses the full portrait height`);
+  assert.ok(Math.abs(responsiveTransform.offsetY) < 0.001, `${viewportWidth}x${viewportHeight} has no portrait letterbox`);
 }
 
 const clock = new GameClock(timing);
@@ -268,6 +273,11 @@ assert.deepEqual(commandActionAt({ x: 160, y: 662 }), { type: "QUEUE_UNIT", unit
 assert.deepEqual(commandActionAt({ x: 300, y: 620 }), { type: "TOGGLE_MENU" });
 assert.deepEqual(commandActionAt({ x: 160, y: 662 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "turret" });
 assert.deepEqual(commandActionAt({ x: 300, y: 662 }), { type: "DEPLOY" });
+const tallCommandUi = commandUiLayout(909);
+assert.equal(tallCommandUi.panel.y, 751);
+assert.equal(tallCommandUi.deploy.y + tallCommandUi.deploy.height, 893);
+assert.deepEqual(commandActionAt({ x: 24, y: 803 }, "units", 909), { type: "QUEUE_UNIT", unitType: "scout" });
+assert.deepEqual(commandActionAt({ x: 300, y: 811 }, "units", 909), { type: "DEPLOY" });
 assert.deepEqual(fullscreenActionAt({ x: 380, y: 26 }), { type: "TOGGLE_FULLSCREEN" });
 assert.equal(fullscreenActionAt({ x: 210, y: 26 }), null);
 
