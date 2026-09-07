@@ -1,5 +1,6 @@
 import { PROJECTILE_DEFINITIONS } from "../data/definitions.js";
 import { fleetVisualFor, projectileVisualFor } from "../data/visuals.js";
+import { LANE, TEAM } from "../core/constants.js";
 
 const stars = Object.freeze([
   [28, 74, 1.2], [96, 122, 0.7], [178, 56, 1], [238, 176, 0.8], [362, 98, 1.3],
@@ -191,7 +192,7 @@ const drawDamageDetails = (ctx, structure, size, hpRatio, frameTime) => {
   }
 };
 
-const drawTurretHead = (ctx, structure, state, projection, color) => {
+const drawTurretHead = (ctx, structure, state, assets, projection, color) => {
   const target = state.units.get(structure.targetId);
   const defaultAngle = structure.team === "TEAM_PLAYER" ? -Math.PI / 2 : Math.PI / 2;
   const desiredAngle = target?.alive
@@ -200,21 +201,24 @@ const drawTurretHead = (ctx, structure, state, projection, color) => {
   const angle = smoothAimAngle(structure, desiredAngle, state.time);
   const shotAge = state.time - structure.lastShotAt;
   const recoil = shotAge >= 0 && shotAge < 0.16 ? Math.sin(shotAge / 0.16 * Math.PI) * 3.5 : 0;
+  const sprite = asset(assets, "structure-turret-head");
   ctx.save();
-  ctx.rotate(angle);
-  ctx.fillStyle = "rgba(5,12,23,0.72)";
-  ctx.fillRect(-7, -7, 15, 14);
-  ctx.fillStyle = "#7c8da3";
-  ctx.fillRect(-5, -6, 12, 12);
-  ctx.fillStyle = "#b8c5d1";
-  ctx.fillRect(5 - recoil, -5, 19, 3.5);
-  ctx.fillRect(5 - recoil, 1.5, 19, 3.5);
-  ctx.fillStyle = "#3d5068";
-  ctx.fillRect(9 - recoil, -4, 11, 1);
-  ctx.fillRect(9 - recoil, 2.5, 11, 1);
+  if (sprite) {
+    ctx.rotate(angle + Math.PI / 2);
+    ctx.drawImage(sprite, -27, -34 + recoil, 54, 54);
+  } else {
+    ctx.rotate(angle);
+    ctx.fillStyle = "#7c8da3";
+    ctx.fillRect(-5, -6, 12, 12);
+    ctx.fillStyle = "#b8c5d1";
+    ctx.fillRect(5 - recoil, -5, 19, 3.5);
+    ctx.fillRect(5 - recoil, 1.5, 19, 3.5);
+  }
   ctx.fillStyle = color;
-  ctx.globalAlpha = 0.78;
-  ctx.fillRect(-3, -1.5, 7, 3);
+  ctx.globalAlpha = 0.74;
+  ctx.beginPath();
+  ctx.arc(0, 0, 2.2, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 };
 
@@ -256,10 +260,17 @@ const drawHqBay = (ctx, side, openness, frameTime, color, hpRatio) => {
   ctx.globalAlpha = 1;
 };
 
-const drawHqHangars = (ctx, structure, state, frameTime, lastDeploymentAt, color) => {
+const drawHqHangars = (ctx, structure, model, frameTime, color) => {
+  const state = model.simulation.state;
   const hpRatio = structure.hp / structure.maxHp;
-  drawHqBay(ctx, -1, hqDoorOpenness(state.time, lastDeploymentAt), frameTime, color, hpRatio);
-  drawHqBay(ctx, 1, hqDoorOpenness(state.time, lastDeploymentAt + 0.07), frameTime, color, hpRatio);
+  for (const side of [-1, 1]) {
+    const screenSide = structure.team === TEAM.PLAYER ? side : -side;
+    const laneId = screenSide < 0 ? LANE.LEFT : LANE.RIGHT;
+    const deployedAt = model.director?.lastDeploymentAtFor(structure.team, laneId);
+    const delay = screenSide > 0 ? 0.07 : 0;
+    const animationAt = Number.isFinite(deployedAt) ? deployedAt + delay : null;
+    drawHqBay(ctx, side, hqDoorOpenness(state.time, animationAt), frameTime, color, hpRatio);
+  }
 };
 
 const drawStructure = (ctx, structure, model, projection) => {
@@ -281,8 +292,8 @@ const drawStructure = (ctx, structure, model, projection) => {
     ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
     ctx.filter = "none";
   }
-  if (isHq) drawHqHangars(ctx, structure, state, model.frameTime, model.director?.lastDeploymentAt, color);
-  else drawTurretHead(ctx, structure, state, projection, color);
+  if (isHq) drawHqHangars(ctx, structure, model, model.frameTime, color);
+  else drawTurretHead(ctx, structure, state, model.assets, projection, color);
   drawDamageDetails(ctx, structure, size, hpRatio, model.frameTime);
   ctx.restore();
   drawBar(ctx, structure.x, y + size * 0.45, isHq ? 84 : 50, hpRatio, color, isHq ? 5 : 4);
@@ -378,6 +389,7 @@ export const renderEntityLayer = (ctx, model) => {
   }
   ctx.globalAlpha = 1;
   for (const unit of units.values()) {
+    if (unit.launching && unit.launchElapsed < 0) continue;
     const size = unitSize(unit.unitType);
     const sprite = asset(model.assets, factionKey(unit));
     const visual = fleetVisualFor(unit.team, unit.unitType);
@@ -386,6 +398,7 @@ export const renderEntityLayer = (ctx, model) => {
     const engineDirection = unit.team === "TEAM_PLAYER" ? 1 : -1;
     const pulse = 0.8 + Math.sin(model.frameTime * 7 + unit.x) * 0.12;
     const y = projection.y(unit.y);
+    const launchProgress = unit.launching ? Math.min(1, Math.max(0, unit.launchElapsed / unit.launchDuration)) : 1;
     ctx.save();
     ctx.globalAlpha = 0.28 * pulse;
     ctx.fillStyle = teamColor(unit.team);
@@ -395,6 +408,8 @@ export const renderEntityLayer = (ctx, model) => {
     ctx.restore();
     ctx.save();
     ctx.translate(unit.x, y);
+    ctx.globalAlpha = 0.62 + launchProgress * 0.38;
+    ctx.scale(0.78 + launchProgress * 0.22, 0.78 + launchProgress * 0.22);
     if (unit.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
     if (simulation.state.time - unit.lastDamagedAt < 0.12) ctx.filter = "brightness(2.2) saturate(0.35)";
     ctx.globalCompositeOperation = "screen";

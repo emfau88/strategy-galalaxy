@@ -8,13 +8,16 @@ export const UNIT_STATE = Object.freeze({
   DEAD: "DEAD",
 });
 
-export const createUnit = ({ id, team, laneId, unitType, x, y, slotOffsetX = 0, spawnCycle = 0 }) => {
+export const createUnit = ({ id, team, laneId, unitType, x, y, slotOffsetX = 0, spawnCycle = 0, launch = null }) => {
   const definition = UNIT_DEFINITIONS[unitType];
   if (!definition) throw new Error(`Unknown unit type: ${unitType}`);
   return {
-    id, team, laneId, unitType, x, y, slotOffsetX, spawnCycle,
+    id, team, laneId, unitType, x: launch?.x ?? x, y: launch?.y ?? y, slotOffsetX, spawnCycle,
     hp: definition.maxHp, maxHp: definition.maxHp, fireCooldown: 0, lastShotAt: -Infinity,
     targetId: null, state: UNIT_STATE.ADVANCING, alive: true, lastDamagedAt: -Infinity,
+    launching: Boolean(launch), launchElapsed: -(launch?.delay ?? 0), launchDuration: launch?.duration ?? 0,
+    launchOriginX: launch?.x ?? x, launchOriginY: launch?.y ?? y,
+    launchTargetX: x, launchTargetY: y,
   };
 };
 

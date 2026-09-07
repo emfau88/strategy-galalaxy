@@ -36,7 +36,7 @@ No visual animation frame triggers a projectile, hit or damage event.
 | --- | --- |
 | `src/game.js` | Browser lifecycle, input routing, fixed-step orchestration, render model |
 | `src/simulation/matchDirector.js` | State transitions and ordering between specialized systems |
-| `src/simulation/deploymentDirector.js` | Timer, lock state, cycle, queues, free-wave backlog, simultaneous spawn and last-deployment timestamp for presentation |
+| `src/simulation/deploymentDirector.js` | Timer, lock state, cycle, queues, free-wave backlog, simultaneous spawn and per-team/lane delivery timestamps for presentation |
 | `src/simulation/commandSystem.js` | Public queue, removal and upgrade commands with validation |
 | `src/simulation/economySystem.js` | Energy, income, escalation and pending upgrades |
 | `src/simulation/battleSimulation.js` | Movement, formation separation, targeting, firing, projectile motion and damage |
@@ -66,6 +66,7 @@ input or AI intent
 ## Simulation invariants
 
 - Units, structures, projectiles and Nodes live in `BattleState` maps with stable IDs.
+- Formation spawns begin at the appropriate HQ hangar and traverse to their deterministic lane slots. Launching ships are excluded from targeting, capture and separation until traversal completes.
 - Units never change lanes.
 - Updates and damage events use deterministic ordering.
 - Projectile behavior is defined in `src/data/definitions.js`; art metadata is defined separately in `src/data/visuals.js`.
@@ -102,7 +103,7 @@ Device pixel ratio is capped, with a lower coarse-pointer target, to control dec
 
 `npm.cmd test` covers deterministic combat, mirrored geometry, lane isolation, role targeting, homing combat, projectile fairness, deployment timing, lock-in, refunds, pending upgrades, persistence, AI legality, capture and five portrait viewports.
 
-`npm.cmd run check` adds source syntax checks and validates 55 registered runtime assets plus the 516-file licensed library.
+`npm.cmd run check` adds source syntax checks and validates 56 registered runtime assets plus the 516-file licensed library.
 
 `npm.cmd run test:stress` runs a dense four-lane-side combat fixture and enforces unit, projectile, trail and event-history bounds.
 

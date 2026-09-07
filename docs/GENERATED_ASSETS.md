@@ -33,3 +33,11 @@
 - **Status:** Active runtime asset. Both teams share it; the enemy instance is rotated 180°.
 
 The earlier generated single-center-gate HQ concept was rejected during integration and is not kept in the repository.
+
+## `defense-turret-head-topdown-v3.png`
+
+- **Destination:** `assets/structures/defense-turret-head-topdown-v3.png`
+- **Method / mode:** Built-in ImageGen, `stylized-concept`, then alpha-preserving downscaling to 384×384 for mobile delivery.
+- **Purpose:** Independent rotating twin-barrel layer. Canvas controls pivot alignment, smooth target tracking, recoil, team indicator and damage response; simulation projectiles originate at the muzzle.
+- **Prompt:** “Create one premium compact twin-barrel orbital defense cannon head only, perfectly top-down and forward-facing toward the top edge, centered for a code-driven rotation pivot. Crisp polished high-resolution pixel-art hybrid, neutral silver/blue-gray/pale-lavender armor with restrained practical lighting, readable at 38–44 pixels, transparent background. No platform, projectile, muzzle flash, UI, text, shadow, aura, team ring, watermark, perspective or excessive bloom.”
+- **Status:** Active runtime asset.

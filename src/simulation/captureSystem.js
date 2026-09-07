@@ -14,7 +14,7 @@ export class CaptureSystem {
       const lane = state.lanes.get(node.laneId);
       const power = (team) => lane.unitIds.get(team)
         .map((id) => state.units.get(id))
-        .filter((unit) => unit?.alive && Math.hypot(unit.x - node.x, unit.y - node.y) <= node.radius)
+        .filter((unit) => unit?.alive && !unit.launching && Math.hypot(unit.x - node.x, unit.y - node.y) <= node.radius)
         .reduce((sum, unit) => sum + (UNIT_DEFINITIONS[unit.unitType].captureStrength ?? 1), 0);
       const playerPower = power(TEAM.PLAYER);
       const enemyPower = power(TEAM.ENEMY);

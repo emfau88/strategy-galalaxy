@@ -123,6 +123,8 @@ match.start();
 assert.equal(match.state, MATCH_STATE.LIVE_MATCH);
 assert.equal(match.cycle, 1);
 assert.equal(match.lastDeploymentAt, 0);
+assert.equal(match.lastDeploymentAtFor(TEAM.PLAYER, LANE.LEFT), 0);
+assert.equal(match.lastDeploymentAtFor(TEAM.ENEMY, LANE.RIGHT), 0);
 assert.ok(match.simulation.state.units.size >= 8);
 assert.equal(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.PLAYER).length, 2);
 assert.ok(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.ENEMY).length >= 2);
@@ -155,8 +157,11 @@ assert.deepEqual(lockMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYE
 
 const formationSimulation = new BattleSimulation();
 const formation = formationSimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["scout", "scout", "scout", "scout", "scout", "scout"]);
+assert.ok(formation.every((unit) => unit.launching));
+assert.ok(formation.every((unit) => unit.x === 176 && unit.y === 527), "left-lane ships begin inside the player HQ hangar");
+for (let index = 0; index < 60; index += 1) formationSimulation.step(1 / 60);
+assert.ok(formation.every((unit) => !unit.launching));
 assert.ok(new Set(formation.map((unit) => `${unit.x},${unit.y}`)).size >= 5);
-formationSimulation.step(1 / 60);
 assert.ok(formation.every((unit) => Math.abs(unit.x - 112) <= 70));
 
 const roleTargeting = new BattleSimulation();

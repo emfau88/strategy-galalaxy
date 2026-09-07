@@ -3,6 +3,7 @@ import { LANE, TEAM } from "../core/constants.js";
 const laneIds = Object.freeze([LANE.LEFT, LANE.RIGHT]);
 const teams = Object.freeze([TEAM.PLAYER, TEAM.ENEMY]);
 const emptyTeamLanes = () => new Map(teams.map((team) => [team, new Map(laneIds.map((laneId) => [laneId, []]))]));
+const emptyDeploymentTimes = () => new Map(teams.map((team) => [team, new Map(laneIds.map((laneId) => [laneId, null]))]));
 
 /** Owns the continuous deployment cadence and both teams' future waves. */
 export class DeploymentDirector {
@@ -15,6 +16,7 @@ export class DeploymentDirector {
     this.cycleNumber = 0;
     this.timeUntilDeployment = this.config.timing.deploymentIntervalSeconds;
     this.lastDeploymentAt = null;
+    this.lastDeploymentAtByTeamLane = emptyDeploymentTimes();
     this.queuedWaves = emptyTeamLanes();
     this.baseWaveBacklog = emptyTeamLanes();
     this.nextQueueSequence = 1;
@@ -55,7 +57,11 @@ export class DeploymentDirector {
     }
 
     this.cycleNumber += 1;
-    for (const entry of deployment) simulation.spawnFormation(entry.team, entry.laneId, entry.unitTypes, this.cycleNumber);
+    for (const entry of deployment) {
+      const spawned = simulation.spawnFormation(entry.team, entry.laneId, entry.unitTypes, this.cycleNumber);
+      entry.spawnedCount = spawned.length;
+      if (spawned.length) this.lastDeploymentAtByTeamLane.get(entry.team).set(entry.laneId, simulation.state.time);
+    }
     this.lastDeploymentAt = simulation.state.time;
     this.timeUntilDeployment = this.config.timing.deploymentIntervalSeconds;
     return { cycle: this.cycleNumber, deployment };

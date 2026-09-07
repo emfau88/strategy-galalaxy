@@ -117,6 +117,7 @@ export class MatchDirector {
   set nextQueueSequence(value) { this.deployment.nextQueueSequence = value; }
   get cycle() { return this.deployment.cycleNumber; }
   get lastDeploymentAt() { return this.deployment.lastDeploymentAt; }
+  lastDeploymentAtFor(team, laneId) { return this.deployment.lastDeploymentAtByTeamLane.get(team)?.get(laneId) ?? null; }
   get phaseRemaining() { return this.deployment.timeUntilDeployment; }
   get queueLocked() { return this.deployment.locked; }
   get activeBattleSeconds() { return this.activeMatchSeconds; }

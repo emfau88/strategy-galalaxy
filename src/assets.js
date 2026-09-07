@@ -8,6 +8,7 @@ export const ASSET_GROUPS = Object.freeze({
     "background-asteroid": "assets/environment/asteroid.png",
     "structure-hq": "assets/structures/command-hq-topdown-v3.png",
     "structure-turret": "assets/structures/defense-turret-base-topdown-v2.png",
+    "structure-turret-head": "assets/structures/defense-turret-head-topdown-v3.png",
     "structure-node": "assets/structures/energy-relay-topdown-v1.png",
     "nairan-scout": "assets/factions/nairan/scout.png",
     "nairan-fighter": "assets/factions/nairan/fighter.png",

@@ -25,7 +25,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Scout, Fighter, Bomber und Frigate mit eigenen Rollen, Formationen, Zielprioritäten und Capture-Stärken.
 - Nairan- und Kla'ed-Flotten mit animierten Engines, Weapon-, Shield- und Destruction-Layern.
 - Rollen- und fraktionsabhängige animierte Projektile, bounded Homing, begrenzte Trails, Muzzle Flashes, Treffer- und Explosionseffekte.
-- Modulare Defense Turrets mit weich nachgeführtem Geschütz und Schussrückstoß sowie hochwertige Headquarters mit zwei lane-seitigen, beim Deployment öffnenden Hangars, pulsierenden Betriebsleuchten und zwei sichtbaren Damage-Stufen.
+- Modulare Defense Turrets mit eigenem weich nachgeführtem Geschütz, Laufmündungs-Projektilen und Schussrückstoß sowie hochwertige Headquarters mit zwei lane-seitigen Hangars: Schiffe starten sichtbar aus dem passenden Tor, das sich nur bei tatsächlicher Auslieferung öffnet und wieder schließt.
 - Keine großflächigen Team-Neonringe oder dekorativen Orbit-Ellipsen; Nodes zeigen Capture-Fortschritt kompakt unterhalb des Sprites.
 - Faire Projektilbudgets pro Team und Lane sowie globale Sicherheitsgrenzen für mobile Geräte.
 - Responsive Canvas-Höhe, die Tall-Screen-Smartphones im Fullscreen ohne große ungenutzte Flächen ausfüllt.

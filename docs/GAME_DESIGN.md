@@ -29,6 +29,7 @@ The primary match ends only when a Headquarters is destroyed.
 - During the final two seconds additions, removal and upgrades are rejected.
 - Deployment is timer-driven only; there is no manual deploy command.
 - Existing lane capacity is respected. Entries that cannot spawn remain as deterministic backlog rather than vanishing.
+- Delivered ships launch visibly from their lane-facing HQ hangar, remain untargetable during the short launch traversal, then join their role formation. A hangar opens only when that team and lane actually deliver at least one ship.
 - The normal HUD reveals only the number of enemy reinforcements, not their types.
 
 ## Economy and upgrades
@@ -61,6 +62,8 @@ Formation offsets put Scouts forward, Frigates near the front, Fighters in escor
 ## Structures, capture and health
 
 Headquarters and turrets fire automatically and retain damage. Capture strength from all ships inside a Node is additive; opposing power is subtracted and near-equal power contests the Node.
+
+Turret platforms and weapon heads are separate presentation layers. The head tracks its authoritative target smoothly, recoils, and places turret projectiles at the muzzle. HQ hangars, practical lamps and damage layers remain renderer-owned and never decide whether a deployment or hit occurred.
 
 Permanent health bars are reserved for Headquarters and turrets. Unit bars appear only after damage. Visual hierarchy must read as `HQ >>> Turret > Frigate > Bomber/Fighter > Scout` without enlarging ships until real-device tests show a readability failure.
 

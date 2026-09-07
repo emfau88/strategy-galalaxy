@@ -9,7 +9,7 @@ The complete licensed asset import comes from read-only Galalaxy commit `7f90d17
 | `assets/library/galalaxy/` | 516 | 20,808,162 | Development/source library; never bulk-loaded |
 | Foozle packs inside library | 502 | 14,218,222 | CC0 source art, previews and editable files |
 | Optional Galalaxy UI inside library | 14 | 6,589,940 | Preserved for reference; not in current manifest |
-| Registered Strategy Galalaxy runtime manifest | 55 | verified by script | Only current background, structures, core fleet layers and projectiles |
+| Registered Strategy Galalaxy runtime manifest | 56 | verified by script | Only current background, modular structures, core fleet layers and projectiles |
 
 The reference contains one additional file, `assets/music/track1.ogg` (5,937,850 bytes). It is deliberately excluded because its distribution license is undocumented. Therefore 516 files is the expected and enforced library count.
 
@@ -55,6 +55,7 @@ Mechanics remain faction-symmetric even when art differs. Each team/lane has an 
 - `assets/environment/strategy-galaxy-background-v1.png`: portrait background created for this project.
 - `assets/structures/command-hq-topdown-v3.png`: production HQ base with two lane-facing hangars; doors, practical lights and damage presentation are composed in Canvas.
 - `assets/structures/defense-turret-base-topdown-v2.png`: barrel-free modular turret platform; the aiming weapon head and recoil are composed in Canvas.
+- `assets/structures/defense-turret-head-topdown-v3.png`: independent top-down twin-barrel head rotated and recoiled around the turret socket in Canvas.
 - `assets/structures/command-hq-topdown-v1.png`, `defense-turret-topdown-v1.png` and `energy-relay-topdown-v1.png`: retained project-native first-pass sources; only the relay remains active.
 - normalized environment aliases and earlier curated fleet bases remain available to the runtime.
 

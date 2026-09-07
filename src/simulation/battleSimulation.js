@@ -10,6 +10,7 @@ const forwardDirection = (team) => (team === TEAM.PLAYER ? -1 : 1);
 const targetDefinition = (entity) => entity.structureType ? STRUCTURE_DEFINITIONS[entity.structureType] : UNIT_DEFINITIONS[entity.unitType];
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const angleDelta = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
+const LAUNCH_DURATION_SECONDS = 0.62;
 
 const FORMATION = Object.freeze({
   scout: Object.freeze({ forward: 46, lateral: [0, -48, 48, -24, 24] }),
@@ -24,20 +25,25 @@ export class BattleSimulation {
     this.economy = economy;
   }
 
-  spawnUnit(team, laneId, unitType, { x, y, slotOffsetX = 0, slotOffsetY = 0, spawnCycle = 0 } = {}) {
+  spawnUnit(team, laneId, unitType, { x, y, slotOffsetX = 0, slotOffsetY = 0, spawnCycle = 0, launch = null } = {}) {
     const lane = laneFor(this.state, laneId);
     const active = lane.unitIds.get(team);
     if (active.length >= CONFIG.caps.unitsPerLaneTeam) return null;
     const spawn = team === TEAM.PLAYER ? this.state.map.lanes.find((item) => item.id === laneId).playerSpawn : this.state.map.lanes.find((item) => item.id === laneId).enemySpawn;
+    const targetX = x ?? spawn.x + slotOffsetX;
+    const targetY = y ?? spawn.y + slotOffsetY;
     return addUnitToState(this.state, createUnit({
       id: this.state.ids.next(), team, laneId, unitType,
-      x: x ?? spawn.x + slotOffsetX, y: y ?? spawn.y + slotOffsetY, slotOffsetX, spawnCycle,
+      x: targetX, y: targetY, slotOffsetX, spawnCycle, launch,
     }));
   }
 
   spawnFormation(team, laneId, unitTypes, spawnCycle = 0) {
     const direction = forwardDirection(team);
     const typeCounts = new Map();
+    const hq = [...this.state.structures.values()].find((structure) => structure.team === team && structure.structureType === "hq");
+    const laneSide = laneId === LANE.LEFT ? -1 : 1;
+    const launchOrigin = hq ? { x: hq.x + laneSide * 34, y: hq.y + direction * 25 } : null;
     return unitTypes.map((unitType, index) => {
       const pattern = FORMATION[unitType] ?? FORMATION.fighter;
       const typeIndex = typeCounts.get(unitType) ?? 0;
@@ -48,6 +54,7 @@ export class BattleSimulation {
         slotOffsetX: lateral,
         slotOffsetY: direction * (pattern.forward - row * 26) + ((index + spawnCycle) % 2 ? 2 : -2),
         spawnCycle,
+        launch: launchOrigin ? { ...launchOrigin, duration: LAUNCH_DURATION_SECONDS, delay: index * 0.055 } : null,
       });
     }).filter(Boolean);
   }
@@ -67,7 +74,7 @@ export class BattleSimulation {
     for (const lane of this.state.lanes.values()) {
       const laneDefinition = this.state.map.lanes.find((item) => item.id === lane.id);
       for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
-        const units = lane.unitIds.get(team).map((id) => this.state.units.get(id)).filter((unit) => unit?.alive).sort((left, right) => left.id.localeCompare(right.id));
+        const units = lane.unitIds.get(team).map((id) => this.state.units.get(id)).filter((unit) => unit?.alive && !unit.launching).sort((left, right) => left.id.localeCompare(right.id));
         for (let first = 0; first < units.length; first += 1) {
           for (let second = first + 1; second < units.length; second += 1) {
             const left = units[first];
@@ -94,6 +101,18 @@ export class BattleSimulation {
 
   updateUnit(unit, dt) {
     if (!unit.alive) return;
+    if (unit.launching) {
+      unit.launchElapsed += dt;
+      if (unit.launchElapsed < 0) return;
+      const progress = Math.min(1, unit.launchElapsed / unit.launchDuration);
+      const eased = 1 - (1 - progress) ** 3;
+      unit.x = unit.launchOriginX + (unit.launchTargetX - unit.launchOriginX) * eased;
+      unit.y = unit.launchOriginY + (unit.launchTargetY - unit.launchOriginY) * eased;
+      if (progress < 1) return;
+      unit.launching = false;
+      unit.x = unit.launchTargetX;
+      unit.y = unit.launchTargetY;
+    }
     const definition = UNIT_DEFINITIONS[unit.unitType];
     const target = acquireUnitTarget(this.state, unit);
     unit.targetId = target?.id ?? null;
@@ -162,9 +181,12 @@ export class BattleSimulation {
     const dx = target.x - owner.x;
     const dy = target.y - owner.y;
     const magnitude = Math.hypot(dx, dy) || 1;
+    const muzzleOffset = owner.structureType === "turret" ? 25 : 0;
+    const muzzleX = owner.x + dx / magnitude * muzzleOffset;
+    const muzzleY = owner.y + dy / magnitude * muzzleOffset;
     const projectile = createProjectile({
       id: this.state.ids.next(), ownerId: owner.id, ownerTeam: owner.team, laneId,
-      projectileType: projectileDefinition.id, x: owner.x, y: owner.y,
+      projectileType: projectileDefinition.id, x: muzzleX, y: muzzleY,
       vx: (dx / magnitude) * projectileDefinition.speed, vy: (dy / magnitude) * projectileDefinition.speed,
       damage: this.damageFor(owner, definition) * this.damageMultiplier(owner, target), targetId: target.id,
     });
@@ -172,7 +194,7 @@ export class BattleSimulation {
     addProjectileToState(this.state, projectile);
     owner.fireCooldown = definition.fireInterval;
     owner.lastShotAt = this.state.time;
-    emitSimulationEvent(this.state, { type: "shot", ownerId: owner.id, targetId: target.id, projectileType: projectile.projectileType, x: owner.x, y: owner.y, team: owner.team });
+    emitSimulationEvent(this.state, { type: "shot", ownerId: owner.id, targetId: target.id, projectileType: projectile.projectileType, x: muzzleX, y: muzzleY, team: owner.team });
   }
 
   damageFor(owner, definition) {
