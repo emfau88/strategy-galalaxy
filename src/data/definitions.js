@@ -3,12 +3,12 @@ import { LANE, TEAM } from "../core/constants.js";
 const freeze = (value) => Object.freeze(value);
 
 export const UNIT_DEFINITIONS = freeze({
-  scout: freeze({ id: "scout", role: "light", cost: 50, maxHp: 62, speed: 96, collisionRadius: 7, attackRange: 62, aggroRange: 102, targetLeash: 132, damage: 4, fireInterval: 1.2, projectileId: "scout_pulse", captureStrength: 2, color: "#9cecff" }),
-  fighter: freeze({ id: "fighter", role: "light", cost: 90, maxHp: 112, speed: 76, collisionRadius: 9, attackRange: 82, aggroRange: 148, targetLeash: 182, damage: 7, fireInterval: 0.58, projectileId: "fighter_laser", captureStrength: 1, color: "#c7e8ff" }),
-  bomber: freeze({ id: "bomber", role: "siege", cost: 140, maxHp: 96, speed: 45, collisionRadius: 11, attackRange: 112, aggroRange: 184, targetLeash: 224, damage: 34, fireInterval: 2.25, projectileId: "siege_missile", captureStrength: 0.5, color: "#ffd5a0" }),
-  frigate: freeze({ id: "frigate", role: "heavy", cost: 180, maxHp: 390, speed: 38, collisionRadius: 14, attackRange: 94, aggroRange: 158, targetLeash: 196, damage: 18, fireInterval: 1.32, projectileId: "heavy_cannon", captureStrength: 0.75, color: "#c4b9ff" }),
-  battlecruiser: freeze({ id: "battlecruiser", role: "capital", cost: 320, maxHp: 480, speed: 34, collisionRadius: 22, attackRange: 110, aggroRange: 180, targetLeash: 216, damage: 46, fireInterval: 0.9, projectileId: "heavy_bolt", color: "#d4b5ff", enabled: false }),
-  dreadnought: freeze({ id: "dreadnought", role: "capital", cost: 520, maxHp: 880, speed: 26, collisionRadius: 29, attackRange: 125, aggroRange: 200, targetLeash: 240, damage: 82, fireInterval: 1.15, projectileId: "heavy_bolt", color: "#f0b5ff", enabled: false }),
+  scout: freeze({ id: "scout", role: "screen", cost: 50, maxHp: 62, speed: 70, acceleration: 150, turnRate: 5.4, collisionRadius: 7, spacingRadius: 12, attackRange: 76, aggroRange: 130, targetLeash: 166, damage: 4, fireInterval: 1.2, projectileId: "scout_pulse", captureStrength: 2, color: "#9cecff" }),
+  fighter: freeze({ id: "fighter", role: "escort", cost: 90, maxHp: 112, speed: 56, acceleration: 112, turnRate: 4.4, collisionRadius: 9, spacingRadius: 15, attackRange: 105, aggroRange: 170, targetLeash: 210, damage: 7, fireInterval: 0.58, projectileId: "fighter_laser", captureStrength: 1, color: "#c7e8ff" }),
+  bomber: freeze({ id: "bomber", role: "siege", cost: 140, maxHp: 96, speed: 34, acceleration: 58, turnRate: 2.6, collisionRadius: 11, spacingRadius: 18, attackRange: 148, aggroRange: 215, targetLeash: 260, damage: 34, fireInterval: 2.25, projectileId: "siege_missile", captureStrength: 0.5, color: "#ffd5a0" }),
+  frigate: freeze({ id: "frigate", role: "heavy", cost: 180, maxHp: 390, speed: 27, acceleration: 40, turnRate: 1.7, collisionRadius: 14, spacingRadius: 24, attackRange: 132, aggroRange: 190, targetLeash: 230, damage: 18, fireInterval: 1.32, projectileId: "heavy_cannon", captureStrength: 0.75, broadside: true, color: "#c4b9ff" }),
+  battlecruiser: freeze({ id: "battlecruiser", role: "capital", cost: 320, maxHp: 480, speed: 23, acceleration: 30, turnRate: 1.35, collisionRadius: 22, spacingRadius: 30, attackRange: 154, aggroRange: 220, targetLeash: 266, damage: 46, fireInterval: 0.9, projectileId: "heavy_bolt", broadside: true, color: "#d4b5ff", enabled: false }),
+  dreadnought: freeze({ id: "dreadnought", role: "capital", cost: 520, maxHp: 880, speed: 18, acceleration: 22, turnRate: 1.05, collisionRadius: 29, spacingRadius: 36, attackRange: 176, aggroRange: 245, targetLeash: 294, damage: 82, fireInterval: 1.15, projectileId: "heavy_bolt", broadside: true, color: "#f0b5ff", enabled: false }),
 });
 
 export const PROJECTILE_DEFINITIONS = freeze({

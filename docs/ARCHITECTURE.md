@@ -70,7 +70,8 @@ input or AI intent
 ## Simulation invariants
 
 - Units, structures, projectiles and Nodes live in `BattleState` maps with stable IDs.
-- Formation spawns begin at the appropriate HQ hangar and traverse to their deterministic lane slots. Launching ships are excluded from targeting, capture and separation until traversal completes.
+- Formation spawns begin at the appropriate HQ hangar and traverse to deterministic role slots around a cycle-owned squad anchor. Launching ships are excluded from targeting, capture and separation until traversal completes.
+- Unit velocity and heading are authoritative simulation values. Acceleration, arrival steering, visual spacing and heavy-ship broadside alignment remain deterministic and renderer-independent.
 - Units never change lanes.
 - Movement and targeting read a per-step position snapshot; updates alternate their stable team order and damage resolves as a batch. This removes sequential side bias, and simultaneous HQ destruction produces `DRAW`.
 - Projectile behavior is defined in `src/data/definitions.js`; art metadata is defined separately in `src/data/visuals.js`.

@@ -31,20 +31,20 @@ committet und gepusht, damit er direkt getestet werden kann.
 - [x] Pure Kamera- und Koordinatentests ergänzen.
 - [x] Touch-Drag und Kartensprünge auf fünf Mobile-Viewports im Browser prüfen.
 - [x] Gesamte technische Prüfkette und neue Balance-Diagnose ausführen.
-- [ ] Meilenstein committen und auf `main` pushen.
+- [x] Meilenstein committen und auf `main` pushen (`22d6ddd`).
 
 ## Meilenstein 2 – ruhige Squad-Bewegung und Formationen
 
-- [ ] Globale Reisegeschwindigkeiten senken und Beschleunigung statt sofortiger Richtungswechsel nutzen.
-- [ ] Deterministische Squad-Anker je Team und Lane einführen.
-- [ ] Rollenplätze relativ zum Squad-Anker definieren: Screen, Front, Escort, Siege, Heavy.
-- [ ] Weiche Ankunft am Formationsplatz statt dauernder Vollgeschwindigkeit umsetzen.
-- [ ] Mindestabstände und seitliche Ausweichslots gegen Stapelbildung verstärken.
-- [ ] Zielbindung stabilisieren, damit Verbände nicht hektisch pendeln.
-- [ ] Frigate und spätere Großschiffe seitlich zum Ziel ausrichten und Breitseite halten lassen.
-- [ ] Reichweite, Projektiltempo und Feuerrhythmus an die langsamere Bewegung anpassen.
-- [ ] Determinismus-, Symmetrie-, Lane- und Stresstests erweitern.
-- [ ] Auf echten Mobile-Screens Sichtkontrolle für dichte Begegnungen durchführen.
+- [x] Globale Reisegeschwindigkeiten senken und Beschleunigung statt sofortiger Richtungswechsel nutzen.
+- [x] Deterministische Squad-Anker je Team und Lane einführen.
+- [x] Rollenplätze relativ zum Squad-Anker definieren: Screen, Front, Escort, Siege, Heavy.
+- [x] Weiche Ankunft am Formationsplatz statt dauernder Vollgeschwindigkeit umsetzen.
+- [x] Mindestabstände und seitliche Ausweichslots gegen Stapelbildung verstärken.
+- [x] Zielbindung stabilisieren, damit Verbände nicht hektisch pendeln.
+- [x] Frigate und spätere Großschiffe seitlich zum Ziel ausrichten und Breitseite halten lassen.
+- [x] Reichweite und Feuermomente an die langsamere Bewegung anpassen.
+- [x] Determinismus-, Symmetrie-, Lane- und Stresstests erweitern.
+- [x] Auf fünf Mobile-Screens Sichtkontrolle für dichte Begegnungen durchführen.
 - [ ] Meilenstein committen und pushen.
 
 ## Meilenstein 3 – automatische Skirmisher-Grundwelle
@@ -105,9 +105,8 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 
 ## Aktueller nächster Schritt
 
-Meilenstein 1 vollständig verifizieren, committen und pushen. Danach beginnt
-Meilenstein 2 mit Messwerten für Geschwindigkeit, Kontaktzeit, Verbandsabstand und
-Frigate-Ausrichtung, bevor Spielwerte verändert werden.
+Meilenstein 2 committen und pushen. Danach beginnt Meilenstein 3 mit der schwachen
+automatischen Drone-Grundwelle und der klareren kaufbaren Scout-Rolle.
 
 ## Letzte verifizierte Messung
 
@@ -120,3 +119,12 @@ Tall-world Meilenstein 1, Seed `1337`, 100 gespiegelte Matches:
 - erster Turretverlust im Mittel: 49,8 Sekunden
 - Spitzenlast: 38 Units / 11 Projektile
 - Browser-Touchprüfung: 360×800, 390×844, 393×852, 412×915 und 420×760 bestanden
+
+Movement-Meilenstein 2, kurzer gespiegelter Smoke-Test mit acht Matches:
+
+- Siege: 4 Spieler / 4 Gegner
+- Draws und Timeouts: 0
+- mittlere Matchdauer: 273,2 Sekunden
+- erster Turretverlust im Mittel: 159,2 Sekunden
+- Spitzenlast: 55 Units / 13 Projektile
+- dichter 90-Sekunden-Stresstest: maximal 36 Projektile, keine Budgetverletzung

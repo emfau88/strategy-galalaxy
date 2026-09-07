@@ -61,7 +61,7 @@ Current data-driven defaults:
 | Bomber | Siege and anti-heavy | Visible accelerating homing missile; prefers turrets, HQ and Frigates | 0.5 |
 | Frigate | Durable frontline anchor | Slower, weightier cannon shot and high durability | 0.75 |
 
-Formation offsets put Scouts forward, Frigates near the front, Fighters in escort positions and Bombers behind. Local separation prevents stacking while preserving a compact fleet. Targets remain sticky while valid and within their leash.
+Deployment cycles create deterministic squads with a shared moving anchor. Role offsets put Scouts into the screen, Fighters into escort positions, Frigates near the heavy front and Bombers behind. Ships accelerate toward their slot and match formation velocity instead of jumping directly to full speed. Visual spacing radii prevent large sprites from stacking while gameplay collision radii remain independent. Targets remain sticky while valid and within their leash. Frigates and later capital ships maneuver to a perpendicular firing posture and only fire once their broadside is aligned.
 
 ## Structures, capture and health
 

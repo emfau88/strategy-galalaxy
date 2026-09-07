@@ -215,6 +215,16 @@ try {
       await delay(80);
       const damageScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
       await writeFile(resolve(output, "structures-closed-damaged-420x760.png"), Buffer.from(damageScreenshot.data, "base64"));
+      const combatState = await send("Runtime.evaluate", {
+        expression: `(() => { const g = window.__strategyGalalaxy; for (const structure of g.match.simulation.state.structures.values()) structure.hp = structure.maxHp; for (let step = 0; step < 60 * 60 && g.state === 'LIVE_MATCH'; step += 1) g.match.advanceLive(1 / 60); g.camera.jumpToWorld(590); const units = [...g.match.simulation.state.units.values()]; return { state: g.state, units: units.length, moving: units.filter((unit) => Math.hypot(unit.vx, unit.vy) > 1).length, headings: units.every((unit) => Number.isFinite(unit.heading)) }; })()`,
+        returnByValue: true,
+      });
+      assert.equal(combatState.result.value.state, "LIVE_MATCH", "formation QA point remains inside an active match");
+      assert.ok(combatState.result.value.units >= 8, "formation QA point contains a readable fleet");
+      assert.ok(combatState.result.value.moving > 0 && combatState.result.value.headings, "ships expose authoritative eased movement and headings");
+      await delay(80);
+      const combatScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+      await writeFile(resolve(output, "combat-formations-420x760.png"), Buffer.from(combatScreenshot.data, "base64"));
     }
     reports.push({ width, height, designHeight: Math.round(designHeight * 10) / 10, scale: Math.round(snapshot.transform.scale * 1000) / 1000, camera: "passed", touch: "passed" });
   }

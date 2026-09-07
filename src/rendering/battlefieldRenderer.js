@@ -413,7 +413,8 @@ export const renderEntityLayer = (ctx, model) => {
     const visual = fleetVisualFor(unit.team, unit.unitType);
     const frameSize = visual?.frameSize ?? 64;
     const displaySize = shipCellSize(unit.unitType, frameSize);
-    const engineDirection = unit.team === "TEAM_PLAYER" ? 1 : -1;
+    const heading = Number.isFinite(unit.heading) ? unit.heading : (unit.team === TEAM.PLAYER ? -Math.PI / 2 : Math.PI / 2);
+    const renderRotation = heading + Math.PI / 2;
     const pulse = 0.8 + Math.sin(model.frameTime * 7 + unit.x) * 0.12;
     const y = projection.y(unit.y);
     const launchProgress = unit.launching ? Math.min(1, Math.max(0, unit.launchElapsed / unit.launchDuration)) : 1;
@@ -421,14 +422,16 @@ export const renderEntityLayer = (ctx, model) => {
     ctx.globalAlpha = 0.28 * pulse;
     ctx.fillStyle = teamColor(unit.team);
     ctx.beginPath();
-    ctx.ellipse(unit.x, y + engineDirection * size * 0.37, Math.max(2, size * 0.1), size * 0.28 * pulse, 0, 0, Math.PI * 2);
+    const exhaustX = unit.x - Math.cos(heading) * size * 0.37;
+    const exhaustY = y - Math.sin(heading) * size * 0.37;
+    ctx.ellipse(exhaustX, exhaustY, Math.max(2, size * 0.1), size * 0.28 * pulse, renderRotation, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     ctx.save();
     ctx.translate(unit.x, y);
     ctx.globalAlpha = 0.62 + launchProgress * 0.38;
     ctx.scale(0.78 + launchProgress * 0.22, 0.78 + launchProgress * 0.22);
-    if (unit.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
+    ctx.rotate(renderRotation);
     if (simulation.state.time - unit.lastDamagedAt < 0.12) ctx.filter = "brightness(2.2) saturate(0.35)";
     ctx.globalCompositeOperation = "screen";
     if (visual?.engine) drawStripFrame(ctx, asset(model.assets, visual.engine.assetKey), visual.engine, frameSize, simulation.state.time, displaySize);

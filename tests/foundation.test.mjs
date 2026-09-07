@@ -198,6 +198,37 @@ assert.ok(formation.every((unit) => !unit.launching));
 assert.ok(new Set(formation.map((unit) => `${unit.x},${unit.y}`)).size >= 5);
 assert.ok(formation.every((unit) => Math.abs(unit.x - CLASSIC_LANES.lanes[0].centerX) <= CLASSIC_LANES.lanes[0].width / 2));
 
+const accelerationSimulation = new BattleSimulation();
+for (const structure of accelerationSimulation.state.structures.values()) {
+  if (structure.team === TEAM.ENEMY) structure.alive = false;
+}
+const acceleratingFighter = accelerationSimulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 105, y: 820, spawnCycle: 71 });
+accelerationSimulation.step(1 / 60);
+assert.ok(Math.hypot(acceleratingFighter.vx, acceleratingFighter.vy) > 0, "ships begin accelerating instead of remaining static");
+assert.ok(Math.hypot(acceleratingFighter.vx, acceleratingFighter.vy) < UNIT_DEFINITIONS.fighter.speed, "ships do not jump to full speed in one step");
+for (let index = 0; index < 240; index += 1) accelerationSimulation.step(1 / 60);
+assert.ok(Math.hypot(acceleratingFighter.vx, acceleratingFighter.vy) <= UNIT_DEFINITIONS.fighter.speed + 1e-6);
+
+const squadSimulation = new BattleSimulation();
+for (const structure of squadSimulation.state.structures.values()) {
+  if (structure.team === TEAM.ENEMY) structure.alive = false;
+}
+const stableSquad = squadSimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["fighter", "bomber", "frigate"], 72);
+for (let index = 0; index < 240; index += 1) squadSimulation.step(1 / 60);
+const [squadFighter, squadBomber, squadFrigate] = stableSquad;
+assert.ok(squadFrigate.y < squadFighter.y && squadFighter.y < squadBomber.y, "front, escort, and siege slots stay ordered while advancing");
+assert.ok(stableSquad.every((unit) => Math.abs(unit.x - (CLASSIC_LANES.lanes[0].centerX + unit.slotOffsetX)) < 9), "squad members return to their lateral slots");
+
+const broadsideSimulation = new BattleSimulation();
+const broadsideFrigate = broadsideSimulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "frigate", { x: 105, y: 620, slotOffsetX: -30, spawnCycle: 73 });
+const broadsideTarget = broadsideSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "fighter", { x: 105, y: 520, spawnCycle: 73 });
+for (let index = 0; index < 180; index += 1) broadsideSimulation.step(1 / 60);
+const targetBearing = Math.atan2(broadsideTarget.y - broadsideFrigate.y, broadsideTarget.x - broadsideFrigate.x);
+const desiredBroadside = targetBearing - broadsideFrigate.broadsideSide * Math.PI / 2;
+const broadsideError = Math.abs(Math.atan2(Math.sin(broadsideFrigate.heading - desiredBroadside), Math.cos(broadsideFrigate.heading - desiredBroadside)));
+assert.ok(broadsideError < 0.4, "frigates turn their hull perpendicular to the firing line");
+assert.ok(broadsideSimulation.state.events.some((event) => event.type === "shot" && event.ownerId === broadsideFrigate.id), "frigates fire after reaching broadside alignment");
+
 const roleTargeting = new BattleSimulation();
 const fighterHunter = roleTargeting.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 112, y: 330 });
 roleTargeting.spawnUnit(TEAM.ENEMY, LANE.LEFT, "frigate", { x: 112, y: 280 });
