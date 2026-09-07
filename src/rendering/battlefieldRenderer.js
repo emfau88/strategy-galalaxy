@@ -99,16 +99,22 @@ export const renderBackground = (ctx, width, height, frameTime, assets) => {
 export const renderBattlefieldLayer = (ctx, width, height) => {
   const top = 102;
   const bottom = height - 170;
-  for (const [center, tint] of [[112, "rgba(103,190,215,0.055)"], [308, "rgba(186,137,185,0.055)"]]) {
-    const gradient = ctx.createRadialGradient(center, (top + bottom) / 2, 28, center, (top + bottom) / 2, 230);
-    gradient.addColorStop(0, tint.replace("0.055", "0.09"));
-    gradient.addColorStop(0.7, tint);
-    gradient.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(center - 70, top, 140, bottom - top);
+  const fade = ctx.createLinearGradient(0, top, 0, bottom);
+  fade.addColorStop(0, "rgba(202,224,239,0)");
+  fade.addColorStop(0.16, "rgba(202,224,239,0.045)");
+  fade.addColorStop(0.84, "rgba(202,224,239,0.045)");
+  fade.addColorStop(1, "rgba(202,224,239,0)");
+  ctx.strokeStyle = fade;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 22]);
+  for (const center of [112, 308]) {
+    ctx.beginPath();
+    ctx.moveTo(center, top + 28);
+    ctx.lineTo(center, bottom - 28);
+    ctx.stroke();
   }
-  ctx.setLineDash([3, 12]);
-  ctx.strokeStyle = "rgba(211,231,246,0.09)";
+  ctx.setLineDash([2, 18]);
+  ctx.strokeStyle = "rgba(211,231,246,0.025)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(width / 2, top + 20);
@@ -128,75 +134,185 @@ const drawBar = (ctx, x, y, width, ratio, color, height = 3) => {
   ctx.fillRect(x - width / 2, y, width * Math.max(0, ratio), height);
 };
 
-const drawStructure = (ctx, structure, state, assets, projection) => {
+const turretAimState = new Map();
+
+const smoothAimAngle = (structure, desiredAngle, simulationTime) => {
+  const previous = turretAimState.get(structure.id);
+  if (!previous || simulationTime < previous.time) {
+    turretAimState.set(structure.id, { angle: desiredAngle, time: simulationTime });
+    return desiredAngle;
+  }
+  const elapsed = Math.min(0.08, Math.max(0, simulationTime - previous.time));
+  const difference = Math.atan2(Math.sin(desiredAngle - previous.angle), Math.cos(desiredAngle - previous.angle));
+  const maximumTurn = elapsed * 4.8;
+  const angle = previous.angle + Math.max(-maximumTurn, Math.min(maximumTurn, difference));
+  turretAimState.set(structure.id, { angle, time: simulationTime });
+  return angle;
+};
+
+const hqDoorOpenness = (simulationTime, lastDeploymentAt) => {
+  if (!Number.isFinite(lastDeploymentAt)) return 0;
+  const elapsed = simulationTime - lastDeploymentAt;
+  if (elapsed < 0 || elapsed >= 1.25) return 0;
+  if (elapsed < 0.22) return elapsed / 0.22;
+  if (elapsed < 0.78) return 1;
+  return 1 - (elapsed - 0.78) / 0.47;
+};
+
+const drawDamageDetails = (ctx, structure, size, hpRatio, frameTime) => {
+  if (hpRatio > 0.67) return;
+  const severe = hpRatio <= 0.34;
+  const direction = structure.id.length % 2 ? 1 : -1;
+  ctx.strokeStyle = severe ? "rgba(16,20,28,0.88)" : "rgba(23,27,36,0.65)";
+  ctx.lineWidth = severe ? 2.1 : 1.35;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.08 * direction, -size * 0.23);
+  ctx.lineTo(size * 0.01 * direction, -size * 0.1);
+  ctx.lineTo(-size * 0.045 * direction, size * 0.015);
+  ctx.lineTo(size * 0.08 * direction, size * 0.14);
+  ctx.stroke();
+  if (!severe) return;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.24 * direction, -size * 0.05);
+  ctx.lineTo(size * 0.13 * direction, size * 0.04);
+  ctx.lineTo(size * 0.2 * direction, size * 0.15);
+  ctx.stroke();
+  const flicker = Math.sin(frameTime * 15 + structure.id.length) > 0.25;
+  if (flicker) {
+    ctx.strokeStyle = "rgba(255,185,104,0.72)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-2, -size * 0.12);
+    ctx.lineTo(2, -size * 0.18);
+    ctx.moveTo(0, -size * 0.13);
+    ctx.lineTo(-4, -size * 0.16);
+    ctx.stroke();
+  }
+};
+
+const drawTurretHead = (ctx, structure, state, projection, color) => {
+  const target = state.units.get(structure.targetId);
+  const defaultAngle = structure.team === "TEAM_PLAYER" ? -Math.PI / 2 : Math.PI / 2;
+  const desiredAngle = target?.alive
+    ? Math.atan2(projection.y(target.y) - projection.y(structure.y), target.x - structure.x)
+    : defaultAngle;
+  const angle = smoothAimAngle(structure, desiredAngle, state.time);
+  const shotAge = state.time - structure.lastShotAt;
+  const recoil = shotAge >= 0 && shotAge < 0.16 ? Math.sin(shotAge / 0.16 * Math.PI) * 3.5 : 0;
+  ctx.save();
+  ctx.rotate(angle);
+  ctx.fillStyle = "rgba(5,12,23,0.72)";
+  ctx.fillRect(-7, -7, 15, 14);
+  ctx.fillStyle = "#7c8da3";
+  ctx.fillRect(-5, -6, 12, 12);
+  ctx.fillStyle = "#b8c5d1";
+  ctx.fillRect(5 - recoil, -5, 19, 3.5);
+  ctx.fillRect(5 - recoil, 1.5, 19, 3.5);
+  ctx.fillStyle = "#3d5068";
+  ctx.fillRect(9 - recoil, -4, 11, 1);
+  ctx.fillRect(9 - recoil, 2.5, 11, 1);
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.78;
+  ctx.fillRect(-3, -1.5, 7, 3);
+  ctx.restore();
+};
+
+const drawHqBay = (ctx, side, openness, frameTime, color, hpRatio) => {
+  ctx.save();
+  ctx.translate(side * 34, -25);
+  ctx.rotate(side * 0.12);
+  ctx.beginPath();
+  ctx.moveTo(-14, -14);
+  ctx.lineTo(14, -14);
+  ctx.lineTo(12, 14);
+  ctx.lineTo(-12, 14);
+  ctx.closePath();
+  ctx.clip();
+  if (openness > 0.015) {
+    const revealedWidth = openness * 25;
+    ctx.fillStyle = "rgba(9,19,34,0.98)";
+    ctx.fillRect(-revealedWidth / 2, -14, revealedWidth, 28);
+    ctx.strokeStyle = "rgba(236,177,91,0.54)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-revealedWidth * 0.38, -11);
+    ctx.lineTo(-revealedWidth * 0.25, 12);
+    ctx.moveTo(revealedWidth * 0.38, -11);
+    ctx.lineTo(revealedWidth * 0.25, 12);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(138,224,235,0.64)";
+    for (const y of [-6, 0, 6]) ctx.fillRect(-1.1, y, 2.2, 2.6);
+    ctx.fillStyle = "rgba(214,225,235,0.72)";
+    ctx.fillRect(-revealedWidth / 2 - 1, -13, 1.5, 26);
+    ctx.fillRect(revealedWidth / 2 - 0.5, -13, 1.5, 26);
+  }
+  ctx.restore();
+  const damageAttenuation = hpRatio <= 0.34 ? (side < 0 ? 0.42 : 0.08) : hpRatio <= 0.67 ? 0.68 : 1;
+  const lampAlpha = (0.42 + (Math.sin(frameTime * 6 + side * 1.7) + 1) * 0.2) * damageAttenuation;
+  ctx.globalAlpha = lampAlpha;
+  ctx.fillStyle = color;
+  ctx.fillRect(side * 47 - 1.5, -27, 3, 3);
+  ctx.globalAlpha = 1;
+};
+
+const drawHqHangars = (ctx, structure, state, frameTime, lastDeploymentAt, color) => {
+  const hpRatio = structure.hp / structure.maxHp;
+  drawHqBay(ctx, -1, hqDoorOpenness(state.time, lastDeploymentAt), frameTime, color, hpRatio);
+  drawHqBay(ctx, 1, hqDoorOpenness(state.time, lastDeploymentAt + 0.07), frameTime, color, hpRatio);
+};
+
+const drawStructure = (ctx, structure, model, projection) => {
+  const state = model.simulation.state;
   const isHq = structure.structureType === "hq";
-  const size = isHq ? 112 : 60;
+  const size = isHq ? 112 : 64;
   const color = teamColor(structure.team);
-  const sprite = asset(assets, isHq ? "structure-hq" : "structure-turret");
+  const sprite = asset(model.assets, isHq ? "structure-hq" : "structure-turret");
   const damaged = state.time - structure.lastDamagedAt < 0.13;
+  const hpRatio = structure.hp / structure.maxHp;
   const y = projection.y(structure.y);
   ctx.save();
   ctx.translate(structure.x, y);
-  ctx.fillStyle = `${color}18`;
-  ctx.beginPath();
-  ctx.arc(0, 0, size * 0.47, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = `${color}88`;
-  ctx.lineWidth = isHq ? 2.2 : 1.5;
-  ctx.beginPath();
-  ctx.arc(0, 0, size * 0.43, 0, Math.PI * 2);
-  ctx.stroke();
+  if (isHq && structure.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
   if (sprite) {
-    if (structure.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
     if (damaged) ctx.filter = "brightness(1.9) saturate(0.4)";
-    ctx.globalCompositeOperation = "screen";
+    else if (hpRatio <= 0.34) ctx.filter = "brightness(0.72) saturate(0.52)";
+    else if (hpRatio <= 0.67) ctx.filter = "brightness(0.88) saturate(0.76)";
     ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
-    ctx.globalCompositeOperation = "source-over";
     ctx.filter = "none";
   }
-  if (!isHq) {
-    const target = state.units.get(structure.targetId);
-    const angle = target ? Math.atan2(projection.y(target.y) - y, target.x - structure.x) : (structure.team === "TEAM_PLAYER" ? -Math.PI / 2 : Math.PI / 2);
-    ctx.rotate(angle - (structure.team !== "TEAM_PLAYER" ? Math.PI : 0));
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 4;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(4, 0);
-    ctx.lineTo(22, 0);
-    ctx.stroke();
-  }
+  if (isHq) drawHqHangars(ctx, structure, state, model.frameTime, model.director?.lastDeploymentAt, color);
+  else drawTurretHead(ctx, structure, state, projection, color);
+  drawDamageDetails(ctx, structure, size, hpRatio, model.frameTime);
   ctx.restore();
-  drawBar(ctx, structure.x, y + size * 0.45, isHq ? 82 : 48, structure.hp / structure.maxHp, color, isHq ? 5 : 4);
+  drawBar(ctx, structure.x, y + size * 0.45, isHq ? 84 : 50, hpRatio, color, isHq ? 5 : 4);
 };
 
 const drawNode = (ctx, node, frameTime, assets, projection) => {
   const color = node.ownerTeam === "TEAM_PLAYER" ? "#a6e6f2" : node.ownerTeam === "TEAM_ENEMY" ? "#f3a58e" : "#d9d5ee";
-  const ring = node.contested ? "#f2cd83" : color;
   const sprite = asset(assets, "structure-node");
   const y = projection.y(node.y);
   ctx.save();
   ctx.translate(node.x, y);
-  ctx.globalAlpha = 0.16;
-  ctx.fillStyle = ring;
-  ctx.beginPath();
-  ctx.arc(0, 0, node.radius + 3, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = `${ring}99`;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(0, 0, node.radius - 2, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.abs(node.progress) / 100);
-  ctx.stroke();
-  ctx.rotate(frameTime * 0.18);
-  ctx.strokeStyle = `${ring}55`;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 29, 18, 0, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.rotate(-frameTime * 0.32);
-  if (sprite) { ctx.globalCompositeOperation = "screen"; ctx.drawImage(sprite, -27, -27, 54, 54); ctx.globalCompositeOperation = "source-over"; }
+  if (sprite) {
+    ctx.globalCompositeOperation = "screen";
+    ctx.drawImage(sprite, -25, -25, 50, 50);
+    ctx.globalCompositeOperation = "source-over";
+  }
   else { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill(); }
+  const progress = Math.min(1, Math.abs(node.progress) / 100);
+  const progressColor = node.progress > 0 ? "#a6e6f2" : node.progress < 0 ? "#f3a58e" : color;
+  ctx.fillStyle = "rgba(7,15,28,0.72)";
+  ctx.fillRect(-21, 24, 42, 3);
+  ctx.fillStyle = progressColor;
+  ctx.globalAlpha = 0.82;
+  ctx.fillRect(-20, 25, 40 * progress, 1.5);
+  if (node.contested) {
+    ctx.globalAlpha = 0.5 + Math.sin(frameTime * 6) * 0.18;
+    ctx.fillStyle = "#f2cd83";
+    ctx.fillRect(-5, -28, 10, 2);
+    ctx.fillRect(-5, 27, 10, 2);
+  }
   ctx.restore();
 };
 
@@ -258,7 +374,7 @@ export const renderEntityLayer = (ctx, model) => {
   for (const node of nodes.values()) drawNode(ctx, node, model.frameTime, model.assets, projection);
   for (const structure of structures.values()) {
     ctx.globalAlpha = structure.alive ? 1 : 0.16;
-    drawStructure(ctx, structure, simulation.state, model.assets, projection);
+    drawStructure(ctx, structure, model, projection);
   }
   ctx.globalAlpha = 1;
   for (const unit of units.values()) {

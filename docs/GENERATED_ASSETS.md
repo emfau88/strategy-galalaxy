@@ -14,4 +14,22 @@
 - **Method:** Built-in ImageGen, guided by the local Nairan frigate sprite as a style reference.
 - **Purpose:** Replace geometric HQ, turret, and node placeholders with readable, top-down 2D game sprites.
 - **Prompt direction:** Orthographic top-down view, compact pixel-art-like silhouette, dark outline, restrained navy/teal/lavender mechanical palette, no UI or text.
-- **Status:** Intentionally rough original placeholders. Both teams reuse the same neutral art with an in-game team-color ring; refine only after silhouette and UI playtesting.
+- **Status:** Retained as first-pass source material. Only the Energy Node remains active; its earlier team ring and orbit ellipse were replaced by a compact linear capture indicator.
+
+## `defense-turret-base-topdown-v2.png`
+
+- **Destination:** `assets/structures/defense-turret-base-topdown-v2.png`
+- **Method / mode:** Built-in ImageGen, `stylized-concept`, then alpha-preserving downscaling to 384×384 for mobile delivery.
+- **Purpose:** Neutral barrel-free platform for a modular Canvas turret head. Target following, team lamp, recoil, hit flash and damage states remain code-driven.
+- **Prompt:** “Create a premium top-down modular defense turret base only, with no gun barrel and no weapon mounted; a circular armored platform with a clearly centered rotation socket. Isolated on transparent background, crisp polished high-resolution pixel-art hybrid, neutral silver and blue-gray armor with restrained teal/lavender details, readable at 55–65 pixels. No projectile, UI, text, shadow, neon aura, team ring, watermark, perspective or isometric angle.”
+- **Status:** Active runtime asset.
+
+## `command-hq-topdown-v3.png`
+
+- **Destination:** `assets/structures/command-hq-topdown-v3.png`
+- **Method / mode:** Built-in ImageGen, `production 2D game asset`, then alpha-preserving downscaling to 384×384 for mobile delivery.
+- **Purpose:** Premium two-lane HQ base. Its two hangar interiors are revealed by Canvas masks at deployment; practical lamps, hit flash, desaturation, cracks and sparks communicate live state.
+- **Prompt:** “Create a premium futuristic orbital fleet Headquarters viewed perfectly top-down, with exactly two distinct high-quality launch hangars aligned symmetrically toward the upper-left and upper-right battle-facing sides because ships deploy into two vertical lanes. No central hangar. Give each bay a deep mechanical mouth, segmented frame, runway guide lights and closed sliding armor. Use a broad hexagonal/octagonal silver, blue-gray and pale-lavender station with a central command core; transparent background; polished high-resolution pixel-art hybrid readable at 105–115 pixels. No ships, projectiles, UI, text, shadow, neon aura, team rings, watermark, perspective or excessive bloom.”
+- **Status:** Active runtime asset. Both teams share it; the enemy instance is rotated 180°.
+
+The earlier generated single-center-gate HQ concept was rejected during integration and is not kept in the repository.

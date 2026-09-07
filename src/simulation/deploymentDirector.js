@@ -14,6 +14,7 @@ export class DeploymentDirector {
   reset() {
     this.cycleNumber = 0;
     this.timeUntilDeployment = this.config.timing.deploymentIntervalSeconds;
+    this.lastDeploymentAt = null;
     this.queuedWaves = emptyTeamLanes();
     this.baseWaveBacklog = emptyTeamLanes();
     this.nextQueueSequence = 1;
@@ -55,6 +56,7 @@ export class DeploymentDirector {
 
     this.cycleNumber += 1;
     for (const entry of deployment) simulation.spawnFormation(entry.team, entry.laneId, entry.unitTypes, this.cycleNumber);
+    this.lastDeploymentAt = simulation.state.time;
     this.timeUntilDeployment = this.config.timing.deploymentIntervalSeconds;
     return { cycle: this.cycleNumber, deployment };
   }

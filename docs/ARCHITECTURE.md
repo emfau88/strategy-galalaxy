@@ -36,13 +36,13 @@ No visual animation frame triggers a projectile, hit or damage event.
 | --- | --- |
 | `src/game.js` | Browser lifecycle, input routing, fixed-step orchestration, render model |
 | `src/simulation/matchDirector.js` | State transitions and ordering between specialized systems |
-| `src/simulation/deploymentDirector.js` | Timer, lock state, cycle, queues, free-wave backlog and simultaneous spawn |
+| `src/simulation/deploymentDirector.js` | Timer, lock state, cycle, queues, free-wave backlog, simultaneous spawn and last-deployment timestamp for presentation |
 | `src/simulation/commandSystem.js` | Public queue, removal and upgrade commands with validation |
 | `src/simulation/economySystem.js` | Energy, income, escalation and pending upgrades |
 | `src/simulation/battleSimulation.js` | Movement, formation separation, targeting, firing, projectile motion and damage |
 | `src/simulation/captureSystem.js` | Additive Node strength, contesting and ownership |
 | `src/simulation/opponentAi.js` | Deterministic, rule-bound planning through public commands |
-| `src/rendering/battlefieldRenderer.js` | World, fleet layers, projectile sprites and bounded trails |
+| `src/rendering/battlefieldRenderer.js` | World, fleet layers, modular animated structures, projectile sprites and bounded trails |
 | `src/rendering/presentationEffects.js` | Event-driven short-lived presentation effects |
 | `src/rendering/uiRenderer.js` | HUD, queue and planning controls |
 | `src/core/viewport.js` | Responsive portrait design height and input transforms |
@@ -106,6 +106,6 @@ Device pixel ratio is capped, with a lower coarse-pointer target, to control dec
 
 `npm.cmd run test:stress` runs a dense four-lane-side combat fixture and enforces unit, projectile, trail and event-history bounds.
 
-`npm.cmd run test:browser` drives a local Chromium browser through the DevTools protocol. It emulates all five target portrait viewports, asserts zero letterbox offsets, full Canvas dimensions, successful asset loading, touch access to the planning controls and no runtime/network errors. Screenshots are written only to ignored `tmp/browser-qa/` output.
+`npm.cmd run test:browser` drives a local Chromium browser through the DevTools protocol. It emulates all five target portrait viewports, asserts zero letterbox offsets, full Canvas dimensions, successful asset loading, touch access to the planning controls and no runtime/network errors. It also captures the 420×760 structures once during deployment and once with closed hangars plus severe damage. Screenshots are written only to ignored `tmp/browser-qa/` output.
 
 `npm.cmd run balance:sim -- 100` runs rule-bound AI-vs-AI matches and reports wins, duration, deployment cycles, purchase mix, Node control, first turret loss and peak entity counts. A complete timeout set fails the command. Results are diagnostic balance evidence, not a substitute for real-phone playtests.

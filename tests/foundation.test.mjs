@@ -122,6 +122,7 @@ const match = new MatchDirector({ config: { ...CONFIG, timing: { ...CONFIG.timin
 match.start();
 assert.equal(match.state, MATCH_STATE.LIVE_MATCH);
 assert.equal(match.cycle, 1);
+assert.equal(match.lastDeploymentAt, 0);
 assert.ok(match.simulation.state.units.size >= 8);
 assert.equal(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.PLAYER).length, 2);
 assert.ok(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.ENEMY).length >= 2);
@@ -134,6 +135,7 @@ const survivorIds = new Set(match.simulation.snapshot().units.map((unit) => unit
 for (let index = 0; index < 12; index += 1) match.advanceLive(1 / 60);
 assert.equal(match.state, MATCH_STATE.LIVE_MATCH);
 assert.equal(match.cycle, 2);
+assert.ok(match.lastDeploymentAt > 0);
 assert.ok([...survivorIds].every((id) => match.simulation.state.units.has(id)));
 
 const terminalMatch = new MatchDirector();

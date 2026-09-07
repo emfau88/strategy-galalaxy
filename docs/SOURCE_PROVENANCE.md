@@ -30,7 +30,7 @@ The imported Foozle pack readmes identify the artwork as CC0. They remain next t
 | Fleet and projectile metadata in reference data modules | `7f90d17…` | `src/data/visuals.js` | Adapted frame size/count, FPS, release-frame and orientation metadata to renderer-only profiles. |
 | `src/entities/projectile.js`, projectile data and FX systems | `7f90d17…` | `src/simulation/battleSimulation.js`, `src/data/definitions.js`, `src/rendering/` | Adapted bounded homing, acceleration and presentation vocabulary to deterministic lane combat; damage remains simulation-owned. |
 
-The portrait background and three structure images outside `assets/library/galalaxy/` were generated specifically for Strategy Galalaxy and are not Galalaxy reference assets.
+The portrait background and all structure images outside `assets/library/galalaxy/` were generated specifically for Strategy Galalaxy and are not Galalaxy reference assets. Active generated structure bases are `assets/structures/command-hq-topdown-v3.png` and `assets/structures/defense-turret-base-topdown-v2.png`; their prompts and runtime adaptations are recorded in `docs/GENERATED_ASSETS.md`.
 
 ## Rules for future reuse
 

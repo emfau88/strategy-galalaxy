@@ -18,13 +18,15 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 ## Aktueller Spielstand
 
 - Kontinuierlicher `LIVE_MATCH` mit 22-Sekunden-Deployment und Zwei-Sekunden-Lock-in.
-- Zwei breite, vollständig sichtbare Lanes mit persistenten Schiffen, Turrets, HQ-Schaden und Energy Nodes.
+- Zwei vollständig sichtbare, nur noch dezent markierte Lanes mit persistenten Schiffen, Turrets, HQ-Schaden und Energy Nodes.
 - Zwei kostenlose Scouts pro Lane und Deployment sowie vier gemeinsame, gekaufte Verstärkungsslots.
 - Sofortige Energiereservierung, vollständige Rückerstattung vor Lock-in und Upgrade-Aktivierung am nächsten Deployment.
 - Regelgebundene KI mit denselben Kosten, Slots, Timern, Kapazitäten und Upgrade-Regeln wie der Spieler.
 - Scout, Fighter, Bomber und Frigate mit eigenen Rollen, Formationen, Zielprioritäten und Capture-Stärken.
 - Nairan- und Kla'ed-Flotten mit animierten Engines, Weapon-, Shield- und Destruction-Layern.
 - Rollen- und fraktionsabhängige animierte Projektile, bounded Homing, begrenzte Trails, Muzzle Flashes, Treffer- und Explosionseffekte.
+- Modulare Defense Turrets mit weich nachgeführtem Geschütz und Schussrückstoß sowie hochwertige Headquarters mit zwei lane-seitigen, beim Deployment öffnenden Hangars, pulsierenden Betriebsleuchten und zwei sichtbaren Damage-Stufen.
+- Keine großflächigen Team-Neonringe oder dekorativen Orbit-Ellipsen; Nodes zeigen Capture-Fortschritt kompakt unterhalb des Sprites.
 - Faire Projektilbudgets pro Team und Lane sowie globale Sicherheitsgrenzen für mobile Geräte.
 - Responsive Canvas-Höhe, die Tall-Screen-Smartphones im Fullscreen ohne große ungenutzte Flächen ausfüllt.
 - Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt nur den kuratierten aktuellen Ausschnitt.
@@ -85,4 +87,4 @@ Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Capture, Targeti
 
 ## Status
 
-Der kontinuierliche Kern-Loop, die mobile Vollbildskalierung, die vier Kernrollen, die erste Original-Animations-/Projektilintegration und die automatisierten technischen Gates sind umgesetzt. Als nächster Schwerpunkt folgt echtes Smartphone-Playtesting: Lesbarkeit dichter Pushes, Touchkomfort, 22-Sekunden-Entscheidungsrhythmus und datengetriebene Balance. Battlecruiser und Dreadnought bleiben bis zum bestandenen Spielspaß-Gate deaktiviert.
+Der kontinuierliche Kern-Loop, die mobile Vollbildskalierung, die vier Kernrollen, die Original-Animations-/Projektilintegration, animierte modulare Strukturen und die automatisierten technischen Gates sind umgesetzt. Als nächster Schwerpunkt folgt echtes Smartphone-Playtesting: Lesbarkeit dichter Pushes, Touchkomfort, 22-Sekunden-Entscheidungsrhythmus und datengetriebene Balance. Battlecruiser und Dreadnought bleiben bis zum bestandenen Spielspaß-Gate deaktiviert.

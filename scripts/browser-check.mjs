@@ -139,6 +139,17 @@ try {
 
     const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
     await writeFile(resolve(output, `match-${width}x${height}.png`), Buffer.from(screenshot.data, "base64"));
+    if (width === 420 && height === 760) {
+      await delay(1400);
+      const damageResult = await send("Runtime.evaluate", {
+        expression: `(() => { const structures = window.__strategyGalalaxy.match.simulation.state.structures; for (const id of ['player-hq', 'player-left-turret']) { const structure = structures.get(id); structure.hp = structure.maxHp * 0.25; } return window.__strategyGalalaxy.match.lastDeploymentAt; })()`,
+        returnByValue: true,
+      });
+      assert.equal(damageResult.result.value, 0, "initial deployment timestamp remains available for HQ door animation");
+      await delay(80);
+      const damageScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+      await writeFile(resolve(output, "structures-closed-damaged-420x760.png"), Buffer.from(damageScreenshot.data, "base64"));
+    }
     reports.push({ width, height, designHeight: Math.round(designHeight * 10) / 10, scale: Math.round(snapshot.transform.scale * 1000) / 1000, touch: "passed" });
   }
   assert.deepEqual(failures, []);
