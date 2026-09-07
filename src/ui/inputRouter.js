@@ -36,7 +36,7 @@ export class InputRouter {
     }
     if (this.activePointerId !== event.pointerId) return;
     const point = toDesignPoint(event.clientX, event.clientY, this.canvas.getBoundingClientRect(), this.getTransform());
-    this.onInput({ kind, pointerType: event.pointerType, pointerId: event.pointerId, ...point });
+    this.onInput({ kind, pointerType: event.pointerType, pointerId: event.pointerId, timeStamp: event.timeStamp, ...point });
     event.preventDefault();
     if (kind === "up" || kind === "cancel") this.activePointerId = null;
   }

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { access } from "node:fs/promises";
 import { GameClock } from "../src/core/clock.js";
+import { BattlefieldCamera } from "../src/core/battlefieldCamera.js";
 import { MATCH_STATE } from "../src/core/constants.js";
 import { SeededRng } from "../src/core/rng.js";
 import { computeViewportTransform, responsivePortraitDesignHeight, toDesignPoint } from "../src/core/viewport.js";
@@ -16,6 +17,7 @@ import { ASSET_GROUPS } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { SoundSystem } from "../src/audio/soundSystem.js";
 import { commandActionAt, commandUiLayout, fullscreenActionAt, titleActionAt, utilityActionAt } from "../src/ui/commandUi.js";
+import { cameraNavigatorRatioAt } from "../src/ui/cameraUi.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
@@ -33,6 +35,28 @@ for (const [viewportWidth, viewportHeight] of targetViewports) {
   assert.ok(Math.abs(responsiveTransform.contentHeight - viewportHeight) < 0.001, `${viewportWidth}x${viewportHeight} uses the full portrait height`);
   assert.ok(Math.abs(responsiveTransform.offsetY) < 0.001, `${viewportWidth}x${viewportHeight} has no portrait letterbox`);
 }
+
+const camera = new BattlefieldCamera({
+  worldHeight: CLASSIC_LANES.bounds.height,
+  designWidth: CONFIG.app.designWidth,
+  designHeight: CONFIG.app.designHeight,
+  config: CONFIG.camera,
+});
+assert.equal(camera.viewport.height, 502);
+assert.equal(camera.y, camera.maximumY, "camera begins at the player HQ sector");
+camera.beginPan(180, 0);
+camera.panTo(380, 16);
+assert.ok(camera.y < camera.maximumY, "dragging downward pans toward the enemy sector");
+camera.endPan();
+const releasedCameraY = camera.y;
+camera.update(1 / 60);
+assert.ok(camera.y < releasedCameraY, "released camera retains bounded inertia");
+camera.jumpToRatio(0.5);
+assert.ok(Math.abs(camera.screenToWorldY(camera.worldToScreenY(590)) - 590) < 0.0001);
+assert.ok(Math.abs(cameraNavigatorRatioAt({ x: 405, y: camera.viewport.y + camera.viewport.height / 2 }, camera.viewport) - 0.5) < 0.02);
+camera.resize(CONFIG.app.designWidth, 909);
+assert.equal(camera.viewport.height, 651);
+assert.ok(camera.y >= 0 && camera.y <= camera.maximumY);
 
 const clock = new GameClock(timing);
 clock.advance(0.1, MATCH_STATE.LIVE_MATCH);
@@ -92,7 +116,8 @@ assert.equal(hqSimulation.state.terminalTeam, TEAM.PLAYER);
 assert.ok(hqSimulation.state.events.some((event) => event.type === "shot" && event.ownerId === "enemy-hq"));
 
 const turretSimulation = new BattleSimulation();
-const intruder = turretSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 132, y: 555 });
+const playerLeftTurret = turretSimulation.state.structures.get("player-left-turret");
+const intruder = turretSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: playerLeftTurret.x + 20, y: playerLeftTurret.y - 70 });
 for (let index = 0; index < 180; index += 1) turretSimulation.step(1 / 60);
 assert.ok(turretSimulation.state.events.some((event) => event.type === "shot" && event.ownerId === "player-left-turret"));
 assert.ok(!turretSimulation.state.units.has(intruder.id) || turretSimulation.state.units.get(intruder.id).hp < intruder.maxHp);
@@ -167,11 +192,11 @@ assert.deepEqual(lockMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYE
 const formationSimulation = new BattleSimulation();
 const formation = formationSimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["scout", "scout", "scout", "scout", "scout", "scout"]);
 assert.ok(formation.every((unit) => unit.launching));
-assert.ok(formation.every((unit) => unit.x === 176 && unit.y === 527), "left-lane ships begin inside the player HQ hangar");
+assert.ok(formation.every((unit) => unit.x === 176 && unit.y === 1065), "left-lane ships begin inside the player HQ hangar");
 for (let index = 0; index < 60; index += 1) formationSimulation.step(1 / 60);
 assert.ok(formation.every((unit) => !unit.launching));
 assert.ok(new Set(formation.map((unit) => `${unit.x},${unit.y}`)).size >= 5);
-assert.ok(formation.every((unit) => Math.abs(unit.x - 112) <= 70));
+assert.ok(formation.every((unit) => Math.abs(unit.x - CLASSIC_LANES.lanes[0].centerX) <= CLASSIC_LANES.lanes[0].width / 2));
 
 const roleTargeting = new BattleSimulation();
 const fighterHunter = roleTargeting.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 112, y: 330 });
@@ -236,11 +261,11 @@ assert.equal(escalatingWaveMatch.deployment.baseWaveSize(999), 5, "free scout es
 
 const captureMatch = new MatchDirector();
 captureMatch.start();
-const captureUnit = captureMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 112, y: 332 });
-captureMatch.capture.advance(captureMatch.simulation.state, 2);
 const leftNode = captureMatch.simulation.state.nodes.get("left-node");
+const captureUnit = captureMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: leftNode.x, y: leftNode.y + 9 });
+captureMatch.capture.advance(captureMatch.simulation.state, 2);
 assert.equal(leftNode.ownerTeam, TEAM.PLAYER);
-const enemyCaptor = captureMatch.simulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 112, y: 332 });
+const enemyCaptor = captureMatch.simulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: leftNode.x, y: leftNode.y + 9 });
 captureMatch.capture.advance(captureMatch.simulation.state, 1);
 assert.equal(leftNode.contested, true);
 assert.equal(leftNode.progress, 100);
@@ -273,11 +298,12 @@ assert.ok(replanMatch.economy.get(TEAM.ENEMY).energy >= 0);
 
 const scoutCapture = new MatchDirector();
 scoutCapture.start();
-scoutCapture.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 112, y: 332 });
+const captureNode = scoutCapture.simulation.state.nodes.get("left-node");
+scoutCapture.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: captureNode.x, y: captureNode.y + 9 });
 scoutCapture.capture.advance(scoutCapture.simulation.state, 0.5);
 const fighterCapture = new MatchDirector();
 fighterCapture.start();
-fighterCapture.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 112, y: 332 });
+fighterCapture.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: captureNode.x, y: captureNode.y + 9 });
 fighterCapture.capture.advance(fighterCapture.simulation.state, 0.5);
 assert.ok(scoutCapture.simulation.state.nodes.get("left-node").progress > fighterCapture.simulation.state.nodes.get("left-node").progress, "scouts capture faster than fighters");
 

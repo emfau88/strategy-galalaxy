@@ -36,6 +36,8 @@ No visual animation frame triggers a projectile, hit or damage event.
 | Module | Responsibility |
 | --- | --- |
 | `src/game.js` | Browser lifecycle, input routing, fixed-step orchestration, render model |
+| `src/core/battlefieldCamera.js` | Bounded vertical camera, world/screen transforms, drag inertia and resize preservation |
+| `src/ui/cameraUi.js` | Strategic navigator layout and world-jump hit mapping |
 | `src/simulation/matchDirector.js` | State transitions and ordering between specialized systems |
 | `src/simulation/deploymentDirector.js` | Timer, lock state, cycle, queues, free-wave backlog, simultaneous spawn and per-team/lane delivery timestamps for presentation |
 | `src/simulation/commandSystem.js` | Public queue, removal and upgrade commands with validation |
@@ -97,7 +99,9 @@ Missing optional layers fall back safely to hull and Canvas effects. The asset v
 
 ## Responsive rendering and input
 
-The logical width remains 420. Portrait design height expands to the viewport aspect ratio with a minimum of 760, so tall phones use their complete screen instead of centering a short fixed canvas. Rendering and pointer conversion share the same transform. The lower planning panel is anchored to the responsive bottom edge; world landmarks remain readable above it.
+The logical width remains 420. Portrait design height expands to the viewport aspect ratio with a minimum of 760, so tall phones use their complete screen instead of centering a short fixed canvas. Rendering and pointer conversion share the same transform. The lower planning panel is anchored to the responsive bottom edge.
+
+The simulation world is taller than the design viewport. Only the battlefield layer is clipped and translated by the bounded vertical camera; title, HUD, planning controls, overlays and strategic navigator remain in screen space. Both lanes therefore stay visible horizontally while direct touch drag reveals the taller engagement space.
 
 Device pixel ratio is capped, with a lower coarse-pointer target, to control decoded surface and fill cost. Fullscreen and resize rebuild the transform without mutating simulation state.
 
@@ -109,7 +113,7 @@ Device pixel ratio is capped, with a lower coarse-pointer target, to control dec
 
 `npm.cmd run test:stress` runs a dense four-lane-side combat fixture and enforces unit, projectile, trail and event-history bounds.
 
-`npm.cmd run test:browser` drives a local Chromium browser through the DevTools protocol. It emulates all five target portrait viewports, asserts zero letterbox offsets, full Canvas dimensions, successful asset loading, title/difficulty/start behavior, touch access to the planning controls, pause/resume, sound toggling and no runtime/network errors. It also captures title, live play and closed-hangar damage states. Screenshots are written only to ignored `tmp/browser-qa/` output.
+`npm.cmd run test:browser` drives a local Chromium browser through the DevTools protocol. It emulates all five target portrait viewports, asserts zero letterbox offsets, full Canvas dimensions, successful asset loading, title/difficulty/start behavior, battlefield drag, strategic-navigator jumps, touch access to the planning controls, pause/resume, sound toggling and no runtime/network errors. It also captures title, live play and closed-hangar damage states. Screenshots are written only to ignored `tmp/browser-qa/` output.
 
 `npm.cmd run balance:sim -- 100` runs rule-bound AI-vs-AI matches with team side and preferred lane mirrored across four configurations. It reports team and profile wins, duration, deployment cycles, purchase mix, Node control, first turret loss and peak entity counts. A complete timeout set fails the command. Results are diagnostic balance evidence, not a substitute for real-phone playtests.
 

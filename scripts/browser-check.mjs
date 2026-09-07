@@ -104,6 +104,16 @@ try {
     await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await delay(40);
   };
+  const drag = async (x, fromY, toY) => {
+    await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y: fromY }] });
+    for (let step = 1; step <= 5; step += 1) {
+      const y = fromY + (toY - fromY) * step / 5;
+      await send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y }] });
+      await delay(16);
+    }
+    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await delay(80);
+  };
   const waitForGame = async () => {
     for (let attempt = 0; attempt < 100; attempt += 1) {
       const ready = await send("Runtime.evaluate", { expression: "Boolean(window.__strategyGalalaxy?.running && window.__strategyGalalaxy?.loader?.isSettled)", returnByValue: true });
@@ -138,7 +148,7 @@ try {
     await waitForGame();
 
     const snapshotResult = await send("Runtime.evaluate", {
-      expression: `(() => { const g = window.__strategyGalalaxy; const r = g.canvas.getBoundingClientRect(); return { innerWidth, innerHeight, state: g.state, transform: g.getViewportSnapshot(), canvas: { x: r.x, y: r.y, width: r.width, height: r.height }, assetFailures: g.loader.errors.length, playerQueue: [...g.match.queuedWaves.get('TEAM_PLAYER').values()].flat().length }; })()`,
+      expression: `(() => { const g = window.__strategyGalalaxy; const r = g.canvas.getBoundingClientRect(); return { innerWidth, innerHeight, state: g.state, transform: g.getViewportSnapshot(), camera: g.getCameraSnapshot(), canvas: { x: r.x, y: r.y, width: r.width, height: r.height }, assetFailures: g.loader.errors.length, playerQueue: [...g.match.queuedWaves.get('TEAM_PLAYER').values()].flat().length }; })()`,
       returnByValue: true,
     });
     const snapshot = snapshotResult.result.value;
@@ -152,6 +162,8 @@ try {
     assert.ok(Math.abs(snapshot.transform.offsetY) < 0.01);
     assert.equal(snapshot.assetFailures, 0);
     assert.equal(snapshot.state, "LIVE_MATCH");
+    assert.equal(snapshot.camera.worldHeight, 1180);
+    assert.ok(Math.abs(snapshot.camera.y - snapshot.camera.maximumY) < 0.01, "match begins focused on the player sector");
 
     const designHeight = snapshot.transform.designHeight;
     const lowerOffset = Math.max(0, designHeight - 760);
@@ -160,6 +172,18 @@ try {
     await touch(touchX, touchY);
     const queueResult = await send("Runtime.evaluate", { expression: "[...window.__strategyGalalaxy.match.queuedWaves.get('TEAM_PLAYER').values()].flat().length", returnByValue: true });
     assert.equal(queueResult.result.value, 1, `${width}x${height} touch reaches Scout control`);
+
+    const panX = 210 * snapshot.transform.scale;
+    const panFromY = (snapshot.camera.viewport.y + 110) * snapshot.transform.scale;
+    const panToY = (snapshot.camera.viewport.y + Math.min(snapshot.camera.viewport.height - 50, 330)) * snapshot.transform.scale;
+    await drag(panX, panFromY, panToY);
+    const panned = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.getCameraSnapshot()", returnByValue: true });
+    assert.ok(panned.result.value.y < snapshot.camera.y - 80, `${width}x${height} direct drag pans the camera toward the rival sector`);
+
+    const navigatorY = (snapshot.camera.viewport.y + snapshot.camera.viewport.height / 2) * snapshot.transform.scale;
+    await touch(405 * snapshot.transform.scale, navigatorY);
+    const centered = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.getCameraSnapshot()", returnByValue: true });
+    assert.ok(Math.abs(centered.result.value.y - centered.result.value.maximumY / 2) < 2, `${width}x${height} strategic navigator centers the battlefield`);
 
     if (width === 420 && height === 760) {
       await touch(323, 29);
@@ -181,6 +205,8 @@ try {
     await writeFile(resolve(output, `match-${width}x${height}.png`), Buffer.from(screenshot.data, "base64"));
     if (width === 420 && height === 760) {
       await delay(1400);
+      const cameraState = centered.result.value;
+      await touch(405 * snapshot.transform.scale, (cameraState.viewport.y + cameraState.viewport.height - 14) * snapshot.transform.scale);
       const damageResult = await send("Runtime.evaluate", {
         expression: `(() => { const structures = window.__strategyGalalaxy.match.simulation.state.structures; for (const id of ['player-hq', 'player-left-turret']) { const structure = structures.get(id); structure.hp = structure.maxHp * 0.25; } return window.__strategyGalalaxy.match.lastDeploymentAt; })()`,
         returnByValue: true,
@@ -190,7 +216,7 @@ try {
       const damageScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
       await writeFile(resolve(output, "structures-closed-damaged-420x760.png"), Buffer.from(damageScreenshot.data, "base64"));
     }
-    reports.push({ width, height, designHeight: Math.round(designHeight * 10) / 10, scale: Math.round(snapshot.transform.scale * 1000) / 1000, touch: "passed" });
+    reports.push({ width, height, designHeight: Math.round(designHeight * 10) / 10, scale: Math.round(snapshot.transform.scale * 1000) / 1000, camera: "passed", touch: "passed" });
   }
   assert.deepEqual(failures, []);
   console.log(JSON.stringify({ browser, reports, failures }, null, 2));

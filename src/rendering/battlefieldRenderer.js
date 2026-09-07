@@ -11,7 +11,7 @@ const stars = Object.freeze([
 const asset = (assets, key) => assets?.get(key) ?? null;
 const teamColor = (team) => (team === "TEAM_PLAYER" ? "#86dff2" : "#f29a83");
 const factionKey = (unit) => `${unit.team === "TEAM_PLAYER" ? "nairan" : "klaed"}-${unit.unitType}`;
-const unitSize = (unitType) => ({ scout: 23, fighter: 28, bomber: 34, frigate: 44, battlecruiser: 56, dreadnought: 70 }[unitType] ?? 28);
+const unitSize = (unitType) => ({ scout: 29, fighter: 35, bomber: 43, frigate: 55, battlecruiser: 70, dreadnought: 88 }[unitType] ?? 35);
 const shipCrop = (unitType) => ({
   scout: { x: 20, y: 23, width: 24, height: 22 }, fighter: { x: 17, y: 20, width: 30, height: 27 },
   bomber: { x: 16, y: 18, width: 32, height: 30 }, frigate: { x: 11, y: 9, width: 42, height: 42 },
@@ -37,14 +37,11 @@ const drawTimedStrip = (ctx, image, layer, frameSize, elapsed, displaySize, dura
   return true;
 };
 
-const battlefieldProjection = (height) => {
-  const sourceTop = 102;
-  const sourceBottom = 590;
-  const targetBottom = height - 210;
-  const scaleY = (targetBottom - sourceTop) / (sourceBottom - sourceTop);
+const battlefieldProjection = (model) => {
+  const camera = model.camera;
   return Object.freeze({
-    y: (value) => sourceTop + (value - sourceTop) * scaleY,
-    velocityY: (value) => value * scaleY,
+    y: (value) => camera ? camera.viewport.y + value - camera.y : value,
+    velocityY: (value) => value,
   });
 };
 
@@ -97,9 +94,13 @@ export const renderBackground = (ctx, width, height, frameTime, assets) => {
   ctx.globalAlpha = 1;
 };
 
-export const renderBattlefieldLayer = (ctx, width, height) => {
-  const top = 102;
-  const bottom = height - 170;
+export const renderBattlefieldLayer = (ctx, model) => {
+  const map = model.simulation?.state.map;
+  if (!map) return;
+  const projection = battlefieldProjection(model);
+  const view = model.camera?.viewport ?? { x: 0, y: 0, width: model.width, height: model.height };
+  const top = view.y;
+  const bottom = view.y + view.height;
   const fade = ctx.createLinearGradient(0, top, 0, bottom);
   fade.addColorStop(0, "rgba(202,224,239,0)");
   fade.addColorStop(0.16, "rgba(202,224,239,0.045)");
@@ -108,19 +109,28 @@ export const renderBattlefieldLayer = (ctx, width, height) => {
   ctx.strokeStyle = fade;
   ctx.lineWidth = 1;
   ctx.setLineDash([2, 22]);
-  for (const center of [112, 308]) {
+  for (const lane of map.lanes) {
     ctx.beginPath();
-    ctx.moveTo(center, top + 28);
-    ctx.lineTo(center, bottom - 28);
+    ctx.moveTo(lane.centerX, projection.y(0));
+    ctx.lineTo(lane.centerX, projection.y(map.bounds.height));
     ctx.stroke();
   }
   ctx.setLineDash([2, 18]);
   ctx.strokeStyle = "rgba(211,231,246,0.025)";
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(width / 2, top + 20);
-  ctx.lineTo(width / 2, bottom - 20);
+  ctx.moveTo(map.bounds.width / 2, projection.y(0));
+  ctx.lineTo(map.bounds.width / 2, projection.y(map.bounds.height));
   ctx.stroke();
+  ctx.setLineDash([1, 28]);
+  ctx.strokeStyle = "rgba(211,231,246,0.022)";
+  for (let worldY = 110; worldY < map.bounds.height; worldY += 160) {
+    const y = projection.y(worldY);
+    ctx.beginPath();
+    ctx.moveTo(24, y);
+    ctx.lineTo(map.bounds.width - 24, y);
+    ctx.stroke();
+  }
   ctx.setLineDash([]);
 };
 
@@ -276,7 +286,7 @@ const drawHqHangars = (ctx, structure, model, frameTime, color) => {
 const drawStructure = (ctx, structure, model, projection) => {
   const state = model.simulation.state;
   const isHq = structure.structureType === "hq";
-  const size = isHq ? 112 : 64;
+  const size = isHq ? 128 : 74;
   const color = teamColor(structure.team);
   const sprite = asset(model.assets, isHq ? "structure-hq" : "structure-turret");
   const damaged = state.time - structure.lastDamagedAt < 0.13;
@@ -307,7 +317,7 @@ const drawNode = (ctx, node, frameTime, assets, projection) => {
   ctx.translate(node.x, y);
   if (sprite) {
     ctx.globalCompositeOperation = "screen";
-    ctx.drawImage(sprite, -25, -25, 50, 50);
+    ctx.drawImage(sprite, -29, -29, 58, 58);
     ctx.globalCompositeOperation = "source-over";
   }
   else { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill(); }
@@ -381,15 +391,23 @@ export const renderEntityLayer = (ctx, model) => {
   const simulation = model.simulation;
   if (!simulation) return;
   const { nodes, structures, units, projectiles } = simulation.state;
-  const projection = battlefieldProjection(model.height);
-  for (const node of nodes.values()) drawNode(ctx, node, model.frameTime, model.assets, projection);
+  const projection = battlefieldProjection(model);
+  const view = model.camera?.viewport;
+  const visible = (worldY, padding = 100) => {
+    if (!view) return true;
+    const screenY = projection.y(worldY);
+    return screenY >= view.y - padding && screenY <= view.y + view.height + padding;
+  };
+  for (const node of nodes.values()) if (visible(node.y, 50)) drawNode(ctx, node, model.frameTime, model.assets, projection);
   for (const structure of structures.values()) {
+    if (!visible(structure.y, structure.structureType === "hq" ? 80 : 50)) continue;
     ctx.globalAlpha = structure.alive ? 1 : 0.16;
     drawStructure(ctx, structure, model, projection);
   }
   ctx.globalAlpha = 1;
   for (const unit of units.values()) {
     if (unit.launching && unit.launchElapsed < 0) continue;
+    if (!visible(unit.y, 60)) continue;
     const size = unitSize(unit.unitType);
     const sprite = asset(model.assets, factionKey(unit));
     const visual = fleetVisualFor(unit.team, unit.unitType);
@@ -425,14 +443,17 @@ export const renderEntityLayer = (ctx, model) => {
     const hpRatio = unit.hp / unit.maxHp;
     if (hpRatio < 0.75 || simulation.state.time - unit.lastDamagedAt < 1.8) drawBar(ctx, unit.x, y + size * 0.52, size * 0.82, hpRatio, teamColor(unit.team));
   }
-  for (const projectile of projectiles.values()) drawProjectile(ctx, projectile, projection, model.assets);
+  for (const projectile of projectiles.values()) if (visible(projectile.y, 50)) drawProjectile(ctx, projectile, projection, model.assets);
 };
 
 const seededAngle = (seed, index) => ((seed * 2.17 + index * 2.399) % (Math.PI * 2));
 
 export const renderEffectsLayer = (ctx, model) => {
-  const projection = battlefieldProjection(model.height);
+  const projection = battlefieldProjection(model);
+  const view = model.camera?.viewport;
   for (const effect of model.effects ?? []) {
+    const effectY = projection.y(effect.y);
+    if (view && (effectY < view.y - 80 || effectY > view.y + view.height + 80)) continue;
     const progress = 1 - effect.life / effect.maxLife;
     const alpha = Math.max(0, 1 - progress);
     const color = teamColor(effect.team);

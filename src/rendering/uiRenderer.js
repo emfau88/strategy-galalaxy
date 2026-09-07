@@ -1,6 +1,7 @@
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
 import { UNIT_DEFINITIONS } from "../data/definitions.js";
 import { commandUiLayout } from "../ui/commandUi.js";
+import { cameraNavigatorLayout } from "../ui/cameraUi.js";
 
 const C = Object.freeze({
   panel: "rgba(14, 29, 53, 0.78)", outline: "rgba(172, 222, 237, 0.38)", text: "#f4f8fb", muted: "#b4c7d6",
@@ -90,6 +91,64 @@ const laneSelector = (ctx, model, rect) => {
   ctx.fillRect(rect.x + 7 + (rect.width - 14) * player / total, rect.y + 37, (rect.width - 14) * enemy / total, 3);
 };
 
+const strategicNavigator = (ctx, model) => {
+  const camera = model.camera;
+  const state = model.simulation?.state;
+  if (!camera || !state) return;
+  const layout = cameraNavigatorLayout(camera.viewport);
+  const { track } = layout;
+  const worldHeight = Math.max(1, camera.worldHeight);
+  const trackY = (worldY) => track.y + Math.max(0, Math.min(1, worldY / worldHeight)) * track.height;
+  const laneX = (laneId) => track.x + (laneId === LANE.LEFT ? 4 : 10);
+
+  box(ctx, { x: track.x - 3, y: track.y - 5, width: track.width + 6, height: track.height + 10 }, "rgba(8,18,34,0.68)", "rgba(178,219,234,0.2)", 7);
+  ctx.strokeStyle = "rgba(210,232,241,0.22)";
+  ctx.lineWidth = 1;
+  for (const x of [laneX(LANE.LEFT), laneX(LANE.RIGHT)]) {
+    ctx.beginPath();
+    ctx.moveTo(x, track.y);
+    ctx.lineTo(x, track.y + track.height);
+    ctx.stroke();
+  }
+
+  for (const node of state.nodes.values()) {
+    ctx.fillStyle = node.ownerTeam === TEAM.PLAYER ? C.player : node.ownerTeam === TEAM.ENEMY ? C.enemy : C.muted;
+    ctx.globalAlpha = 0.82;
+    ctx.fillRect(laneX(node.laneId) - 2, trackY(node.y) - 2, 4, 4);
+  }
+  ctx.globalAlpha = 1;
+
+  for (const structure of state.structures.values()) {
+    const y = trackY(structure.y);
+    const color = structure.team === TEAM.PLAYER ? C.player : C.enemy;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = structure.alive ? 0.9 : 0.22;
+    if (structure.structureType === "hq") ctx.fillRect(track.x + 2, y - 1.5, track.width - 4, 3);
+    else ctx.fillRect(laneX(structure.laneId) - 2, y - 1.5, 4, 3);
+  }
+  ctx.globalAlpha = 1;
+
+  for (const laneId of [LANE.LEFT, LANE.RIGHT]) {
+    const lane = state.lanes.get(laneId);
+    for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
+      const units = lane.unitIds.get(team).map((id) => state.units.get(id)).filter((unit) => unit?.alive);
+      if (!units.length) continue;
+      const averageY = units.reduce((sum, unit) => sum + unit.y, 0) / units.length;
+      const radius = Math.min(4, 1.5 + Math.sqrt(units.length) * 0.45);
+      ctx.fillStyle = team === TEAM.PLAYER ? C.player : C.enemy;
+      ctx.beginPath();
+      ctx.arc(laneX(laneId) + (team === TEAM.PLAYER ? -1.5 : 1.5), trackY(averageY), radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  const windowTop = trackY(camera.y);
+  const windowBottom = trackY(camera.y + camera.viewport.height);
+  ctx.strokeStyle = C.gold;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(track.x - 2, windowTop, track.width + 4, Math.max(8, windowBottom - windowTop));
+};
+
 const unitCard = (ctx, model, rect) => {
   const def = UNIT_DEFINITIONS[rect.unitType];
   const slotsOpen = purchasedCount(model) < model.director.config.balance.maxPurchasedReinforcementsPerDeployment;
@@ -148,7 +207,7 @@ const title = (ctx, model) => {
   box(ctx, { x: 52, y: 264 + offsetY, width: model.width - 104, height: 234 }, "rgba(16, 33, 58, 0.84)", C.player, 12);
   text(ctx, "STRATEGY GALALAXY", model.width / 2, 294 + offsetY, 19, C.text, "center");
   text(ctx, "PLAN · DEPLOY · WATCH THE LINE", model.width / 2, 320 + offsetY, 11, C.muted, "center");
-  text(ctx, "1  WATCH BOTH LANES", model.width / 2, 352 + offsetY, 10, C.text, "center", 600);
+  text(ctx, "1  DRAG TO EXPLORE THE FRONT", model.width / 2, 352 + offsetY, 10, C.text, "center", 600);
   text(ctx, "2  PICK LEFT OR RIGHT", model.width / 2, 372 + offsetY, 10, C.text, "center", 600);
   text(ctx, "3  QUEUE UP TO 4 SHIPS", model.width / 2, 392 + offsetY, 10, C.text, "center", 600);
   box(ctx, { ...ui.fullscreen, x: 104, y: 408 + offsetY, width: 212, height: 32 }, "rgba(37,72,93,0.82)", "rgba(190,229,239,0.32)", 8);
@@ -179,6 +238,7 @@ export const renderUiLayer = (ctx, model) => {
   const ui = commandUiLayout(model.height);
   header(ctx, model, ui);
   if ((model.state === MATCH_STATE.LIVE_MATCH || model.state === MATCH_STATE.PAUSED) && model.simulation) {
+    strategicNavigator(ctx, model);
     commandPanel(ctx, model, ui);
     if (model.state === MATCH_STATE.PAUSED) paused(ctx, model);
   } else if ([MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(model.state)) endState(ctx, model);

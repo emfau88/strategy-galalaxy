@@ -12,10 +12,11 @@ The primary match ends only when a Headquarters is destroyed.
 
 ## Battlefield
 
-- Exactly two isolated, wide corridors: Left and Right.
+- Exactly two isolated, wide corridors: Left and Right, on a `420 x 1180` world.
 - Player Headquarters and turrets are at the bottom; enemy structures mirror them at the top.
 - Each lane contains one capturable Energy Node.
-- The full relevant battlefield remains visible without camera movement, zoom or minimap.
+- Both lanes remain visible side by side while direct vertical drag moves between sectors.
+- A slim strategic navigator shows objectives, structures, fleet pressure and the current view.
 - Units retain their lane for life but use local horizontal offsets for formations and separation.
 - The vertical geometry is mirrored around the Node axis so neither team receives a distance advantage.
 
@@ -88,7 +89,7 @@ The top HUD prioritizes both HQ health values and the deployment countdown. Ener
 - unit/upgrade menu switching;
 - explicit editable or locked deployment state.
 
-The canvas uses the full portrait viewport from 360×800 through 412×915 and the 420×760 design baseline. Controls remain in design space while the battlefield grows vertically, avoiding unused letterbox regions on tall phones.
+The canvas uses the full portrait viewport from 360×800 through 412×915 and the 420×760 design baseline. HUD controls remain in screen space while the battlefield keeps its own taller world coordinates. Pointer Events support direct vertical map dragging; the strategic navigator provides fast sector jumps.
 
 ## AI fairness
 

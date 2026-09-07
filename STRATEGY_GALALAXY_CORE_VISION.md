@@ -173,18 +173,19 @@ Initial battlefield:
 - one enemy turret per lane,
 - one capturable Energy Node per lane.
 
-The whole strategically relevant battlefield should remain visible on one portrait screen.
+The battlefield is intentionally taller than one portrait viewport so fleets can
+use readable spacing, larger silhouettes and longer engagement distances.
 
-Hard design rule for the initial game:
+Core navigation is deliberately constrained:
 
-- no free camera,
-- no camera panning,
-- no minimap,
-- no zoom required for normal play.
+- the camera pans vertically only,
+- direct touch drag moves the battlefield,
+- a slim strategic navigator jumps between sectors and preserves global awareness,
+- horizontal panning, free rotation and pinch-zoom are not required,
+- HUD and command controls stay fixed in screen space.
 
-This is an intentional advantage over many desktop tug-of-war games.
-
-The player should always be able to read:
+The player must never be forced to hunt blindly for the battle. Across the
+camera window and strategic navigator, the player should always be able to read:
 
 - both lanes,
 - both HQs,
@@ -1056,8 +1057,8 @@ Useful lessons:
 Do not copy:
 
 - one-lane layout,
-- free camera,
-- minimap,
+- unrestricted desktop-style free camera,
+- minimap complexity that demands precision interaction,
 - constant immediate production timing as the only model.
 
 ## TinyWar-style tug-of-war
@@ -1329,8 +1330,9 @@ The reworked core should satisfy all of the following:
 - Node control affects income.
 - Turrets/HQs remain meaningful structural objectives.
 - Battle HUD is compact.
-- Entire battlefield remains visible in portrait.
-- No camera panning is required.
+- Tall battlefield supports larger ships and separated formations.
+- Direct vertical touch panning and strategic jumps remain comfortable.
+- Both lanes stay horizontally readable at every camera position.
 - Combat is visually more satisfying than generic bullet exchange.
 - No JS errors.
 - No broken mobile layout.

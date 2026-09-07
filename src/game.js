@@ -1,6 +1,7 @@
 import { ASSET_GROUPS, mergeAssetGroups } from "./assets.js";
 import { CONFIG } from "./config.js";
 import { GameClock } from "./core/clock.js";
+import { BattlefieldCamera } from "./core/battlefieldCamera.js";
 import { LANE, MATCH_STATE, TEAM } from "./core/constants.js";
 import { SeededRng } from "./core/rng.js";
 import { computeViewportTransform, responsivePortraitDesignHeight } from "./core/viewport.js";
@@ -11,8 +12,10 @@ import { PresentationEffects } from "./rendering/presentationEffects.js";
 import { SoundSystem } from "./audio/soundSystem.js";
 import { MatchDirector } from "./simulation/matchDirector.js";
 import { InputRouter } from "./ui/inputRouter.js";
-import { commandActionAt, titleActionAt, utilityActionAt } from "./ui/commandUi.js";
+import { commandActionAt, containsPoint, titleActionAt, utilityActionAt } from "./ui/commandUi.js";
+import { cameraNavigatorRatioAt } from "./ui/cameraUi.js";
 import { AI_PROFILES } from "./simulation/opponentAi.js";
+import { CLASSIC_LANES } from "./data/definitions.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
 
@@ -37,6 +40,13 @@ export class Game {
     this.commandFeedbackUntil = 0;
     this.fullscreenActive = false;
     this.match = new MatchDirector();
+    this.camera = new BattlefieldCamera({
+      worldHeight: CLASSIC_LANES.bounds.height,
+      designWidth: CONFIG.app.designWidth,
+      designHeight: CONFIG.app.designHeight,
+      config: CONFIG.camera,
+    });
+    this.cameraGesture = null;
     this.aiProfiles = [AI_PROFILES.CADET, AI_PROFILES.TACTICIAN, AI_PROFILES.ADMIRAL];
     this.lastFrameAt = null;
     this.running = false;
@@ -58,6 +68,8 @@ export class Game {
     await this.loader.load();
     if (this.options.testMode) {
       this.match.start();
+      this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
+      this.camera.reset("player");
       this.effects.reset();
     }
     this.syncMatchState();
@@ -107,11 +119,13 @@ export class Game {
       designWidth: CONFIG.app.designWidth,
       designHeight,
     });
+    this.camera.resize(CONFIG.app.designWidth, designHeight);
     this.renderer.resize(this.transform);
   }
 
   receiveInput(input) {
     this.lastInput = input;
+    if (this.handleCameraInput(input)) return;
     if (input.kind !== "down") return;
     this.sound.unlock().catch(() => {});
     const utility = utilityActionAt(input);
@@ -139,6 +153,8 @@ export class Game {
       }
       if (action?.type !== "START_MATCH") return;
       this.match.start();
+      this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
+      this.camera.reset("player");
       this.effects.reset();
       this.sound.reset();
       this.sound.play("deploy");
@@ -147,11 +163,73 @@ export class Game {
     else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight));
     else if ([MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(this.match.state)) {
       this.match.restart();
+      this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
+      this.camera.reset("player");
       this.effects.reset();
       this.sound.reset();
       this.sound.play("deploy");
     }
     this.syncMatchState();
+  }
+
+  handleCameraInput(input) {
+    const cameraState = this.match.state === MATCH_STATE.LIVE_MATCH || this.match.state === MATCH_STATE.PAUSED;
+    if (!cameraState) {
+      if (input.kind === "up" || input.kind === "cancel") this.cameraGesture = null;
+      return false;
+    }
+
+    if (input.kind === "down") {
+      const navigatorRatio = cameraNavigatorRatioAt(input, this.camera.viewport);
+      if (navigatorRatio !== null) {
+        this.cameraGesture = { type: "navigator" };
+        this.camera.jumpToRatio(navigatorRatio);
+        return true;
+      }
+      if (!containsPoint(this.camera.viewport, input)) return false;
+      this.cameraGesture = {
+        type: "pan",
+        originX: input.x,
+        originY: input.y,
+        originTime: input.timeStamp,
+        moved: false,
+      };
+      this.camera.beginPan(input.y, input.timeStamp);
+      return true;
+    }
+
+    if (!this.cameraGesture) return false;
+    if (this.cameraGesture.type === "navigator") {
+      if (input.kind === "move") {
+        const ratio = cameraNavigatorRatioAt({ ...input, x: 400 }, this.camera.viewport);
+        if (ratio !== null) this.camera.jumpToRatio(ratio);
+      }
+      if (input.kind === "up" || input.kind === "cancel") this.cameraGesture = null;
+      return true;
+    }
+
+    if (input.kind === "move") {
+      const distance = Math.hypot(input.x - this.cameraGesture.originX, input.y - this.cameraGesture.originY);
+      if (!this.cameraGesture.moved && distance >= this.camera.config.dragThreshold) {
+        this.cameraGesture.moved = true;
+        this.camera.beginPan(this.cameraGesture.originY, this.cameraGesture.originTime);
+      }
+      if (this.cameraGesture.moved) this.camera.panTo(input.y, input.timeStamp);
+      return true;
+    }
+
+    if (input.kind === "up") {
+      if (this.cameraGesture.moved) this.camera.endPan();
+      else this.camera.cancelPan();
+      this.cameraGesture = null;
+      return true;
+    }
+    if (input.kind === "cancel") {
+      this.camera.cancelPan();
+      this.cameraGesture = null;
+      return true;
+    }
+    return true;
   }
 
   toggleFullscreen() {
@@ -223,6 +301,7 @@ export class Game {
     this.lastFrameAt = now;
     const previousState = this.match.state;
     const previousCycle = this.match.cycle;
+    this.camera.update(delta);
     this.clock.advance(delta, previousState, {
       onSimulationStep: (step) => {
         this.match.advanceLive(step);
@@ -255,6 +334,7 @@ export class Game {
       fullscreenActive: this.fullscreenActive,
       soundEnabled: this.sound.enabled,
       queueLocked: this.match.queueLocked,
+      camera: this.camera.snapshot(),
       commandFeedback: this.clock.frameTime < this.commandFeedbackUntil ? this.commandFeedback : null,
       assets: this.loader,
       effects: this.effects.effects,
@@ -264,5 +344,9 @@ export class Game {
 
   getViewportSnapshot() {
     return this.transform;
+  }
+
+  getCameraSnapshot() {
+    return this.camera.snapshot();
   }
 }

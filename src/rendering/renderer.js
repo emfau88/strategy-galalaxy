@@ -23,9 +23,17 @@ export class Renderer {
     ctx.scale(transform.scale, transform.scale);
     const sceneModel = { ...model, width: transform.designWidth, height: transform.designHeight };
     renderBackground(ctx, transform.designWidth, transform.designHeight, model.frameTime, model.assets);
-    renderBattlefieldLayer(ctx, transform.designWidth, transform.designHeight);
+    ctx.save();
+    if (sceneModel.camera?.viewport) {
+      const view = sceneModel.camera.viewport;
+      ctx.beginPath();
+      ctx.rect(view.x, view.y, view.width, view.height);
+      ctx.clip();
+    }
+    renderBattlefieldLayer(ctx, sceneModel);
     renderEntityLayer(ctx, sceneModel);
     renderEffectsLayer(ctx, sceneModel);
+    ctx.restore();
     renderUiLayer(ctx, sceneModel);
   }
 }

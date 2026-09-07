@@ -8,6 +8,13 @@ export const CONFIG = Object.freeze({
     maxDevicePixelRatio: 2,
     coarsePointerPixelRatio: 1.5,
   }),
+  camera: Object.freeze({
+    battlefieldTopInset: 64,
+    battlefieldBottomInset: 194,
+    dragThreshold: 7,
+    inertiaDamping: 9,
+    maximumInertiaSpeed: 720,
+  }),
   timing: Object.freeze({
     fixedStepSeconds: 1 / 60,
     maxFrameDeltaSeconds: 0.1,

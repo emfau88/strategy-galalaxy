@@ -18,7 +18,8 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 ## Aktueller Spielstand
 
 - Kontinuierlicher `LIVE_MATCH` mit 22-Sekunden-Deployment und Zwei-Sekunden-Lock-in.
-- Zwei vollständig sichtbare, nur noch dezent markierte Lanes mit persistenten Schiffen, Turrets, HQ-Schaden und Energy Nodes.
+- Zwei nebeneinander sichtbare Lanes auf einem höheren Schlachtfeld mit direktem vertikalem Touch-Panning.
+- Eine schmale strategische Kartenleiste zeigt Fronten, Strukturen, Nodes und den aktuellen Kameraausschnitt.
 - Zwei kostenlose Scouts pro Lane und Deployment sowie vier gemeinsame, gekaufte Verstärkungsslots.
 - Sofortige Energiereservierung, vollständige Rückerstattung vor Lock-in und Upgrade-Aktivierung am nächsten Deployment.
 - Gedeckelte, entschärfte Economy mit 300 Startenergie, 16 Basisenergie/s, 7 Energie/s pro Node, maximal 1.200 gespeicherter Energie und begrenzten Upgrade-Stufen.
@@ -29,7 +30,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Modulare Defense Turrets mit eigenem weich nachgeführtem Geschütz, Laufmündungs-Projektilen und Schussrückstoß sowie hochwertige Headquarters mit zwei lane-seitigen Hangars: Schiffe starten sichtbar aus dem passenden Tor, das sich nur bei tatsächlicher Auslieferung öffnet und wieder schließt.
 - Keine großflächigen Team-Neonringe oder dekorativen Orbit-Ellipsen; Nodes zeigen Capture-Fortschritt kompakt unterhalb des Sprites.
 - Faire Projektilbudgets pro Team und Lane sowie globale Sicherheitsgrenzen für mobile Geräte.
-- Responsive Canvas-Höhe, die Tall-Screen-Smartphones im Fullscreen ohne große ungenutzte Flächen ausfüllt.
+- Responsive Canvas-Höhe mit bildschirmfestem HUD, größer dargestellten Schiffen und einer davon entkoppelten `420 x 1180` Spielwelt.
 - Größere Mobile-Touchflächen, direkt in den Lane-Tabs sichtbarer Druckvergleich sowie ein kurzer Drei-Schritte-Einstieg auf dem Startbildschirm.
 - Schaltbare, synthetisierte Combat-Sounds und an echte Nutzergesten gebundenes Haptik-Feedback ohne zusätzliche Audio-Lizenzabhängigkeit.
 - Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt nur den kuratierten aktuellen Ausschnitt.
@@ -43,7 +44,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 | Bomber | verwundbarer Siege- und Anti-Heavy-Angreifer | sichtbare Homing-Rakete/Torpedo | 0,5 |
 | Frigate | langlebiger Frontline-Anker | langsamer, schwerer Ray/Big Bullet | 0,75 |
 
-Die aktuellen Schiffsgrößen bleiben bewusst klassenabhängig. Eine pauschale Vergrößerung würde die dichten, persistenten Flotten und Nodes schneller verdecken; weitere Größenänderungen sollen auf echten Smartphone-Tests beruhen.
+Die Darstellung bleibt klassenabhängig, nutzt im höheren Schlachtfeld aber größere Silhouetten. Kollisionsradien und Simulationswerte bleiben davon getrennt; spätere Atlas-Zuschnitte können noch mehr sichtbare Details schaffen, ohne das Gameplay heimlich zu verändern.
 
 ## Repository-Grenze und Assets
 
@@ -65,7 +66,7 @@ Das Projekt nutzt native Browsermodule und benötigt keinen Build-Schritt.
 python -m http.server 8765 --directory .
 ```
 
-Anschließend `http://127.0.0.1:8765/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel wählt man Left oder Right, reiht Einheiten ein, entfernt den letzten Queue-Eintrag mit Undo oder wechselt zu Upgrades. `P` pausiert, das Symbol oben rechts fordert Browser-Fullscreen an.
+Anschließend `http://127.0.0.1:8765/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste, wählt Left oder Right, reiht Einheiten ein, entfernt den letzten Queue-Eintrag mit Undo oder wechselt zu Upgrades. `P` pausiert, das Symbol oben rechts fordert Browser-Fullscreen an.
 
 ## Prüfen
 
@@ -82,6 +83,7 @@ Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Capture, Targeti
 ## Dokumentation
 
 - [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md)
+- [Aktuelle Umbau-Roadmap](IMPLEMENTATION_ROADMAP.md)
 - [Umsetzungsplan](ROADMAP.md)
 - [Game-Design-Vertrag](docs/GAME_DESIGN.md)
 - [Architektur-Vertrag](docs/ARCHITECTURE.md)
@@ -91,4 +93,4 @@ Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Capture, Targeti
 
 ## Status
 
-Der kontinuierliche Kern-Loop, die mobile Vollbildskalierung, die vier Kernrollen, die Original-Animations-/Projektilintegration, animierte modulare Strukturen, drei KI-Stufen, Sound/Haptik und die automatisierten technischen Gates sind umgesetzt. In der aktuellen vollständig gespiegelten 100-Match-Referenzserie endeten alle Matches durch HQ-Zerstörung, mit 50:50 Siegen und durchschnittlich 167 Sekunden Laufzeit. Das ist ein technisches Fairnesssignal, kein Nachweis für Spielspaß. Als nächster Schwerpunkt folgt echtes Smartphone-Playtesting: Lesbarkeit dichter Pushes, Touchkomfort, 22-Sekunden-Entscheidungsrhythmus und datengetriebene Balance. Battlecruiser und Dreadnought bleiben bis zum bestandenen Spielspaß-Gate deaktiviert.
+Der kontinuierliche Kern-Loop, die vier Kernrollen, Original-Animationen und Projektile, animierte modulare Strukturen, drei KI-Stufen, Sound/Haptik und die automatisierten technischen Gates sind umgesetzt. Der erste Tall-world-Meilenstein ergänzt eine vertikal verschiebbare Welt, eine strategische Kartenleiste und größere Darstellungen. Seine erste vollständig gespiegelte 100-Match-Diagnose endete ohne Draws oder Timeouts bei 50:50 Siegen und durchschnittlich 202,8 Sekunden Laufzeit. Diese Messung ist ein technisches Symmetriesignal; die neue Balance-Referenz wird erst nach Bewegungs- und Formationsumbau festgeschrieben. Der aktuelle Fortschritt steht in der [Umbau-Roadmap](IMPLEMENTATION_ROADMAP.md).
