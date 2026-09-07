@@ -1,6 +1,6 @@
 import { CONFIG } from "../src/config.js";
 import { LANE, MATCH_STATE, TEAM } from "../src/core/constants.js";
-import { AI_PROFILES, OpponentAi } from "../src/simulation/opponentAi.js";
+import { AI_PROFILES, INVESTMENT_BIASES, OpponentAi } from "../src/simulation/opponentAi.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 
 const requestedMatches = Number.parseInt(process.argv[2] ?? "100", 10);
@@ -20,6 +20,9 @@ const runConfig = Object.freeze({
 const validProfiles = new Set(Object.values(AI_PROFILES));
 const fixedPlayerProfile = validProfiles.has(process.env.SG_PLAYER_AI_PROFILE) ? process.env.SG_PLAYER_AI_PROFILE : null;
 const fixedEnemyProfile = validProfiles.has(process.env.SG_ENEMY_AI_PROFILE) ? process.env.SG_ENEMY_AI_PROFILE : null;
+const validInvestmentBiases = new Set(Object.values(INVESTMENT_BIASES));
+const playerInvestmentBias = validInvestmentBiases.has(process.env.SG_PLAYER_INVESTMENT_BIAS) ? process.env.SG_PLAYER_INVESTMENT_BIAS : INVESTMENT_BIASES.BALANCED;
+const enemyInvestmentBias = validInvestmentBiases.has(process.env.SG_ENEMY_INVESTMENT_BIAS) ? process.env.SG_ENEMY_INVESTMENT_BIAS : INVESTMENT_BIASES.BALANCED;
 const maximumSeconds = 8 * 60;
 const step = CONFIG.timing.fixedStepSeconds;
 const teams = [TEAM.PLAYER, TEAM.ENEMY];
@@ -32,7 +35,8 @@ const metrics = {
   durations: [],
   cycles: [],
   purchases: Object.fromEntries(teams.map((team) => [team, Object.fromEntries(unitTypes.map((type) => [type, 0]))])),
-  upgrades: Object.fromEntries(teams.map((team) => [team, { economy: 0, turret: 0 }])),
+  upgrades: Object.fromEntries(teams.map((team) => [team, { economy: 0, weapons: 0, turret: 0, logistics: 0 }])),
+  spending: Object.fromEntries(teams.map((team) => [team, { fleet: 0, economy: 0, research: 0 }])),
   finalEnergy: Object.fromEntries(teams.map((team) => [team, []])),
   nodeControlSeconds: Object.fromEntries(teams.map((team) => [team, 0])),
   firstTurretLossSeconds: [],
@@ -59,12 +63,13 @@ const runMatch = (index) => {
   const enemyProfile = fixedEnemyProfile ?? (index % 4 < 2 ? AI_PROFILES.TACTICIAN : AI_PROFILES.ADMIRAL);
   const playerPreferredLane = index % 2 === 0 ? LANE.RIGHT : LANE.LEFT;
   const enemyPreferredLane = playerPreferredLane === LANE.LEFT ? LANE.RIGHT : LANE.LEFT;
-  const director = new MatchDirector({ config: runConfig, aiProfile: enemyProfile, aiPreferredLane: enemyPreferredLane });
+  const director = new MatchDirector({ config: runConfig, aiProfile: enemyProfile, aiPreferredLane: enemyPreferredLane, aiInvestmentBias: enemyInvestmentBias });
   director.start();
   const playerAi = new OpponentAi({
     team: TEAM.PLAYER,
     preferredLane: playerPreferredLane,
     profile: playerProfile,
+    investmentBias: playerInvestmentBias,
   });
   let playerDecision = playerAi.plan(director).decision;
   let playerReplannedForCycle = null;
@@ -104,6 +109,9 @@ const runMatch = (index) => {
   metrics.cycles.push(director.cycle);
   if (firstTurretLoss !== null) metrics.firstTurretLossSeconds.push(firstTurretLoss);
   for (const team of teams) metrics.finalEnergy[team].push(director.economy.get(team).energy);
+  for (const team of teams) {
+    for (const category of ["fleet", "economy", "research"]) metrics.spending[team][category] += director.economy.get(team).spending[category];
+  }
   if (director.state === MATCH_STATE.VICTORY) {
     metrics.wins[TEAM.PLAYER] += 1;
     metrics.winsByProfile[playerProfile] += 1;
@@ -132,6 +140,7 @@ const report = {
   averageFirstTurretLossSeconds: rounded(average(metrics.firstTurretLossSeconds)),
   purchases: metrics.purchases,
   upgrades: metrics.upgrades,
+  spending: metrics.spending,
   averageFinalEnergy: Object.fromEntries(teams.map((team) => [team, rounded(average(metrics.finalEnergy[team]))])),
   nodeControlSeconds: Object.fromEntries(teams.map((team) => [team, rounded(metrics.nodeControlSeconds[team])])),
   peaks: { units: metrics.peakUnits, projectiles: metrics.peakProjectiles },
@@ -144,6 +153,7 @@ const report = {
     matchup: fixedPlayerProfile || fixedEnemyProfile
       ? `${fixedPlayerProfile ?? AI_PROFILES.TACTICIAN} vs ${fixedEnemyProfile ?? AI_PROFILES.TACTICIAN}`
       : "four-way side/lane-mirrored admiral vs tactician",
+    investmentBias: `${playerInvestmentBias} vs ${enemyInvestmentBias}`,
   },
 };
 

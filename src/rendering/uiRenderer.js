@@ -7,6 +7,12 @@ const C = Object.freeze({
   panel: "rgba(14, 29, 53, 0.78)", outline: "rgba(172, 222, 237, 0.38)", text: "#f4f8fb", muted: "#b4c7d6",
   player: "#91e0ef", enemy: "#f1a08a", gold: "#f1cc89", select: "rgba(54, 123, 149, 0.76)", card: "rgba(31, 60, 86, 0.82)",
 });
+const UPGRADE_UI = Object.freeze({
+  economy: Object.freeze({ label: "ECONOMY", active: "economyLevel", pending: "pendingEconomyLevels" }),
+  weapons: Object.freeze({ label: "WEAPONS", active: "weaponLevel", pending: "pendingWeaponLevels" }),
+  turret: Object.freeze({ label: "TURRETS", active: "turretLevel", pending: "pendingTurretLevels" }),
+  logistics: Object.freeze({ label: "LOGISTICS", active: "logisticsLevel", pending: "pendingLogisticsLevels" }),
+});
 const text = (ctx, value, x, y, size, color, align = "left", weight = 700) => {
   ctx.fillStyle = color; ctx.font = `${weight} ${size}px Inter, system-ui, sans-serif`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillText(value, x, y);
 };
@@ -151,7 +157,7 @@ const strategicNavigator = (ctx, model) => {
 
 const unitCard = (ctx, model, rect) => {
   const def = UNIT_DEFINITIONS[rect.unitType];
-  const slotsOpen = purchasedCount(model) < model.director.config.balance.maxPurchasedReinforcementsPerDeployment;
+  const slotsOpen = purchasedCount(model) < model.economy.reinforcementLimit(TEAM.PLAYER);
   const affordable = model.economy.get(TEAM.PLAYER).energy >= def.cost && slotsOpen && !model.queueLocked;
   box(ctx, rect, affordable ? C.card : "rgba(35, 45, 58, 0.76)", affordable ? C.outline : null, 8);
   const role = { scout: "CAPTURE", fighter: "ANTI-LIGHT", bomber: "SIEGE", frigate: "FRONTLINE" }[rect.unitType];
@@ -164,11 +170,12 @@ const upgradeCard = (ctx, model, rect) => {
   const cost = model.economy.upgradeCost(TEAM.PLAYER, rect.upgradeId);
   const affordable = cost !== null && model.economy.get(TEAM.PLAYER).energy >= cost && !model.queueLocked;
   const economy = model.economy.get(TEAM.PLAYER);
-  const activeKey = rect.upgradeId === "economy" ? "economyLevel" : "turretLevel";
-  const pendingKey = rect.upgradeId === "economy" ? "pendingEconomyLevels" : "pendingTurretLevels";
+  const upgrade = UPGRADE_UI[rect.upgradeId];
+  const activeKey = upgrade.active;
+  const pendingKey = upgrade.pending;
   const level = economy[activeKey] + economy[pendingKey];
   box(ctx, rect, affordable ? "rgba(44, 82, 84, 0.8)" : "rgba(35, 45, 58, 0.76)", affordable ? C.outline : null, 8);
-  text(ctx, rect.upgradeId === "economy" ? "ECONOMY" : "TURRETS", rect.x + 11, rect.y + 17, 11, affordable ? C.text : C.muted);
+  text(ctx, upgrade.label, rect.x + 11, rect.y + 17, 10, affordable ? C.text : C.muted);
   const detail = cost === null ? `MAX · LV ${level}` : `${economy[pendingKey] ? "NEXT " : ""}LV ${level} · ${cost} E`;
   text(ctx, detail, rect.x + 11, rect.y + 36, 9, affordable ? C.gold : C.muted);
 };
@@ -176,7 +183,7 @@ const upgradeCard = (ctx, model, rect) => {
 const commandPanel = (ctx, model, ui) => {
   const entries = queue(model, model.selectedLaneId);
   const total = purchasedCount(model);
-  const limit = model.director.config.balance.maxPurchasedReinforcementsPerDeployment;
+  const limit = model.economy.reinforcementLimit(TEAM.PLAYER);
   box(ctx, ui.panel, "rgba(13, 27, 50, 0.82)", "rgba(180, 222, 235, 0.34)", 10);
   for (const rect of ui.lanes) laneSelector(ctx, model, rect);
   box(ctx, ui.undo, entries.length ? "rgba(99, 67, 91, 0.82)" : "rgba(38, 47, 60, 0.68)", null);

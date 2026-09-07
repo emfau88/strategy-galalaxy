@@ -20,13 +20,14 @@ export class CommandSystem {
     if (!definition || definition.enabled === false || definition.purchasable === false) return { ok: false, reason: "UNAVAILABLE_UNIT" };
     const queue = director.queuedWaves.get(team).get(laneId);
     const purchased = [...director.queuedWaves.get(team).values()].reduce((sum, entries) => sum + entries.length, 0);
-    if (purchased >= director.config.balance.maxPurchasedReinforcementsPerDeployment) return { ok: false, reason: "REINFORCEMENT_LIMIT" };
+    if (purchased >= director.economy.reinforcementLimit(team)) return { ok: false, reason: "REINFORCEMENT_LIMIT" };
     const active = director.simulation.state.lanes.get(laneId).unitIds.get(team).length;
     const reservedBase = director.baseWaveBacklog.get(team).get(laneId).length + director.deployment.baseWaveSize(director.simulation.state.time);
     if (active + reservedBase + queue.length >= director.config.caps.unitsPerLaneTeam) return { ok: false, reason: "CAPACITY_RESERVED" };
     const economy = director.economy.get(team);
     if (economy.energy < definition.cost) return { ok: false, reason: "INSUFFICIENT_ENERGY" };
     economy.energy -= definition.cost;
+    director.economy.recordFleetPurchase(team, definition.cost);
     const entry = { id: `queue-${director.nextQueueSequence}`, unitType, paidCost: definition.cost, source: "purchased", sequence: director.nextQueueSequence };
     director.nextQueueSequence += 1;
     queue.push(entry);
@@ -42,6 +43,7 @@ export class CommandSystem {
     if (index < 0) return { ok: false, reason: "UNKNOWN_QUEUE_ENTRY" };
     const [entry] = queue.splice(index, 1);
     director.economy.get(team).energy += entry.paidCost;
+    director.economy.recordFleetRefund(team, entry.paidCost);
     return { ok: true, refunded: entry.paidCost, entry };
   }
 

@@ -18,7 +18,9 @@ export const COMMAND_UI = Object.freeze({
   ]),
   upgrades: Object.freeze([
     Object.freeze({ upgradeId: "economy", x: 16, y: 638, width: 132, height: 50 }),
-    Object.freeze({ upgradeId: "turret", x: 154, y: 638, width: 132, height: 50 }),
+    Object.freeze({ upgradeId: "weapons", x: 154, y: 638, width: 132, height: 50 }),
+    Object.freeze({ upgradeId: "turret", x: 16, y: 696, width: 132, height: 50 }),
+    Object.freeze({ upgradeId: "logistics", x: 154, y: 696, width: 132, height: 50 }),
   ]),
   deploy: Object.freeze({ x: 294, y: 638, width: 110, height: 108 }),
   titleDifficulty: Object.freeze({ x: 104, y: 408, width: 212, height: 32 }),

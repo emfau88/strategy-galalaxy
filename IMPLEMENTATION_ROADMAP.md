@@ -56,18 +56,18 @@ committet und gepusht, damit er direkt getestet werden kann.
 - [x] Spawnzahl und spätes Wachstum so begrenzen, dass Projektil- und Unit-Budgets halten.
 - [x] Vorhandene kleine Scout-Layer in eigener Drone-Größe wiederverwenden.
 - [x] KI, Tests und Lane-Telemetrie um die neue Rolle erweitern.
-- [ ] Meilenstein committen und pushen.
+- [x] Meilenstein committen und pushen (`45b244d`).
 
 ## Meilenstein 4 – echte Flotte/Economy/Forschung-Abwägung
 
-- [ ] Ausgaben nach Flotte, Economy und Forschung getrennt telemetrieren.
-- [ ] Economy-Upgrades mit steigenden Kosten und verzögerter Amortisation neu abstimmen.
-- [ ] Forschung als eigener Investitionspfad statt sofortiger Gratiswirkung modellieren.
-- [ ] Forschungseffekte an Deployment-Grenzen aktivieren und klar ankündigen.
-- [ ] Mindestens drei konkurrierende Pfade anbieten: Einkommen, Waffen, Defensive/Logistik.
-- [ ] Sparen durch Energie-Cap und zunehmende Opportunitätskosten begrenzen.
-- [ ] KI-Profile zu nachvollziehbaren Investitionsstrategien erweitern.
-- [ ] Reproduzierbare Experimentmatrix für Rush, Greed, Tech und Mischstrategien ergänzen.
+- [x] Ausgaben nach Flotte, Economy und Forschung getrennt telemetrieren.
+- [x] Economy-Upgrades mit steigenden Kosten und verzögerter Amortisation neu abstimmen.
+- [x] Forschung als eigener Investitionspfad statt sofortiger Gratiswirkung modellieren.
+- [x] Forschungseffekte an Deployment-Grenzen aktivieren und klar ankündigen.
+- [x] Vier konkurrierende Pfade anbieten: Einkommen, Waffen, Turrets und Logistics.
+- [x] Sparen durch einen niedrigeren Energie-Cap und zunehmende Opportunitätskosten begrenzen.
+- [x] KI-Profile und Messläufe um nachvollziehbare Investitionsstrategien erweitern.
+- [x] Reproduzierbare Experimentmatrix für Rush, Greed, Tech und Mischstrategien ergänzen.
 - [ ] Meilenstein committen und pushen.
 
 ## Meilenstein 5 – Schlachtinszenierung und Asset-Tiefe
@@ -105,8 +105,8 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 
 ## Aktueller nächster Schritt
 
-Meilenstein 3 gezielt prüfen, committen und pushen. Danach beginnt Meilenstein 4
-mit getrennten Flotten-, Economy- und Forschungsinvestitionen.
+Meilenstein 4 gezielt prüfen, committen und pushen. Danach beginnt Meilenstein 5
+mit Salven, mehreren Breitseiten-Hardpoints und besserer Offscreen-Kampfmeldung.
 
 ## Letzte verifizierte Messung
 
@@ -128,3 +128,16 @@ Movement-Meilenstein 2, kurzer gespiegelter Smoke-Test mit acht Matches:
 - erster Turretverlust im Mittel: 159,2 Sekunden
 - Spitzenlast: 55 Units / 13 Projektile
 - dichter 90-Sekunden-Stresstest: maximal 36 Projektile, keine Budgetverletzung
+
+Drone-Meilenstein 3, vier gespiegelte Matches:
+
+- Siege: 2 Spieler / 2 Gegner
+- Draws und Timeouts: 0
+- mittlere Matchdauer: 254,6 Sekunden
+- Spitzenlast: 40 Units / 12 Projektile
+
+Investment-Meilenstein 4, je zwei Matches für fünf Strategiepaarungen:
+
+- Rush, Greed, Weapons, Logistics und Balanced erzeugen messbar verschiedene Ausgabenprofile
+- jede Paarung beendete beide Matches ohne technischen Timeout
+- symmetrisches Balanced-Paar endete 1:1 mit exakt gleichen Ausgaben

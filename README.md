@@ -22,7 +22,8 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Eine schmale strategische Kartenleiste zeigt Fronten, Strukturen, Nodes und den aktuellen Kameraausschnitt.
 - Drei schwache automatische Drones pro Lane und Deployment sowie vier gemeinsame, gekaufte Verstärkungsslots; Scouts bleiben wertvolle Capture-Spezialisten.
 - Sofortige Energiereservierung, vollständige Rückerstattung vor Lock-in und Upgrade-Aktivierung am nächsten Deployment.
-- Gedeckelte, entschärfte Economy mit 300 Startenergie, 16 Basisenergie/s, 7 Energie/s pro Node, maximal 1.200 gespeicherter Energie und begrenzten Upgrade-Stufen.
+- Gedeckelte Economy mit 300 Startenergie, 16 Basisenergie/s, 7 Energie/s pro Node und maximal 900 gespeicherter Energie.
+- Vier konkurrierende Investitionen: Economy-Einkommen, Flottenwaffen, Turret-Defensive und zusätzliche Logistics-Slots; alles wird erst an der nächsten Deployment-Grenze aktiv.
 - Regelgebundene KI mit denselben Kosten, Slots, Timern, Kapazitäten und Upgrade-Regeln wie der Spieler, drei wählbaren Profilen und genau einer Neubewertung kurz vor dem Lock-in.
 - Scout, Fighter, Bomber und Frigate mit eigenen Rollen, Formationen, Zielprioritäten und Capture-Stärken.
 - Nairan- und Kla'ed-Flotten mit animierten Engines, Weapon-, Shield- und Destruction-Layern.
@@ -77,9 +78,10 @@ npm.cmd run test:stress
 npm.cmd run test:browser
 npm.cmd run balance:sim -- 100
 npm.cmd run balance:experiments -- 30
+npm.cmd run balance:investments -- 8
 ```
 
-Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Capture, Targeting, gespiegelte Kartengeometrie, dichte Flotten, Projektile, alle Runtime-Manifeste und die 516 Dateien der importierten Bibliothek ab. Der Browserlauf emuliert fünf echte Mobile-Viewports und prüft Start, Schwierigkeitswahl, Touch, Pause, Sound, vollständige Canvas-Nutzung sowie Console-/Netzwerkfehler. Die Balance-Simulation spiegelt Teamseite und bevorzugte Lane, meldet zusätzlich Siege pro KI-Profil, Matchdauer, Deployment-Zyklen, Käufe, Nodekontrolle, ersten Turretverlust und Spitzenlast; der Experimentlauf vergleicht drei Economy-Konfigurationen reproduzierbar.
+Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Forschung, Capture, Targeting, gespiegelte Kartengeometrie, dichte Flotten, Projektile, alle Runtime-Manifeste und die 516 Dateien der importierten Bibliothek ab. Der Browserlauf emuliert fünf echte Mobile-Viewports und prüft Start, Schwierigkeitswahl, Touch, Pause, Sound, Kamera sowie Console-/Netzwerkfehler. Die Balance-Simulation meldet zusätzlich Käufe, getrennte Ausgabenkategorien, Upgrades, Nodekontrolle und Spitzenlast; die Experimentläufe vergleichen Economy-Konfigurationen sowie Rush-, Greed-, Weapons-, Logistics- und Mischstrategien reproduzierbar.
 
 ## Dokumentation
 

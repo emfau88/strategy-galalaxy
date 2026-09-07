@@ -260,6 +260,7 @@ assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 210);
 const removed = economyMatch.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, queueEntryId: queued.entry.id });
 assert.deepEqual({ ok: removed.ok, refunded: removed.refunded }, { ok: true, refunded: 90 });
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
+assert.deepEqual(economyMatch.economy.get(TEAM.PLAYER).spending, { fleet: 0, economy: 0, research: 0 });
 
 const slotMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 1000 } } });
 slotMatch.start();
@@ -273,15 +274,16 @@ const slotUndo = slotMatch.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TE
 assert.equal(slotUndo.ok, true);
 assert.equal(slotMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" }).ok, true, "undo reopens a shared reinforcement slot");
 const economyUpgrade = economyMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" });
-assert.deepEqual({ ok: economyUpgrade.ok, cost: economyUpgrade.cost, level: economyUpgrade.level }, { ok: true, cost: 240, level: 1 });
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 60);
+assert.deepEqual({ ok: economyUpgrade.ok, cost: economyUpgrade.cost, level: economyUpgrade.level }, { ok: true, cost: 260, level: 1 });
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 40);
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).spending.economy, 260);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).economyLevel, 0);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).pendingEconomyLevels, 1);
 assert.equal(economyMatch.economy.incomePerSecond(economyMatch.simulation.state, TEAM.PLAYER, 0), 16);
 economyMatch.forceDeployment();
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).economyLevel, 1);
 economyMatch.advanceLive(1);
-assert.ok(Math.abs(economyMatch.economy.get(TEAM.PLAYER).energy - 79.2) < 0.000001);
+assert.ok(Math.abs(economyMatch.economy.get(TEAM.PLAYER).energy - 58.88) < 0.000001);
 economyMatch.economy.get(TEAM.PLAYER).energy = CONFIG.balance.energyCap - 1;
 economyMatch.advanceLive(1);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, CONFIG.balance.energyCap, "passive income respects the energy cap");
@@ -317,6 +319,30 @@ for (let level = 0; level < CONFIG.balance.economyUpgradeMaxLevel; level += 1) {
   assert.equal(cappedUpgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" }).ok, true);
 }
 assert.deepEqual(cappedUpgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" }), { ok: false, reason: "MAX_LEVEL" });
+
+const researchMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 900 } } });
+researchMatch.start();
+const researchFighter = researchMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 105, y: 820, spawnCycle: 80 });
+const baseWeaponDamage = researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter);
+assert.equal(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "weapons" }).ok, true);
+assert.equal(researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter), baseWeaponDamage, "research waits for the deployment boundary");
+researchMatch.forceDeployment();
+assert.equal(researchMatch.economy.get(TEAM.PLAYER).weaponLevel, 1);
+assert.equal(researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter), baseWeaponDamage * 1.12);
+assert.equal(researchMatch.economy.get(TEAM.PLAYER).spending.research, 220);
+
+const logisticsMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 900 } } });
+logisticsMatch.start();
+assert.equal(logisticsMatch.economy.reinforcementLimit(TEAM.PLAYER), 4);
+assert.equal(logisticsMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "logistics" }).ok, true);
+assert.equal(logisticsMatch.economy.reinforcementLimit(TEAM.PLAYER), 4, "pending logistics does not grant an early slot");
+logisticsMatch.forceDeployment();
+assert.equal(logisticsMatch.economy.reinforcementLimit(TEAM.PLAYER), 5);
+logisticsMatch.economy.get(TEAM.PLAYER).energy = 900;
+for (let index = 0; index < 5; index += 1) {
+  assert.equal(logisticsMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: index % 2 ? LANE.RIGHT : LANE.LEFT, unitType: "scout" }).ok, true);
+}
+assert.deepEqual(logisticsMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" }), { ok: false, reason: "REINFORCEMENT_LIMIT" });
 
 const replanMatch = new MatchDirector({ aiProfile: AI_PROFILES.ADMIRAL });
 replanMatch.start();
@@ -387,7 +413,9 @@ assert.deepEqual(commandActionAt({ x: 126, y: 628 }), { type: "SELECT_LANE", lan
 assert.deepEqual(commandActionAt({ x: 24, y: 662 }), { type: "QUEUE_UNIT", unitType: "scout" });
 assert.deepEqual(commandActionAt({ x: 160, y: 662 }), { type: "QUEUE_UNIT", unitType: "fighter" });
 assert.deepEqual(commandActionAt({ x: 300, y: 620 }), { type: "TOGGLE_MENU" });
-assert.deepEqual(commandActionAt({ x: 160, y: 662 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "turret" });
+assert.deepEqual(commandActionAt({ x: 160, y: 662 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "weapons" });
+assert.deepEqual(commandActionAt({ x: 24, y: 720 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "turret" });
+assert.deepEqual(commandActionAt({ x: 160, y: 720 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "logistics" });
 assert.equal(commandActionAt({ x: 300, y: 662 }), null);
 const tallCommandUi = commandUiLayout(909);
 assert.equal(tallCommandUi.panel.y, 725);

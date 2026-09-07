@@ -24,7 +24,7 @@ The primary match ends only when a Headquarters is destroyed.
 
 - A match opens with a free symmetric base wave so the battlefield is active immediately.
 - Each later boundary adds three free Drones per lane and team. Every 150 active seconds this rises by one, capped at five. Drones keep the front active but are deliberately fragile and weak against structures; Scouts remain purchased capture specialists.
-- A team may buy at most four reinforcements per deployment across both lanes combined.
+- A team begins with four paid reinforcement slots per deployment across both lanes combined; active logistics research can raise this to six.
 - Buying reserves the full Energy cost immediately.
 - Removing an entry before lock-in refunds its full cost.
 - During the final two seconds additions, removal and upgrades are rejected.
@@ -35,19 +35,21 @@ The primary match ends only when a Headquarters is destroyed.
 
 ## Economy and upgrades
 
-Energy is generated continuously from base income and controlled Nodes and is capped so saving remains a choice rather than an unlimited stockpile. Gentle escalation multipliers and the late free-Scout ramp discourage stalemates. Economy and turret upgrades are purchased during the editable window, but their effects become active only at the next deployment boundary.
+Energy is generated continuously from base income and controlled Nodes and is capped so saving remains a choice rather than an unlimited stockpile. Gentle escalation multipliers and the late Drone ramp discourage stalemates. Every purchase competes in the same Energy budget. Economy, weapons, turret and logistics upgrades are purchased during the editable window, but their effects become active only at the next deployment boundary. Weapons improve fleet damage; logistics adds paid reinforcement capacity. Spending telemetry groups choices into fleet, economy and research so their opportunity cost can be measured.
 
 Current data-driven defaults:
 
 | Rule | Value |
 | --- | ---: |
 | Starting Energy | 300 |
-| Energy cap | 1,200 |
+| Energy cap | 900 |
 | Base income | 16/s |
 | Controlled Node bonus | 7/s |
 | Paid reinforcement slots | 4 |
 | Free Drones | 3 per lane/deployment, +1 every 150 s, max. 5 |
 | Economy upgrades | max. level 3 |
+| Weapons research | +12% fleet damage/level, max. level 3 |
+| Logistics research | +1 paid slot/level, max. level 2 |
 | Turret upgrades | max. level 4 |
 | Deployment interval | 22 s |
 | Queue lock-in | final 2 s |
@@ -94,7 +96,7 @@ The canvas uses the full portrait viewport from 360×800 through 412×915 and th
 
 ## AI fairness
 
-The opponent uses the public command system, the same Energy, costs, four slots, lock window, capacity and upgrade timing. It evaluates pressure, composition, Node control and turret health at the start of a cycle and exactly once more with seven seconds remaining. That revision removes and refunds its old entries through the same public commands before rebuilding the queue. It receives no permanent resource cheat and may not mutate queues after lock-in.
+The opponent uses the public command system, the same Energy, costs, research-adjusted slots, lock window, capacity and upgrade timing. It evaluates pressure, composition, Node control and turret health at the start of a cycle and exactly once more with seven seconds remaining. That revision removes and refunds its old entries through the same public commands before rebuilding the queue. It receives no permanent resource cheat and may not mutate queues after lock-in.
 
 Three title-screen profiles expose understandable difficulty rather than hidden resource bonuses: Cadet buys at most two ships and skips upgrades, Tactician uses all systems conservatively, and Admiral invests and counters more aggressively.
 

@@ -6,14 +6,15 @@ import { CaptureSystem } from "./captureSystem.js";
 import { CommandSystem } from "./commandSystem.js";
 import { DeploymentDirector } from "./deploymentDirector.js";
 import { EconomySystem } from "./economySystem.js";
-import { AI_PROFILES, OpponentAi } from "./opponentAi.js";
+import { AI_PROFILES, INVESTMENT_BIASES, OpponentAi } from "./opponentAi.js";
 
 /** Coordinates a continuous match; specialized systems own combat, economy, capture, and deployment. */
 export class MatchDirector {
-  constructor({ config = CONFIG, aiProfile = AI_PROFILES.TACTICIAN, aiPreferredLane = LANE.LEFT } = {}) {
+  constructor({ config = CONFIG, aiProfile = AI_PROFILES.TACTICIAN, aiPreferredLane = LANE.LEFT, aiInvestmentBias = INVESTMENT_BIASES.BALANCED } = {}) {
     this.config = config;
     this.aiProfile = aiProfile;
     this.aiPreferredLane = aiPreferredLane;
+    this.aiInvestmentBias = aiInvestmentBias;
     this.state = MATCH_STATE.TITLE;
     this.resumeState = null;
     this.activeMatchSeconds = 0;
@@ -23,7 +24,7 @@ export class MatchDirector {
     this.commands = new CommandSystem();
     this.deployment = new DeploymentDirector({ config });
     this.events = [];
-    this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane });
+    this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
     this.aiReplannedForCycle = null;
   }
@@ -36,7 +37,7 @@ export class MatchDirector {
     this.simulation = new BattleSimulation({ state: createBattleState(), economy: this.economy });
     this.deployment = new DeploymentDirector({ config: this.config });
     this.events = [{ type: "MATCH_STARTED", state: this.state }];
-    this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane });
+    this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
     this.aiReplannedForCycle = null;
 
@@ -119,7 +120,7 @@ export class MatchDirector {
   setAiProfile(profile) {
     if (!Object.values(AI_PROFILES).includes(profile) || this.state === MATCH_STATE.LIVE_MATCH) return false;
     this.aiProfile = profile;
-    this.ai = new OpponentAi({ profile, preferredLane: this.aiPreferredLane });
+    this.ai = new OpponentAi({ profile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     return true;
   }
 

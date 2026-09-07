@@ -4,6 +4,7 @@ import { STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js"
 const lanes = Object.freeze([LANE.LEFT, LANE.RIGHT]);
 const opponentOf = (team) => (team === TEAM.PLAYER ? TEAM.ENEMY : TEAM.PLAYER);
 export const AI_PROFILES = Object.freeze({ CADET: "cadet", TACTICIAN: "tactician", ADMIRAL: "admiral" });
+export const INVESTMENT_BIASES = Object.freeze({ BALANCED: "balanced", FLEET: "fleet", ECONOMY: "economy", WEAPONS: "weapons", LOGISTICS: "logistics" });
 
 const unitStrength = (unit) => {
   const definition = UNIT_DEFINITIONS[unit.unitType];
@@ -23,10 +24,11 @@ const turretStrength = (state, team, laneId) => {
  * identical budget, costs, capacity, and phase restrictions as player commands.
  */
 export class OpponentAi {
-  constructor({ team = TEAM.ENEMY, preferredLane = LANE.LEFT, profile = AI_PROFILES.TACTICIAN } = {}) {
+  constructor({ team = TEAM.ENEMY, preferredLane = LANE.LEFT, profile = AI_PROFILES.TACTICIAN, investmentBias = INVESTMENT_BIASES.BALANCED } = {}) {
     this.team = team;
     this.preferredLane = preferredLane;
     this.profile = Object.values(AI_PROFILES).includes(profile) ? profile : AI_PROFILES.TACTICIAN;
+    this.investmentBias = Object.values(INVESTMENT_BIASES).includes(investmentBias) ? investmentBias : INVESTMENT_BIASES.BALANCED;
     this.lastDecision = null;
   }
 
@@ -74,7 +76,7 @@ export class OpponentAi {
     const purchases = [];
     const upgrades = [];
     const economy = director.economy.get(this.team);
-    const purchaseLimit = this.profile === AI_PROFILES.CADET ? 2 : 4;
+    const purchaseLimit = this.profile === AI_PROFILES.CADET ? 2 : director.economy.reinforcementLimit(this.team);
     const buy = (upgradeId, reserve) => {
       const cost = director.economy.upgradeCost(this.team, upgradeId);
       if (cost !== null && economy.energy >= cost + reserve) {
@@ -91,9 +93,14 @@ export class OpponentAi {
 
     // Economy is preferred while the match is still open; immediate defense is
     // preferred when a lane is actually under pressure.
-    if (this.profile !== AI_PROFILES.CADET) {
+    if (this.profile !== AI_PROFILES.CADET && this.investmentBias !== INVESTMENT_BIASES.FLEET) {
       if (defense.threat > 70) buy("turret", 110);
-      else if (economy.economyLevel < 2) buy("economy", this.profile === AI_PROFILES.ADMIRAL ? 100 : 150);
+      else if (this.investmentBias === INVESTMENT_BIASES.ECONOMY) buy("economy", 120);
+      else if (this.investmentBias === INVESTMENT_BIASES.WEAPONS) buy("weapons", 130);
+      else if (this.investmentBias === INVESTMENT_BIASES.LOGISTICS) buy("logistics", 150);
+      else if (this.profile === AI_PROFILES.ADMIRAL && economy.weaponLevel < 2) buy("weapons", 120);
+      else if (economy.economyLevel < 2) buy("economy", 150);
+      else if (economy.logisticsLevel < 1) buy("logistics", 160);
     }
 
     const defenseChoice = defense.enemyComposition.bomber > defense.friendlyComposition.fighter
@@ -114,6 +121,7 @@ export class OpponentAi {
       cycle: director.cycle + 1,
       team: this.team,
       profile: this.profile,
+      investmentBias: this.investmentBias,
       defenseLane: defense.laneId,
       pushLane: push.laneId,
       assessments,

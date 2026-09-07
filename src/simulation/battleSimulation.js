@@ -328,7 +328,9 @@ export class BattleSimulation {
   }
 
   damageFor(owner, definition) {
-    if (owner.structureType !== "turret" || !this.economy) return definition.damage;
+    if (!this.economy) return definition.damage;
+    if (!owner.structureType) return definition.damage * this.economy.weaponDamageMultiplier(owner.team);
+    if (owner.structureType !== "turret") return definition.damage;
     const level = this.economy.get(owner.team).turretLevel;
     return definition.damage * (1 + level * this.economy.balance.turretUpgradeDamageBonus);
   }

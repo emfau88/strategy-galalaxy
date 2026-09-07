@@ -41,7 +41,7 @@ No visual animation frame triggers a projectile, hit or damage event.
 | `src/simulation/matchDirector.js` | State transitions and ordering between specialized systems |
 | `src/simulation/deploymentDirector.js` | Timer, lock state, cycle, queues, free-wave backlog, simultaneous spawn and per-team/lane delivery timestamps for presentation |
 | `src/simulation/commandSystem.js` | Public queue, removal and upgrade commands with validation |
-| `src/simulation/economySystem.js` | Energy, income, escalation and pending upgrades |
+| `src/simulation/economySystem.js` | Energy, income, spending categories, reinforcement capacity and pending economy/research upgrades |
 | `src/simulation/battleSimulation.js` | Movement, formation separation, targeting, firing, projectile motion and damage |
 | `src/simulation/captureSystem.js` | Additive Node strength, contesting and ownership |
 | `src/simulation/opponentAi.js` | Deterministic, rule-bound planning through public commands |
@@ -55,7 +55,7 @@ No visual animation frame triggers a projectile, hit or damage event.
 
 `DeploymentDirector` owns one queue per team and lane. Queue entries include a stable sequence, unit type, paid cost and source. The shared purchased count across both lanes may never exceed four.
 
-Commands are accepted only in `LIVE_MATCH` and outside lock-in. Queue purchase deducts immediately; removal refunds exactly once. At a boundary, free and paid entries are evaluated in stable order against the per-lane/team unit cap. Spawned entries leave the queue; rejected capacity entries remain backlog. Existing units are untouched.
+Commands are accepted only in `LIVE_MATCH` and outside lock-in. Queue purchase deducts immediately; removal refunds exactly once. The base paid capacity is four and active logistics research can raise it. At a boundary, pending upgrades activate before free and paid entries are evaluated in stable order against the per-lane/team unit cap. Spawned entries leave the queue; rejected capacity entries remain backlog. Existing units are untouched.
 
 Both teams use the same path:
 
