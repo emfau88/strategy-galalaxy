@@ -1,556 +1,431 @@
-# Strategy Galalaxy – Entwicklungsroadmap
+# Strategy Galalaxy – Verbesserungs- und Umsetzungsplan
 
-## Ziel
+## Zielbild
 
-Strategy Galalaxy wird ein eigenständiges, Mobile-First Singleplayer-Spiel im Smartphone-Portraitformat. Zwei persistente Lanes, automatisch kämpfende Flotten und wiederkehrende Command-/Battle-Phasen bilden den spielbaren Kern.
+Dieser Plan setzt die [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md) in ausführbare Arbeitspakete um.
 
-Die zentrale Spielerentscheidung lautet:
+Strategy Galalaxy wird ein Mobile-First Portrait-Lane-Wars-Spiel mit:
 
-> Welche Einheiten schicke ich wann auf welche Lane, und investiere ich jetzt in Druck, Verteidigung oder Economy?
+- einem kontinuierlich laufenden Match ohne harte Command-/Battle-Pause,
+- zwei persistenten, breiten Kampf-Korridoren,
+- simultanen Verstärkungs-Deployments alle 22 Sekunden,
+- einer während des Kampfes editierbaren nächsten Welle,
+- maximal vier gekauften Verstärkungen pro Deployment über beide Lanes,
+- klar unterscheidbaren Rollen, Projektilen und Animationen,
+- Nairan als Spielerflotte und Kla'ed als Gegnerflotte,
+- dem Original-Repository `emfau88/galalaxy` als strikt schreibgeschützter Referenz.
 
-Das erste Produktziel ist ein vollständiges, gut lesbares und neu startbares Match. Zusätzlicher Content folgt erst, wenn dieser Kern trägt.
+Die Leitfrage bleibt:
 
-## Verbindliche Leitplanken
+> Ist es interessant, den laufenden Kampf zu lesen, die nächste Welle vorzubereiten und deren Wirkung auf die Front zu beobachten?
 
-- Arbeits-Repository: `emfau88/strategy-galalaxy`
-- Referenz-Repository: `emfau88/galalaxy`
-- Das Referenz-Repository wird ausschließlich gelesen oder separat lokal geklont. Dort werden keine Dateien geändert, Commits erzeugt oder Branches gepusht.
-- Alle Änderungen, Dokumentation, Commits und Pushes erfolgen ausschließlich im Arbeits-Repository.
-- Smartphone Portrait ist die primäre Plattform; Desktop mit Maus bleibt funktionsfähig.
-- Das Spiel besitzt genau zwei Lanes im ersten Vertical Slice.
-- Es gibt keine manuelle Steuerung, Einheitenauswahl oder Kampf-Micro.
-- Einheiten bleiben nach einem Deployment Cycle bestehen, sofern sie überleben.
-- Command Phase und Battle Phase wechseln sich ab; während der Command Phase steht die gesamte Simulation.
-- Beide Teams verwenden dieselben Economy-, Kauf-, Upgrade- und Deployment-Regeln.
-- Ein Match endet erst mit der Zerstörung eines Headquarters.
-- Bestehende Galalaxy-Technik und Assets werden gezielt wiederverwendet, ohne das alte Domänenmodell zu übernehmen.
-- Spielwerte und Inhalte werden datengetrieben und zentral konfigurierbar angelegt.
-- Qualität und Spielbarkeit des Kernmatches haben Vorrang vor Feature-Menge.
+Neue Spielmodi und zusätzlicher Content folgen erst, wenn diese Schleife trägt.
 
-## Prioritäten
+## Verbindliche Entscheidungen
 
-| Priorität | Bedeutung | Regel |
+1. Das Match läuft in `LIVE_MATCH` kontinuierlich weiter. Bewegung, Kampf, Projektile, Capture und Einkommen pausieren nur bei einer echten Spielpause.
+2. Der Deployment-Takt bleibt bei 22 Sekunden. Er wird nicht auf einen hektischen 10–15-Sekunden-Rhythmus verkürzt.
+3. Die letzten zwei Sekunden sind zunächst ein Lock-in-Fenster. Die Queue ist davor frei editierbar und vollständig erstattbar.
+4. Spieler und KI deployen am selben Zeitpunkt und benutzen dieselben Energie-, Slot-, Upgrade- und Kapazitätsregeln.
+5. Überlebende Einheiten und Strukturschaden bleiben über alle Deployment-Zyklen erhalten.
+6. Die exakte gegnerische Queue bleibt verborgen; sichtbar ist höchstens die Anzahl gegnerischer Verstärkungen.
+7. Simulation und Darstellung bleiben getrennt. Animationen dürfen Trefferzeitpunkt, Schaden oder Matchausgang nicht bestimmen.
+8. `strategy-galalaxy` ist das einzige Schreibziel. `galalaxy` bleibt read-only.
+9. Der vollständige lizenzierte Foozle-Assetbestand darf in das Arbeits-Repository übernommen werden. Die Runtime lädt dennoch nur explizit registrierte Assets.
+10. `assets/music/track1.ogg` wird nicht übernommen, solange Herkunft und Distributionsrecht nicht dokumentiert sind.
+
+## Ausgangslage
+
+Bereits vorhanden und weiterzuverwenden:
+
+- deterministische Zwei-Lane-Simulation,
+- persistente Einheiten und Strukturen,
+- Energy, Nodes, Upgrades und regelgebundene KI,
+- vier gemeinsame Verstärkungsslots,
+- Formationen, lokale Separation und rollenbasiertes Targeting,
+- Scout-, Fighter-, Bomber- und Frigate-Grundrollen,
+- Homing-Raketen, Canvas-Projektile und begrenzte FX,
+- mobile Portrait-Skalierung mit vollständiger Viewport-Nutzung,
+- Nairan- und Kla'ed-Basissprites,
+- automatisierte Kernprüfungen für fünf Portraitgrößen.
+
+Zu ersetzen oder weiterzuentwickeln:
+
+- `COMMAND -> BATTLE -> COMMAND` wird durch `LIVE_MATCH` ersetzt,
+- der manuelle `DEPLOY FLEETS`-Start wird zum automatischen 22-Sekunden-Deployment,
+- Einkommen und Capture müssen jederzeit im Live-Match laufen,
+- das untere Planungs-UI muss während des Kampfes sichtbar und bedienbar bleiben,
+- KI-Planung muss innerhalb desselben Countdowns stattfinden,
+- statische Schiffszeichnungen werden um Engine-, Weapon-, Shield- und Destruction-Layer ergänzt,
+- Canvas-Projektile werden durch datengetriebene Original-Spriteprofile ergänzt.
+
+## Prioritäten und Gates
+
+| Priorität | Bedeutung | Gate |
 | --- | --- | --- |
-| P0 | Für den Vertical Slice zwingend | Muss vor der ersten Spielbewertung fertig und stabil sein |
-| P1 | Für Lesbarkeit, Atmosphäre oder belastbare Entwicklung wichtig | Nach funktionierendem Kern umsetzen |
-| P2 | Spätere Erweiterung | Nur vorbereiten, nicht im ersten Vertical Slice ausbauen |
+| P0 | Kernidentität und spielbarer Live-Loop | Muss vor visueller Vertiefung stabil sein |
+| P1 | Combat-Lesbarkeit, Original-Animationen und Mobile-Polish | Nach funktionierendem Live-Loop |
+| P2 | Balancewerkzeuge und spätere Erweiterbarkeit | Nach dem ersten Spielspaß-Gate |
 
-## Definition des ersten Vertical Slice
-
-Der Vertical Slice ist erreicht, wenn ein Match vom Start bis Victory oder Defeat ohne manuelle Schiffssteuerung gespielt und anschließend neu gestartet werden kann.
-
-Enthalten sind:
-
-- Portrait-Mobile-Layout mit zwei Lanes
-- Player HQ und Enemy HQ
-- je eine Defense Station pro Team und Lane
-- je ein Energy Node pro Lane
-- Command Phase und Battle Phase
-- persistierende Einheiten und Frontlinien
-- kostenlose Basis-Waves auf beiden Lanes
-- Scout, Fighter, Bomber und Frigate
-- Energy, Basiseinkommen und Node-Bonus
-- Economy Upgrade und Turret Upgrade
-- regelkonforme heuristische AI
-- Victory, Defeat und Restart
-- geeignete Galalaxy-Schiffsassets, Projektile und Effekte
-- Debug-/Testmodus und Kern-QA
-
-## Arbeitsreihenfolge
-
-Die Bulks werden in der folgenden Reihenfolge bearbeitet. Jeder Bulk endet mit einem überprüfbaren Zwischenstand und soll in einem eigenen kleinen Commit oder einer kleinen zusammenhängenden Commit-Serie landen.
+Jedes Paket endet mit Tests, einer mobilen Sichtprüfung und einem eigenen Commit. Nach jedem Paket muss `main` spielbar bleiben.
 
 ---
 
-## Bulk 0 – Repository-Schutz und Arbeitsgrundlage
+## Paket 0 – Verträge und Dokumentation synchronisieren
 
-**Priorität:** P0  
-**Ziel:** Verwechslungen zwischen Arbeits- und Referenz-Repository technisch und dokumentarisch vermeiden.
+**Priorität:** P0
 
 ### Aufgaben
 
-- [x] Git-Remote, Branch und Arbeitsverzeichnis des neuen Repositories prüfen.
-- [x] Referenz-Repository in ein klar getrenntes, nur für die Analyse verwendetes Verzeichnis klonen oder vorhandenen Clone verifizieren.
-- [x] Vor jedem späteren Commit und Push prüfen, dass das Ziel `strategy-galalaxy` ist.
-- [x] Basisdateien für Projekt- und Entwicklungsdokumentation anlegen.
-- [x] Festhalten, wie übernommener Code und Assets auf ihre Herkunft zurückgeführt werden.
+- `docs/GAME_DESIGN.md` und `docs/ARCHITECTURE.md` auf die Core Vision umstellen.
+- Alte Aussagen über eingefrorene Command-Phasen entfernen.
+- Zielzustände verbindlich festlegen: `LOADING`, `TITLE`, `LIVE_MATCH`, `PAUSED`, `VICTORY`, `DEFEAT`.
+- 22 Sekunden Deployment-Intervall und zwei Sekunden Lock-in zentral dokumentieren.
+- Upgrade-Aktivierung an der nächsten Deployment-Grenze als Standard festlegen.
+- Den neuen Galalaxy-Audit-Baseline-Commit `7f90d17a063967f9978e74f6519c450a2b0e4f85` in Provenance und Asset-Inventar vormerken.
 
-### Ergebnis / Abnahme
+### Abnahme
 
-- Das neue Repository ist eindeutig das einzige Schreibziel.
-- Das Referenz-Repository ist getrennt und bleibt sauber/unverändert.
-- Repository-Regeln sind im neuen Projekt auffindbar dokumentiert.
+- Kein Kerndokument beschreibt die alte Command-Pause als Zielverhalten.
+- Zustände, Timer, Queue-Regeln und Verantwortlichkeiten widersprechen einander nicht.
 
 ---
 
-## Bulk 1 – Vollständiger Galalaxy-Audit
+## Paket 1 – Kontinuierlichen Live-Match-Kern einführen
 
-**Priorität:** P0  
-**Ziel:** Wiederverwendbare Technik und Assets erkennen, bevor neue Grundlagen gebaut werden.
+**Priorität:** P0
 
 ### Aufgaben
 
-- [x] Projektaufbau, Build-/Startprozess, Runtime und Abhängigkeiten erfassen.
-- [x] Game Loop, Canvas-Rendering, Mobile Scaling und Safe-Area-Verhalten analysieren.
-- [x] Asset Loader und Asset-Registrierung analysieren.
-- [x] Entity- und Datenmodelle untersuchen, besonders Player, Enemies, Projectiles, Pickups und Particles.
-- [x] Combat-, Ability-, FX-, Sector-, Upgrade- und Sound-Systeme untersuchen.
-- [x] Flotten-, Schiffs-, Waffen-, Projektil- und Visual-Definitionen erfassen.
-- [x] Formation-/Flyby-Logik und Spawn-Verhalten prüfen.
-- [x] Save-, Run-Stats-, Input- und QA-/Reliability-Mechanismen prüfen.
-- [x] Performance-Caps und bekannte Schutzmechanismen für Units, Projectiles und Particles dokumentieren.
-- [x] Sämtliche relevanten Assets inventarisieren und nach Schiffsklasse, Fraktion, Projektil, FX, UI, Hintergrund und Sound gruppieren.
-- [x] Zwei visuell konsistente Fraktionen für den Vertical Slice vorschlagen.
-- [x] Lizenz-/Attributionslage der übernommenen Bestandteile prüfen und dokumentieren.
+- `COMMAND` und `BATTLE` aus dem normalen Matchablauf entfernen.
+- `MatchDirector` auf Matchstart, Pause, Ende und Restart begrenzen.
+- Einen `DeploymentDirector` einführen mit:
+  - `deploymentInterval = 22`,
+  - `timeUntilDeployment`,
+  - `cycleNumber`,
+  - `lockWindow = 2`,
+  - Spieler- und KI-Queues,
+  - gemeinsamer Slotkapazität,
+  - atomarem simultanem `deploy()`.
+- Beim Matchstart sofort die erste kostenlose Basiswelle beider Teams ausliefern, damit der Bildschirm nicht 22 Sekunden leer bleibt.
+- Danach ohne Unterbrechung den nächsten 22-Sekunden-Zyklus starten.
+- Fixed-Step-Simulation, Capture und Economy während des gesamten `LIVE_MATCH` fortschreiben.
+- Pause/Resume so umbauen, dass Timer und Simulation gemeinsam einfrieren und exakt fortgesetzt werden.
 
-### Zu analysierende Kernbereiche
+### Abnahme
+
+- Das Match wechselt während des Spielens nie in einen Planungs-Stopp.
+- Deployment erfolgt wiederholbar exakt an derselben Simulationsgrenze.
+- Kampf, Einkommen und Capture laufen zwischen Deployments kontinuierlich.
+- Einheiten und Strukturschaden werden an keiner Deployment-Grenze zurückgesetzt.
+
+---
+
+## Paket 2 – Live-Queues, Lock-in, Economy und Upgrades
+
+**Priorität:** P0
+
+### Aufgaben
+
+- Linke und rechte Spielerqueue während des laufenden Kampfes editierbar machen.
+- Maximal vier gekaufte Verstärkungsslots über beide Lanes beibehalten.
+- Kosten beim Einreihen sofort reservieren/abbuchen.
+- Entfernen vor Lock-in vollständig erstatten.
+- Im Zwei-Sekunden-Lock-in Queueänderungen und Erstattungen sperren.
+- Nach Deployment nur tatsächlich ausgelieferte Einträge entfernen; Kapazitäts-Backlog deterministisch behandeln.
+- Economy- und Turret-Upgrades zunächst an der nächsten Deployment-Grenze aktivieren.
+- Kosten, Erstattung, Locking und Upgrade-Aktivierung durch Tests absichern.
+
+### Abnahme
+
+- Kein Last-Frame-Kauf kann die gesperrte Wave verändern.
+- Es gibt keine Energieverdopplung oder verlorene Erstattung.
+- Player und KI können niemals mehr als vier gekaufte Einheiten ausliefern.
+
+---
+
+## Paket 3 – KI auf denselben 22-Sekunden-Planungsraum umstellen
+
+**Priorität:** P0
+
+### Aufgaben
+
+- KI zu Beginn jedes Deployment-Zyklus einen Plan anlegen lassen.
+- Eine begrenzte Neubewertung während des editierbaren Fensters erlauben, ohne pro Frame neu zu planen.
+- Vor Lock-in dieselben Queue-Kommandos wie beim Spieler verwenden.
+- Lane Pressure, Nodebesitz, Turret-HP, Einheitenwert, Komposition, Energie und Restzeit berücksichtigen.
+- Exakte gegnerische Einheitentypen nicht an die normale UI geben.
+- Debug-Ausgabe für Entscheidung, Kosten, Slots und Lock-Zeitpunkt ergänzen.
+
+### Abnahme
+
+- KI kauft, entfernt, spart und deployt ausschließlich über die öffentlichen Matchregeln.
+- Automatisierte Matches zeigen keine negative Energie, Slotüberschreitung oder verspätete Queueänderung.
+
+---
+
+## Paket 4 – Permanentes Mobile-Planungs-UI
+
+**Priorität:** P0
+
+### Aufgaben
+
+- Obere HUD-Zeile auf Spieler-HQ, Countdown und Gegner-HQ konzentrieren.
+- Energy, Income und Slots kompakt, aber dauerhaft lesbar darstellen.
+- Unteres Planungs-Panel während des Live-Kampfs sichtbar halten.
+- Linke/rechte Lane-Auswahl, Wave-Icons, vier Unit-Buttons, Undo und Upgrade-Wechsel integrieren.
+- `DEPLOY FLEETS` aus dem normalen Ablauf entfernen; Deployment geschieht ausschließlich durch den Countdown.
+- Lock-in klar mit `DEPLOYMENT LOCKED` und visuellem Countdown kommunizieren.
+- Gegnerseite nur als Verstärkungsanzahl oder unspezifische Aktivität anzeigen.
+- Battlefield trotz Panel auf 360×800 bis 412×915 vollständig lesbar halten.
+
+### Abnahme
+
+- Der Spieler kann beide Lanes beobachten und gleichzeitig die nächste Welle bearbeiten.
+- Kein relevantes Element liegt außerhalb Safe Areas oder Touch-Hitboxen.
+- Kein großes opakes Panel verdeckt den aktuellen Frontverlauf.
+
+---
+
+## Paket 5 – Vollständige Galalaxy-Assetbibliothek übernehmen
+
+**Priorität:** P1, Import kann parallel zu Paket 1–4 vorbereitet werden
+
+### Importumfang
+
+Aus dem read-only Referenzstand `7f90d17a063967f9978e74f6519c450a2b0e4f85` werden in `strategy-galalaxy` übernommen:
+
+- vollständiges Void Main Ship Pack,
+- vollständige Kla'ed-, Nairan- und Nautolan-Flottenpacks,
+- vollständiges Void Environment Pack,
+- vollständiges Void Pickups Pack,
+- alle zugehörigen PNGs, Aseprite-Quellen, Vorschau-GIFs und Pack-Readmes,
+- Projektile, Engines, Weapon-Layer, Shields und Destruction-Strips aller vorhandenen Klassen,
+- bestehende Galalaxy-UI-Grafiken nur als optionale Bibliothek, nicht automatisch als neue Strategy-Galalaxy-Oberfläche.
+
+### Speicher- und Runtime-Regel
+
+- Die komplette Bibliothek darf im Repository liegen.
+- `src/assets.js` registriert nur tatsächlich verwendete Runtime-Dateien.
+- Browser laden niemals pauschal die komplette Bibliothek.
+- Normalisierte Runtime-Aliasnamen verweisen auf die Originaldateien oder auf bewusst erzeugte Derivate.
+- Große Vorschauen und Aseprite-Dateien sind Entwicklungsquellen, keine Boot-Assets.
+- Keine Datei aus `galalaxy` wird verschoben, gelöscht oder dort bearbeitet.
+
+### Lizenz und Provenance
+
+- Die sechs Foozle-Pack-Readmes werden mitkopiert; die dokumentierte CC0-Lizenz bleibt unmittelbar auffindbar.
+- Jede kopierte Gruppe erhält einen Eintrag in `docs/SOURCE_PROVENANCE.md` mit Quellpfad, Commit und Zielpfad.
+- `docs/ASSET_INVENTORY.md` unterscheidet künftig `library`, `runtime` und `deferred`.
+- Die vorhandene Musikdatei bleibt bis zu einer dokumentierten Lizenz außerhalb des Imports.
+
+### Abnahme
+
+- Ein Asset-Verifikationsskript prüft Existenz, Dateigröße, Bilddekodierung und Sprite-Strip-Dimensionen.
+- Der initiale Netzwerkdownload wächst nur um die Assets, die der aktuelle Match tatsächlich benutzt.
+- Repository und GitHub Pages enthalten alle erlaubten Quellen, ohne das Original-Repository zu verändern.
+
+---
+
+## Paket 6 – Datengetriebenes Animations- und Layer-System
+
+**Priorität:** P1
+
+### Aufgaben
+
+- Ein gemeinsames `FleetVisualProfile` pro Fraktion und Schiffsklasse einführen.
+- Metadaten explizit speichern: Framegröße, Frameanzahl, FPS, Release-Frame, Rotation und Layeroffsets.
+- Layerreihenfolge implementieren:
 
 ```text
-src/game.js
-src/config.js
-src/entities/
-src/systems/
-src/data/
-src/assetLoader.js
-src/assets.js
-src/input.js
-src/saveSystem.js
-src/runStats.js
+Engine-Effekt
+→ Hull/Base
+→ Weapon-Layer
+→ optional Shield-Hit
+→ Damage-/Death-Effekt
 ```
 
-### Entscheidungsmatrix
+- Animierte Engine-Strips für Scout, Fighter, Bomber und Frigate beider Hauptfraktionen integrieren.
+- Waffenanimationen an Simulations-`shot`-Events koppeln; Schaden bleibt unabhängig von Animationsframes.
+- Destruction-Strips als kurzlebige Präsentationsobjekte abspielen, nachdem die Simulation die Einheit entfernt hat.
+- Nairan/Kla'ed zuerst vollständig integrieren; Nautolan und Capital Ships nur registrieren und für später bereithalten.
+- Sichtbare Pixelbounds statt kompletter transparenter Spritezellen für mobile Größen verwenden.
 
-Jedes relevante System wird einer Kategorie zugeordnet:
+### Bereits bekannte Original-Metadaten
 
-1. **Direkt übernehmen:** technisch passend und ausreichend entkoppelt.
-2. **Adaptieren:** wertvolle Grundlage, benötigt aber Team-/Lane-/Match-Anpassungen.
-3. **Nur als Konzept übernehmen:** Implementierung ist zu stark an das alte Spiel gebunden.
-4. **Nicht übernehmen:** für Strategy Galalaxy ungeeignet oder unnötig.
+- Nairan Engines: meist 8 Frames bei 10 FPS.
+- Kla'ed Engines: 10–12 Frames bei 10 FPS.
+- Destruction: je nach Klasse 8–18 Frames bei ungefähr 14 FPS.
+- Weapon-Release-Frames unterscheiden sich stark je Schiff und müssen aus Metadaten stammen.
+- Scout/Fighter/Bomber/Frigate verwenden überwiegend 64-Pixel-Quellframes; Capital Ships 128 Pixel.
 
-### Ergebnis / Abnahme
+### Abnahme
 
-- `docs/REFERENCE_AUDIT.md` beschreibt Architektur, Assets, Wiederverwendung und Risiken.
-- `docs/ASSET_INVENTORY.md` listet geeignete Assets samt geplanter Rolle.
-- Für jedes Kernsystem besteht eine begründete Übernahmeentscheidung.
-- Noch wurde keine neue Gameplay-Architektur auf Vermutungen aufgebaut.
-
----
-
-## Bulk 2 – Produkt- und Architekturvertrag
-
-**Priorität:** P0  
-**Abhängigkeit:** Bulk 1  
-**Ziel:** Die unverhandelbaren Spielregeln und die technische Trennung verbindlich festhalten.
-
-### Aufgaben
-
-- [x] `README.md` mit Projektziel, geplantem lokalen Start, aktuellem Status und Dokumentationslinks erstellen.
-- [x] `docs/GAME_DESIGN.md` mit Kernloop, Siegbedingung, Economy, Units, Nodes, Upgrades, AI-Regeln und Scope-Grenzen erstellen.
-- [x] `docs/ARCHITECTURE.md` mit Systemgrenzen, Datenfluss und Herkunft übernommener Technik erstellen.
-- [x] Zentrale Match-States definieren: `LOADING`, `TITLE`, `COMMAND`, `BATTLE`, `VICTORY`, `DEFEAT`, `PAUSED`.
-- [x] Domänenmodell festlegen: `Team`, `Unit`, `Lane`, `Structure`, `Wave`, `Economy`, `CaptureNode`, `Match`, `AI`.
-- [x] Teammodell generalisieren: `TEAM_PLAYER`, `TEAM_ENEMY`, `ownerTeam` und teamneutrales Targeting.
-- [x] Datenformate für Units, Fraktionen, Maps, Upgrades und Balancing festlegen.
-- [x] Schnittstellen zwischen Simulation, Rendering, UI und Input festlegen.
-- [x] Deterministische Zeitführung sowie Seed-/Teststrategie beschreiben.
-
-### Architekturprinzipien
-
-- Der `MatchDirector` besitzt Phase, Timer, Cycle, Matchzeit, Deployment, Eskalation und Endzustand.
-- Gameplay-Systeme arbeiten auf Simulationsdaten; Rendering liest diesen Zustand.
-- UI plant Waves und Upgrades, verändert aber Einheiten im laufenden Kampf nicht direkt.
-- Targeting sucht lane-lokal und vorhersehbar.
-- Assets sind austauschbar; keine Mechanik hängt von einem Placeholder ab.
-- Unit- und Balancingwerte stehen zentral in Daten, nicht verteilt in Entity-Code.
-
-### Ergebnis / Abnahme
-
-- Die drei Kerndokumente sind konsistent und bilden die Grundlage für spätere Agent-Sessions.
-- Verantwortlichkeiten und erlaubte Abhängigkeiten der Systeme sind eindeutig.
-- Technische Entscheidungen aus dem Referenz-Audit sind nachvollziehbar dokumentiert.
+- Alle vier Kernklassen beider Teams besitzen laufende Triebwerke.
+- Schuss- und Todesanimationen starten deterministisch auf passende Simulationsevents.
+- Fehlende Layer fallen sauber auf Basissprite/Canvas-FX zurück.
 
 ---
 
-## Bulk 3 – Technische Foundation
+## Paket 7 – Original-Projektile und Combat-FX integrieren
 
-**Priorität:** P0  
-**Abhängigkeit:** Bulk 2  
-**Ziel:** Ein stabiler, mobiler Canvas-Rahmen ohne fertiges Gameplay.
+**Priorität:** P1
 
-### Aufgaben
+### Architektur
 
-- [x] Minimale Projekt-, Build- und Verzeichnisstruktur aufsetzen.
-- [x] `index.html`, Einstiegspunkt, Canvas und Game Loop integrieren.
-- [x] Design Space auf Portrait ausrichten; Galalaxys circa `420 × 760` als Ausgangspunkt prüfen.
-- [x] Viewport Scaling, Safe Areas, Touch-Koordinaten und Desktop-Mausabbildung umsetzen.
-- [x] Asset Loader gezielt übernehmen oder adaptieren.
-- [x] Rendering-Schichten für Hintergrund, Battlefield, Entities, FX und UI vorbereiten.
-- [x] Zeitmodell mit pausierbarer Simulation und getrennten Render-/Simulationszeiten anlegen.
-- [x] Zentrale Konfiguration für Phasenlängen, Caps und Balancing-Ausgangswerte anlegen.
-- [x] Einfachen `?debug=1`- und `?test=match`-Einstieg vorbereiten.
-
-### Ergebnis / Abnahme
-
-- Das Projekt startet lokal ohne JavaScript-Fehler.
-- Ein skalierter Portrait-Canvas wird auf Zielgrößen korrekt dargestellt.
-- Maus und Touch werden konsistent auf den Design Space abgebildet.
-- Pausierte Simulationszeit ist technisch von weiterlaufendem Rendering getrennt.
-
-### Zielgrößen
-
-- `360 × 800`
-- `390 × 844`
-- `393 × 852`
-- `412 × 915`
-- `420 × 760`
-
----
-
-## Bulk 4 – Headless Lane-Kampfsimulation
-
-**Priorität:** P0  
-**Abhängigkeit:** Bulk 3  
-**Ziel:** Der Kampf funktioniert zunächst mit einfachen Visuals und ohne Command-UI.
-
-### Aufgaben
-
-- [x] Mapdaten für zwei parallele Lanes definieren.
-- [x] Allgemeine `Unit`-, `Structure`- und `Projectile`-Modelle implementieren.
-- [x] HQs, vier Defense Stations und feste Lane-Zuordnung implementieren.
-- [x] Scout, Fighter, Bomber und Frigate datengetrieben anlegen.
-- [x] Battlecruiser und Dreadnought im Datenmodell ermöglichen, ohne sie schon fertig auszubalancieren.
-- [x] Lane-gebundene Bewegung und sinnvolle Spawn-Formationen implementieren.
-- [x] Vorhersehbare Zielauswahl implementieren: Lane-Unit, Lane-Struktur, HQ.
-- [x] Zustände umsetzen: `ADVANCING`, `ENGAGING`, `HOLDING`, `ATTACKING_STRUCTURE`, `DEAD`.
-- [x] Projectile-, Treffer-, Schaden-, Tod- und Strukturkampf integrieren.
-- [x] Turret- und HQ-Auto-Angriffe implementieren.
-- [x] Lane-spezifische Collections und begrenzte Suchen verwenden.
-- [x] Caps und Object-Pooling dort übernehmen, wo Messung oder Audit es rechtfertigen.
-
-### Ergebnis / Abnahme
-
-- Zwei Teams können ohne Benutzereingriff auf beiden Lanes kämpfen.
-- Units wechseln nicht unmotiviert zwischen Lanes und verfolgen keine Ziele quer über die Karte.
-- Türme und HQs können Schaden erhalten und zerstört werden.
-- Vier kaufbare Unit-Rollen sind im Kampf erkennbar verschieden.
-- Mehrere Testkämpfe laufen stabil und nachvollziehbar ab.
-
----
-
-## Bulk 5 – Deployment Cycle und persistierendes Match
-
-**Priorität:** P0  
-**Abhängigkeit:** Bulk 4  
-**Ziel:** Den vollständigen Command-/Battle-Rhythmus herstellen.
-
-### Aufgaben
-
-- [x] `MatchDirector` als alleinige Instanz für Match-State und Phasenwechsel implementieren.
-- [x] Command Phase zunächst mit Timer umgesetzt und anschließend für das Mobile-Spiel auf manuelle Bestätigung umgestellt.
-- [x] Battle Phase mit zentral konfigurierbarer Ausgangsdauer von circa 22 Sekunden umsetzen.
-- [x] Während der Command Phase Movement, Combat, Capture, Income und Cooldowns vollständig einfrieren.
-- [x] Pro Team und Lane eine geplante Wave verwalten.
-- [x] Automatische kostenlose Basis-Wave von zunächst zwei Scouts pro Lane integrieren.
-- [x] Player- und AI-Waves gleichzeitig zu Beginn der Battle Phase deployen.
-- [x] Überlebende Einheiten ohne Reset in den nächsten Cycle übernehmen.
-- [x] Victory und Defeat ausschließlich über HQ-Zerstörung auslösen.
-- [x] Restart in einen sauberen initialen Matchzustand umsetzen.
-
-### Ergebnis / Abnahme
-
-- Mehrere Deployment Cycles laufen ohne Reset des Schlachtfelds.
-- Überlebende alter Waves vereinigen sich sichtbar mit Verstärkungen.
-- Command Phase friert die gesamte Simulation exakt ein.
-- Beide Seiten starten ihre neue Wave gleichzeitig.
-- Matchende und Restart funktionieren zuverlässig.
-
----
-
-## Bulk 6 – Economy, Energy Nodes und Eskalation
-
-**Priorität:** P0  
-**Abhängigkeit:** Bulk 5  
-**Ziel:** Lane-Kontrolle und Ressourceneinsatz zu echten strategischen Entscheidungen machen.
-
-### Aufgaben
-
-- [x] Eine einzige Hauptressource `Energy` implementieren.
-- [x] Konfigurierbare Startenergie und Basiseinkommen anlegen.
-- [x] Einkommen ausschließlich während aktiver Battle-Zeit erzeugen.
-- [x] Pro Lane einen Capture Node mit Fortschritt und Besitzstatus implementieren.
-- [x] Capture-Regeln umsetzen: ein Team im Bereich bewegt Fortschritt, beide Teams pausieren ihn.
-- [x] Kontrollierte Nodes gewähren konfigurierbaren Einkommensbonus.
-- [x] Kaufkosten reservieren/abbuchen und Entfernen geplanter Units korrekt erstatten.
-- [x] Economy Upgrade mit steigenden Kosten und prozentualem Basisbonus implementieren.
-- [x] Turret Upgrade mit steigenden Kosten und Damage-Bonus implementieren.
-- [x] Einkommensskalierung nach Matchzeit zentral konfigurieren.
-- [x] Stagnationsschutz für das Late Game vorsehen; zunächst über Income-Multiplikator und optional stärkere Auto-Waves.
-
-### Ausgangswerte zum Testen
+Mechanik und Darstellung werden getrennt:
 
 ```text
-Start Energy: 300
-Base Income: +20/s
-Node Bonus: +10/s
-0–2 min: 1.0× Income
-2–4 min: 1.5× Income
-4–6 min: 2.0× Income
-ab 6 min: 3.0× Income / Sudden Death
+ProjectileBehavior
+- speed
+- lifetime
+- hit shape
+- homing / turn rate / acceleration
+- piercing
+
+ProjectileVisualProfile
+- asset key
+- frame size / count / FPS
+- rendered width / height
+- rotation offset
+- glow / trail / muzzle / impact profile
 ```
 
-### Ergebnis / Abnahme
+### Erste Rollenbelegung
 
-- Energy-Bilanz ist für Player und AI korrekt und nachvollziehbar.
-- Nodes wechseln den Besitzer, können contested sein und verändern das Einkommen.
-- In der Command Phase wächst weder Energy noch Capture-Fortschritt.
-- Upgrades können gekauft werden, wirken korrekt und werden mit jedem Level teurer.
-- Ein Match eskaliert messbar und bleibt nicht unbegrenzt in Kleingefechten stecken.
+| Einheit | Mechanische Aussage | Nairan/Kla'ed Visual-Familie |
+| --- | --- | --- |
+| Scout | kleiner, leichter Kontrollschuss | Bolt/Bullet |
+| Fighter | schnelle Anti-Light-Salve | animierter Bolt oder Ray/Tracer |
+| Bomber | klar sichtbare, beschleunigende Homing-Rakete | Rocket/Torpedo |
+| Frigate | langsamerer, gewichtiger Kanonenschuss | Ray/Big Bullet |
 
----
-
-## Bulk 7 – Regelkonforme Singleplayer-AI
-
-**Priorität:** P0  
-**Abhängigkeit:** Bulk 6  
-**Ziel:** Eine faire, verständliche Gegnerseite für vollständige Matches.
+Die Fraktionen dürfen unterschiedliche Farben und Animationen verwenden, müssen bei denselben Rollen aber mechanisch fair und sofort lesbar bleiben.
 
 ### Aufgaben
 
-- [x] AI ausschließlich während der Command Phase planen lassen.
-- [x] Dieselben Energy-, Kosten-, Income-, Node-, Wave- und Upgrade-Regeln wie beim Player verwenden.
-- [x] Lane Pressure aus Units, Positionen, Rollen, Turretstatus und Nodebesitz ableiten.
-- [x] Defensive Verstärkung einer bedrohten Lane ermöglichen.
-- [x] Push gegen eine erkennbare schwache Lane ermöglichen.
-- [x] Einfaches Budget für unmittelbare Units, Economy, Verteidigung und Sparen festlegen.
-- [x] Unit-Mix statt reinem Kauf der teuersten verfügbaren Unit fördern.
-- [x] Späte schwere Units über Sparziele technisch ermöglichen.
-- [x] Letzte AI-Entscheidung im Debug Overlay ausgeben.
-- [x] Garantieren, dass die AI nie mehr Energy ausgibt als vorhanden.
+- Animierte horizontale Sprite-Strips mit Rotationsoffset unterstützen.
+- Bounded-turn Homing, optionale Beschleunigung und Homing-Dauer aus dem Original adaptieren.
+- Kreis- und orientierte Rechteck-Hitboxen vorbereiten.
+- Piercing nur aktivieren, wenn eine konkrete Rolle und Balanceprüfung es rechtfertigt.
+- Raketen mit echter Positionshistorie oder begrenzten Exhaust-Partikeln statt einer rein statischen Linie darstellen.
+- Muzzle Flash, kurze Hit Sparks, Missile Impact, schwere Treffer und strukturabhängige Explosionen definieren.
+- Todesexplosionen nach Zielgröße staffeln; Scout/Fighter klein, Bomber mittel, Frigate groß, Struktur deutlich größer.
+- Sehr subtilen Screen Shake nur bei Frigate-/Strukturereignissen und abschaltbar einsetzen.
+- Shield-Animationen zunächst als Trefferfeedback vorbereiten; eine neue Shield-Mechanik gehört nicht automatisch zu diesem Paket.
 
-### Ergebnis / Abnahme
+### Performance-Grenzen
 
-- Die AI spielt ein Match selbstständig bis zu einem Endzustand.
-- Entscheidungen reagieren sichtbar auf Lane Pressure und Economy.
-- Die AI erhält keine versteckten Dauereinnahmen oder kostenlosen Kauf-Waves.
-- Mehrere automatisierte Matchläufe enden ohne Regelverletzung oder Deadlock.
+- Projektil- und Partikelbudgets pro Team/Lane statt eines unfairen globalen First-Come-Caps prüfen.
+- Keine unbegrenzten Trails oder pro Frame wachsenden Arrays.
+- Mobile Low-FX-Modus, DPR-Cap und kurze Lebenszeiten beibehalten.
 
----
+### Abnahme
 
-## Bulk 8 – Mobile Command- und Battle-UI
-
-**Priorität:** P0  
-**Abhängigkeit:** Bulks 5–7  
-**Ziel:** Den fertigen Kern mit einem klaren, einhändig bedienbaren Interface spielbar machen.
-
-### Command Phase
-
-- [x] Pausiertes Schlachtfeld vollständig sichtbar halten.
-- [x] Linke und rechte Lane eindeutig auswählbar und unterscheidbar darstellen.
-- [x] Auto-Wave und zusätzlich geplante Units je Lane anzeigen.
-- [x] Scout-, Fighter-, Bomber- und Frigate-Buttons mit Kosten und Verfügbarkeit anzeigen.
-- [x] Hinzufügen und Entfernen geplanter Units ermöglichen.
-- [x] Restenergie und Gesamtkosten sofort aktualisieren.
-- [x] Economy- und Turret-Upgrades klar anbieten.
-- [x] Einen eindeutigen `DEPLOY WAVE`-Button bereitstellen.
-- [x] Bei explizitem `DEPLOY WAVE` eine konsistente Standardaktion ausführen; Testmodus darf automatisch fortsetzen.
-
-### Battle Phase
-
-- [x] Kauf- und Upgrade-Steuerung ausblenden oder eindeutig deaktivieren.
-- [x] Phasentimer und Zeit bis zur nächsten Command Phase anzeigen.
-- [x] Player-/Enemy-HQ-HP, Turretstatus, Energy und Income anzeigen.
-- [x] Nodebesitz und Lane Pressure lesbar darstellen.
-- [x] UI-Fläche so begrenzen, dass das Beobachten der Schlacht im Mittelpunkt bleibt.
-
-### Ergebnis / Abnahme
-
-- Der Spieler versteht ohne Anleitung, was links und rechts deployt wird.
-- Sämtliche P0-Interaktionen funktionieren mit Touch und Maus.
-- Touch Targets sind ausreichend groß; kein Zielviewport erzeugt horizontales Scrollen.
-- Die Battle Phase vermittelt klar, dass keine Eingabe erforderlich ist.
+- Eine Schiffsklasse ist am Schussbild erkennbar, auch wenn der Hull kurz verdeckt ist.
+- Raketen, leichte Salven und schwere Schüsse sind in Bewegung klar unterscheidbar.
+- Effekte verdecken auf 360-Pixel-Breite weder Units noch Nodes.
 
 ---
 
-## Bulk 9 – Assets, Lesbarkeit und Audio
+## Paket 8 – Kampflesbarkeit und Rollen vertiefen
 
-**Priorität:** P1  
-**Abhängigkeit:** Funktionierender P0-Matchloop  
-**Ziel:** Den Vertical Slice mit vorhandenen Galalaxy-Ressourcen visuell klar und atmosphärisch machen.
+**Priorität:** P1
 
 ### Aufgaben
 
-- [x] Mobile-Lesbarkeits-Pass: schlanke Statusleiste, seitliche Lane-Auswahl, kompaktes unteres Command-Panel und freies Enemy-HQ.
-- [x] Zwei Lanes mit größerem Mittelraum und klaren Seitenrändern anordnen.
-- [x] Grobe originale Top-down-Placeholder für HQ, Turrets und Energy Nodes ergänzen.
-- [x] Command Phase auf manuelle Bestätigung umstellen und Testmodus automatisch belassen.
-- [x] Mobile Fullscreen-Steuerung als progressive Browser-Funktion ergänzen.
-- [x] Kampfgeschwindigkeit, Feuerintervalle, Formation und gleichteamige Abstände für mobile Lesbarkeit entschärfen.
+- Target Stickiness mit klarer Leash-Regel prüfen und Retarget-Jitter messen.
+- Frigate als echte Frontline-Schutzrolle stärken, ohne versteckte Aggro-Magie unverständlich zu machen.
+- Fighter-Anti-Bomber-Verhalten und Bomber-Siege-Verhalten sichtbar testen.
+- Scout-Capture-Vorteil durch Bewegung und Zielwahl nutzbar halten.
+- Formation beim Spawn beibehalten, danach kontrolliert aufbrechen lassen.
+- Separation auf dichte, persistente Flotten testen.
+- Aktuelle Schiffsgrößen zunächst beibehalten; nur bei realen Mobile-Tests klassenweise korrigieren.
+- Healthbars weiterhin nur für Strukturen und beschädigte Units zeigen.
 
-- [x] Zwei visuell konsistente Referenzflotten integrieren.
-- [x] Scout, Fighter, Bomber und Frigate über Größe und Silhouette klar unterscheiden.
-- [x] Geeignete Assets oder robuste Placeholder für HQ, Turrets und Nodes verwenden.
-- [ ] Projektile, Homing, Trails, Hit Sparks, Explosionen, Zaps und Shield Feedback gezielt adaptieren.
-- [x] Partikel und Effekte für kleine Displays begrenzen.
-- [x] Helle, freundliche Space-Palette mit Navy, Space Blue, Cyan, Teal, Lavender und Coral umsetzen.
-- [x] Hintergrundelemente wie Sterne, Nebel, Planeten und Asteroiden hinter die Lesbarkeit der Lanes stellen.
-- [x] Team- und Waffenfarben klar unterscheiden.
-- [ ] Sound-System und geeignete bestehende Sounds integrieren.
-- [ ] Kleine UI-Transitions und Trefferfeedback ergänzen.
+### Abnahme
 
-### Ergebnis / Abnahme
-
-- Unit-Typen und Teams sind auf kleinen Displays in Bewegung erkennbar.
-- Effekte verdecken weder Frontverlauf noch wichtige Einheiten.
-- Capital Ships können später sichtbar größer ergänzt werden.
-- Das Spiel wirkt hell, hochwertig und arcadeartig, ohne Neon-/Bloom-Überladung.
+- Die vier Kernklassen erzeugen erkennbare Kompositionsentscheidungen.
+- Mehrere Zyklen führen zu einer lesbaren Flotte und nicht zu gestapelten Sprite-Clustern.
 
 ---
 
-## Bulk 10 – Debugging, Automatisierung und Performance-Gates
+## Paket 9 – Automatisierung, Performance und Mobile-QA
 
-**Priorität:** P0 für Kernprüfungen, P1 für Optimierung  
-**Abhängigkeit:** parallel zu Bulks 4–9 fortführen  
-**Ziel:** Fehler schnell reproduzieren und den Matchloop dauerhaft absichern.
-
-### Debug-Funktionen
-
-- [ ] `?debug=1` zeigt FPS, Phase, Cycle, Matchzeit und beide Energy-Werte.
-- [ ] Unit Counts pro Lane und Team anzeigen.
-- [ ] Nodebesitz, Income-Multiplikator und letzte AI-Entscheidung anzeigen.
-- [ ] `?test=match` startet einen schnellen, reproduzierbaren Matchmodus.
-- [ ] Seed und Simulationsgeschwindigkeit für reproduzierbare Tests steuerbar machen.
-
-### Automatische Kernprüfungen
-
-- [ ] Spiel lädt ohne JavaScript-Fehler.
-- [ ] Title → Match funktioniert.
-- [ ] Command Phase friert die Simulation vollständig ein.
-- [ ] Player kann Units einer Lane hinzufügen und wieder entfernen.
-- [ ] Kosten, Erstattung und verfügbare Energy stimmen.
-- [ ] Deploy startet Player- und AI-Wave gleichzeitig.
-- [ ] Battle Phase läuft und Units bleiben lane-gebunden.
-- [ ] Units bekämpfen gegnerische Units und Strukturen.
-- [ ] Überlebende bleiben nach dem Cycle bestehen.
-- [ ] Nodes wechseln Besitzer und verändern Income.
-- [ ] Turrets und HQs können zerstört werden.
-- [ ] Victory, Defeat und Restart funktionieren.
-- [ ] AI überzieht ihr Budget nicht.
-- [ ] Ziel-Viewports bleiben ohne Überlauf bedienbar.
-
-### Performance-Gates
-
-- [ ] Keine DOM-Elemente pro Unit verwenden.
-- [ ] Keine unbegrenzten Partikel oder Projektile zulassen.
-- [ ] Keine globale O(n²)-Zielsuche über beide Lanes verwenden.
-- [ ] Objektallokationen in Hot Paths messen und begrenzen.
-- [ ] Stressszenario mit großen persistierenden Waves definieren.
-- [ ] Performance auf einem realistischen mobilen Leistungsprofil prüfen.
-
-### Ergebnis / Abnahme
-
-- Kernregressionen werden automatisiert erkannt.
-- Fehlerhafte Matches sind über Seed/Testmodus reproduzierbar.
-- Der Vertical Slice hält definierte Caps ein und bleibt bei großen Pushes bedienbar.
-
----
-
-## Bulk 11 – Vertical-Slice-Balancing und Spielspaß-Gate
-
-**Priorität:** P0  
-**Abhängigkeit:** Bulks 0–10  
-**Ziel:** Prüfen, ob die Kernentscheidung über Lane, Timing, Composition und Economy trägt.
+**Priorität:** P0/P1
 
 ### Aufgaben
 
-- [ ] Telemetrie im Debugmodus für Matchdauer, Ausgaben, Nodebesitz, Turret-Fall und Unit-Mix erfassen.
-- [ ] Early-, Mid- und Late-Game-Verlauf gegen das gewünschte Dramaturgiemodell prüfen.
-- [ ] Scout, Fighter, Bomber und Frigate auf unterschiedliche, verständliche Rollen abstimmen.
-- [ ] Prüfen, ob „immer teuerste Unit kaufen“ dominant ist, und Kosten/Rollen korrigieren.
-- [ ] Defense, Counterpush, Sparen und Economy-Investment als mindestens situativ sinnvolle Entscheidungen herstellen.
-- [ ] Node-Snowball stark genug für Relevanz, aber umkehrbar abstimmen.
-- [ ] Matchdauer und Sudden-Death-Skalierung gegen Stagnation testen.
-- [ ] Lesbarkeit großer Pushes auf kleinsten Ziel-Viewports prüfen.
-- [ ] Restart und mehrere Matches hintereinander auf Zustandslecks testen.
+- Headless-Tests für Live-Match, Deployment-Grenzen, Lock-in, Refunds und Upgrade-Aktivierung ergänzen.
+- Asset-Manifest und Animationsmetadaten automatisch validieren.
+- Browser-Testmatrix für 360×800, 390×844, 393×852, 412×915 und 420×760 einrichten.
+- Touch, Safe Areas, Fullscreen, Resize, Pause und Restart prüfen.
+- JavaScript-Fehler, fehlgeschlagene Asset-Requests und unhandled rejections als Testfehler behandeln.
+- Stressfixture mit dichten Flotten, Projektilen, Engines und Explosionen ausführen.
+- Ziele messen: Framezeit, Projektilanzahl, Partikelanzahl, aktive Animationslayer und dekodierter Bildspeicher.
+
+### Abnahme
+
+- Keine JS-Fehler und keine fehlenden Manifestdateien.
+- Der komplette Mobile-Viewport wird ohne Letterbox oder abgeschnittene Controls genutzt.
+- Der Live-Match bleibt bei realistischen dichten Wellen bedienbar und visuell lesbar.
+
+---
+
+## Paket 10 – Balance- und Spielspaß-Gate
+
+**Priorität:** P1/P2
+
+### Aufgaben
+
+- Headless AI-vs-AI-Simulation für Hunderte Matches ergänzen.
+- Winrate, Matchdauer, Unit-Kaufhäufigkeit, Nodekontrolle, Turret-Lebensdauer und Lane Pressure erfassen.
+- 22-Sekunden-Rhythmus auf Beobachtungs- und Entscheidungszeit testen, nicht vorschnell verkürzen.
+- Unitkosten, Einkommen, Basisscouts, Capturestärke und Eskalation datengetrieben iterieren.
+- Stagnation und Snowballing getrennt messen.
+- Erst nach erfolgreichem Kern-Gate Battlecruiser und Dreadnought aktivieren.
 
 ### Spielspaß-Gate
 
-Vor P2-Content müssen folgende Fragen überwiegend mit „ja“ beantwortet werden:
+Der Kern ist erst bestanden, wenn:
 
-- Erzeugt fast jeder Command Cycle eine echte Abwägung?
-- Ist der Frontverlauf auf beiden Lanes sofort verständlich?
-- Fühlen sich erfolgreiche persistierende Pushes befriedigend an?
-- Sind Nodes kurzfristig relevant, ohne das Match früh unumkehrbar zu machen?
-- Haben alle vier Unit-Typen einen erkennbaren Einsatzgrund?
-- Eskaliert das Match von kleinen Gefechten zu großen Flottenkämpfen?
-- Ist Zuschauen während der Battle Phase unterhaltsam?
-
-### Ergebnis / Abnahme
-
-- Ein vollständiges Match ist stabil, verständlich und spielerisch bewertbar.
-- Bekannte Balanceprobleme sind dokumentiert und zentral über Daten korrigierbar.
-- Erst nach bestandenem Gate wird der Scope erweitert.
+- während des laufenden Kampfes sinnvolle nächste Wellen geplant werden können,
+- die simultane Auslieferung eine sichtbare taktische Konsequenz hat,
+- beide Lanes regelmäßig unterschiedliche Entscheidungen verlangen,
+- mindestens zwei sinnvolle Kompositionen pro typischer Lage existieren,
+- Nodes relevant sind, aber nicht allein das Match entscheiden,
+- Matches ohne künstliche Wave-Grenze zuverlässig durch HQ-Zerstörung enden,
+- der Kampf auf einem echten Smartphone ruhig, verständlich und befriedigend wirkt.
 
 ---
 
-## P2 – Bewusst zurückgestellter Ausbau
+## Empfohlene Commit-Grenzen
 
-Diese Punkte werden architektonisch ermöglicht, aber erst nach dem Spielspaß-Gate umgesetzt:
+1. `Align contracts with continuous live match`
+2. `Introduce live deployment director`
+3. `Add lockable reinforcement queues`
+4. `Move opponent AI into deployment cycles`
+5. `Keep planning UI active during combat`
+6. `Import licensed Galalaxy asset library`
+7. `Add layered fleet animation profiles`
+8. `Integrate animated projectile profiles`
+9. `Add bounded combat FX and mobile stress checks`
+10. `Add headless balance simulation`
 
-- Battlecruiser und Dreadnought vollständig balancieren
-- weitere Fraktionen, einschließlich Nautolan
-- alternative Maps wie Asteroid Choke, Node Relay und Central Station
-- stärkere Auto-Waves und zusätzliche Late-Game-Eskalation
-- zusätzliche Unit-Prioritäten und vorsichtiges Counter-System
-- echte HQ-Abilities
-- weitere Upgrades
-- Meta-Progression oder Kampagnenstruktur
+## Bewusst nicht im aktuellen Ausbau
 
-## Nicht Bestandteil des ersten Vorhabens
+- dritte Lane,
+- Multiplayer oder PvP,
+- Kampagne und Story,
+- Karten-/Decksystem,
+- Gacha, Shop oder Monetarisierung,
+- aktive Kampfzauber,
+- direkte Schiffssteuerung,
+- freie Kamera, Zoom oder Minimap,
+- Fleet Doctrines vor bestandenem Kern-Gate,
+- Shield-Gameplay nur weil Shield-Assets vorhanden sind,
+- neue Fraktionsmechaniken nur weil Nautolan-Assets importiert wurden.
 
-- Multiplayer, PvP, Backend, Accounts oder Matchmaking
-- Shop, Echtgeld, Werbung oder Battle Pass
-- Deckbuilding, Kartenhand, Booster, Gacha oder Random Loot
-- Inventar oder große Tech Trees
-- Campaign Map oder Story-Produktion
-- sechs Maps oder zehn Fraktionen
-- dritte Lane
-- Hero Unit oder manuelle Abilities
-- Joystick, WASD, Drag-to-move, Waypoints oder andere manuelle Unit-Steuerung
+## Nächster ausführbarer Schritt
 
-## Vorgeschlagene Commit-Grenzen
-
-Commits sollen klein und prüfbar bleiben. Sinnvolle Grenzen sind:
-
-1. Repository-Regeln und Audit-Dokumente
-2. Game-Design- und Architekturvertrag
-3. Canvas-, Scaling- und Asset-Foundation
-4. Lane-, Unit- und Structure-Simulation
-5. Projectile- und Combat-Integration
-6. MatchDirector und Deployment Cycles
-7. Economy, Nodes und Upgrades
-8. AI
-9. Command-/Battle-UI
-10. Assets, FX und Sound
-11. QA-, Debug- und Performance-Gates
-12. Balancing-Anpassungen jeweils thematisch getrennt
-
-## Reihenfolge der ersten ausführbaren Arbeitspakete
-
-Für die konkrete Abarbeitung beginnt die Entwicklung mit diesen fünf überschaubaren Paketen:
-
-1. **Referenz sichern und auditieren**  
-   Read-only Clone prüfen, Quellstruktur und Runtime erfassen, keine Dateien übernehmen.
-
-2. **Asset- und Systeminventar erstellen**  
-   Wiederverwendbarkeit bewerten, zwei Fraktionen auswählen, Risiken dokumentieren.
-
-3. **Architektur und Datenverträge festziehen**  
-   Match-, Team-, Lane-, Unit-, Structure- und Wave-Modell sowie Systemgrenzen dokumentieren.
-
-4. **Technische Foundation aufsetzen**  
-   Projektstart, Canvas, Game Loop, Scaling, Asset Loader und pausierbare Simulationszeit.
-
-5. **Ersten autonomen Zwei-Lane-Kampf herstellen**  
-   Units, Strukturen, Bewegung, Targeting, Projectiles und Tod zunächst ohne fertige UI.
-
-Danach folgen Deployment Cycle, Economy/Nodes, AI, Mobile UI, visuelle Integration und das Spielspaß-Gate in genau dieser Abhängigkeitsfolge.
+Als nächstes wird Paket 0 abgeschlossen und unmittelbar danach Paket 1 implementiert. Die Assetbibliothek kann währenddessen importiert und verifiziert werden; ihre Runtime-Integration beginnt erst, wenn der kontinuierliche Live-Loop stabil ist.
