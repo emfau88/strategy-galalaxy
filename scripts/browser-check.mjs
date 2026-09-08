@@ -147,7 +147,7 @@ try {
     expression: `(() => { const g = window.__strategyGalalaxy; return { map: g.match.simulation.state.map.id, lanes: [...g.match.simulation.state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, playerUnits: g.match.simulation.state.lanes.get('LANE_CENTER').unitIds.get('TEAM_PLAYER').length, slots: g.match.economy.reinforcementLimit('TEAM_PLAYER'), assetFailures: g.loader.errors.length }; })()`,
     returnByValue: true,
   });
-  assert.deepEqual(gardenState.result.value, { map: "orbital_garden", lanes: ["LANE_CENTER"], worldHeight: 760, playerUnits: 2, slots: 3, assetFailures: 0 });
+  assert.deepEqual(gardenState.result.value, { map: "orbital_garden", lanes: ["LANE_CENTER"], worldHeight: 1180, playerUnits: 2, slots: 3, assetFailures: 0 });
   const gardenPlayerScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(resolve(output, "level-1-player-sector-420x760.png"), Buffer.from(gardenPlayerScreenshot.data, "base64"));
   await touch(70, 675);

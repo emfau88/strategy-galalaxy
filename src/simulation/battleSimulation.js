@@ -330,18 +330,16 @@ export class BattleSimulation {
       const muzzleX = ownerPosition.x + Math.cos(firingAngle) * muzzleOffset + Math.cos(hardpointAxis) * hardpointOffset;
       const muzzleY = ownerPosition.y + Math.sin(firingAngle) * muzzleOffset + Math.sin(hardpointAxis) * hardpointOffset;
       const projectileAngle = firingAngle + salvoOffset * (definition.salvoSpread ?? 0);
+      const launchDelay = index * (definition.salvoInterval ?? 0);
       const projectile = createProjectile({
         id: this.state.ids.next(), ownerId: owner.id, ownerTeam: owner.team, laneId,
         projectileType: projectileDefinition.id, x: muzzleX, y: muzzleY,
         vx: Math.cos(projectileAngle) * projectileDefinition.speed, vy: Math.sin(projectileAngle) * projectileDefinition.speed,
-        damage: totalDamage / requestedShots, targetId: target.id,
+        damage: totalDamage / requestedShots, targetId: target.id, launchDelay, hardpointIndex: mirroredIndex, salvoCount: requestedShots,
       });
       projectile.remainingLife = projectileDefinition.lifetime;
       addProjectileToState(this.state, projectile);
-      emitSimulationEvent(this.state, {
-        type: "shot", ownerId: owner.id, targetId: target.id, projectileType: projectile.projectileType,
-        x: muzzleX, y: muzzleY, team: owner.team, laneId, hardpointIndex: mirroredIndex, salvoCount: requestedShots,
-      });
+      if (launchDelay === 0) this.emitShot(projectile);
     }
     if (availableShots < requestedShots) {
       emitSimulationEvent(this.state, {
@@ -351,6 +349,14 @@ export class BattleSimulation {
     }
     owner.fireCooldown = definition.fireInterval;
     owner.lastShotAt = this.state.time;
+  }
+
+  emitShot(projectile) {
+    emitSimulationEvent(this.state, {
+      type: "shot", ownerId: projectile.ownerId, targetId: projectile.targetId, projectileType: projectile.projectileType,
+      x: projectile.x, y: projectile.y, team: projectile.ownerTeam, laneId: projectile.laneId,
+      hardpointIndex: projectile.hardpointIndex, salvoCount: projectile.salvoCount,
+    });
   }
 
   damageFor(owner, definition) {
@@ -373,11 +379,14 @@ export class BattleSimulation {
     const damageEvents = [];
     for (const projectile of [...this.state.projectiles.values()].sort((a, b) => a.id.localeCompare(b.id))) {
       if (!projectile.alive) continue;
+      const waitingToLaunch = projectile.age < 0;
+      projectile.age += dt;
+      if (projectile.age < 0) continue;
+      if (waitingToLaunch) this.emitShot(projectile);
       projectile.previousX = projectile.x;
       projectile.previousY = projectile.y;
       projectile.trail.push({ x: projectile.x, y: projectile.y });
       if (projectile.trail.length > 10) projectile.trail.shift();
-      projectile.age += dt;
       const definition = PROJECTILE_DEFINITIONS[projectile.projectileType];
       const target = getEntity(this.state, projectile.targetId);
       if (definition.homing && target?.alive) {

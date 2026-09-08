@@ -133,11 +133,11 @@ assert.ok(turretSimulation.state.events.some((event) => event.type === "shot" &&
 assert.ok(!turretSimulation.state.units.has(intruder.id) || turretSimulation.state.units.get(intruder.id).hp < intruder.maxHp);
 
 const homeDefenseSimulation = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
-const freshDefender = homeDefenseSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "fighter", { x: 210, y: 590 });
-const baseIntruder = homeDefenseSimulation.spawnUnit(TEAM.ENEMY, LANE.CENTER, "scout", { x: 210, y: 655 });
+const freshDefender = homeDefenseSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "fighter", { x: 210, y: 980 });
+const baseIntruder = homeDefenseSimulation.spawnUnit(TEAM.ENEMY, LANE.CENTER, "scout", { x: 210, y: 1045 });
 assert.equal(acquireUnitTarget(homeDefenseSimulation.state, freshDefender)?.id, baseIntruder.id, "fresh defenders acquire intruders behind them inside the HQ defense zone");
-const firstFirePosition = homeDefenseSimulation.tacticalPosition({ ...freshDefender, x: 120, y: 500 }, baseIntruder, UNIT_DEFINITIONS.fighter);
-const secondFirePosition = homeDefenseSimulation.tacticalPosition({ ...freshDefender, x: 300, y: 620 }, baseIntruder, UNIT_DEFINITIONS.fighter);
+const firstFirePosition = homeDefenseSimulation.tacticalPosition({ ...freshDefender, x: 120, y: 950 }, baseIntruder, UNIT_DEFINITIONS.fighter);
+const secondFirePosition = homeDefenseSimulation.tacticalPosition({ ...freshDefender, x: 300, y: 1090 }, baseIntruder, UNIT_DEFINITIONS.fighter);
 assert.deepEqual({ x: firstFirePosition.x, y: firstFirePosition.y }, { x: secondFirePosition.x, y: secondFirePosition.y }, "firing positions remain fixed instead of rotating around the target");
 assert.ok(Math.hypot(firstFirePosition.x - baseIntruder.x, firstFirePosition.y - baseIntruder.y) >= UNIT_DEFINITIONS.fighter.attackRange * 0.84, "ships hold a readable firing standoff");
 
@@ -173,6 +173,12 @@ hardpointSimulation.fire(hardpointFrigate, hardpointTarget, UNIT_DEFINITIONS.fri
 const broadsideShots = [...hardpointSimulation.state.projectiles.values()];
 assert.equal(broadsideShots.length, 3);
 assert.equal(new Set(broadsideShots.map((projectile) => Math.round(projectile.x))).size, 3, "frigate salvos originate at three hull hardpoints");
+assert.deepEqual(broadsideShots.map((projectile) => Number(projectile.age.toFixed(2))), [0, -0.15, -0.3], "broadside hardpoints launch as a readable sequence");
+assert.equal(hardpointSimulation.state.events.filter((event) => event.type === "shot").length, 1);
+hardpointSimulation.step(0.16);
+assert.equal(hardpointSimulation.state.events.filter((event) => event.type === "shot").length, 2);
+hardpointSimulation.step(0.15);
+assert.equal(hardpointSimulation.state.events.filter((event) => event.type === "shot").length, 3);
 
 const boundedEvents = new BattleSimulation();
 for (let index = 0; index < 1100; index += 1) emitSimulationEvent(boundedEvents.state, { type: "stress_event" });

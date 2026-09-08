@@ -32,7 +32,7 @@ export const createStructure = ({ id, team, laneId, structureType, x, y }) => {
   };
 };
 
-export const createProjectile = ({ id, ownerId, ownerTeam, laneId, projectileType, x, y, vx, vy, damage, targetId }) => ({
-  id, ownerId, ownerTeam, laneId, projectileType, x, y, vx, vy, damage, targetId,
-  previousX: x, previousY: y, age: 0, remainingLife: 0, trail: [], alive: true,
+export const createProjectile = ({ id, ownerId, ownerTeam, laneId, projectileType, x, y, vx, vy, damage, targetId, launchDelay = 0, hardpointIndex = 0, salvoCount = 1 }) => ({
+  id, ownerId, ownerTeam, laneId, projectileType, x, y, vx, vy, damage, targetId, hardpointIndex, salvoCount,
+  previousX: x, previousY: y, age: -launchDelay, remainingLife: 0, trail: [], alive: true,
 });

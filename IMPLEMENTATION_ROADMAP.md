@@ -1,6 +1,6 @@
 # Strategy Galalaxy – aktuelle Umbau-Roadmap
 
-Stand: 2026-09-08
+Stand: 2026-09-09
 
 Diese Datei ist der lebende Arbeitsplan für den Umbau zu größeren, langsameren und
 lesbareren Weltraumschlachten. Abgeschlossene Punkte werden erst nach automatischer
@@ -118,6 +118,20 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 - [x] Garten-Turret-Basis und klare Cyan-/Coral-Gebäudekennzeichnung integrieren.
 - [x] Alle fünf Mobile-Viewports inklusive Touch, Kamera und Assetrequests im Browser bestehen.
 - [x] Stabilen Meilenstein committen und pushen.
+
+## Level-1-Polish – Maßstab, Perspektive und Feuerlesbarkeit
+
+- [x] Level 1 wieder auf eine echte `420 x 1180` Scroll-Welt erweitern.
+- [x] Zwei eigene, proportional beschnittene Kartensektoren statt eines gestreckten Vollbilds einsetzen.
+- [x] Schiffsmaßstab auf Level 1 zurücknehmen und Reisetempo zur größeren Welt passend abstimmen.
+- [x] Ein eigenständiges, nach unten ausgerichtetes Rivalen-HQ statt einer kopfstehenden Spiegelung integrieren.
+- [x] Garten-Turret als strikt top-down gezeichnete Basis mit separat rotierendem Top-down-Kopf erneuern.
+- [x] Teamfarben an HQs und Turrets weiterhin klar durch Ring, Kernlicht und Beacons zeigen.
+- [x] Bomberstart, Rakete, Rauchspur und Einschlag als klar lesbare Sequenz verstärken.
+- [x] Projektilgeschwindigkeit global senken und Lebensdauer für die bisherige Reichweite kompensieren.
+- [x] Drei Frigate-Breitseitenschüsse über `0,30 s` als echte Salve nacheinander starten.
+- [ ] Foundation-, Asset- und Mobile-Browserprüfung bestehen.
+- [ ] Ergebnis committen und auf `main` pushen.
 
 - [ ] HQ antippbar machen und ein kontextuelles Kommandomenü als Prototyp öffnen.
 - [ ] Schiffstypen als Drag-and-drop-Chips vom HQ auf Left/Right anbieten.

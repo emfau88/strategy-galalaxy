@@ -18,7 +18,10 @@ export class PresentationEffects {
     const freshEvents = sequenced ? events.filter((event) => event.sequence > this.lastEventSequence) : events;
     for (const event of freshEvents) {
       const seed = (event.sequence ?? this.effects.length + 1) + this.effects.length;
-      if (event.type === "shot") this.add({ type: "muzzle", x: event.x, y: event.y, team: event.team, projectileType: event.projectileType, seed, life: 0.12, maxLife: 0.12 });
+      if (event.type === "shot") {
+        const duration = event.projectileType === "siege_missile" ? 0.24 : 0.12;
+        this.add({ type: "muzzle", x: event.x, y: event.y, team: event.team, projectileType: event.projectileType, seed, life: duration, maxLife: duration });
+      }
       if (event.type === "hit") this.add({ type: "hit", x: event.x, y: event.y, team: event.team, projectileType: event.projectileType, seed, life: event.projectileType === "siege_missile" ? 0.38 : 0.2, maxLife: event.projectileType === "siege_missile" ? 0.38 : 0.2 });
       if (event.type === "upgrade_activated") this.add({ type: "upgrade", x: event.x, y: event.y, team: event.team, upgradeId: event.upgradeId, level: event.level, seed, life: 1.25, maxLife: 1.25 });
       if (event.type === "destroyed") {

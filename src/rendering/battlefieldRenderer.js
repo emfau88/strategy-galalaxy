@@ -54,6 +54,13 @@ const radialWash = (ctx, x, y, radius, inner, outer = "rgba(0,0,0,0)") => {
   ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
 };
 
+const drawGardenSector = (ctx, image, projection, worldY, width, height, cropEdge) => {
+  if (!image?.naturalWidth || !image?.naturalHeight) return;
+  const sourceHeight = Math.min(image.naturalHeight, height * image.naturalWidth / width);
+  const sourceY = cropEdge === "bottom" ? image.naturalHeight - sourceHeight : 0;
+  ctx.drawImage(image, 0, sourceY, image.naturalWidth, sourceHeight, 0, projection.y(worldY), width, height);
+};
+
 export const renderBackground = (ctx, width, height, frameTime, assets) => {
   const background = asset(assets, "background-placeholder");
   if (background) ctx.drawImage(background, 0, 0, width, height);
@@ -104,11 +111,14 @@ export const renderBattlefieldLayer = (ctx, model) => {
   const top = view.y;
   const bottom = view.y + view.height;
   if (map.visualTheme === "orbital_garden") {
-    const garden = asset(model.assets, "background-orbital-garden");
-    if (garden) {
+    const rivalSector = asset(model.assets, "background-orbital-garden-rival");
+    const playerSector = asset(model.assets, "background-orbital-garden-player");
+    if (rivalSector && playerSector) {
       ctx.save();
-      ctx.globalAlpha = 0.94;
-      ctx.drawImage(garden, 0, projection.y(0), map.bounds.width, map.bounds.height);
+      ctx.globalAlpha = 0.97;
+      const sectorHeight = map.bounds.height / 2;
+      drawGardenSector(ctx, rivalSector, projection, 0, map.bounds.width, sectorHeight, "top");
+      drawGardenSector(ctx, playerSector, projection, sectorHeight, map.bounds.width, sectorHeight, "bottom");
       ctx.restore();
     }
   }
@@ -228,7 +238,7 @@ const drawDamageDetails = (ctx, structure, size, hpRatio, frameTime) => {
   }
 };
 
-const drawTurretHead = (ctx, structure, state, assets, projection, color) => {
+const drawTurretHead = (ctx, structure, state, assets, projection, color, gardenTurret = false) => {
   const target = state.units.get(structure.targetId);
   const defaultAngle = structure.team === "TEAM_PLAYER" ? -Math.PI / 2 : Math.PI / 2;
   const desiredAngle = target?.alive
@@ -237,7 +247,7 @@ const drawTurretHead = (ctx, structure, state, assets, projection, color) => {
   const angle = smoothAimAngle(structure, desiredAngle, state.time);
   const shotAge = state.time - structure.lastShotAt;
   const recoil = shotAge >= 0 && shotAge < 0.16 ? Math.sin(shotAge / 0.16 * Math.PI) * 3.5 : 0;
-  const sprite = asset(assets, "structure-turret-head");
+  const sprite = asset(assets, gardenTurret ? "structure-turret-head-garden" : "structure-turret-head");
   ctx.save();
   ctx.globalAlpha = 0.34;
   ctx.fillStyle = color;
@@ -371,13 +381,14 @@ const drawStructure = (ctx, structure, model, projection) => {
   const spriteWidth = gardenHq ? 330 : size;
   const spriteHeight = gardenHq ? 227 : size;
   const color = teamColor(structure.team);
-  const sprite = asset(model.assets, gardenHq ? "structure-hq-garden" : gardenTurret ? "structure-turret-garden" : isHq ? "structure-hq" : "structure-turret");
+  const hqAssetKey = gardenHq && structure.team === TEAM.ENEMY ? "structure-hq-garden-rival" : "structure-hq-garden";
+  const sprite = asset(model.assets, gardenHq ? hqAssetKey : gardenTurret ? "structure-turret-garden" : isHq ? "structure-hq" : "structure-turret");
   const damaged = state.time - structure.lastDamagedAt < 0.13;
   const hpRatio = structure.hp / structure.maxHp;
   const y = projection.y(structure.y);
   ctx.save();
   ctx.translate(structure.x, y);
-  if (isHq && structure.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
+  if (isHq && !gardenHq && structure.team !== TEAM.PLAYER) ctx.rotate(Math.PI);
   if (sprite) {
     if (damaged) ctx.filter = "brightness(1.9) saturate(0.4)";
     else if (hpRatio <= 0.34) ctx.filter = "brightness(0.72) saturate(0.52)";
@@ -419,7 +430,7 @@ const drawStructure = (ctx, structure, model, projection) => {
   }
   drawStructureUpgradeDetails(ctx, structure, model, size, color);
   if (isHq) drawHqHangars(ctx, structure, model, model.frameTime, color);
-  else drawTurretHead(ctx, structure, state, model.assets, projection, color);
+  else drawTurretHead(ctx, structure, state, model.assets, projection, color, gardenTurret);
   drawDamageDetails(ctx, structure, size, hpRatio, model.frameTime);
   ctx.restore();
   drawBar(ctx, structure.x, y + size * 0.45, isHq ? 84 : 50, hpRatio, color, isHq ? 5 : 4);
@@ -481,6 +492,7 @@ const drawProjectile = (ctx, projectile, projection, model) => {
   const y = projection.y(projectile.y);
   const angle = Math.atan2(projection.velocityY(projectile.vy), projectile.vx);
   const color = projectile.ownerTeam === "TEAM_PLAYER" ? definition.color : (definition.visual === "missile" ? "#f5a17e" : "#f3a28d");
+  const isSiegeMissile = projectile.projectileType === "siege_missile";
   const economy = model.economy?.get(projectile.ownerTeam);
   const techLevel = projectile.ownerId?.includes("turret") ? economy?.turretLevel ?? 0
     : projectile.ownerId?.includes("hq") ? 0 : economy?.weaponLevel ?? 0;
@@ -488,8 +500,8 @@ const drawProjectile = (ctx, projectile, projection, model) => {
   ctx.lineCap = "round";
   if (visual?.trail && projectile.trail?.length) {
     ctx.strokeStyle = projectile.ownerTeam === "TEAM_PLAYER" ? "#a8eaf3" : "#f0ad95";
-    ctx.lineWidth = (visual.trail === "heavy" ? 2.4 : 3) + techLevel * 0.35;
-    ctx.globalAlpha = (visual.trail === "heavy" ? 0.26 : 0.42) + techLevel * 0.06;
+    ctx.lineWidth = (visual.trail === "heavy" ? 2.4 : isSiegeMissile ? 4.2 : 3) + techLevel * 0.35;
+    ctx.globalAlpha = (visual.trail === "heavy" ? 0.26 : isSiegeMissile ? 0.68 : 0.42) + techLevel * 0.06;
     ctx.beginPath();
     projectile.trail.forEach((point, index) => {
       const pointY = projection.y(point.y);
@@ -497,6 +509,16 @@ const drawProjectile = (ctx, projectile, projection, model) => {
     });
     ctx.lineTo(x, y);
     ctx.stroke();
+  }
+  if (isSiegeMissile) {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, 13 + techLevel * 2);
+    glow.addColorStop(0, projectile.ownerTeam === TEAM.PLAYER ? "rgba(255,230,169,0.8)" : "rgba(255,163,127,0.82)");
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(x - 16, y - 16, 32, 32);
+    ctx.restore();
   }
   const sprite = visual ? asset(assets, visual.assetKey) : null;
   if (visual && sprite) {
@@ -549,7 +571,7 @@ export const renderEntityLayer = (ctx, model) => {
   for (const unit of units.values()) {
     if (unit.launching && unit.launchElapsed < 0) continue;
     if (!visible(unit.y, 60)) continue;
-    const fleetScale = simulation.state.map.visualTheme === "orbital_garden" ? 1.28 : 1;
+    const fleetScale = simulation.state.map.visualTheme === "orbital_garden" ? 1.12 : 1;
     const size = unitSize(unit.unitType) * fleetScale;
     const sprite = asset(model.assets, factionKey(unit));
     const visual = fleetVisualFor(unit.team, unit.unitType);
@@ -593,6 +615,23 @@ export const renderEntityLayer = (ctx, model) => {
       ctx.globalAlpha = 1;
     }
     if (visual?.weapon) drawTimedStrip(ctx, asset(model.assets, visual.weapon.assetKey), visual.weapon, frameSize, simulation.state.time - unit.lastShotAt, displaySize, 0.42);
+    const shotAge = simulation.state.time - unit.lastShotAt;
+    if (unit.unitType === "bomber" && shotAge >= 0 && shotAge < 0.32) {
+      const flashProgress = shotAge / 0.32;
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = (1 - flashProgress) * 0.92;
+      ctx.fillStyle = unit.team === TEAM.PLAYER ? "#ffe2a6" : "#ffae83";
+      ctx.beginPath();
+      ctx.ellipse(0, -size * 0.43, 4 + flashProgress * 5, 8 + flashProgress * 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#fff4d0";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.43, 5 + flashProgress * 10, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
     if (visual?.shield) drawTimedStrip(ctx, asset(model.assets, visual.shield.assetKey), visual.shield, frameSize, simulation.state.time - unit.lastDamagedAt, displaySize, unit.unitType === "frigate" ? 0.82 : 0.62);
     const damageAge = simulation.state.time - unit.lastDamagedAt;
     if ((unit.unitType === "frigate" || unit.unitType === "bomber") && damageAge >= 0 && damageAge < 0.34) {
@@ -609,7 +648,7 @@ export const renderEntityLayer = (ctx, model) => {
     const hpRatio = unit.hp / unit.maxHp;
     if (hpRatio < 0.75 || simulation.state.time - unit.lastDamagedAt < 1.8) drawBar(ctx, unit.x, y + size * 0.52, size * 0.82, hpRatio, teamColor(unit.team));
   }
-  for (const projectile of projectiles.values()) if (visible(projectile.y, 50)) drawProjectile(ctx, projectile, projection, model);
+  for (const projectile of projectiles.values()) if (projectile.age >= 0 && visible(projectile.y, 50)) drawProjectile(ctx, projectile, projection, model);
 };
 
 const seededAngle = (seed, index) => ((seed * 2.17 + index * 2.399) % (Math.PI * 2));
@@ -647,10 +686,20 @@ export const renderEffectsLayer = (ctx, model) => {
         ctx.fill();
       }
     } else if (effect.type === "muzzle") {
-      ctx.fillStyle = "#fff4cf";
+      const siege = effect.projectileType === "siege_missile";
+      ctx.globalCompositeOperation = "screen";
+      ctx.fillStyle = siege ? "#ffd18c" : "#fff4cf";
       ctx.beginPath();
-      ctx.arc(effect.x, y, 2 + progress * 5, 0, Math.PI * 2);
+      ctx.arc(effect.x, y, (siege ? 4 : 2) + progress * (siege ? 10 : 5), 0, Math.PI * 2);
       ctx.fill();
+      if (siege) {
+        ctx.globalAlpha = alpha * 0.8;
+        ctx.strokeStyle = "#ffad78";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(effect.x, y, 7 + progress * 17, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     } else if (effect.type === "hit") {
       ctx.strokeStyle = effect.projectileType === "siege_missile" ? "#ffd096" : "#f7f4d7";
       ctx.lineWidth = 1.6;

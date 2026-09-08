@@ -32,8 +32,8 @@ export const PROJECTILE_VISUALS = freeze({
     [TEAM.ENEMY]: projectile("klaed-ray", 18, 38, 4, 12, 11, 24),
   }),
   siege_missile: freeze({
-    [TEAM.PLAYER]: projectile("nairan-rocket", 9, 16, 4, 12, 13, 24, { trail: "missile" }),
-    [TEAM.ENEMY]: projectile("klaed-torpedo", 11, 32, 3, 10, 13, 28, { trail: "missile" }),
+    [TEAM.PLAYER]: projectile("nairan-rocket", 9, 16, 4, 12, 18, 34, { trail: "missile" }),
+    [TEAM.ENEMY]: projectile("klaed-torpedo", 11, 32, 3, 10, 18, 36, { trail: "missile" }),
   }),
   heavy_cannon: freeze({
     [TEAM.PLAYER]: projectile("nairan-torpedo", 9, 24, 3, 10, 13, 28, { trail: "heavy" }),

@@ -7,18 +7,18 @@ export const UNIT_DEFINITIONS = freeze({
   scout: freeze({ id: "scout", role: "screen", cost: 50, maxHp: 62, speed: 70, acceleration: 150, turnRate: 5.4, collisionRadius: 7, spacingRadius: 12, attackRange: 76, aggroRange: 130, targetLeash: 166, damage: 4, fireInterval: 1.2, projectileId: "scout_pulse", muzzleOffset: 8, salvoCount: 2, salvoSpread: 0.035, hardpointSpacing: 4, captureStrength: 2, color: "#9cecff" }),
   fighter: freeze({ id: "fighter", role: "escort", cost: 90, maxHp: 112, speed: 56, acceleration: 112, turnRate: 4.4, collisionRadius: 9, spacingRadius: 15, attackRange: 105, aggroRange: 170, targetLeash: 210, damage: 7, fireInterval: 0.72, projectileId: "fighter_laser", muzzleOffset: 11, salvoCount: 3, salvoSpread: 0.026, hardpointSpacing: 6, captureStrength: 1, color: "#c7e8ff" }),
   bomber: freeze({ id: "bomber", role: "siege", cost: 140, maxHp: 96, speed: 34, acceleration: 58, turnRate: 2.6, collisionRadius: 11, spacingRadius: 18, attackRange: 148, aggroRange: 215, targetLeash: 260, damage: 34, fireInterval: 2.25, projectileId: "siege_missile", muzzleOffset: 14, captureStrength: 0.5, color: "#ffd5a0" }),
-  frigate: freeze({ id: "frigate", role: "heavy", cost: 180, maxHp: 390, speed: 27, acceleration: 40, turnRate: 1.7, collisionRadius: 14, spacingRadius: 24, attackRange: 132, aggroRange: 190, targetLeash: 230, damage: 18, fireInterval: 1.32, projectileId: "heavy_cannon", muzzleOffset: 18, salvoCount: 3, salvoSpread: 0.018, hardpointSpacing: 13, captureStrength: 0.75, broadside: true, color: "#c4b9ff" }),
-  battlecruiser: freeze({ id: "battlecruiser", role: "capital", cost: 320, maxHp: 480, speed: 23, acceleration: 30, turnRate: 1.35, collisionRadius: 22, spacingRadius: 30, attackRange: 154, aggroRange: 220, targetLeash: 266, damage: 46, fireInterval: 0.9, projectileId: "heavy_bolt", muzzleOffset: 24, salvoCount: 5, salvoSpread: 0.016, hardpointSpacing: 14, broadside: true, color: "#d4b5ff", enabled: false }),
-  dreadnought: freeze({ id: "dreadnought", role: "capital", cost: 520, maxHp: 880, speed: 18, acceleration: 22, turnRate: 1.05, collisionRadius: 29, spacingRadius: 36, attackRange: 176, aggroRange: 245, targetLeash: 294, damage: 82, fireInterval: 1.15, projectileId: "heavy_bolt", muzzleOffset: 30, salvoCount: 7, salvoSpread: 0.014, hardpointSpacing: 15, broadside: true, color: "#f0b5ff", enabled: false }),
+  frigate: freeze({ id: "frigate", role: "heavy", cost: 180, maxHp: 390, speed: 27, acceleration: 40, turnRate: 1.7, collisionRadius: 14, spacingRadius: 24, attackRange: 132, aggroRange: 190, targetLeash: 230, damage: 18, fireInterval: 1.32, projectileId: "heavy_cannon", muzzleOffset: 18, salvoCount: 3, salvoInterval: 0.15, salvoSpread: 0.018, hardpointSpacing: 13, captureStrength: 0.75, broadside: true, color: "#c4b9ff" }),
+  battlecruiser: freeze({ id: "battlecruiser", role: "capital", cost: 320, maxHp: 480, speed: 23, acceleration: 30, turnRate: 1.35, collisionRadius: 22, spacingRadius: 30, attackRange: 154, aggroRange: 220, targetLeash: 266, damage: 46, fireInterval: 0.9, projectileId: "heavy_bolt", muzzleOffset: 24, salvoCount: 5, salvoInterval: 0.12, salvoSpread: 0.016, hardpointSpacing: 14, broadside: true, color: "#d4b5ff", enabled: false }),
+  dreadnought: freeze({ id: "dreadnought", role: "capital", cost: 520, maxHp: 880, speed: 18, acceleration: 22, turnRate: 1.05, collisionRadius: 29, spacingRadius: 36, attackRange: 176, aggroRange: 245, targetLeash: 294, damage: 82, fireInterval: 1.15, projectileId: "heavy_bolt", muzzleOffset: 30, salvoCount: 7, salvoInterval: 0.11, salvoSpread: 0.014, hardpointSpacing: 15, broadside: true, color: "#f0b5ff", enabled: false }),
 });
 
 export const PROJECTILE_DEFINITIONS = freeze({
-  scout_pulse: freeze({ id: "scout_pulse", speed: 300, lifetime: 1.25, hitRadius: 3, color: "#c7f5ff", visual: "pulse" }),
-  fighter_laser: freeze({ id: "fighter_laser", speed: 420, lifetime: 1.15, hitRadius: 3, color: "#8ee7ff", visual: "laser" }),
-  siege_missile: freeze({ id: "siege_missile", speed: 145, lifetime: 2.8, hitRadius: 6, color: "#ffc27d", visual: "missile", homing: true, turnRate: 2.8, acceleration: 42 }),
-  heavy_cannon: freeze({ id: "heavy_cannon", speed: 260, lifetime: 1.8, hitRadius: 5, color: "#d9caff", visual: "heavy" }),
-  light_bolt: freeze({ id: "light_bolt", speed: 290, lifetime: 1.5, hitRadius: 4, color: "#b9f4ff", visual: "pulse" }),
-  heavy_bolt: freeze({ id: "heavy_bolt", speed: 220, lifetime: 1.9, hitRadius: 5, color: "#ffd27b", visual: "heavy" }),
+  scout_pulse: freeze({ id: "scout_pulse", speed: 255, lifetime: 1.48, hitRadius: 3, color: "#c7f5ff", visual: "pulse" }),
+  fighter_laser: freeze({ id: "fighter_laser", speed: 350, lifetime: 1.38, hitRadius: 3, color: "#8ee7ff", visual: "laser" }),
+  siege_missile: freeze({ id: "siege_missile", speed: 118, lifetime: 3.55, hitRadius: 6, color: "#ffc27d", visual: "missile", homing: true, turnRate: 2.8, acceleration: 32 }),
+  heavy_cannon: freeze({ id: "heavy_cannon", speed: 220, lifetime: 2.15, hitRadius: 5, color: "#d9caff", visual: "heavy" }),
+  light_bolt: freeze({ id: "light_bolt", speed: 245, lifetime: 1.75, hitRadius: 4, color: "#b9f4ff", visual: "pulse" }),
+  heavy_bolt: freeze({ id: "heavy_bolt", speed: 185, lifetime: 2.28, hitRadius: 5, color: "#ffd27b", visual: "heavy" }),
 });
 
 export const STRUCTURE_DEFINITIONS = freeze({
@@ -31,29 +31,29 @@ export const ORBITAL_GARDEN = freeze({
   level: 1,
   title: "ORBITAL GARDEN",
   visualTheme: "orbital_garden",
-  movementScale: 0.62,
+  movementScale: 0.78,
   spacingScale: 1.22,
   balanceOverrides: freeze({
     baseWaveDronesPerLane: 2,
     maxPurchasedReinforcementsPerDeployment: 3,
     startingEnergy: 270,
   }),
-  bounds: freeze({ width: 420, height: 760 }),
+  bounds: freeze({ width: 420, height: 1180 }),
   lanes: freeze([
     freeze({
       id: LANE.CENTER,
       centerX: 210,
       width: 330,
-      node: freeze({ id: "sunwell-node", x: 210, y: 380, radius: 72 }),
-      playerSpawn: freeze({ x: 210, y: 590 }),
-      enemySpawn: freeze({ x: 210, y: 170 }),
+      node: freeze({ id: "sunwell-node", x: 210, y: 590, radius: 72 }),
+      playerSpawn: freeze({ x: 210, y: 980 }),
+      enemySpawn: freeze({ x: 210, y: 200 }),
     }),
   ]),
   structures: freeze([
-    freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 695 }),
-    freeze({ id: "enemy-hq", team: TEAM.ENEMY, laneId: null, structureType: "hq", x: 210, y: 65 }),
-    freeze({ id: "player-center-turret", team: TEAM.PLAYER, laneId: LANE.CENTER, structureType: "turret", x: 112, y: 548 }),
-    freeze({ id: "enemy-center-turret", team: TEAM.ENEMY, laneId: LANE.CENTER, structureType: "turret", x: 308, y: 212 }),
+    freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 1090 }),
+    freeze({ id: "enemy-hq", team: TEAM.ENEMY, laneId: null, structureType: "hq", x: 210, y: 90 }),
+    freeze({ id: "player-center-turret", team: TEAM.PLAYER, laneId: LANE.CENTER, structureType: "turret", x: 112, y: 930 }),
+    freeze({ id: "enemy-center-turret", team: TEAM.ENEMY, laneId: LANE.CENTER, structureType: "turret", x: 308, y: 250 }),
   ]),
 });
 
