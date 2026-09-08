@@ -235,25 +235,21 @@ export class BattleSimulation {
   }
 
   tacticalPosition(unit, target, definition) {
-    let dx = unit.x - target.x;
-    let dy = unit.y - target.y;
-    let magnitude = Math.hypot(dx, dy);
-    if (magnitude < 0.001) {
-      dx = unit.broadsideSide;
-      dy = -forwardDirection(unit.team);
-      magnitude = Math.hypot(dx, dy);
-    }
-    const awayX = dx / magnitude;
-    const awayY = dy / magnitude;
-    const standoff = definition.attackRange * (definition.broadside ? 0.82 : 0.76);
-    const lateral = clamp(unit.slotOffsetX * 0.42, -30, 30) * forwardDirection(unit.team);
+    const direction = forwardDirection(unit.team);
+    const standoff = definition.attackRange * (definition.broadside ? 0.84 : 0.86);
+    const formationLateral = clamp(unit.slotOffsetX * 0.4, -34, 34);
     const targetBearing = Math.atan2(target.y - unit.y, target.x - unit.x);
+    if (definition.broadside) {
+      return {
+        x: target.x + unit.broadsideSide * standoff,
+        y: target.y - direction * formationLateral * 0.45,
+        heading: targetBearing + unit.broadsideSide * direction * Math.PI / 2,
+      };
+    }
     return {
-      x: target.x + awayX * standoff - awayY * lateral,
-      y: target.y + awayY * standoff + awayX * lateral,
-      heading: definition.broadside
-        ? targetBearing + unit.broadsideSide * forwardDirection(unit.team) * Math.PI / 2
-        : targetBearing,
+      x: target.x + formationLateral,
+      y: target.y - direction * standoff,
+      heading: targetBearing,
     };
   }
 

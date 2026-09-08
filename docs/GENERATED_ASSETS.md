@@ -43,6 +43,15 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
 - **Runtime:** The `932×1688` background is rendered proportionally as a `420×760` world. Sunwell and HQ remain independent layers so gameplay units and structure state can animate above them.
 - **Status:** Active Level-1 runtime assets. Level 2 retains its existing art.
 
+## `orbital-garden-turret-v1.png`
+
+- **Destination:** `assets/structures/orbital-garden-turret-v1.png`
+- **Method / mode:** Built-in ImageGen, `stylized-concept`, using the approved Orbital Garden mockup as material and perspective reference.
+- **Purpose:** Replace Level 1's cold blue mechanical turret base with a readable garden defense platform that belongs to the Sunwell/HQ family.
+- **Prompt direction:** Compact ivory-stone and brass emplacement, dark rotating socket, planted garden beds, warm lamps and neutral cyan conduits on a uniform black compositing background; no mounted weapon, ships, UI or scenery.
+- **Runtime:** The existing rotating turret head remains code-driven. Team ownership is added as a strong Cyan/Coral ring, central glow and four perimeter beacons.
+- **Status:** Active for Level 1; Level 2 keeps its original modular turret base.
+
 ## `defense-turret-head-topdown-v3.png`
 
 - **Destination:** `assets/structures/defense-turret-head-topdown-v3.png`

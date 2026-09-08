@@ -10,6 +10,7 @@ export const ASSET_GROUPS = Object.freeze({
     "structure-hq": "assets/structures/command-hq-topdown-v3.png",
     "structure-hq-garden": "assets/structures/orbital-garden-hq-v2.png",
     "structure-turret": "assets/structures/defense-turret-base-topdown-v2.png",
+    "structure-turret-garden": "assets/structures/orbital-garden-turret-v1.png",
     "structure-turret-head": "assets/structures/defense-turret-head-topdown-v3.png",
     "structure-node": "assets/structures/energy-relay-topdown-v1.png",
     "structure-node-sunwell": "assets/structures/orbital-sunwell-v2.png",

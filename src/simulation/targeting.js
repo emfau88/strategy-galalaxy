@@ -60,12 +60,15 @@ export const acquireUnitTarget = (state, unit, positions = null) => {
   if (isValidUnitTarget(state, unit, current, positions) && rolePriority(unit, current) <= 2) return current;
 
   const definition = UNIT_DEFINITIONS[unit.unitType];
+  const friendlyHq = [...state.structures.values()].find((structure) => structure.team === unit.team && structure.structureType === "hq");
+  const homeDefenseRange = STRUCTURE_DEFINITIONS.hq.attackRange + 85;
   const hostileIds = laneFor(state, unit.laneId).unitIds.get(enemyOf(unit.team));
   const candidates = hostileIds
     .map((id) => state.units.get(id))
     .filter((candidate) => candidate?.alive
       && !candidate.launching
-      && isHostileUnitAhead(unit, candidate, positions)
+      && (isHostileUnitAhead(unit, candidate, positions)
+        || (friendlyHq && inRange(positioned(friendlyHq, positions), positioned(candidate, positions), homeDefenseRange)))
       && inRange(positioned(unit, positions), positioned(candidate, positions), definition.aggroRange));
   const structureTarget = nextStructureTarget(state, unit);
   if (unit.unitType === "bomber" && structureTarget) candidates.push(structureTarget);

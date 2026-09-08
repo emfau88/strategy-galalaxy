@@ -239,6 +239,18 @@ const drawTurretHead = (ctx, structure, state, assets, projection, color) => {
   const recoil = shotAge >= 0 && shotAge < 0.16 ? Math.sin(shotAge / 0.16 * Math.PI) * 3.5 : 0;
   const sprite = asset(assets, "structure-turret-head");
   ctx.save();
+  ctx.globalAlpha = 0.34;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(0, 0, 16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 0.82;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, 12.5, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
   if (sprite) {
     ctx.rotate(angle + Math.PI / 2);
     ctx.drawImage(sprite, -27, -34 + recoil, 54, 54);
@@ -251,7 +263,7 @@ const drawTurretHead = (ctx, structure, state, assets, projection, color) => {
     ctx.fillRect(5 - recoil, 1.5, 19, 3.5);
   }
   ctx.fillStyle = color;
-  ctx.globalAlpha = 0.74;
+  ctx.globalAlpha = 0.96;
   ctx.beginPath();
   ctx.arc(0, 0, 2.2, 0, Math.PI * 2);
   ctx.fill();
@@ -354,11 +366,12 @@ const drawStructure = (ctx, structure, model, projection) => {
   const state = model.simulation.state;
   const isHq = structure.structureType === "hq";
   const gardenHq = isHq && state.map.visualTheme === "orbital_garden";
-  const size = gardenHq ? 230 : isHq ? 128 : 74;
+  const gardenTurret = !isHq && state.map.visualTheme === "orbital_garden";
+  const size = gardenHq ? 230 : gardenTurret ? 94 : isHq ? 128 : 74;
   const spriteWidth = gardenHq ? 330 : size;
   const spriteHeight = gardenHq ? 227 : size;
   const color = teamColor(structure.team);
-  const sprite = asset(model.assets, gardenHq ? "structure-hq-garden" : isHq ? "structure-hq" : "structure-turret");
+  const sprite = asset(model.assets, gardenHq ? "structure-hq-garden" : gardenTurret ? "structure-turret-garden" : isHq ? "structure-hq" : "structure-turret");
   const damaged = state.time - structure.lastDamagedAt < 0.13;
   const hpRatio = structure.hp / structure.maxHp;
   const y = projection.y(structure.y);
@@ -369,10 +382,40 @@ const drawStructure = (ctx, structure, model, projection) => {
     if (damaged) ctx.filter = "brightness(1.9) saturate(0.4)";
     else if (hpRatio <= 0.34) ctx.filter = "brightness(0.72) saturate(0.52)";
     else if (hpRatio <= 0.67) ctx.filter = "brightness(0.88) saturate(0.76)";
-    if (gardenHq) ctx.globalCompositeOperation = "screen";
+    if (gardenHq || gardenTurret) ctx.globalCompositeOperation = "screen";
     ctx.drawImage(sprite, -spriteWidth / 2, -spriteHeight / 2, spriteWidth, spriteHeight);
     ctx.globalCompositeOperation = "source-over";
     ctx.filter = "none";
+  }
+  if (gardenHq) {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = 0.48;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(0, 8, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.86;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(0, 8, 25, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  } else if (gardenTurret) {
+    ctx.globalAlpha = 0.88;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, 35, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+      ctx.beginPath();
+      ctx.arc(Math.cos(angle) * 39, Math.sin(angle) * 39, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
   }
   drawStructureUpgradeDetails(ctx, structure, model, size, color);
   if (isHq) drawHqHangars(ctx, structure, model, model.frameTime, color);

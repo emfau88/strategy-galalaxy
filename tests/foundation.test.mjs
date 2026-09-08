@@ -12,8 +12,8 @@ import { CLASSIC_LANES, ORBITAL_GARDEN, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS 
 import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 import { AI_PROFILES } from "../src/simulation/opponentAi.js";
-import { emitSimulationEvent } from "../src/simulation/battleState.js";
-import { acquireStructureTarget } from "../src/simulation/targeting.js";
+import { createBattleState, emitSimulationEvent } from "../src/simulation/battleState.js";
+import { acquireStructureTarget, acquireUnitTarget } from "../src/simulation/targeting.js";
 import { ASSET_GROUPS } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { SoundSystem } from "../src/audio/soundSystem.js";
@@ -131,6 +131,15 @@ const intruder = turretSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x:
 for (let index = 0; index < 180; index += 1) turretSimulation.step(1 / 60);
 assert.ok(turretSimulation.state.events.some((event) => event.type === "shot" && event.ownerId === "player-left-turret"));
 assert.ok(!turretSimulation.state.units.has(intruder.id) || turretSimulation.state.units.get(intruder.id).hp < intruder.maxHp);
+
+const homeDefenseSimulation = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
+const freshDefender = homeDefenseSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "fighter", { x: 210, y: 590 });
+const baseIntruder = homeDefenseSimulation.spawnUnit(TEAM.ENEMY, LANE.CENTER, "scout", { x: 210, y: 655 });
+assert.equal(acquireUnitTarget(homeDefenseSimulation.state, freshDefender)?.id, baseIntruder.id, "fresh defenders acquire intruders behind them inside the HQ defense zone");
+const firstFirePosition = homeDefenseSimulation.tacticalPosition({ ...freshDefender, x: 120, y: 500 }, baseIntruder, UNIT_DEFINITIONS.fighter);
+const secondFirePosition = homeDefenseSimulation.tacticalPosition({ ...freshDefender, x: 300, y: 620 }, baseIntruder, UNIT_DEFINITIONS.fighter);
+assert.deepEqual({ x: firstFirePosition.x, y: firstFirePosition.y }, { x: secondFirePosition.x, y: secondFirePosition.y }, "firing positions remain fixed instead of rotating around the target");
+assert.ok(Math.hypot(firstFirePosition.x - baseIntruder.x, firstFirePosition.y - baseIntruder.y) >= UNIT_DEFINITIONS.fighter.attackRange * 0.84, "ships hold a readable firing standoff");
 
 const firstBattle = createDemoBattle();
 const secondBattle = createDemoBattle();

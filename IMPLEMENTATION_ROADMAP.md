@@ -113,6 +113,9 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 - [x] Mockup-Hintergrund ohne Seitenverhältnis-Verzerrung als `420×760`-Welt rendern.
 - [x] Sunwell und Garten-HQ als detailreiche Mockup-nahe V2-Runtime-Objekte ersetzen.
 - [x] Level-1-Schiffe größer, langsamer und mit weiterem Verbandsabstand darstellen.
+- [x] Stabile Feuerpositionen statt radial wandernder Orbit-Zielpunkte verwenden.
+- [x] Basis-Eindringlinge für frisch gespawnte Verteidiger unabhängig von der Flugrichtung priorisieren.
+- [x] Garten-Turret-Basis und klare Cyan-/Coral-Gebäudekennzeichnung integrieren.
 - [x] Alle fünf Mobile-Viewports inklusive Touch, Kamera und Assetrequests im Browser bestehen.
 - [x] Stabilen Meilenstein committen und pushen.
 
