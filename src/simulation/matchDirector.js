@@ -12,7 +12,7 @@ import { CLASSIC_LANES } from "../data/definitions.js";
 /** Coordinates a continuous match; specialized systems own combat, economy, capture, and deployment. */
 export class MatchDirector {
   constructor({ config = CONFIG, mapDefinition = CLASSIC_LANES, aiProfile = AI_PROFILES.TACTICIAN, aiPreferredLane = null, aiInvestmentBias = INVESTMENT_BIASES.BALANCED } = {}) {
-    this.config = config;
+    this.config = { ...config, balance: { ...config.balance, ...(mapDefinition.balanceOverrides ?? {}) } };
     this.mapDefinition = mapDefinition;
     this.aiProfile = aiProfile;
     this.aiPreferredLane = aiPreferredLane ?? mapDefinition.lanes[0].id;
@@ -21,10 +21,10 @@ export class MatchDirector {
     this.resumeState = null;
     this.activeMatchSeconds = 0;
     this.simulation = null;
-    this.economy = new EconomySystem({ balance: config.balance });
-    this.capture = new CaptureSystem({ captureRatePerSecond: config.balance.nodeCaptureRatePerSecond });
+    this.economy = new EconomySystem({ balance: this.config.balance });
+    this.capture = new CaptureSystem({ captureRatePerSecond: this.config.balance.nodeCaptureRatePerSecond });
     this.commands = new CommandSystem();
-    this.deployment = new DeploymentDirector({ config, laneIds: mapDefinition.lanes.map((lane) => lane.id) });
+    this.deployment = new DeploymentDirector({ config: this.config, laneIds: mapDefinition.lanes.map((lane) => lane.id) });
     this.events = [];
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;

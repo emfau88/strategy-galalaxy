@@ -1,6 +1,6 @@
 # Level 1 – Orbital Garden
 
-Status: visuelles und spielerisches Konzept, noch nicht implementiert.
+Status: Umsetzung läuft; Map, Runtime-Art, Ein-Lane-Regeln und Levelauswahl sind integriert, Browserabnahme steht aus.
 
 ![Level-1-Mockup](mockups/level-1-orbital-garden-concept-v1.png)
 

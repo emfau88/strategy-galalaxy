@@ -72,7 +72,7 @@ export class BattleSimulation {
     const direction = forwardDirection(team);
     const typeCounts = new Map();
     const hq = [...this.state.structures.values()].find((structure) => structure.team === team && structure.structureType === "hq");
-    const laneSide = laneId === LANE.LEFT ? -1 : 1;
+    const laneSide = laneId === LANE.LEFT ? -1 : laneId === LANE.RIGHT ? 1 : spawnCycle % 2 ? -1 : 1;
     const launchOrigin = hq ? { x: hq.x + laneSide * 34, y: hq.y + direction * 25 } : null;
     return unitTypes.map((unitType, index) => {
       const pattern = FORMATION[unitType] ?? FORMATION.fighter;

@@ -31,6 +31,11 @@ export const ORBITAL_GARDEN = freeze({
   level: 1,
   title: "ORBITAL GARDEN",
   visualTheme: "orbital_garden",
+  balanceOverrides: freeze({
+    baseWaveDronesPerLane: 2,
+    maxPurchasedReinforcementsPerDeployment: 3,
+    startingEnergy: 270,
+  }),
   bounds: freeze({ width: 420, height: 1280 }),
   lanes: freeze([
     freeze({

@@ -128,16 +128,35 @@ try {
   await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?debug=1&seed=1180` });
   await loaded;
   await waitForGame();
-  let titleState = await send("Runtime.evaluate", { expression: "({ state: window.__strategyGalalaxy.state, difficulty: window.__strategyGalalaxy.match.aiProfile })", returnByValue: true });
-  assert.deepEqual(titleState.result.value, { state: "TITLE", difficulty: "tactician" });
+  let titleState = await send("Runtime.evaluate", { expression: "({ state: window.__strategyGalalaxy.state, difficulty: window.__strategyGalalaxy.match.aiProfile, level: window.__strategyGalalaxy.match.mapDefinition.level })", returnByValue: true });
+  assert.deepEqual(titleState.result.value, { state: "TITLE", difficulty: "tactician", level: 1 });
   const titleScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(resolve(output, "title-420x760.png"), Buffer.from(titleScreenshot.data, "base64"));
-  await touch(210, 424);
+  await touch(210, 454);
   titleState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.aiProfile", returnByValue: true });
   assert.equal(titleState.result.value, "admiral", "difficulty selector is touch-operable");
-  await touch(210, 467);
+  await touch(210, 497);
   titleState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.state", returnByValue: true });
   assert.equal(titleState.result.value, "LIVE_MATCH", "start button begins a live match");
+
+  loaded = waitEvent("Page.loadEventFired");
+  await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&level=1&seed=640` });
+  await loaded;
+  await waitForGame();
+  const gardenState = await send("Runtime.evaluate", {
+    expression: `(() => { const g = window.__strategyGalalaxy; return { map: g.match.simulation.state.map.id, lanes: [...g.match.simulation.state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, playerUnits: g.match.simulation.state.lanes.get('LANE_CENTER').unitIds.get('TEAM_PLAYER').length, slots: g.match.economy.reinforcementLimit('TEAM_PLAYER'), assetFailures: g.loader.errors.length }; })()`,
+    returnByValue: true,
+  });
+  assert.deepEqual(gardenState.result.value, { map: "orbital_garden", lanes: ["LANE_CENTER"], worldHeight: 1280, playerUnits: 2, slots: 3, assetFailures: 0 });
+  const gardenPlayerScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "level-1-player-sector-420x760.png"), Buffer.from(gardenPlayerScreenshot.data, "base64"));
+  await touch(70, 675);
+  const gardenQueue = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.queuedWaves.get('TEAM_PLAYER').get('LANE_CENTER').length", returnByValue: true });
+  assert.equal(gardenQueue.result.value, 1, "Orbital Garden main-lane queue is touch-operable");
+  await send("Runtime.evaluate", { expression: "(() => { const g = window.__strategyGalalaxy; for (let step = 0; step < 60 * 36 && g.state === 'LIVE_MATCH'; step += 1) g.match.advanceLive(1 / 60); g.camera.jumpToWorld(640); })()" });
+  await delay(100);
+  const gardenScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "level-1-orbital-garden-420x760.png"), Buffer.from(gardenScreenshot.data, "base64"));
 
   const reports = [];
   for (const [width, height] of viewports) {

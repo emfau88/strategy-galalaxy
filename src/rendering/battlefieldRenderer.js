@@ -103,6 +103,15 @@ export const renderBattlefieldLayer = (ctx, model) => {
   const view = model.camera?.viewport ?? { x: 0, y: 0, width: model.width, height: model.height };
   const top = view.y;
   const bottom = view.y + view.height;
+  if (map.visualTheme === "orbital_garden") {
+    const garden = asset(model.assets, "background-orbital-garden");
+    if (garden) {
+      ctx.save();
+      ctx.globalAlpha = 0.94;
+      ctx.drawImage(garden, 0, projection.y(0), map.bounds.width, map.bounds.height);
+      ctx.restore();
+    }
+  }
   const fade = ctx.createLinearGradient(0, top, 0, bottom);
   fade.addColorStop(0, "rgba(202,224,239,0)");
   fade.addColorStop(0.16, "rgba(202,224,239,0.045)");
@@ -112,6 +121,7 @@ export const renderBattlefieldLayer = (ctx, model) => {
   ctx.lineWidth = 1;
   ctx.setLineDash([2, 22]);
   for (const lane of map.lanes) {
+    if (map.visualTheme === "orbital_garden") continue;
     ctx.beginPath();
     ctx.moveTo(lane.centerX, projection.y(0));
     ctx.lineTo(lane.centerX, projection.y(map.bounds.height));
@@ -289,9 +299,10 @@ const drawHqBay = (ctx, side, openness, frameTime, color, hpRatio) => {
 const drawHqHangars = (ctx, structure, model, frameTime, color) => {
   const state = model.simulation.state;
   const hpRatio = structure.hp / structure.maxHp;
+  const laneIds = state.map.lanes.map((lane) => lane.id);
   for (const side of [-1, 1]) {
     const screenSide = structure.team === TEAM.PLAYER ? side : -side;
-    const laneId = screenSide < 0 ? LANE.LEFT : LANE.RIGHT;
+    const laneId = laneIds.length === 1 ? laneIds[0] : screenSide < 0 ? LANE.LEFT : LANE.RIGHT;
     const deployedAt = model.director?.lastDeploymentAtFor(structure.team, laneId);
     const delay = screenSide > 0 ? 0.07 : 0;
     const animationAt = Number.isFinite(deployedAt) ? deployedAt + delay : null;
@@ -342,9 +353,12 @@ const drawStructureUpgradeDetails = (ctx, structure, model, size, color) => {
 const drawStructure = (ctx, structure, model, projection) => {
   const state = model.simulation.state;
   const isHq = structure.structureType === "hq";
-  const size = isHq ? 128 : 74;
+  const gardenHq = isHq && state.map.visualTheme === "orbital_garden";
+  const size = gardenHq ? 190 : isHq ? 128 : 74;
+  const spriteWidth = gardenHq ? 226 : size;
+  const spriteHeight = gardenHq ? 150 : size;
   const color = teamColor(structure.team);
-  const sprite = asset(model.assets, isHq ? "structure-hq" : "structure-turret");
+  const sprite = asset(model.assets, gardenHq ? "structure-hq-garden" : isHq ? "structure-hq" : "structure-turret");
   const damaged = state.time - structure.lastDamagedAt < 0.13;
   const hpRatio = structure.hp / structure.maxHp;
   const y = projection.y(structure.y);
@@ -355,7 +369,9 @@ const drawStructure = (ctx, structure, model, projection) => {
     if (damaged) ctx.filter = "brightness(1.9) saturate(0.4)";
     else if (hpRatio <= 0.34) ctx.filter = "brightness(0.72) saturate(0.52)";
     else if (hpRatio <= 0.67) ctx.filter = "brightness(0.88) saturate(0.76)";
-    ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
+    if (gardenHq) ctx.globalCompositeOperation = "screen";
+    ctx.drawImage(sprite, -spriteWidth / 2, -spriteHeight / 2, spriteWidth, spriteHeight);
+    ctx.globalCompositeOperation = "source-over";
     ctx.filter = "none";
   }
   drawStructureUpgradeDetails(ctx, structure, model, size, color);
@@ -366,32 +382,37 @@ const drawStructure = (ctx, structure, model, projection) => {
   drawBar(ctx, structure.x, y + size * 0.45, isHq ? 84 : 50, hpRatio, color, isHq ? 5 : 4);
 };
 
-const drawNode = (ctx, node, frameTime, assets, projection) => {
+const drawNode = (ctx, node, frameTime, assets, projection, visualTheme) => {
   const color = node.ownerTeam === "TEAM_PLAYER" ? "#a6e6f2" : node.ownerTeam === "TEAM_ENEMY" ? "#f3a58e" : "#d9d5ee";
-  const sprite = asset(assets, "structure-node");
+  const sunwell = visualTheme === "orbital_garden";
+  const sprite = asset(assets, sunwell ? "structure-node-sunwell" : "structure-node");
   const y = projection.y(node.y);
   ctx.save();
   ctx.translate(node.x, y);
-  const aura = ctx.createRadialGradient(0, 0, 4, 0, 0, 46);
+  const auraRadius = sunwell ? 104 : 46;
+  const aura = ctx.createRadialGradient(0, 0, 4, 0, 0, auraRadius);
   aura.addColorStop(0, node.ownerTeam ? `${color}35` : "rgba(235,199,139,0.22)");
   aura.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = aura;
   ctx.beginPath();
-  ctx.arc(0, 0, 46, 0, Math.PI * 2);
+  ctx.arc(0, 0, auraRadius, 0, Math.PI * 2);
   ctx.fill();
   if (sprite) {
     ctx.globalCompositeOperation = "screen";
-    ctx.drawImage(sprite, -29, -29, 58, 58);
+    if (sunwell) ctx.drawImage(sprite, -112, -75, 224, 150);
+    else ctx.drawImage(sprite, -29, -29, 58, 58);
     ctx.globalCompositeOperation = "source-over";
   }
   else { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill(); }
   const progress = Math.min(1, Math.abs(node.progress) / 100);
   const progressColor = node.progress > 0 ? "#a6e6f2" : node.progress < 0 ? "#f3a58e" : color;
   ctx.fillStyle = "rgba(7,15,28,0.72)";
-  ctx.fillRect(-21, 24, 42, 3);
+  const barY = sunwell ? 78 : 24;
+  const barWidth = sunwell ? 78 : 42;
+  ctx.fillRect(-barWidth / 2, barY, barWidth, 3);
   ctx.fillStyle = progressColor;
   ctx.globalAlpha = 0.82;
-  ctx.fillRect(-20, 25, 40 * progress, 1.5);
+  ctx.fillRect(-barWidth / 2 + 1, barY + 1, (barWidth - 2) * progress, 1.5);
   if (node.contested) {
     ctx.globalAlpha = 0.5 + Math.sin(frameTime * 6) * 0.18;
     ctx.fillStyle = "#f2cd83";
@@ -475,7 +496,7 @@ export const renderEntityLayer = (ctx, model) => {
     const screenY = projection.y(worldY);
     return screenY >= view.y - padding && screenY <= view.y + view.height + padding;
   };
-  for (const node of nodes.values()) if (visible(node.y, 50)) drawNode(ctx, node, model.frameTime, model.assets, projection);
+  for (const node of nodes.values()) if (visible(node.y, 120)) drawNode(ctx, node, model.frameTime, model.assets, projection, simulation.state.map.visualTheme);
   for (const structure of structures.values()) {
     if (!visible(structure.y, structure.structureType === "hq" ? 80 : 50)) continue;
     ctx.globalAlpha = structure.alive ? 1 : 0.16;

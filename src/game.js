@@ -15,9 +15,11 @@ import { InputRouter } from "./ui/inputRouter.js";
 import { commandActionAt, containsPoint, titleActionAt, utilityActionAt } from "./ui/commandUi.js";
 import { cameraNavigatorRatioAt } from "./ui/cameraUi.js";
 import { AI_PROFILES } from "./simulation/opponentAi.js";
-import { CLASSIC_LANES } from "./data/definitions.js";
+import { CLASSIC_LANES, ORBITAL_GARDEN } from "./data/definitions.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
+const LEVELS = Object.freeze([ORBITAL_GARDEN, CLASSIC_LANES]);
+const configForMap = (map) => ({ ...CONFIG, balance: { ...CONFIG.balance, ...(map.balanceOverrides ?? {}) } });
 
 export class Game {
   constructor(canvas, options = readLaunchOptions()) {
@@ -34,14 +36,15 @@ export class Game {
     this.effects = new PresentationEffects();
     this.sound = new SoundSystem();
     this.lastInput = null;
-    this.selectedLaneId = LANE.LEFT;
+    this.levelIndex = Math.max(0, LEVELS.findIndex((level) => level.level === options.level));
+    this.selectedLaneId = LEVELS[this.levelIndex].lanes[0].id;
     this.commandMenu = "units";
     this.commandFeedback = null;
     this.commandFeedbackUntil = 0;
     this.fullscreenActive = false;
-    this.match = new MatchDirector();
+    this.match = new MatchDirector({ config: configForMap(LEVELS[this.levelIndex]), mapDefinition: LEVELS[this.levelIndex] });
     this.camera = new BattlefieldCamera({
-      worldHeight: CLASSIC_LANES.bounds.height,
+      worldHeight: LEVELS[this.levelIndex].bounds.height,
       designWidth: CONFIG.app.designWidth,
       designHeight: CONFIG.app.designHeight,
       config: CONFIG.camera,
@@ -151,6 +154,17 @@ export class Game {
         this.match.setAiProfile(this.aiProfiles[index]);
         return;
       }
+      if (action?.type === "CYCLE_LEVEL") {
+        const profile = this.match.aiProfile;
+        this.levelIndex = (this.levelIndex + 1) % LEVELS.length;
+        const mapDefinition = LEVELS[this.levelIndex];
+        this.selectedLaneId = mapDefinition.lanes[0].id;
+        this.match = new MatchDirector({ config: configForMap(mapDefinition), mapDefinition, aiProfile: profile });
+        this.camera.setWorldHeight(mapDefinition.bounds.height);
+        this.camera.reset("player");
+        this.sound.play("select");
+        return;
+      }
       if (action?.type !== "START_MATCH") return;
       this.match.start();
       this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
@@ -160,7 +174,7 @@ export class Game {
       this.sound.play("deploy");
       this.sound.vibrate([12, 24, 18]);
     }
-    else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight));
+    else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight, this.match.mapDefinition.lanes.map((lane) => lane.id)));
     else if ([MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(this.match.state)) {
       this.match.restart();
       this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
@@ -254,7 +268,8 @@ export class Game {
     if (!action) return;
     if (action.type === "SELECT_LANE") {
       this.selectedLaneId = action.laneId;
-      this.showFeedback(`${action.laneId === LANE.LEFT ? "LEFT" : "RIGHT"} LANE SELECTED`);
+      const laneLabel = action.laneId === LANE.CENTER ? "MAIN" : action.laneId === LANE.LEFT ? "LEFT" : "RIGHT";
+      this.showFeedback(`${laneLabel} LANE SELECTED`);
       this.sound.play("select");
       return;
     }
@@ -334,6 +349,8 @@ export class Game {
       director: this.match,
       aiProfile: this.match.aiProfile,
       lastAiDecision: this.match.lastAiDecision,
+      mapDefinition: this.match.mapDefinition,
+      selectedLevel: this.match.mapDefinition.level,
       selectedLaneId: this.selectedLaneId,
       commandMenu: this.commandMenu,
       fullscreenActive: this.fullscreenActive,

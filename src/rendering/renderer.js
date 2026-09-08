@@ -23,6 +23,15 @@ export class Renderer {
     ctx.scale(transform.scale, transform.scale);
     const sceneModel = { ...model, width: transform.designWidth, height: transform.designHeight };
     renderBackground(ctx, transform.designWidth, transform.designHeight, model.frameTime, model.assets);
+    if (model.state === "TITLE" && model.mapDefinition?.visualTheme === "orbital_garden") {
+      const garden = model.assets?.get("background-orbital-garden");
+      if (garden) {
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.drawImage(garden, 0, 0, transform.designWidth, transform.designHeight);
+        ctx.restore();
+      }
+    }
     ctx.save();
     if (sceneModel.camera?.viewport) {
       const view = sceneModel.camera.viewport;

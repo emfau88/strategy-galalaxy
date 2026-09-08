@@ -8,7 +8,7 @@ import { computeViewportTransform, responsivePortraitDesignHeight, toDesignPoint
 import { AssetLoader } from "../src/rendering/assetLoader.js";
 import { BattleSimulation, createDemoBattle } from "../src/simulation/battleSimulation.js";
 import { LANE, TEAM } from "../src/core/constants.js";
-import { CLASSIC_LANES, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../src/data/definitions.js";
+import { CLASSIC_LANES, ORBITAL_GARDEN, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../src/data/definitions.js";
 import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 import { AI_PROFILES } from "../src/simulation/opponentAi.js";
@@ -447,6 +447,7 @@ assert.deepEqual(commandActionAt({ x: 160, y: 662 }, "upgrades"), { type: "BUY_U
 assert.deepEqual(commandActionAt({ x: 24, y: 720 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "turret" });
 assert.deepEqual(commandActionAt({ x: 160, y: 720 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "logistics" });
 assert.equal(commandActionAt({ x: 300, y: 662 }), null);
+assert.deepEqual(commandActionAt({ x: 80, y: 610 }, "units", 760, [LANE.CENTER]), { type: "SELECT_LANE", laneId: LANE.CENTER });
 const tallCommandUi = commandUiLayout(909);
 assert.equal(tallCommandUi.panel.y, 725);
 assert.equal(tallCommandUi.deploy.y + tallCommandUi.deploy.height, 895);
@@ -457,8 +458,15 @@ assert.deepEqual(fullscreenActionAt({ x: 380, y: 26 }), { type: "TOGGLE_FULLSCRE
 assert.equal(fullscreenActionAt({ x: 210, y: 26 }), null);
 assert.deepEqual(utilityActionAt({ x: 320, y: 26 }), { type: "TOGGLE_PAUSE" });
 assert.deepEqual(utilityActionAt({ x: 355, y: 26 }), { type: "TOGGLE_SOUND" });
-assert.deepEqual(titleActionAt({ x: 210, y: 424 }), { type: "CYCLE_DIFFICULTY" });
-assert.deepEqual(titleActionAt({ x: 210, y: 467 }), { type: "START_MATCH" });
+assert.deepEqual(titleActionAt({ x: 210, y: 414 }), { type: "CYCLE_LEVEL" });
+assert.deepEqual(titleActionAt({ x: 210, y: 454 }), { type: "CYCLE_DIFFICULTY" });
+assert.deepEqual(titleActionAt({ x: 210, y: 497 }), { type: "START_MATCH" });
+
+const gardenMatch = new MatchDirector({ mapDefinition: ORBITAL_GARDEN });
+gardenMatch.start();
+assert.deepEqual([...gardenMatch.simulation.state.lanes.keys()], [LANE.CENTER]);
+assert.equal(gardenMatch.simulation.state.lanes.get(LANE.CENTER).unitIds.get(TEAM.PLAYER).length, 2);
+assert.equal(gardenMatch.economy.reinforcementLimit(TEAM.PLAYER), 3);
 
 const sound = new SoundSystem();
 assert.equal(sound.userInteracted, false);

@@ -99,6 +99,19 @@ committet und gepusht, damit er direkt getestet werden kann.
 
 Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 
+## Meilenstein 5.5 – Level 1 „Orbital Garden“
+
+- [x] Neue breite Ein-Lane-Karte als reguläres Level 1 definieren.
+- [x] Bisherige Zwei-Lane-Karte unverändert als Level 2 erhalten.
+- [x] Cozy-Orbital-Garden-Hintergrund, Sunwell und Garten-HQ als Runtime-Layer erzeugen und registrieren.
+- [x] Spieler- und KI-Queues, Deployment, Targeting und Navigator auf dynamische Lane-Anzahlen umstellen.
+- [x] Level 1 mit zwei Auto-Drones und drei gekauften Wave-Slots abstimmen.
+- [x] Startscreen um Levelwahl und levelabhängige Kurzanleitung erweitern.
+- [x] Ein-Lane-HUD und beide HQ-Hangars für die Hauptlane anpassen.
+- [ ] Headless-Kernprüfung und Asset-Verifikation bestehen.
+- [ ] Level 1 im echten 420×760-Browser starten, spielen und visuell mit dem Mockup abgleichen.
+- [ ] Stabilen Meilenstein committen und pushen.
+
 - [ ] HQ antippbar machen und ein kontextuelles Kommandomenü als Prototyp öffnen.
 - [ ] Schiffstypen als Drag-and-drop-Chips vom HQ auf Left/Right anbieten.
 - [ ] Tap-Fallback für Drag-and-drop und klare Abbruch-/Refund-Regeln vorsehen.

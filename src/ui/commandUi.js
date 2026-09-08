@@ -23,17 +23,21 @@ export const COMMAND_UI = Object.freeze({
     Object.freeze({ upgradeId: "logistics", x: 154, y: 696, width: 132, height: 50 }),
   ]),
   deploy: Object.freeze({ x: 294, y: 638, width: 110, height: 108 }),
-  titleDifficulty: Object.freeze({ x: 104, y: 408, width: 212, height: 32 }),
-  titleStart: Object.freeze({ x: 104, y: 448, width: 212, height: 38 }),
+  titleLevel: Object.freeze({ x: 104, y: 398, width: 212, height: 32 }),
+  titleDifficulty: Object.freeze({ x: 104, y: 438, width: 212, height: 32 }),
+  titleStart: Object.freeze({ x: 104, y: 478, width: 212, height: 38 }),
 });
 
 const shiftVertically = (rect, offsetY) => Object.freeze({ ...rect, y: rect.y + offsetY });
 
-export const commandUiLayout = (height = 760) => {
+export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT]) => {
   const lowerOffset = Math.max(0, height - 760);
+  const lanes = laneIds.length === 1
+    ? [Object.freeze({ laneId: laneIds[0], x: 16, y: 586, width: 146, height: 44 })]
+    : COMMAND_UI.lanes.filter((rect) => laneIds.includes(rect.laneId));
   return Object.freeze({
     fullscreen: COMMAND_UI.fullscreen,
-    lanes: Object.freeze(COMMAND_UI.lanes.map((rect) => shiftVertically(rect, lowerOffset))),
+    lanes: Object.freeze(lanes.map((rect) => shiftVertically(rect, lowerOffset))),
     panel: Object.freeze({ x: 8, y: 576 + lowerOffset, width: 404, height: 176 }),
     feedbackY: 566 + lowerOffset,
     debugY: 544 + lowerOffset,
@@ -48,8 +52,8 @@ export const commandUiLayout = (height = 760) => {
 export const containsPoint = (rect, point) => point.x >= rect.x && point.x <= rect.x + rect.width && point.y >= rect.y && point.y <= rect.y + rect.height;
 const containsWithSlop = (rect, point, slop = 3) => containsPoint({ x: rect.x - slop, y: rect.y - slop, width: rect.width + slop * 2, height: rect.height + slop * 2 }, point);
 
-export const commandActionAt = (point, menu = "units", height = 760) => {
-  const layout = commandUiLayout(height);
+export const commandActionAt = (point, menu = "units", height = 760, laneIds = [LANE.LEFT, LANE.RIGHT]) => {
+  const layout = commandUiLayout(height, laneIds);
   const lane = layout.lanes.find((rect) => containsWithSlop(rect, point));
   if (lane) return { type: "SELECT_LANE", laneId: lane.laneId };
   if (menu === "units") {
@@ -66,6 +70,7 @@ export const commandActionAt = (point, menu = "units", height = 760) => {
 
 export const titleActionAt = (point, height = 760) => {
   const offsetY = height / 2 - 380;
+  if (containsPoint({ ...COMMAND_UI.titleLevel, y: COMMAND_UI.titleLevel.y + offsetY }, point)) return { type: "CYCLE_LEVEL" };
   if (containsPoint({ ...COMMAND_UI.titleDifficulty, y: COMMAND_UI.titleDifficulty.y + offsetY }, point)) return { type: "CYCLE_DIFFICULTY" };
   if (containsPoint({ ...COMMAND_UI.titleStart, y: COMMAND_UI.titleStart.y + offsetY }, point)) return { type: "START_MATCH" };
   return null;

@@ -22,9 +22,10 @@ const box = (ctx, rect, fill = C.panel, stroke = C.outline, radius = 8) => {
   ctx.fillStyle = fill; ctx.fill();
   if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
 };
-const laneName = (laneId) => (laneId === LANE.LEFT ? "LEFT" : "RIGHT");
+const laneName = (laneId) => (laneId === LANE.CENTER ? "MAIN" : laneId === LANE.LEFT ? "LEFT" : "RIGHT");
 const queue = (model, laneId, team = TEAM.PLAYER) => model.director?.queuedWaves.get(team).get(laneId) ?? [];
-const purchasedCount = (model, team = TEAM.PLAYER) => [LANE.LEFT, LANE.RIGHT].reduce((sum, laneId) => sum + queue(model, laneId, team).length, 0);
+const laneIdsFor = (model) => model.simulation?.state.map.lanes.map((lane) => lane.id) ?? model.mapDefinition?.lanes.map((lane) => lane.id) ?? [LANE.LEFT, LANE.RIGHT];
+const purchasedCount = (model, team = TEAM.PLAYER) => laneIdsFor(model).reduce((sum, laneId) => sum + queue(model, laneId, team).length, 0);
 const structure = (simulation, id) => simulation?.state.structures.get(id);
 const ratio = (target) => target?.alive ? Math.max(0, target.hp / target.maxHp) : 0;
 const laneStrength = (model, laneId, team) => {
@@ -108,12 +109,16 @@ const strategicNavigator = (ctx, model) => {
   const { track } = layout;
   const worldHeight = Math.max(1, camera.worldHeight);
   const trackY = (worldY) => track.y + Math.max(0, Math.min(1, worldY / worldHeight)) * track.height;
-  const laneX = (laneId) => track.x + (laneId === LANE.LEFT ? 4 : 10);
+  const laneIds = state.map.lanes.map((lane) => lane.id);
+  const laneX = (laneId) => {
+    const index = Math.max(0, laneIds.indexOf(laneId));
+    return laneIds.length === 1 ? track.x + track.width / 2 : track.x + 4 + index * 6;
+  };
 
   box(ctx, { x: track.x - 3, y: track.y - 5, width: track.width + 6, height: track.height + 10 }, "rgba(8,18,34,0.68)", "rgba(178,219,234,0.2)", 7);
   ctx.strokeStyle = "rgba(210,232,241,0.22)";
   ctx.lineWidth = 1;
-  for (const x of [laneX(LANE.LEFT), laneX(LANE.RIGHT)]) {
+  for (const x of laneIds.map(laneX)) {
     ctx.beginPath();
     ctx.moveTo(x, track.y);
     ctx.lineTo(x, track.y + track.height);
@@ -137,7 +142,7 @@ const strategicNavigator = (ctx, model) => {
   }
   ctx.globalAlpha = 1;
 
-  for (const laneId of [LANE.LEFT, LANE.RIGHT]) {
+  for (const laneId of laneIds) {
     const lane = state.lanes.get(laneId);
     for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
       const units = lane.unitIds.get(team).map((id) => state.units.get(id)).filter((unit) => unit?.alive);
@@ -161,7 +166,7 @@ const strategicNavigator = (ctx, model) => {
   for (const event of recentOffscreenCombat) {
     const age = state.time - event.time;
     const progress = Math.max(0, Math.min(1, age / 0.9));
-    const laneId = event.laneId ?? (event.x < state.map.bounds.width / 2 ? LANE.LEFT : LANE.RIGHT);
+    const laneId = event.laneId ?? laneIds[Math.min(laneIds.length - 1, Math.floor(event.x / state.map.bounds.width * laneIds.length))];
     const x = laneX(laneId);
     const y = trackY(event.y);
     ctx.globalAlpha = 0.85 * (1 - progress);
@@ -224,7 +229,9 @@ const commandPanel = (ctx, model, ui) => {
   text(ctx, "NEXT", ui.deploy.x + 55, ui.deploy.y + 25, 10, C.muted, "center");
   text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, ui.deploy.x + 55, ui.deploy.y + 57, 23, model.queueLocked ? C.gold : C.text, "center");
   text(ctx, model.queueLocked ? "LOCKED" : `SLOTS ${total}/${limit}`, ui.deploy.x + 55, ui.deploy.y + 88, 9, model.queueLocked || total >= limit ? C.gold : "#d7f2f2", "center");
-  const tutorial = model.activeBattleSeconds < 10 && total === 0 ? "PICK A LANE · QUEUE YOUR NEXT WAVE" : null;
+  const tutorial = model.activeBattleSeconds < 10 && total === 0
+    ? (laneIdsFor(model).length === 1 ? "BUILD YOUR NEXT WAVE · HOLD THE SUNWELL" : "PICK A LANE · QUEUE YOUR NEXT WAVE")
+    : null;
   const feedback = model.commandFeedback ?? tutorial;
   if (feedback) {
     box(ctx, { x: 78, y: ui.feedbackY - 9, width: 264, height: 18 }, "rgba(10,22,42,0.88)", null, 7);
@@ -239,17 +246,20 @@ const title = (ctx, model) => {
   text(ctx, model.fullscreenActive ? "×" : "□", 395, 29, 16, C.text, "center");
   box(ctx, { x: 343, y: 12, width: 30, height: 34 }, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
   text(ctx, model.soundEnabled ? "♪" : "×", 358, 29, 13, model.soundEnabled ? C.text : C.muted, "center");
-  box(ctx, { x: 52, y: 264 + offsetY, width: model.width - 104, height: 234 }, "rgba(16, 33, 58, 0.84)", C.player, 12);
-  text(ctx, "STRATEGY GALALAXY", model.width / 2, 294 + offsetY, 19, C.text, "center");
-  text(ctx, "PLAN · DEPLOY · WATCH THE LINE", model.width / 2, 320 + offsetY, 11, C.muted, "center");
-  text(ctx, "1  DRAG TO EXPLORE THE FRONT", model.width / 2, 352 + offsetY, 10, C.text, "center", 600);
-  text(ctx, "2  PICK LEFT OR RIGHT", model.width / 2, 372 + offsetY, 10, C.text, "center", 600);
-  text(ctx, "3  QUEUE UP TO 4 SHIPS", model.width / 2, 392 + offsetY, 10, C.text, "center", 600);
-  box(ctx, { ...ui.fullscreen, x: 104, y: 408 + offsetY, width: 212, height: 32 }, "rgba(37,72,93,0.82)", "rgba(190,229,239,0.32)", 8);
+  const singleLane = model.mapDefinition?.lanes.length === 1;
+  box(ctx, { x: 52, y: 248 + offsetY, width: model.width - 104, height: 280 }, "rgba(16, 33, 58, 0.84)", C.player, 12);
+  text(ctx, "STRATEGY GALALAXY", model.width / 2, 278 + offsetY, 19, C.text, "center");
+  text(ctx, "PLAN · DEPLOY · WATCH THE LINE", model.width / 2, 304 + offsetY, 11, C.muted, "center");
+  text(ctx, "1  DRAG TO EXPLORE THE FRONT", model.width / 2, 334 + offsetY, 10, C.text, "center", 600);
+  text(ctx, singleLane ? "2  HOLD THE ORBITAL SUNWELL" : "2  PICK LEFT OR RIGHT", model.width / 2, 354 + offsetY, 10, C.text, "center", 600);
+  text(ctx, singleLane ? "3  BUILD A THREE-SHIP WAVE" : "3  QUEUE UP TO 4 SHIPS", model.width / 2, 374 + offsetY, 10, C.text, "center", 600);
+  box(ctx, { x: 104, y: 398 + offsetY, width: 212, height: 32 }, "rgba(83,78,65,0.88)", "rgba(239,199,127,0.56)", 8);
+  text(ctx, `LEVEL ${model.selectedLevel ?? 1} · ${model.mapDefinition?.title ?? "ORBITAL GARDEN"}`, model.width / 2, 414 + offsetY, 10, C.gold, "center");
+  box(ctx, { ...ui.fullscreen, x: 104, y: 438 + offsetY, width: 212, height: 32 }, "rgba(37,72,93,0.82)", "rgba(190,229,239,0.32)", 8);
   const difficulty = { cadet: "CADET · RELAXED", tactician: "TACTICIAN · NORMAL", admiral: "ADMIRAL · HARD" }[model.aiProfile] ?? "TACTICIAN · NORMAL";
-  text(ctx, difficulty, model.width / 2, 424 + offsetY, 10, C.text, "center");
-  box(ctx, { x: 104, y: 448 + offsetY, width: 212, height: 38 }, "rgba(54,139,145,0.88)", "#b8edf0", 9);
-  text(ctx, "START MATCH", model.width / 2, 467 + offsetY, 11, C.text, "center");
+  text(ctx, difficulty, model.width / 2, 454 + offsetY, 10, C.text, "center");
+  box(ctx, { x: 104, y: 478 + offsetY, width: 212, height: 38 }, "rgba(54,139,145,0.88)", "#b8edf0", 9);
+  text(ctx, "START MATCH", model.width / 2, 497 + offsetY, 11, C.text, "center");
 };
 const endState = (ctx, model) => {
   const win = model.state === MATCH_STATE.VICTORY;
@@ -270,7 +280,7 @@ const paused = (ctx, model) => {
 
 export const renderUiLayer = (ctx, model) => {
   if (model.state === MATCH_STATE.TITLE) return title(ctx, model);
-  const ui = commandUiLayout(model.height);
+  const ui = commandUiLayout(model.height, laneIdsFor(model));
   header(ctx, model, ui);
   if ((model.state === MATCH_STATE.LIVE_MATCH || model.state === MATCH_STATE.PAUSED) && model.simulation) {
     strategicNavigator(ctx, model);
