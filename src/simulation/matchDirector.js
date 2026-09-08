@@ -7,13 +7,15 @@ import { CommandSystem } from "./commandSystem.js";
 import { DeploymentDirector } from "./deploymentDirector.js";
 import { EconomySystem } from "./economySystem.js";
 import { AI_PROFILES, INVESTMENT_BIASES, OpponentAi } from "./opponentAi.js";
+import { CLASSIC_LANES } from "../data/definitions.js";
 
 /** Coordinates a continuous match; specialized systems own combat, economy, capture, and deployment. */
 export class MatchDirector {
-  constructor({ config = CONFIG, aiProfile = AI_PROFILES.TACTICIAN, aiPreferredLane = LANE.LEFT, aiInvestmentBias = INVESTMENT_BIASES.BALANCED } = {}) {
+  constructor({ config = CONFIG, mapDefinition = CLASSIC_LANES, aiProfile = AI_PROFILES.TACTICIAN, aiPreferredLane = null, aiInvestmentBias = INVESTMENT_BIASES.BALANCED } = {}) {
     this.config = config;
+    this.mapDefinition = mapDefinition;
     this.aiProfile = aiProfile;
-    this.aiPreferredLane = aiPreferredLane;
+    this.aiPreferredLane = aiPreferredLane ?? mapDefinition.lanes[0].id;
     this.aiInvestmentBias = aiInvestmentBias;
     this.state = MATCH_STATE.TITLE;
     this.resumeState = null;
@@ -22,7 +24,7 @@ export class MatchDirector {
     this.economy = new EconomySystem({ balance: config.balance });
     this.capture = new CaptureSystem({ captureRatePerSecond: config.balance.nodeCaptureRatePerSecond });
     this.commands = new CommandSystem();
-    this.deployment = new DeploymentDirector({ config });
+    this.deployment = new DeploymentDirector({ config, laneIds: mapDefinition.lanes.map((lane) => lane.id) });
     this.events = [];
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
@@ -35,8 +37,8 @@ export class MatchDirector {
     this.resumeState = null;
     this.activeMatchSeconds = 0;
     this.economy = new EconomySystem({ balance: this.config.balance });
-    this.simulation = new BattleSimulation({ state: createBattleState(), economy: this.economy });
-    this.deployment = new DeploymentDirector({ config: this.config });
+    this.simulation = new BattleSimulation({ state: createBattleState({ map: this.mapDefinition }), economy: this.economy });
+    this.deployment = new DeploymentDirector({ config: this.config, laneIds: this.mapDefinition.lanes.map((lane) => lane.id) });
     this.events = [{ type: "MATCH_STARTED", state: this.state }];
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
@@ -122,7 +124,7 @@ export class MatchDirector {
 
   planAi({ revise = false } = {}) {
     if (revise) {
-      for (const laneId of [LANE.LEFT, LANE.RIGHT]) {
+      for (const laneId of this.mapDefinition.lanes.map((lane) => lane.id)) {
         for (const entry of [...this.queuedWaves.get(TEAM.ENEMY).get(laneId)].reverse()) {
           this.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.ENEMY, laneId, queueEntryId: entry.id });
         }

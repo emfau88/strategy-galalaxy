@@ -2,14 +2,17 @@
 export const ASSET_GROUPS = Object.freeze({
   boot: Object.freeze({
     "background-placeholder": "assets/environment/strategy-galaxy-background-v1.png",
+    "background-orbital-garden": "assets/environment/orbital-garden-background-v1.png",
     "background-void": "assets/environment/void.png",
     "background-stars": "assets/environment/stars.png",
     "background-planet": "assets/environment/planet.png",
     "background-asteroid": "assets/environment/asteroid.png",
     "structure-hq": "assets/structures/command-hq-topdown-v3.png",
+    "structure-hq-garden": "assets/structures/orbital-garden-hq-v1.png",
     "structure-turret": "assets/structures/defense-turret-base-topdown-v2.png",
     "structure-turret-head": "assets/structures/defense-turret-head-topdown-v3.png",
     "structure-node": "assets/structures/energy-relay-topdown-v1.png",
+    "structure-node-sunwell": "assets/structures/orbital-sunwell-v1.png",
     "nairan-scout": "assets/factions/nairan/scout.png",
     "nairan-fighter": "assets/factions/nairan/fighter.png",
     "nairan-bomber": "assets/factions/nairan/bomber.png",

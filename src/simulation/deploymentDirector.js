@@ -1,14 +1,15 @@
 import { LANE, TEAM } from "../core/constants.js";
 
-const laneIds = Object.freeze([LANE.LEFT, LANE.RIGHT]);
+const defaultLaneIds = Object.freeze([LANE.LEFT, LANE.RIGHT]);
 const teams = Object.freeze([TEAM.PLAYER, TEAM.ENEMY]);
-const emptyTeamLanes = () => new Map(teams.map((team) => [team, new Map(laneIds.map((laneId) => [laneId, []]))]));
-const emptyDeploymentTimes = () => new Map(teams.map((team) => [team, new Map(laneIds.map((laneId) => [laneId, null]))]));
+const emptyTeamLanes = (laneIds) => new Map(teams.map((team) => [team, new Map(laneIds.map((laneId) => [laneId, []]))]));
+const emptyDeploymentTimes = (laneIds) => new Map(teams.map((team) => [team, new Map(laneIds.map((laneId) => [laneId, null]))]));
 
 /** Owns the continuous deployment cadence and both teams' future waves. */
 export class DeploymentDirector {
-  constructor({ config }) {
+  constructor({ config, laneIds = defaultLaneIds }) {
     this.config = config;
+    this.laneIds = [...laneIds];
     this.reset();
   }
 
@@ -16,9 +17,9 @@ export class DeploymentDirector {
     this.cycleNumber = 0;
     this.timeUntilDeployment = this.config.timing.deploymentIntervalSeconds;
     this.lastDeploymentAt = null;
-    this.lastDeploymentAtByTeamLane = emptyDeploymentTimes();
-    this.queuedWaves = emptyTeamLanes();
-    this.baseWaveBacklog = emptyTeamLanes();
+    this.lastDeploymentAtByTeamLane = emptyDeploymentTimes(this.laneIds);
+    this.queuedWaves = emptyTeamLanes(this.laneIds);
+    this.baseWaveBacklog = emptyTeamLanes(this.laneIds);
     this.nextQueueSequence = 1;
   }
 
@@ -48,7 +49,7 @@ export class DeploymentDirector {
   deploy(simulation) {
     const deployment = [];
     for (const team of teams) {
-      for (const laneId of laneIds) {
+      for (const laneId of this.laneIds) {
         const pendingBase = this.baseWaveBacklog.get(team).get(laneId);
         const baseEntries = [...pendingBase, ...Array.from({ length: this.baseWaveSize(simulation.state.time) }, () => "drone")];
         const paidEntries = this.queuesFor(team).get(laneId);

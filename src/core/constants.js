@@ -15,6 +15,7 @@ export const TEAM = Object.freeze({
 });
 
 export const LANE = Object.freeze({
+  CENTER: "LANE_CENTER",
   LEFT: "LANE_LEFT",
   RIGHT: "LANE_RIGHT",
 });

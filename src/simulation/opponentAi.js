@@ -1,7 +1,6 @@
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
 import { STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
 
-const lanes = Object.freeze([LANE.LEFT, LANE.RIGHT]);
 const opponentOf = (team) => (team === TEAM.PLAYER ? TEAM.ENEMY : TEAM.PLAYER);
 export const AI_PROFILES = Object.freeze({ CADET: "cadet", TACTICIAN: "tactician", ADMIRAL: "admiral" });
 export const INVESTMENT_BIASES = Object.freeze({ BALANCED: "balanced", FLEET: "fleet", ECONOMY: "economy", WEAPONS: "weapons", LOGISTICS: "logistics" });
@@ -13,7 +12,7 @@ const unitStrength = (unit) => {
 };
 
 const turretStrength = (state, team, laneId) => {
-  const turret = state.structures.get(`${team === TEAM.PLAYER ? "player" : "enemy"}-${laneId === LANE.LEFT ? "left" : "right"}-turret`);
+  const turret = [...state.structures.values()].find((structure) => structure.team === team && structure.laneId === laneId && structure.structureType === "turret");
   if (!turret?.alive) return 0;
   return (STRUCTURE_DEFINITIONS.turret.damage * 5 + STRUCTURE_DEFINITIONS.turret.maxHp * 0.1) * (turret.hp / turret.maxHp);
 };
@@ -70,7 +69,7 @@ export class OpponentAi {
 
   plan(director) {
     if (director.state !== MATCH_STATE.LIVE_MATCH || director.queueLocked || !director.simulation) return { ok: false, reason: "WRONG_PHASE" };
-    const assessments = lanes.map((laneId) => this.laneAssessment(director, laneId));
+    const assessments = director.simulation.state.map.lanes.map((lane) => this.laneAssessment(director, lane.id));
     const defense = [...assessments].sort((left, right) => right.threat - left.threat || this.laneTieBreak(left, right))[0];
     const push = [...assessments].sort((left, right) => right.opportunity - left.opportunity || this.laneTieBreak(left, right))[0];
     const purchases = [];
