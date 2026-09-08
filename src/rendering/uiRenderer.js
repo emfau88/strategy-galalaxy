@@ -148,6 +148,28 @@ const strategicNavigator = (ctx, model) => {
     }
   }
 
+  const recentOffscreenCombat = state.events.filter((event) => (
+    (event.type === "hit" || event.type === "destroyed")
+    && Number.isFinite(event.time)
+    && Number.isFinite(event.y)
+    && state.time - event.time < 0.9
+    && (event.y < camera.y || event.y > camera.y + camera.viewport.height)
+  )).slice(-8);
+  for (const event of recentOffscreenCombat) {
+    const age = state.time - event.time;
+    const progress = Math.max(0, Math.min(1, age / 0.9));
+    const laneId = event.laneId ?? (event.x < state.map.bounds.width / 2 ? LANE.LEFT : LANE.RIGHT);
+    const x = laneX(laneId);
+    const y = trackY(event.y);
+    ctx.globalAlpha = 0.85 * (1 - progress);
+    ctx.strokeStyle = event.type === "destroyed" ? C.gold : event.team === TEAM.PLAYER ? C.player : C.enemy;
+    ctx.lineWidth = event.type === "destroyed" ? 2 : 1;
+    ctx.beginPath();
+    ctx.arc(x, y, 2.5 + progress * 4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
   const windowTop = trackY(camera.y);
   const windowBottom = trackY(camera.y + camera.viewport.height);
   ctx.strokeStyle = C.gold;

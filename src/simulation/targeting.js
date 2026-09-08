@@ -1,5 +1,5 @@
 import { STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
-import { LANE, TEAM } from "../core/constants.js";
+import { TEAM } from "../core/constants.js";
 import { enemyOf, laneFor } from "./battleState.js";
 import { UNIT_STATE } from "./entities.js";
 
@@ -98,9 +98,8 @@ export const acquireStructureTarget = (state, structure, positions = null) => {
   const candidates = laneIds.flatMap((laneId) => laneFor(state, laneId).unitIds.get(enemyOf(structure.team)))
     .map((id) => state.units.get(id))
     .filter((unit) => unit?.alive && !unit.launching && inRange(positioned(structure, positions), positioned(unit, positions), definition.attackRange));
-  const mirroredTieLane = structure.team === TEAM.PLAYER ? LANE.LEFT : LANE.RIGHT;
   candidates.sort((a, b) => squaredDistance(positioned(structure, positions), positioned(a, positions)) - squaredDistance(positioned(structure, positions), positioned(b, positions))
-    || Number(b.laneId === mirroredTieLane) - Number(a.laneId === mirroredTieLane)
+    || a.laneId.localeCompare(b.laneId)
     || a.id.localeCompare(b.id));
   return candidates[0] ?? null;
 };

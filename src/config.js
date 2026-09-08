@@ -25,8 +25,8 @@ export const CONFIG = Object.freeze({
   }),
   caps: Object.freeze({
     unitsPerLaneTeam: 40,
-    projectilesPerLaneTeam: 48,
-    projectiles: 180,
+    projectilesPerLaneTeam: 64,
+    projectiles: 220,
     particles: 240,
   }),
   balance: Object.freeze({

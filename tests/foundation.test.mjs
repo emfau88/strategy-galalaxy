@@ -13,6 +13,7 @@ import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 import { AI_PROFILES } from "../src/simulation/opponentAi.js";
 import { emitSimulationEvent } from "../src/simulation/battleState.js";
+import { acquireStructureTarget } from "../src/simulation/targeting.js";
 import { ASSET_GROUPS } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { SoundSystem } from "../src/audio/soundSystem.js";
@@ -100,10 +101,19 @@ assert.ok(UNIT_DEFINITIONS.bomber.damage > UNIT_DEFINITIONS.fighter.damage);
 assert.ok(UNIT_DEFINITIONS.fighter.fireInterval < UNIT_DEFINITIONS.frigate.fireInterval);
 assert.equal(CONFIG.timing.deploymentIntervalSeconds, 22);
 assert.equal(CONFIG.timing.deploymentLockSeconds, 2);
-assert.equal(CONFIG.caps.projectilesPerLaneTeam, 48);
+assert.equal(CONFIG.caps.projectilesPerLaneTeam, 64);
 assert.equal((CLASSIC_LANES.structures.find((structure) => structure.id === "player-hq").y + CLASSIC_LANES.structures.find((structure) => structure.id === "enemy-hq").y) / 2, CLASSIC_LANES.lanes[0].node.y);
 assert.equal(UNIT_DEFINITIONS.battlecruiser.enabled, false);
 assert.equal(UNIT_DEFINITIONS.dreadnought.enabled, false);
+
+const structureTieSimulation = new BattleSimulation();
+structureTieSimulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 105, y: 150 });
+structureTieSimulation.spawnUnit(TEAM.PLAYER, LANE.RIGHT, "scout", { x: 315, y: 150 });
+structureTieSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 105, y: 1030 });
+structureTieSimulation.spawnUnit(TEAM.ENEMY, LANE.RIGHT, "scout", { x: 315, y: 1030 });
+const enemyHqTieTarget = acquireStructureTarget(structureTieSimulation.state, structureTieSimulation.state.structures.get("enemy-hq"));
+const playerHqTieTarget = acquireStructureTarget(structureTieSimulation.state, structureTieSimulation.state.structures.get("player-hq"));
+assert.equal(enemyHqTieTarget.laneId, playerHqTieTarget.laneId, "mirrored HQs resolve equal-distance targets identically");
 
 const hqSimulation = new BattleSimulation();
 const enemyTurret = hqSimulation.state.structures.get("enemy-left-turret");
@@ -138,6 +148,22 @@ for (let index = 0; index < CONFIG.caps.projectilesPerLaneTeam + 5; index += 1) 
 }
 assert.equal(projectileBudget.state.projectiles.size, CONFIG.caps.projectilesPerLaneTeam);
 assert.ok(projectileBudget.state.events.some((event) => event.type === "projectile_rejected" && event.reason === "lane_team_budget"));
+
+const salvoSimulation = new BattleSimulation();
+const salvoScout = salvoSimulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 105, y: 600, spawnCycle: 61 });
+const salvoTarget = salvoSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 105, y: 540, spawnCycle: 61 });
+salvoSimulation.fire(salvoScout, salvoTarget, UNIT_DEFINITIONS.scout);
+assert.equal(salvoSimulation.state.projectiles.size, 2, "scout fire is presented as a two-shot salvo");
+const salvoDamage = [...salvoSimulation.state.projectiles.values()].reduce((sum, projectile) => sum + projectile.damage, 0);
+assert.equal(salvoDamage, UNIT_DEFINITIONS.scout.damage, "extra projectiles do not multiply salvo damage");
+const hardpointSimulation = new BattleSimulation();
+const hardpointFrigate = hardpointSimulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "frigate", { x: 105, y: 620, spawnCycle: 62 });
+const hardpointTarget = hardpointSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "frigate", { x: 105, y: 520, spawnCycle: 62 });
+hardpointFrigate.heading = 0;
+hardpointSimulation.fire(hardpointFrigate, hardpointTarget, UNIT_DEFINITIONS.frigate);
+const broadsideShots = [...hardpointSimulation.state.projectiles.values()];
+assert.equal(broadsideShots.length, 3);
+assert.equal(new Set(broadsideShots.map((projectile) => Math.round(projectile.x))).size, 3, "frigate salvos originate at three hull hardpoints");
 
 const boundedEvents = new BattleSimulation();
 for (let index = 0; index < 1100; index += 1) emitSimulationEvent(boundedEvents.state, { type: "stress_event" });

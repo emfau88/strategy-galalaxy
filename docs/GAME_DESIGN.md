@@ -78,9 +78,9 @@ Permanent health bars are reserved for Headquarters and turrets. Unit bars appea
 
 Nairan represents the player and Kla'ed the opponent. Runtime visuals layer engine animation behind the hull, weapon animation over it, shield feedback on damage and a class-specific destruction strip on death. Animation frames never decide damage or hit timing.
 
-Projectile behavior and projectile art are separate data. Scouts use small shots, Fighters fast salvos, Bombers missiles/torpedoes with bounded homing and real position trails, and Frigates heavier rays or bullets. Muzzle flashes, hit sparks and explosions remain short and size-aware.
+Projectile behavior and projectile art are separate data. Scouts use paired small shots, Fighters fast three-projectile salvos, Bombers missiles/torpedoes with bounded homing and real position trails, and Frigates fire three heavy rounds from hull-spaced broadside hardpoints. Salvo damage is divided between projectiles, so spectacle does not secretly multiply DPS. Muzzle flashes, hit sparks and explosions remain short and size-aware. Shield feedback lasts longer on heavy ships, and destruction strips preserve the ship's final heading.
 
-Budgets are bounded. In particular, each team and lane has its own projectile allowance, with a higher global cap retained only as a safety net. This prevents one busy lane from suppressing the other team’s fire.
+Budgets are bounded. In particular, each team and lane has its own projectile allowance, with a higher global cap retained only as a safety net. Partial salvos degrade safely at the cap. This prevents one busy lane from suppressing the other team’s fire. Recent offscreen hits and destructions pulse at their world position on the strategic navigator while the existing throttled combat audio remains audible.
 
 ## Mobile interface
 

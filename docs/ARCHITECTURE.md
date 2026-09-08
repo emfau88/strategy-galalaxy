@@ -74,7 +74,7 @@ input or AI intent
 - Unit velocity and heading are authoritative simulation values. Acceleration, arrival steering, visual spacing and heavy-ship broadside alignment remain deterministic and renderer-independent.
 - Units never change lanes.
 - Movement and targeting read a per-step position snapshot; updates alternate their stable team order and damage resolves as a batch. This removes sequential side bias, and simultaneous HQ destruction produces `DRAW`.
-- Projectile behavior is defined in `src/data/definitions.js`; art metadata is defined separately in `src/data/visuals.js`.
+- Projectile behavior, salvo count and hardpoint spacing are defined in `src/data/definitions.js`; art metadata is defined separately in `src/data/visuals.js`. Total attack damage is divided across salvo projectiles.
 - Per-team/per-lane projectile budgets protect fairness; a global cap is a final memory guard.
 - Trails keep only a bounded position history.
 - Capture power is derived from living ships currently inside a Node.

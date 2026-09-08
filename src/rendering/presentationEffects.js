@@ -1,6 +1,6 @@
 import { fleetVisualFor } from "../data/visuals.js";
 
-const MAX_EFFECTS = 80;
+const MAX_EFFECTS = 120;
 
 export class PresentationEffects {
   constructor() {
@@ -24,7 +24,7 @@ export class PresentationEffects {
         const scale = event.entityType === "hq" ? 2.2 : event.entityType === "turret" ? 1.65 : event.entityType === "frigate" ? 1.35 : event.entityType === "drone" ? 0.62 : 0.85;
         const destruction = fleetVisualFor(event.team, event.entityType)?.destruction;
         const duration = destruction ? destruction.frameCount / destruction.fps : 0.66 * scale;
-        this.add({ type: "destroyed", x: event.x, y: event.y, team: event.team, entityType: event.entityType, seed, scale, life: duration, maxLife: duration });
+        this.add({ type: "destroyed", x: event.x, y: event.y, heading: event.heading, team: event.team, entityType: event.entityType, seed, scale, life: duration, maxLife: duration });
       }
     }
     if (sequenced && events.length) this.lastEventSequence = Math.max(this.lastEventSequence, events.at(-1).sequence);

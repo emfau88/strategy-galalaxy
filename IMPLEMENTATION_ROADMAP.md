@@ -1,6 +1,6 @@
 # Strategy Galalaxy – aktuelle Umbau-Roadmap
 
-Stand: 2026-09-07
+Stand: 2026-09-08
 
 Diese Datei ist der lebende Arbeitsplan für den Umbau zu größeren, langsameren und
 lesbareren Weltraumschlachten. Abgeschlossene Punkte werden erst nach automatischer
@@ -68,18 +68,18 @@ committet und gepusht, damit er direkt getestet werden kann.
 - [x] Sparen durch einen niedrigeren Energie-Cap und zunehmende Opportunitätskosten begrenzen.
 - [x] KI-Profile und Messläufe um nachvollziehbare Investitionsstrategien erweitern.
 - [x] Reproduzierbare Experimentmatrix für Rush, Greed, Tech und Mischstrategien ergänzen.
-- [ ] Meilenstein committen und pushen.
+- [x] Meilenstein committen und pushen (`efb5f1d`).
 
 ## Meilenstein 5 – Schlachtinszenierung und Asset-Tiefe
 
-- [ ] Projektilbudgets pro Sichtfenster, Lane und Team prüfen und gezielt erhöhen.
-- [ ] Salven, Tracer, Raketen, Mündungsblitze und Trefferfeedback rollenabhängig verdichten.
-- [ ] Breitseitenwaffen an mehrere sichtbare Hardpoints koppeln.
-- [ ] Schild-, Schadens- und Zerstörungslayer bei größeren Schiffen besser lesbar machen.
-- [ ] Offscreen-Kampf durch Kartenleisten-Signale und dezentes Audio verständlich halten.
-- [ ] Atlas-/Transparenzränder untersuchen und nur bei messbarem Nutzen zuschneiden.
-- [ ] Mobile Framezeit, Projectile Caps, Trails und Event-Historie stressprüfen.
-- [ ] Meilenstein committen und pushen.
+- [x] Projektilbudgets pro Lane und Team prüfen und gezielt erhöhen.
+- [x] Salven, Tracer, Raketen, Mündungsblitze und Trefferfeedback rollenabhängig verdichten.
+- [x] Breitseitenwaffen an mehrere sichtbare Hardpoints koppeln.
+- [x] Schild-, Schadens- und Zerstörungslayer bei größeren Schiffen besser lesbar machen.
+- [x] Offscreen-Kampf durch Kartenleisten-Signale und dezentes Audio verständlich halten.
+- [x] Atlas-/Transparenzränder untersuchen und vorhandene Laufzeit-Crops weiterverwenden.
+- [x] Mobile Framezeit, Projectile Caps, Trails und Event-Historie stressprüfen.
+- [x] Meilenstein committen und pushen.
 
 ## Meilenstein 6 – alternatives HQ-Kommandomenü (Experiment)
 
@@ -105,8 +105,9 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 
 ## Aktueller nächster Schritt
 
-Meilenstein 4 gezielt prüfen, committen und pushen. Danach beginnt Meilenstein 5
-mit Salven, mehreren Breitseiten-Hardpoints und besserer Offscreen-Kampfmeldung.
+Die verbindlichen Meilensteine 1 bis 5 sind umgesetzt. Als nächstes folgt ein manueller
+Playtest des neuen Kampfmaßstabs und eine größere Balance-Matrix; das alternative
+HQ-Kommandomenü aus Meilenstein 6 bleibt bis zu diesem Spielgefühl-Test bewusst ein Experiment.
 
 ## Letzte verifizierte Messung
 
@@ -141,3 +142,11 @@ Investment-Meilenstein 4, je zwei Matches für fünf Strategiepaarungen:
 - Rush, Greed, Weapons, Logistics und Balanced erzeugen messbar verschiedene Ausgabenprofile
 - jede Paarung beendete beide Matches ohne technischen Timeout
 - symmetrisches Balanced-Paar endete 1:1 mit exakt gleichen Ausgaben
+
+Inszenierungs-Meilenstein 5:
+
+- dichter 90-Sekunden-Stresstest: maximal 92 Projektile bei 64 pro Lane/Team und 220 global
+- Trails blieben auf 10 Punkte und die Event-Historie auf 1024 Einträge begrenzt
+- Browserprüfung auf allen fünf Ziel-Viewports ohne Konsolen-, Netzwerk-, Kamera- oder Touchfehler
+- vier gespiegelte Tactician-Matches endeten 2:2 ohne Draw oder Timeout
+- der kurze Admiral-Smoke endete 4:0 für die Spielerseite; deshalb bleibt der globale Balance-/Symmetrie-Gate bis zur größeren Matrix offen

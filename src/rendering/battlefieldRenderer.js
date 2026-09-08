@@ -441,7 +441,17 @@ export const renderEntityLayer = (ctx, model) => {
     }
     else { ctx.fillStyle = teamColor(unit.team); ctx.beginPath(); ctx.arc(0, 0, size * 0.3, 0, Math.PI * 2); ctx.fill(); }
     if (visual?.weapon) drawTimedStrip(ctx, asset(model.assets, visual.weapon.assetKey), visual.weapon, frameSize, simulation.state.time - unit.lastShotAt, displaySize, 0.42);
-    if (visual?.shield) drawTimedStrip(ctx, asset(model.assets, visual.shield.assetKey), visual.shield, frameSize, simulation.state.time - unit.lastDamagedAt, displaySize, 0.5);
+    if (visual?.shield) drawTimedStrip(ctx, asset(model.assets, visual.shield.assetKey), visual.shield, frameSize, simulation.state.time - unit.lastDamagedAt, displaySize, unit.unitType === "frigate" ? 0.82 : 0.62);
+    const damageAge = simulation.state.time - unit.lastDamagedAt;
+    if ((unit.unitType === "frigate" || unit.unitType === "bomber") && damageAge >= 0 && damageAge < 0.34) {
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = (1 - damageAge / 0.34) * 0.72;
+      ctx.strokeStyle = teamColor(unit.team);
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * 0.48, size * 0.38, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     ctx.globalCompositeOperation = "source-over";
     ctx.restore();
     const hpRatio = unit.hp / unit.maxHp;
@@ -497,7 +507,8 @@ export const renderEffectsLayer = (ctx, model) => {
         const displaySize = shipCellSize(effect.entityType, visual.frameSize);
         ctx.save();
         ctx.translate(effect.x, y);
-        if (effect.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
+        if (Number.isFinite(effect.heading)) ctx.rotate(effect.heading + Math.PI / 2);
+        else if (effect.team !== "TEAM_PLAYER") ctx.rotate(Math.PI);
         ctx.globalCompositeOperation = "screen";
         drawStripFrame(ctx, destructionImage, visual.destruction, visual.frameSize, effect.maxLife - effect.life, displaySize, false);
         ctx.restore();

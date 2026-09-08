@@ -35,7 +35,7 @@ export const createBattleState = ({ map = CLASSIC_LANES } = {}) => {
 };
 
 export const emitSimulationEvent = (state, event) => {
-  state.events.push({ ...event, sequence: state.nextEventSequence });
+  state.events.push({ time: state.time, ...event, sequence: state.nextEventSequence });
   state.nextEventSequence += 1;
   if (state.events.length > MAX_SIMULATION_EVENTS) state.events.splice(0, state.events.length - MAX_SIMULATION_EVENTS);
 };

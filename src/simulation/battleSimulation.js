@@ -295,7 +295,13 @@ export class BattleSimulation {
     const laneTeamProjectiles = [...this.state.projectiles.values()].reduce((count, projectile) => (
       projectile.alive && projectile.ownerTeam === owner.team && projectile.laneId === laneId ? count + 1 : count
     ), 0);
-    if (laneTeamProjectiles >= CONFIG.caps.projectilesPerLaneTeam || this.state.projectiles.size >= CONFIG.caps.projectiles) {
+    const requestedShots = definition.salvoCount ?? 1;
+    const availableShots = Math.min(
+      requestedShots,
+      CONFIG.caps.projectilesPerLaneTeam - laneTeamProjectiles,
+      CONFIG.caps.projectiles - this.state.projectiles.size,
+    );
+    if (availableShots <= 0) {
       emitSimulationEvent(this.state, {
         type: "projectile_rejected",
         ownerId: owner.id,
@@ -311,20 +317,38 @@ export class BattleSimulation {
     const dx = targetPosition.x - ownerPosition.x;
     const dy = targetPosition.y - ownerPosition.y;
     const magnitude = Math.hypot(dx, dy) || 1;
-    const muzzleOffset = owner.structureType === "turret" ? 25 : 0;
-    const muzzleX = ownerPosition.x + dx / magnitude * muzzleOffset;
-    const muzzleY = ownerPosition.y + dy / magnitude * muzzleOffset;
-    const projectile = createProjectile({
-      id: this.state.ids.next(), ownerId: owner.id, ownerTeam: owner.team, laneId,
-      projectileType: projectileDefinition.id, x: muzzleX, y: muzzleY,
-      vx: (dx / magnitude) * projectileDefinition.speed, vy: (dy / magnitude) * projectileDefinition.speed,
-      damage: this.damageFor(owner, definition) * this.damageMultiplier(owner, target), targetId: target.id,
-    });
-    projectile.remainingLife = projectileDefinition.lifetime;
-    addProjectileToState(this.state, projectile);
+    const firingAngle = Math.atan2(dy, dx);
+    const hardpointAxis = definition.broadside && Number.isFinite(owner.heading) ? owner.heading : firingAngle + Math.PI / 2;
+    const muzzleOffset = definition.muzzleOffset ?? (owner.structureType === "turret" ? 25 : 0);
+    const totalDamage = this.damageFor(owner, definition) * this.damageMultiplier(owner, target);
+    for (let index = 0; index < availableShots; index += 1) {
+      const mirroredIndex = owner.team === TEAM.ENEMY ? requestedShots - 1 - index : index;
+      const salvoOffset = mirroredIndex - (requestedShots - 1) / 2;
+      const hardpointOffset = salvoOffset * (definition.hardpointSpacing ?? 0);
+      const muzzleX = ownerPosition.x + Math.cos(firingAngle) * muzzleOffset + Math.cos(hardpointAxis) * hardpointOffset;
+      const muzzleY = ownerPosition.y + Math.sin(firingAngle) * muzzleOffset + Math.sin(hardpointAxis) * hardpointOffset;
+      const projectileAngle = firingAngle + salvoOffset * (definition.salvoSpread ?? 0);
+      const projectile = createProjectile({
+        id: this.state.ids.next(), ownerId: owner.id, ownerTeam: owner.team, laneId,
+        projectileType: projectileDefinition.id, x: muzzleX, y: muzzleY,
+        vx: Math.cos(projectileAngle) * projectileDefinition.speed, vy: Math.sin(projectileAngle) * projectileDefinition.speed,
+        damage: totalDamage / requestedShots, targetId: target.id,
+      });
+      projectile.remainingLife = projectileDefinition.lifetime;
+      addProjectileToState(this.state, projectile);
+      emitSimulationEvent(this.state, {
+        type: "shot", ownerId: owner.id, targetId: target.id, projectileType: projectile.projectileType,
+        x: muzzleX, y: muzzleY, team: owner.team, laneId, hardpointIndex: mirroredIndex, salvoCount: requestedShots,
+      });
+    }
+    if (availableShots < requestedShots) {
+      emitSimulationEvent(this.state, {
+        type: "projectile_rejected", ownerId: owner.id, team: owner.team, laneId,
+        reason: "partial_salvo_budget", rejectedCount: requestedShots - availableShots,
+      });
+    }
     owner.fireCooldown = definition.fireInterval;
     owner.lastShotAt = this.state.time;
-    emitSimulationEvent(this.state, { type: "shot", ownerId: owner.id, targetId: target.id, projectileType: projectile.projectileType, x: muzzleX, y: muzzleY, team: owner.team });
   }
 
   damageFor(owner, definition) {
@@ -367,7 +391,7 @@ export class BattleSimulation {
       projectile.remainingLife -= dt;
       if (target?.alive && target.team !== projectile.ownerTeam && (target.laneId === null || target.laneId === projectile.laneId) && distance(projectile, target) <= definition.hitRadius + targetDefinition(target).collisionRadius + 1e-6) {
         projectile.alive = false;
-        damageEvents.push({ projectileId: projectile.id, projectileType: projectile.projectileType, targetId: target.id, damage: projectile.damage, ownerTeam: projectile.ownerTeam });
+        damageEvents.push({ projectileId: projectile.id, projectileType: projectile.projectileType, targetId: target.id, damage: projectile.damage, ownerTeam: projectile.ownerTeam, laneId: projectile.laneId });
       } else if (projectile.remainingLife <= 0) {
         projectile.alive = false;
       }
@@ -386,7 +410,7 @@ export class BattleSimulation {
       if (target.hp !== 0) continue;
       target.alive = false;
       if (!target.structureType) target.state = UNIT_STATE.DEAD;
-      emitSimulationEvent(this.state, { type: "destroyed", entityId: target.id, x: target.x, y: target.y, team: target.team, entityType: target.structureType ?? target.unitType });
+      emitSimulationEvent(this.state, { type: "destroyed", entityId: target.id, x: target.x, y: target.y, heading: target.heading, team: target.team, laneId: target.laneId, entityType: target.structureType ?? target.unitType });
       if (target.structureType === "hq") headquartersDestroyed = true;
     }
     if (headquartersDestroyed) {

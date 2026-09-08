@@ -27,10 +27,10 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Regelgebundene KI mit denselben Kosten, Slots, Timern, Kapazitäten und Upgrade-Regeln wie der Spieler, drei wählbaren Profilen und genau einer Neubewertung kurz vor dem Lock-in.
 - Scout, Fighter, Bomber und Frigate mit eigenen Rollen, Formationen, Zielprioritäten und Capture-Stärken.
 - Nairan- und Kla'ed-Flotten mit animierten Engines, Weapon-, Shield- und Destruction-Layern.
-- Rollen- und fraktionsabhängige animierte Projektile, bounded Homing, begrenzte Trails, Muzzle Flashes, Treffer- und Explosionseffekte.
+- Rollen- und fraktionsabhängige animierte Projektile, schadensneutrale Mehrfachsalven, echte Breitseiten-Hardpoints, bounded Homing, begrenzte Trails, Muzzle Flashes, Treffer- und Explosionseffekte.
 - Modulare Defense Turrets mit eigenem weich nachgeführtem Geschütz, Laufmündungs-Projektilen und Schussrückstoß sowie hochwertige Headquarters mit zwei lane-seitigen Hangars: Schiffe starten sichtbar aus dem passenden Tor, das sich nur bei tatsächlicher Auslieferung öffnet und wieder schließt.
 - Keine großflächigen Team-Neonringe oder dekorativen Orbit-Ellipsen; Nodes zeigen Capture-Fortschritt kompakt unterhalb des Sprites.
-- Faire Projektilbudgets pro Team und Lane sowie globale Sicherheitsgrenzen für mobile Geräte.
+- Faire Projektilbudgets pro Team und Lane sowie globale Sicherheitsgrenzen für mobile Geräte; die Kartenleiste pulsiert bei frischen Offscreen-Treffern und Zerstörungen.
 - Responsive Canvas-Höhe mit bildschirmfestem HUD, größer dargestellten Schiffen und einer davon entkoppelten `420 x 1180` Spielwelt.
 - Größere Mobile-Touchflächen, direkt in den Lane-Tabs sichtbarer Druckvergleich sowie ein kurzer Drei-Schritte-Einstieg auf dem Startbildschirm.
 - Schaltbare, synthetisierte Combat-Sounds und an echte Nutzergesten gebundenes Haptik-Feedback ohne zusätzliche Audio-Lizenzabhängigkeit.
@@ -96,4 +96,4 @@ Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Forschung, Captu
 
 ## Status
 
-Der kontinuierliche Kern-Loop, die vier Kernrollen, Original-Animationen und Projektile, animierte modulare Strukturen, drei KI-Stufen, Sound/Haptik und die automatisierten technischen Gates sind umgesetzt. Der erste Tall-world-Meilenstein ergänzt eine vertikal verschiebbare Welt, eine strategische Kartenleiste und größere Darstellungen. Seine erste vollständig gespiegelte 100-Match-Diagnose endete ohne Draws oder Timeouts bei 50:50 Siegen und durchschnittlich 202,8 Sekunden Laufzeit. Diese Messung ist ein technisches Symmetriesignal; die neue Balance-Referenz wird erst nach Bewegungs- und Formationsumbau festgeschrieben. Der aktuelle Fortschritt steht in der [Umbau-Roadmap](IMPLEMENTATION_ROADMAP.md).
+Die verbindlichen Umbau-Meilensteine 1 bis 5 sind umgesetzt: Tall-world-Kamera, langsamere Squad-Formationen, automatische Drones, konkurrierende Economy-/Forschungswege und die verdichtete Schlachtinszenierung mit Mehrfachsalven und Breitseiten-Hardpoints. Foundation-, Asset-, Stress- und Mobile-Browserprüfungen laufen grün. Die frühere 100-Match-Referenz endete 50:50; nach dem Umbau wird die neue große Balance-Referenz erst nach manuellem Spielgefühl-Test festgeschrieben. Das optionale HQ-Kommandomenü bleibt als Meilenstein 6 in der [Umbau-Roadmap](IMPLEMENTATION_ROADMAP.md) vorgemerkt.
