@@ -1,6 +1,6 @@
 import { CONFIG } from "../config.js";
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
-import { createBattleState } from "./battleState.js";
+import { createBattleState, emitSimulationEvent } from "./battleState.js";
 import { BattleSimulation } from "./battleSimulation.js";
 import { CaptureSystem } from "./captureSystem.js";
 import { CommandSystem } from "./commandSystem.js";
@@ -27,6 +27,7 @@ export class MatchDirector {
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
     this.aiReplannedForCycle = null;
+    this.lastUpgradeActivations = [];
   }
 
   start() {
@@ -40,6 +41,7 @@ export class MatchDirector {
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
     this.aiReplannedForCycle = null;
+    this.lastUpgradeActivations = [];
 
     // Start with symmetric free pressure; the first paid planning window begins immediately.
     this.deployWaves();
@@ -70,7 +72,7 @@ export class MatchDirector {
       this.maybeReplanAi();
       return false;
     }
-    this.economy.activatePendingUpgrades();
+    this.activatePendingUpgrades();
     this.deployWaves();
     this.planAi();
     return true;
@@ -79,7 +81,7 @@ export class MatchDirector {
   /** QA helper. Normal gameplay deploys only through the continuous timer. */
   forceDeployment() {
     if (this.state !== MATCH_STATE.LIVE_MATCH) return false;
-    this.economy.activatePendingUpgrades();
+    this.activatePendingUpgrades();
     this.deployWaves();
     this.planAi();
     return true;
@@ -89,6 +91,33 @@ export class MatchDirector {
     const result = this.deployment.deploy(this.simulation);
     this.events.push({ type: "WAVE_DEPLOYED", ...result });
     return result;
+  }
+
+  activatePendingUpgrades() {
+    const fields = {
+      economy: ["economy", "economyLevel"],
+      weapons: ["weapons", "weaponLevel"],
+      turret: ["turret", "turretLevel"],
+      logistics: ["logistics", "logisticsLevel"],
+    };
+    this.lastUpgradeActivations = [];
+    for (const activation of this.economy.activatePendingUpgrades()) {
+      const headquarters = this.simulation.state.structures.get(activation.team === TEAM.PLAYER ? "player-hq" : "enemy-hq");
+      for (const [upgradeId, [amountKey, levelKey]] of Object.entries(fields)) {
+        if (!activation[amountKey]) continue;
+        const event = {
+          type: "upgrade_activated",
+          team: activation.team,
+          upgradeId,
+          level: this.economy.get(activation.team)[levelKey],
+          x: headquarters?.x,
+          y: headquarters?.y,
+        };
+        this.lastUpgradeActivations.push(event);
+        emitSimulationEvent(this.simulation.state, event);
+      }
+    }
+    return this.lastUpgradeActivations;
   }
 
   planAi({ revise = false } = {}) {

@@ -300,16 +300,17 @@ const slotUndo = slotMatch.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TE
 assert.equal(slotUndo.ok, true);
 assert.equal(slotMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" }).ok, true, "undo reopens a shared reinforcement slot");
 const economyUpgrade = economyMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" });
-assert.deepEqual({ ok: economyUpgrade.ok, cost: economyUpgrade.cost, level: economyUpgrade.level }, { ok: true, cost: 260, level: 1 });
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 40);
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).spending.economy, 260);
+assert.deepEqual({ ok: economyUpgrade.ok, cost: economyUpgrade.cost, level: economyUpgrade.level }, { ok: true, cost: 220, level: 1 });
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 80);
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).spending.economy, 220);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).economyLevel, 0);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).pendingEconomyLevels, 1);
 assert.equal(economyMatch.economy.incomePerSecond(economyMatch.simulation.state, TEAM.PLAYER, 0), 16);
 economyMatch.forceDeployment();
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).economyLevel, 1);
+assert.ok(economyMatch.simulation.state.events.some((event) => event.type === "upgrade_activated" && event.upgradeId === "economy" && event.level === 1));
 economyMatch.advanceLive(1);
-assert.ok(Math.abs(economyMatch.economy.get(TEAM.PLAYER).energy - 58.88) < 0.000001);
+assert.ok(Math.abs(economyMatch.economy.get(TEAM.PLAYER).energy - 99.52) < 0.000001);
 economyMatch.economy.get(TEAM.PLAYER).energy = CONFIG.balance.energyCap - 1;
 economyMatch.advanceLive(1);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, CONFIG.balance.energyCap, "passive income respects the energy cap");
@@ -343,6 +344,7 @@ cappedUpgradeMatch.start();
 cappedUpgradeMatch.economy.get(TEAM.PLAYER).energy = 3000;
 for (let level = 0; level < CONFIG.balance.economyUpgradeMaxLevel; level += 1) {
   assert.equal(cappedUpgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" }).ok, true);
+  cappedUpgradeMatch.forceDeployment();
 }
 assert.deepEqual(cappedUpgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" }), { ok: false, reason: "MAX_LEVEL" });
 
@@ -351,6 +353,7 @@ researchMatch.start();
 const researchFighter = researchMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 105, y: 820, spawnCycle: 80 });
 const baseWeaponDamage = researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter);
 assert.equal(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "weapons" }).ok, true);
+assert.deepEqual(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "logistics" }), { ok: false, reason: "RESEARCH_SLOT_USED" });
 assert.equal(researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter), baseWeaponDamage, "research waits for the deployment boundary");
 researchMatch.forceDeployment();
 assert.equal(researchMatch.economy.get(TEAM.PLAYER).weaponLevel, 1);
@@ -429,10 +432,11 @@ assert.ok(aiMatch.economy.get(TEAM.ENEMY).energy >= 0);
 
 for (const path of Object.values(ASSET_GROUPS.boot)) await access(new URL(`../${path}`, import.meta.url));
 const effects = new PresentationEffects();
-effects.observe([{ type: "hit", x: 12, y: 24, team: TEAM.PLAYER }, { type: "destroyed", x: 48, y: 96, team: TEAM.ENEMY }]);
-assert.equal(effects.effects.length, 2);
+effects.observe([{ type: "hit", x: 12, y: 24, team: TEAM.PLAYER }, { type: "destroyed", x: 48, y: 96, team: TEAM.ENEMY }, { type: "upgrade_activated", x: 210, y: 1090, team: TEAM.PLAYER, upgradeId: "economy", level: 1 }]);
+assert.ok(effects.effects.some((effect) => effect.type === "upgrade" && effect.upgradeId === "economy"));
+assert.equal(effects.effects.length, 3);
 effects.update(1);
-assert.equal(effects.effects.length, 0);
+assert.equal(effects.effects.length, 1);
 
 assert.deepEqual(commandActionAt({ x: 50, y: 628 }), { type: "SELECT_LANE", laneId: LANE.LEFT });
 assert.deepEqual(commandActionAt({ x: 126, y: 628 }), { type: "SELECT_LANE", laneId: LANE.RIGHT });

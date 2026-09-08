@@ -20,6 +20,7 @@ export class PresentationEffects {
       const seed = (event.sequence ?? this.effects.length + 1) + this.effects.length;
       if (event.type === "shot") this.add({ type: "muzzle", x: event.x, y: event.y, team: event.team, projectileType: event.projectileType, seed, life: 0.12, maxLife: 0.12 });
       if (event.type === "hit") this.add({ type: "hit", x: event.x, y: event.y, team: event.team, projectileType: event.projectileType, seed, life: event.projectileType === "siege_missile" ? 0.38 : 0.2, maxLife: event.projectileType === "siege_missile" ? 0.38 : 0.2 });
+      if (event.type === "upgrade_activated") this.add({ type: "upgrade", x: event.x, y: event.y, team: event.team, upgradeId: event.upgradeId, level: event.level, seed, life: 1.25, maxLife: 1.25 });
       if (event.type === "destroyed") {
         const scale = event.entityType === "hq" ? 2.2 : event.entityType === "turret" ? 1.65 : event.entityType === "frigate" ? 1.35 : event.entityType === "drone" ? 0.62 : 0.85;
         const destruction = fleetVisualFor(event.team, event.entityType)?.destruction;

@@ -22,8 +22,8 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Eine schmale strategische Kartenleiste zeigt Fronten, Strukturen, Nodes und den aktuellen Kameraausschnitt.
 - Drei schwache automatische Drones pro Lane und Deployment sowie vier gemeinsame, gekaufte Verstärkungsslots; Scouts bleiben wertvolle Capture-Spezialisten.
 - Sofortige Energiereservierung, vollständige Rückerstattung vor Lock-in und Upgrade-Aktivierung am nächsten Deployment.
-- Gedeckelte Economy mit 300 Startenergie, 16 Basisenergie/s, 7 Energie/s pro Node und maximal 900 gespeicherter Energie.
-- Vier konkurrierende Investitionen: Economy-Einkommen, Flottenwaffen, Turret-Defensive und zusätzliche Logistics-Slots; alles wird erst an der nächsten Deployment-Grenze aktiv.
+- Gedeckelte Economy mit 300 Startenergie, 16 Basisenergie/s, 7 Energie/s pro Node und maximal 780 gespeicherter Energie.
+- Vier konkurrierende, konkret beschriftete Investitionen: Reactor-Einkommen, Arsenal-Flottenschaden, Bastion-Turret-Feuerkraft und zusätzliche Hangar-Slots. Pro Welle kann ein Projekt vorbereitet werden; es wird an der nächsten Deployment-Grenze hörbar und sichtbar aktiv.
 - Regelgebundene KI mit denselben Kosten, Slots, Timern, Kapazitäten und Upgrade-Regeln wie der Spieler, drei wählbaren Profilen und genau einer Neubewertung kurz vor dem Lock-in.
 - Scout, Fighter, Bomber und Frigate mit eigenen Rollen, Formationen, Zielprioritäten und Capture-Stärken.
 - Nairan- und Kla'ed-Flotten mit animierten Engines, Weapon-, Shield- und Destruction-Layern.

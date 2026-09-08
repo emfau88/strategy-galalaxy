@@ -199,6 +199,24 @@ try {
       await touch(358, 29);
       const soundRestored = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.sound.enabled", returnByValue: true });
       assert.equal(soundRestored.result.value, soundBefore.result.value, "sound control restores its prior state");
+      await touch(348, 608);
+      const upgradeMenu = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.commandMenu", returnByValue: true });
+      assert.equal(upgradeMenu.result.value, "upgrades", "upgrade projects are touch-operable");
+      await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').energy = 300" });
+      await touch(82, 663);
+      const pendingUpgrade = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.pendingUpgradeCount('TEAM_PLAYER')", returnByValue: true });
+      assert.equal(pendingUpgrade.result.value, 1, "one visible upgrade project can be prepared per wave");
+      const pendingScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+      await writeFile(resolve(output, "upgrades-pending-420x760.png"), Buffer.from(pendingScreenshot.data, "base64"));
+      await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.deployment.timeUntilDeployment = 1 / 120" });
+      await delay(120);
+      const activeUpgrade = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').economyLevel", returnByValue: true });
+      assert.equal(activeUpgrade.result.value, 1, "prepared upgrade activates at the next wave boundary");
+      await touch(405, centered.result.value.viewport.y + centered.result.value.viewport.height - 14);
+      await delay(60);
+      const activeScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+      await writeFile(resolve(output, "upgrades-active-420x760.png"), Buffer.from(activeScreenshot.data, "base64"));
+      await touch(348, 608);
     }
 
     const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
@@ -211,7 +229,7 @@ try {
         expression: `(() => { const structures = window.__strategyGalalaxy.match.simulation.state.structures; for (const id of ['player-hq', 'player-left-turret']) { const structure = structures.get(id); structure.hp = structure.maxHp * 0.25; } return window.__strategyGalalaxy.match.lastDeploymentAt; })()`,
         returnByValue: true,
       });
-      assert.equal(damageResult.result.value, 0, "initial deployment timestamp remains available for HQ door animation");
+      assert.ok(Number.isFinite(damageResult.result.value), "latest deployment timestamp remains available for HQ door animation");
       await delay(80);
       const damageScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
       await writeFile(resolve(output, "structures-closed-damaged-420x760.png"), Buffer.from(damageScreenshot.data, "base64"));

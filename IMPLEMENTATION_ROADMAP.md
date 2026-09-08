@@ -81,6 +81,20 @@ committet und gepusht, damit er direkt getestet werden kann.
 - [x] Mobile Framezeit, Projectile Caps, Trails und Event-Historie stressprüfen.
 - [x] Meilenstein committen und pushen.
 
+## Zwischenmeilenstein – sichtbare Upgrades und Cozy-Pass
+
+- [x] Upgrade-Karten um konkrete Werte statt abstrakter Kategorien ergänzen.
+- [x] Pro Welle genau ein konkurrierendes Forschungsprojekt zulassen.
+- [x] Economy auf zwei amortisierbare Stufen frontladen und den Energie-Cap auf 780 senken.
+- [x] Aktivierung an der Wave-Grenze mit Banner, warmem Klang und HQ-Impuls inszenieren.
+- [x] Reactor, Arsenal, Bastion und Hangar dauerhaft an HQ, Schiffen, Projektilen und Turrets ablesbar machen.
+- [x] HUD-Palette von kaltem Navy/Neon zu wärmerem Slate, Elfenbein und Messing verschieben.
+- [x] Schiffshüllen materieller rendern und Nodes sowie Lane-Routen mit warmen Diorama-Lichtern beleben.
+- [x] Pending- und Active-Zustand im echten 420×760-Browserrender erfassen.
+- [x] Foundation-, Asset- und Fünf-Viewport-Browserprüfung ausführen.
+- [x] Kurze gespiegelte Investment-Matrix nach dem Economy-Umbau ausführen.
+- [x] Zwischenmeilenstein committen und pushen.
+
 ## Meilenstein 6 – alternatives HQ-Kommandomenü (Experiment)
 
 Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
@@ -105,9 +119,10 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 
 ## Aktueller nächster Schritt
 
-Die verbindlichen Meilensteine 1 bis 5 sind umgesetzt. Als nächstes folgt ein manueller
-Playtest des neuen Kampfmaßstabs und eine größere Balance-Matrix; das alternative
-HQ-Kommandomenü aus Meilenstein 6 bleibt bis zu diesem Spielgefühl-Test bewusst ein Experiment.
+Die verbindlichen Meilensteine 1 bis 5 und der sichtbare Upgrade-/Cozy-Zwischenpass
+sind umgesetzt. Als nächstes folgt ein manueller Playtest des neuen Kampfmaßstabs und
+der stärkeren Entscheidungsanzeige; das alternative HQ-Kommandomenü aus Meilenstein 6
+bleibt bis zu diesem Spielgefühl-Test bewusst ein Experiment.
 
 ## Letzte verifizierte Messung
 
@@ -150,3 +165,11 @@ Inszenierungs-Meilenstein 5:
 - Browserprüfung auf allen fünf Ziel-Viewports ohne Konsolen-, Netzwerk-, Kamera- oder Touchfehler
 - vier gespiegelte Tactician-Matches endeten 2:2 ohne Draw oder Timeout
 - der kurze Admiral-Smoke endete 4:0 für die Spielerseite; deshalb bleibt der globale Balance-/Symmetrie-Gate bis zur größeren Matrix offen
+
+Upgrade-/Cozy-Zwischenpass, je zwei Matches für fünf Investitionspaarungen:
+
+- Rush gegen Balanced und gespiegeltes Greed gegen Fleet endeten exakt 2:0 beziehungsweise 0:2
+- Weapons gegen Economy, Logistics gegen Weapons und Balanced gegen Balanced endeten jeweils 1:1
+- alle zehn Matches endeten ohne Draw oder Timeout
+- durchschnittliche Matchdauer je Paarung lag zwischen 210,9 und 335,4 Sekunden
+- Foundation-/Assetprüfung und alle fünf Mobile-Browser-Viewports bestanden

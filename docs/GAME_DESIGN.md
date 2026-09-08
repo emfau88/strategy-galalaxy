@@ -35,19 +35,19 @@ The primary match ends only when a Headquarters is destroyed.
 
 ## Economy and upgrades
 
-Energy is generated continuously from base income and controlled Nodes and is capped so saving remains a choice rather than an unlimited stockpile. Gentle escalation multipliers and the late Drone ramp discourage stalemates. Every purchase competes in the same Energy budget. Economy, weapons, turret and logistics upgrades are purchased during the editable window, but their effects become active only at the next deployment boundary. Weapons improve fleet damage; logistics adds paid reinforcement capacity. Spending telemetry groups choices into fleet, economy and research so their opportunity cost can be measured.
+Energy is generated continuously from base income and controlled Nodes and is capped so saving remains a choice rather than an unlimited stockpile. Gentle escalation multipliers and the late Drone ramp discourage stalemates. Every purchase competes in the same Energy budget. Exactly one economy, weapons, turret or logistics project may be pending per team and deployment cycle; its effect becomes active only at the next deployment boundary. Weapons improve fleet damage; logistics adds paid reinforcement capacity. Spending telemetry groups choices into fleet, economy and research so their opportunity cost can be measured.
 
 Current data-driven defaults:
 
 | Rule | Value |
 | --- | ---: |
 | Starting Energy | 300 |
-| Energy cap | 900 |
+| Energy cap | 780 |
 | Base income | 16/s |
 | Controlled Node bonus | 7/s |
 | Paid reinforcement slots | 4 |
 | Free Drones | 3 per lane/deployment, +1 every 150 s, max. 5 |
-| Economy upgrades | max. level 3 |
+| Economy upgrades | +22% base income/level, max. level 2 |
 | Weapons research | +12% fleet damage/level, max. level 3 |
 | Logistics research | +1 paid slot/level, max. level 2 |
 | Turret upgrades | max. level 4 |
@@ -91,6 +91,8 @@ The top HUD prioritizes both HQ health values and the deployment countdown. Ener
 - Undo for the most recent selected-lane entry;
 - unit/upgrade menu switching;
 - explicit editable or locked deployment state.
+
+Upgrade cards state their concrete per-level effect instead of only a category name and cost. A prepared project shows its pending level. Activation at the next wave is announced through a short banner, warm audio cue, HQ pulse and persistent visual level markers: Reactor light on the HQ, Hangar lamps, Arsenal marks and stronger projectile presentation on ships, and external modules on upgraded turrets.
 
 The canvas uses the full portrait viewport from 360×800 through 412×915 and the 420×760 design baseline. HUD controls remain in screen space while the battlefield keeps its own taller world coordinates. Pointer Events support direct vertical map dragging; the strategic navigator provides fast sector jumps.
 

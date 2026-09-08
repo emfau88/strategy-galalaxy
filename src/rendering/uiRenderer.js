@@ -4,14 +4,14 @@ import { commandUiLayout } from "../ui/commandUi.js";
 import { cameraNavigatorLayout } from "../ui/cameraUi.js";
 
 const C = Object.freeze({
-  panel: "rgba(14, 29, 53, 0.78)", outline: "rgba(172, 222, 237, 0.38)", text: "#f4f8fb", muted: "#b4c7d6",
-  player: "#91e0ef", enemy: "#f1a08a", gold: "#f1cc89", select: "rgba(54, 123, 149, 0.76)", card: "rgba(31, 60, 86, 0.82)",
+  panel: "rgba(29, 37, 58, 0.82)", outline: "rgba(218, 211, 205, 0.34)", text: "#f6f0e7", muted: "#c5bec1",
+  player: "#8ddbdc", enemy: "#ed9b83", gold: "#efc77f", select: "rgba(61, 125, 133, 0.78)", card: "rgba(49, 68, 82, 0.86)",
 });
 const UPGRADE_UI = Object.freeze({
-  economy: Object.freeze({ label: "ECONOMY", active: "economyLevel", pending: "pendingEconomyLevels" }),
-  weapons: Object.freeze({ label: "WEAPONS", active: "weaponLevel", pending: "pendingWeaponLevels" }),
-  turret: Object.freeze({ label: "TURRETS", active: "turretLevel", pending: "pendingTurretLevels" }),
-  logistics: Object.freeze({ label: "LOGISTICS", active: "logisticsLevel", pending: "pendingLogisticsLevels" }),
+  economy: Object.freeze({ label: "REACTOR", active: "economyLevel", pending: "pendingEconomyLevels", effect: (balance) => `+${Math.round(balance.baseIncomePerSecond * balance.economyUpgradeIncomeBonus * 10) / 10} BASE E/s` }),
+  weapons: Object.freeze({ label: "ARSENAL", active: "weaponLevel", pending: "pendingWeaponLevels", effect: (balance) => `+${Math.round(balance.weaponUpgradeDamageBonus * 100)}% FLEET DMG` }),
+  turret: Object.freeze({ label: "BASTION", active: "turretLevel", pending: "pendingTurretLevels", effect: (balance) => `+${Math.round(balance.turretUpgradeDamageBonus * 100)}% TURRET DMG` }),
+  logistics: Object.freeze({ label: "HANGAR", active: "logisticsLevel", pending: "pendingLogisticsLevels", effect: (balance) => `+${balance.logisticsUpgradeSlotBonus} WAVE SLOT` }),
 });
 const text = (ctx, value, x, y, size, color, align = "left", weight = 700) => {
   ctx.fillStyle = color; ctx.font = `${weight} ${size}px Inter, system-ui, sans-serif`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillText(value, x, y);
@@ -49,10 +49,13 @@ const header = (ctx, model, ui) => {
   const playerHq = structure(model.simulation, "player-hq");
   const enemyHq = structure(model.simulation, "enemy-hq");
   const income = economy && model.simulation ? Math.round(economy.incomePerSecond(model.simulation.state, TEAM.PLAYER, model.activeBattleSeconds)) : 0;
+  const nodeIncome = economy && model.simulation
+    ? Math.round(economy.controlledNodes(model.simulation.state, TEAM.PLAYER) * economy.balance.nodeIncomePerSecond * economy.escalationMultiplier(model.activeBattleSeconds))
+    : 0;
   box(ctx, { x: 8, y: 8, width: model.width - 16, height: 48 }, C.panel, "rgba(190,224,236,0.3)", 10);
   text(ctx, `YOU  ${Math.round(ratio(playerHq) * 100)}%`, 18, 22, 11, C.player);
   miniBar(ctx, 18, 31, 102, ratio(playerHq), C.player);
-  text(ctx, `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E  ·  +${income}/s`, 18, 44, 10, C.text);
+  text(ctx, `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s · N${nodeIncome}`, 18, 44, 9, C.text);
   text(ctx, model.queueLocked ? "LOCKED" : "NEXT WAVE", 158, 22, 9, model.queueLocked ? C.gold : C.text, "center");
   text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, 158, 42, 14, model.queueLocked ? C.gold : C.text, "center");
   text(ctx, `${Math.round(ratio(enemyHq) * 100)}%  RIVAL`, 300, 22, 10, C.enemy, "right");
@@ -190,16 +193,19 @@ const unitCard = (ctx, model, rect) => {
 
 const upgradeCard = (ctx, model, rect) => {
   const cost = model.economy.upgradeCost(TEAM.PLAYER, rect.upgradeId);
-  const affordable = cost !== null && model.economy.get(TEAM.PLAYER).energy >= cost && !model.queueLocked;
   const economy = model.economy.get(TEAM.PLAYER);
   const upgrade = UPGRADE_UI[rect.upgradeId];
   const activeKey = upgrade.active;
   const pendingKey = upgrade.pending;
+  const projectPending = model.economy.pendingUpgradeCount(TEAM.PLAYER) > 0;
+  const affordable = cost !== null && !projectPending && economy.energy >= cost && !model.queueLocked;
   const level = economy[activeKey] + economy[pendingKey];
-  box(ctx, rect, affordable ? "rgba(44, 82, 84, 0.8)" : "rgba(35, 45, 58, 0.76)", affordable ? C.outline : null, 8);
-  text(ctx, upgrade.label, rect.x + 11, rect.y + 17, 10, affordable ? C.text : C.muted);
-  const detail = cost === null ? `MAX · LV ${level}` : `${economy[pendingKey] ? "NEXT " : ""}LV ${level} · ${cost} E`;
-  text(ctx, detail, rect.x + 11, rect.y + 36, 9, affordable ? C.gold : C.muted);
+  const isPending = economy[pendingKey] > 0;
+  box(ctx, rect, isPending ? "rgba(115, 84, 76, 0.88)" : affordable ? "rgba(55, 94, 88, 0.88)" : "rgba(45, 48, 62, 0.82)", affordable || isPending ? C.outline : null, 8);
+  text(ctx, upgrade.label, rect.x + 10, rect.y + 11, 9, affordable || isPending ? C.text : C.muted);
+  text(ctx, upgrade.effect(model.economy.balance), rect.x + 10, rect.y + 27, 8, isPending ? "#ffe0b0" : affordable ? C.gold : C.muted, "left", 650);
+  const detail = cost === null ? `MAX · LV ${level}` : isPending ? `LV ${economy[activeKey]} → ${level} · NEXT WAVE` : `LV ${level} · ${cost} E`;
+  text(ctx, detail, rect.x + 10, rect.y + 42, 8, affordable || isPending ? C.text : C.muted, "left", 650);
 };
 
 const commandPanel = (ctx, model, ui) => {

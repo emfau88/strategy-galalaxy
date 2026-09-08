@@ -273,13 +273,13 @@ export class Game {
       return;
     }
     const result = this.match.executeCommand({ ...action, team: TEAM.PLAYER, laneId: this.selectedLaneId });
-    this.showFeedback(result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE READY NEXT DEPLOYMENT" : `${action.unitType.toUpperCase()} QUEUED`) : this.commandFailureLabel(result.reason));
+    this.showFeedback(result.ok ? (action.type === "BUY_UPGRADE" ? "PROJECT READY NEXT WAVE" : `${action.unitType.toUpperCase()} QUEUED`) : this.commandFailureLabel(result.reason));
     this.sound.play(result.ok ? "purchase" : "error");
     if (result.ok) this.sound.vibrate(9);
   }
 
   commandFailureLabel(reason) {
-    return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", CAPACITY_RESERVED: "LANE CAPACITY RESERVED", REINFORCEMENT_LIMIT: "ALL 4 REINFORCEMENT SLOTS USED", QUEUE_LOCKED: "DEPLOYMENT LOCKED", WRONG_PHASE: "PLANNING UNAVAILABLE", MAX_LEVEL: "UPGRADE ALREADY MAXED" })[reason] ?? "COMMAND UNAVAILABLE";
+    return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", CAPACITY_RESERVED: "LANE CAPACITY RESERVED", REINFORCEMENT_LIMIT: "ALL REINFORCEMENT SLOTS USED", RESEARCH_SLOT_USED: "ONE PROJECT PER WAVE", QUEUE_LOCKED: "DEPLOYMENT LOCKED", WRONG_PHASE: "PLANNING UNAVAILABLE", MAX_LEVEL: "UPGRADE ALREADY MAXED" })[reason] ?? "COMMAND UNAVAILABLE";
   }
 
   handleKeyDown(event) {
@@ -313,6 +313,11 @@ export class Game {
     if (this.match.cycle > previousCycle) {
       this.sound.play("deploy");
       this.sound.vibrate([12, 24, 18]);
+      const activation = this.match.lastUpgradeActivations.find((event) => event.team === TEAM.PLAYER);
+      if (activation) {
+        const label = { economy: "REACTOR", weapons: "ARSENAL", turret: "BASTION", logistics: "HANGAR" }[activation.upgradeId];
+        this.showFeedback(`${label} ${activation.level} ONLINE`, 2.2);
+      }
     }
     this.syncMatchState();
     this.renderer.render({

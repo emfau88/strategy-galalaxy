@@ -83,6 +83,10 @@ export class SoundSystem {
     } else if (cue === "deploy") {
       this.tone(180, 0.22, { volume: 0.035, type: "triangle", endFrequency: 360 });
       this.tone(360, 0.18, { volume: 0.026, type: "triangle", endFrequency: 720, delay: 0.1 });
+    } else if (cue === "upgrade") {
+      this.tone(330, 0.2, { volume: 0.024, type: "sine", endFrequency: 440 });
+      this.tone(494, 0.24, { volume: 0.022, type: "sine", endFrequency: 659, delay: 0.09 });
+      this.tone(659, 0.28, { volume: 0.019, type: "sine", endFrequency: 880, delay: 0.18 });
     }
     return true;
   }
@@ -94,6 +98,7 @@ export class SoundSystem {
       else if (event.type === "hit") this.play("hit");
       else if (event.type === "destroyed") this.play("destroyed");
       else if (event.type === "NODE_CAPTURED") this.play("node");
+      else if (event.type === "upgrade_activated" && event.team === "TEAM_PLAYER") this.play("upgrade");
     }
     if (fresh.length) this.lastEventSequence = fresh.at(-1).sequence;
   }

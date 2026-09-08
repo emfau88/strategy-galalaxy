@@ -55,7 +55,7 @@ No visual animation frame triggers a projectile, hit or damage event.
 
 `DeploymentDirector` owns one queue per team and lane. Queue entries include a stable sequence, unit type, paid cost and source. The shared purchased count across both lanes may never exceed four.
 
-Commands are accepted only in `LIVE_MATCH` and outside lock-in. Queue purchase deducts immediately; removal refunds exactly once. The base paid capacity is four and active logistics research can raise it. At a boundary, pending upgrades activate before free and paid entries are evaluated in stable order against the per-lane/team unit cap. Spawned entries leave the queue; rejected capacity entries remain backlog. Existing units are untouched.
+Commands are accepted only in `LIVE_MATCH` and outside lock-in. Queue purchase deducts immediately; removal refunds exactly once. The base paid capacity is four and active logistics research can raise it. A team may hold exactly one pending upgrade project per cycle. At a boundary, pending upgrades activate and emit presentation-only activation events before free and paid entries are evaluated in stable order against the per-lane/team unit cap. Spawned entries leave the queue; rejected capacity entries remain backlog. Existing units are untouched.
 
 Both teams use the same path:
 

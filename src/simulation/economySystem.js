@@ -56,6 +56,14 @@ export class EconomySystem {
     return 1 + this.get(team).weaponLevel * this.balance.weaponUpgradeDamageBonus;
   }
 
+  pendingUpgradeCount(team) {
+    const economy = this.get(team);
+    return economy.pendingEconomyLevels
+      + economy.pendingTurretLevels
+      + economy.pendingWeaponLevels
+      + economy.pendingLogisticsLevels;
+  }
+
   recordFleetPurchase(team, amount) {
     this.get(team).spending.fleet += amount;
   }
@@ -85,6 +93,7 @@ export class EconomySystem {
   buyUpgrade(team, upgradeId) {
     const fields = this.upgradeFields(upgradeId);
     if (!fields) return { ok: false, reason: "UNKNOWN_UPGRADE" };
+    if (this.pendingUpgradeCount(team) > 0) return { ok: false, reason: "RESEARCH_SLOT_USED" };
     const cost = this.upgradeCost(team, upgradeId);
     if (cost === null) return { ok: false, reason: "MAX_LEVEL" };
     const economy = this.get(team);
