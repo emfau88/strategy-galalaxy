@@ -108,9 +108,13 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 - [x] Level 1 mit zwei Auto-Drones und drei gekauften Wave-Slots abstimmen.
 - [x] Startscreen um Levelwahl und levelabhängige Kurzanleitung erweitern.
 - [x] Ein-Lane-HUD und beide HQ-Hangars für die Hauptlane anpassen.
-- [ ] Headless-Kernprüfung und Asset-Verifikation bestehen.
-- [ ] Level 1 im echten 420×760-Browser starten, spielen und visuell mit dem Mockup abgleichen.
-- [ ] Stabilen Meilenstein committen und pushen.
+- [x] Headless-Kernprüfung und Asset-Verifikation bestehen.
+- [x] Level 1 im echten 420×760-Browser starten, spielen und visuell mit dem Mockup abgleichen.
+- [x] Mockup-Hintergrund ohne Seitenverhältnis-Verzerrung als `420×760`-Welt rendern.
+- [x] Sunwell und Garten-HQ als detailreiche Mockup-nahe V2-Runtime-Objekte ersetzen.
+- [x] Level-1-Schiffe größer, langsamer und mit weiterem Verbandsabstand darstellen.
+- [x] Alle fünf Mobile-Viewports inklusive Touch, Kamera und Assetrequests im Browser bestehen.
+- [x] Stabilen Meilenstein committen und pushen.
 
 - [ ] HQ antippbar machen und ein kontextuelles Kommandomenü als Prototyp öffnen.
 - [ ] Schiffstypen als Drag-and-drop-Chips vom HQ auf Left/Right anbieten.

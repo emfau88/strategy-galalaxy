@@ -51,7 +51,7 @@ export class BattleSimulation {
       launch,
     }));
     const squad = this.squads.get(formationId);
-    const unitSpeed = UNIT_DEFINITIONS[unitType].speed;
+    const unitSpeed = UNIT_DEFINITIONS[unitType].speed * (this.state.map.movementScale ?? 1);
     if (squad) {
       squad.minimumSpeed = Math.min(squad.minimumSpeed, unitSpeed);
       squad.speedTotal += unitSpeed;
@@ -154,7 +154,7 @@ export class BattleSimulation {
             const right = units[second];
             const leftSpacing = UNIT_DEFINITIONS[left.unitType].spacingRadius ?? UNIT_DEFINITIONS[left.unitType].collisionRadius;
             const rightSpacing = UNIT_DEFINITIONS[right.unitType].spacingRadius ?? UNIT_DEFINITIONS[right.unitType].collisionRadius;
-            const minimum = leftSpacing + rightSpacing + 4;
+            const minimum = (leftSpacing + rightSpacing) * (this.state.map.spacingScale ?? 1) + 4;
             const dx = right.x - left.x || (second % 2 ? 0.5 : -0.5);
             const dy = right.y - left.y || (second % 2 ? 0.25 : -0.25);
             const current = Math.hypot(dx, dy);
@@ -178,6 +178,12 @@ export class BattleSimulation {
     if (!unit.alive) return;
     if (unit.launching) return;
     const definition = UNIT_DEFINITIONS[unit.unitType];
+    const movementScale = this.state.map.movementScale ?? 1;
+    const motionDefinition = movementScale === 1 ? definition : {
+      ...definition,
+      speed: definition.speed * movementScale,
+      acceleration: definition.acceleration * movementScale,
+    };
     const previousTargetId = unit.targetId;
     const target = acquireUnitTarget(this.state, unit, positions);
     const targetPosition = positions?.get(target?.id) ?? target;
@@ -199,28 +205,28 @@ export class BattleSimulation {
           this.steerUnit(unit, {
             x: node.x - dx / magnitude * node.radius * 0.38,
             y: node.y - dy / magnitude * node.radius * 0.38,
-          }, definition, dt);
+          }, motionDefinition, dt);
         } else {
           unit.state = UNIT_STATE.HOLDING;
-          this.steerUnit(unit, { x: unit.x, y: unit.y }, definition, dt);
+          this.steerUnit(unit, { x: unit.x, y: unit.y }, motionDefinition, dt);
         }
       } else {
         const squad = this.squads.get(unit.formationId);
         const lane = this.state.map.lanes.find((item) => item.id === unit.laneId);
-        const cruiseSpeed = squad?.cruiseSpeed ?? definition.speed;
+        const cruiseSpeed = squad?.cruiseSpeed ?? motionDefinition.speed;
         this.steerUnit(unit, {
           x: lane.centerX + unit.slotOffsetX,
           y: (squad?.y ?? unit.y) + unit.slotOffsetY,
           baseVx: 0,
           baseVy: forwardDirection(unit.team) * cruiseSpeed,
-          speedLimit: Math.max(definition.speed, cruiseSpeed),
-        }, definition, dt);
+          speedLimit: Math.max(motionDefinition.speed, cruiseSpeed),
+        }, motionDefinition, dt);
       }
       this.constrainToLane(unit);
       return;
     }
     const tactical = this.tacticalPosition(unit, targetPosition, definition);
-    this.steerUnit(unit, tactical, definition, dt, tactical.heading);
+    this.steerUnit(unit, tactical, motionDefinition, dt, tactical.heading);
     this.constrainToLane(unit);
     const aligned = !definition.broadside || Math.abs(angleDelta(unit.heading, tactical.heading)) <= 0.32;
     if (inRange(unitPosition, targetPosition, definition.attackRange) && aligned && unit.fireCooldown === 0) {

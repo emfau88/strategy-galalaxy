@@ -34,6 +34,15 @@
 
 The earlier generated single-center-gate HQ concept was rejected during integration and is not kept in the repository.
 
+## Orbital Garden Level 1 art pass
+
+- **Destinations:** `assets/environment/orbital-garden-background-v1.png`, `assets/structures/orbital-sunwell-v2.png`, `assets/structures/orbital-garden-hq-v2.png`
+- **Method / mode:** Built-in ImageGen using the approved `level-1-orbital-garden-concept-v1.png` as the exact art-direction reference; `background-extraction` and targeted `precise-object-edit` passes.
+- **Purpose:** A cozy inhabited single-lane world matching the approved mockup: garden asteroids, warm navigation lights, blue-violet nebulae, a dominant golden Sunwell and large biosphere headquarters.
+- **Prompt direction:** Preserve the mockup's ivory stone, brass, vegetation, warm amber light and restrained cyan team accents. Isolate one structure, keep it centered and fully visible, remove ships, UI, text and unrelated scenery. Checkerboard artifacts from the extraction pass were replaced with uniform black for Canvas `screen` compositing.
+- **Runtime:** The `932×1688` background is rendered proportionally as a `420×760` world. Sunwell and HQ remain independent layers so gameplay units and structure state can animate above them.
+- **Status:** Active Level-1 runtime assets. Level 2 retains its existing art.
+
 ## `defense-turret-head-topdown-v3.png`
 
 - **Destination:** `assets/structures/defense-turret-head-topdown-v3.png`

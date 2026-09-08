@@ -1,6 +1,6 @@
 # Level 1 – Orbital Garden
 
-Status: Umsetzung läuft; Map, Runtime-Art, Ein-Lane-Regeln und Levelauswahl sind integriert, Browserabnahme steht aus.
+Status: spielbar umgesetzt und auf fünf Mobile-Viewports abgenommen. Der Hintergrund wird im exakten Mockup-Seitenverhältnis dargestellt; Sunwell und Garten-HQ liegen als separate V2-Runtime-Objekte vor.
 
 ![Level-1-Mockup](mockups/level-1-orbital-garden-concept-v1.png)
 
@@ -55,10 +55,10 @@ Ressourcen zwischen zwei Lanes aufteilen.
 
 ## Produktionshinweis
 
-Das Mockup ist eine Art-Direction-Referenz, kein fertiges Runtime-Asset. Die vorhandenen
-Schiffs- und HQ-Assets bleiben maßgeblich. Für die Umsetzung sollten Sunwell, Garteninseln,
-Bojen und Randdekorationen als getrennte Layer erstellt werden, damit Kampfgeometrie,
-Animation und Mobile-Performance unabhängig bleiben.
+Der Mockup-nahe, schiffs- und UI-freie Hintergrund bildet die verzerrungsfreie Weltfläche.
+Sunwell, beide HQs, Turrets, Schiffe, Projektile und Effekte werden separat gerendert, damit
+Kampfgeometrie, Animation und Mobile-Performance unabhängig bleiben. Level 1 vergrößert
+die Flotten visuell und reduziert ihre Bewegungsgeschwindigkeit, ohne Level 2 zu verändern.
 
 ## Bildherkunft
 

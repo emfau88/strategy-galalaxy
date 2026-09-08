@@ -354,9 +354,9 @@ const drawStructure = (ctx, structure, model, projection) => {
   const state = model.simulation.state;
   const isHq = structure.structureType === "hq";
   const gardenHq = isHq && state.map.visualTheme === "orbital_garden";
-  const size = gardenHq ? 190 : isHq ? 128 : 74;
-  const spriteWidth = gardenHq ? 226 : size;
-  const spriteHeight = gardenHq ? 150 : size;
+  const size = gardenHq ? 230 : isHq ? 128 : 74;
+  const spriteWidth = gardenHq ? 330 : size;
+  const spriteHeight = gardenHq ? 227 : size;
   const color = teamColor(structure.team);
   const sprite = asset(model.assets, gardenHq ? "structure-hq-garden" : isHq ? "structure-hq" : "structure-turret");
   const damaged = state.time - structure.lastDamagedAt < 0.13;
@@ -399,7 +399,7 @@ const drawNode = (ctx, node, frameTime, assets, projection, visualTheme) => {
   ctx.fill();
   if (sprite) {
     ctx.globalCompositeOperation = "screen";
-    if (sunwell) ctx.drawImage(sprite, -112, -75, 224, 150);
+    if (sunwell) ctx.drawImage(sprite, -128, -106, 256, 212);
     else ctx.drawImage(sprite, -29, -29, 58, 58);
     ctx.globalCompositeOperation = "source-over";
   }
@@ -407,8 +407,8 @@ const drawNode = (ctx, node, frameTime, assets, projection, visualTheme) => {
   const progress = Math.min(1, Math.abs(node.progress) / 100);
   const progressColor = node.progress > 0 ? "#a6e6f2" : node.progress < 0 ? "#f3a58e" : color;
   ctx.fillStyle = "rgba(7,15,28,0.72)";
-  const barY = sunwell ? 78 : 24;
-  const barWidth = sunwell ? 78 : 42;
+  const barY = sunwell ? 108 : 24;
+  const barWidth = sunwell ? 92 : 42;
   ctx.fillRect(-barWidth / 2, barY, barWidth, 3);
   ctx.fillStyle = progressColor;
   ctx.globalAlpha = 0.82;
@@ -506,11 +506,12 @@ export const renderEntityLayer = (ctx, model) => {
   for (const unit of units.values()) {
     if (unit.launching && unit.launchElapsed < 0) continue;
     if (!visible(unit.y, 60)) continue;
-    const size = unitSize(unit.unitType);
+    const fleetScale = simulation.state.map.visualTheme === "orbital_garden" ? 1.28 : 1;
+    const size = unitSize(unit.unitType) * fleetScale;
     const sprite = asset(model.assets, factionKey(unit));
     const visual = fleetVisualFor(unit.team, unit.unitType);
     const frameSize = visual?.frameSize ?? 64;
-    const displaySize = shipCellSize(unit.unitType, frameSize);
+    const displaySize = shipCellSize(unit.unitType, frameSize) * fleetScale;
     const heading = Number.isFinite(unit.heading) ? unit.heading : (unit.team === TEAM.PLAYER ? -Math.PI / 2 : Math.PI / 2);
     const renderRotation = heading + Math.PI / 2;
     const pulse = 0.8 + Math.sin(model.frameTime * 7 + unit.x) * 0.12;

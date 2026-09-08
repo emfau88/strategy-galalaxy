@@ -31,27 +31,29 @@ export const ORBITAL_GARDEN = freeze({
   level: 1,
   title: "ORBITAL GARDEN",
   visualTheme: "orbital_garden",
+  movementScale: 0.62,
+  spacingScale: 1.22,
   balanceOverrides: freeze({
     baseWaveDronesPerLane: 2,
     maxPurchasedReinforcementsPerDeployment: 3,
     startingEnergy: 270,
   }),
-  bounds: freeze({ width: 420, height: 1280 }),
+  bounds: freeze({ width: 420, height: 760 }),
   lanes: freeze([
     freeze({
       id: LANE.CENTER,
       centerX: 210,
       width: 330,
-      node: freeze({ id: "sunwell-node", x: 210, y: 640, radius: 68 }),
-      playerSpawn: freeze({ x: 210, y: 1082 }),
-      enemySpawn: freeze({ x: 210, y: 198 }),
+      node: freeze({ id: "sunwell-node", x: 210, y: 380, radius: 72 }),
+      playerSpawn: freeze({ x: 210, y: 590 }),
+      enemySpawn: freeze({ x: 210, y: 170 }),
     }),
   ]),
   structures: freeze([
-    freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 1190 }),
-    freeze({ id: "enemy-hq", team: TEAM.ENEMY, laneId: null, structureType: "hq", x: 210, y: 90 }),
-    freeze({ id: "player-center-turret", team: TEAM.PLAYER, laneId: LANE.CENTER, structureType: "turret", x: 210, y: 1010 }),
-    freeze({ id: "enemy-center-turret", team: TEAM.ENEMY, laneId: LANE.CENTER, structureType: "turret", x: 210, y: 270 }),
+    freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 695 }),
+    freeze({ id: "enemy-hq", team: TEAM.ENEMY, laneId: null, structureType: "hq", x: 210, y: 65 }),
+    freeze({ id: "player-center-turret", team: TEAM.PLAYER, laneId: LANE.CENTER, structureType: "turret", x: 112, y: 548 }),
+    freeze({ id: "enemy-center-turret", team: TEAM.ENEMY, laneId: LANE.CENTER, structureType: "turret", x: 308, y: 212 }),
   ]),
 });
 
