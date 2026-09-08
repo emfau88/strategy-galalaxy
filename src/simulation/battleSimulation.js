@@ -116,8 +116,8 @@ export class BattleSimulation {
       const units = [...this.state.units.values()].filter((unit) => unit.alive && unit.formationId === squad.id);
       const active = units.filter((unit) => !unit.launching);
       if (!active.length) continue;
-      const engaged = active.some((unit) => unit.state !== UNIT_STATE.ADVANCING);
-      if (!engaged) squad.y += forwardDirection(squad.team) * squad.cruiseSpeed * dt;
+      const hasAdvancingShips = active.some((unit) => unit.state === UNIT_STATE.ADVANCING);
+      if (hasAdvancingShips) squad.y += forwardDirection(squad.team) * squad.cruiseSpeed * dt;
       squad.y = clamp(squad.y, 70, this.state.map.bounds.height - 70);
     }
   }
@@ -417,7 +417,10 @@ export class BattleSimulation {
       if (!target?.alive || target.team === event.ownerTeam) continue;
       target.hp = Math.max(0, target.hp - event.damage);
       target.lastDamagedAt = this.state.time;
-      emitSimulationEvent(this.state, { type: "hit", ...event, x: target.x, y: target.y, team: target.team, entityType: target.structureType ?? target.unitType });
+      emitSimulationEvent(this.state, {
+        type: "hit", ...event, x: target.x, y: target.y, team: target.team,
+        entityType: target.structureType ?? target.unitType, hpRatio: target.hp / target.maxHp,
+      });
       if (target.hp !== 0) continue;
       target.alive = false;
       if (!target.structureType) target.state = UNIT_STATE.DEAD;

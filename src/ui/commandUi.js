@@ -49,6 +49,18 @@ export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT])
   });
 };
 
+export const overlayUiLayout = (height = 760) => {
+  const centerY = height / 2;
+  return Object.freeze({
+    pausePanel: Object.freeze({ x: 68, y: centerY - 104, width: 284, height: 208 }),
+    pauseResume: Object.freeze({ x: 88, y: centerY + 4, width: 116, height: 46 }),
+    pauseMenu: Object.freeze({ x: 216, y: centerY + 4, width: 116, height: 46 }),
+    endPanel: Object.freeze({ x: 68, y: centerY - 100, width: 284, height: 200 }),
+    endRestart: Object.freeze({ x: 88, y: centerY + 16, width: 116, height: 46 }),
+    endMenu: Object.freeze({ x: 216, y: centerY + 16, width: 116, height: 46 }),
+  });
+};
+
 export const containsPoint = (rect, point) => point.x >= rect.x && point.x <= rect.x + rect.width && point.y >= rect.y && point.y <= rect.y + rect.height;
 const containsWithSlop = (rect, point, slop = 3) => containsPoint({ x: rect.x - slop, y: rect.y - slop, width: rect.width + slop * 2, height: rect.height + slop * 2 }, point);
 
@@ -73,6 +85,20 @@ export const titleActionAt = (point, height = 760) => {
   if (containsPoint({ ...COMMAND_UI.titleLevel, y: COMMAND_UI.titleLevel.y + offsetY }, point)) return { type: "CYCLE_LEVEL" };
   if (containsPoint({ ...COMMAND_UI.titleDifficulty, y: COMMAND_UI.titleDifficulty.y + offsetY }, point)) return { type: "CYCLE_DIFFICULTY" };
   if (containsPoint({ ...COMMAND_UI.titleStart, y: COMMAND_UI.titleStart.y + offsetY }, point)) return { type: "START_MATCH" };
+  return null;
+};
+
+export const pauseActionAt = (point, height = 760) => {
+  const ui = overlayUiLayout(height);
+  if (containsPoint(ui.pauseResume, point)) return { type: "RESUME_MATCH" };
+  if (containsPoint(ui.pauseMenu, point)) return { type: "RETURN_TO_TITLE" };
+  return null;
+};
+
+export const endActionAt = (point, height = 760) => {
+  const ui = overlayUiLayout(height);
+  if (containsPoint(ui.endRestart, point)) return { type: "RESTART_MATCH" };
+  if (containsPoint(ui.endMenu, point)) return { type: "RETURN_TO_TITLE" };
   return null;
 };
 

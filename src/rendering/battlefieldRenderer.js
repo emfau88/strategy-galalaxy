@@ -61,6 +61,47 @@ const drawGardenSector = (ctx, image, projection, worldY, width, height, cropEdg
   ctx.drawImage(image, 0, sourceY, image.naturalWidth, sourceHeight, 0, projection.y(worldY), width, height);
 };
 
+let gardenWorldCache = null;
+const composeGardenWorld = (rivalSector, playerSector, width, height) => {
+  if (gardenWorldCache?.rivalSector === rivalSector && gardenWorldCache?.playerSector === playerSector
+    && gardenWorldCache.width === width && gardenWorldCache.height === height) return gardenWorldCache.canvas;
+  if (!rivalSector?.naturalWidth || !playerSector?.naturalWidth) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const worldCtx = canvas.getContext("2d");
+  const identityProjection = { y: (value) => value };
+  const overlap = 100;
+  const sectorHeight = (height + overlap) / 2;
+  const playerStart = height - sectorHeight;
+  drawGardenSector(worldCtx, rivalSector, identityProjection, 0, width, sectorHeight, "top");
+  worldCtx.save();
+  worldCtx.beginPath();
+  worldCtx.rect(0, sectorHeight, width, height - sectorHeight);
+  worldCtx.clip();
+  drawGardenSector(worldCtx, playerSector, identityProjection, playerStart, width, sectorHeight, "bottom");
+  worldCtx.restore();
+  const blendSteps = 20;
+  for (let index = 0; index < blendSteps; index += 1) {
+    const stripY = playerStart + overlap * index / blendSteps;
+    worldCtx.save();
+    worldCtx.beginPath();
+    worldCtx.rect(0, stripY, width, overlap / blendSteps + 0.5);
+    worldCtx.clip();
+    worldCtx.globalAlpha = (index + 1) / blendSteps;
+    drawGardenSector(worldCtx, playerSector, identityProjection, playerStart, width, sectorHeight, "bottom");
+    worldCtx.restore();
+  }
+  const seamMist = worldCtx.createLinearGradient(0, height / 2 - 68, 0, height / 2 + 68);
+  seamMist.addColorStop(0, "rgba(8,18,38,0)");
+  seamMist.addColorStop(0.5, "rgba(8,18,38,0.24)");
+  seamMist.addColorStop(1, "rgba(8,18,38,0)");
+  worldCtx.fillStyle = seamMist;
+  worldCtx.fillRect(0, height / 2 - 68, width, 136);
+  gardenWorldCache = { rivalSector, playerSector, width, height, canvas };
+  return canvas;
+};
+
 export const renderBackground = (ctx, width, height, frameTime, assets) => {
   const background = asset(assets, "background-placeholder");
   if (background) ctx.drawImage(background, 0, 0, width, height);
@@ -113,12 +154,11 @@ export const renderBattlefieldLayer = (ctx, model) => {
   if (map.visualTheme === "orbital_garden") {
     const rivalSector = asset(model.assets, "background-orbital-garden-rival");
     const playerSector = asset(model.assets, "background-orbital-garden-player");
-    if (rivalSector && playerSector) {
+    const gardenWorld = composeGardenWorld(rivalSector, playerSector, map.bounds.width, map.bounds.height);
+    if (gardenWorld) {
       ctx.save();
       ctx.globalAlpha = 0.97;
-      const sectorHeight = map.bounds.height / 2;
-      drawGardenSector(ctx, rivalSector, projection, 0, map.bounds.width, sectorHeight, "top");
-      drawGardenSector(ctx, playerSector, projection, sectorHeight, map.bounds.width, sectorHeight, "bottom");
+      ctx.drawImage(gardenWorld, 0, projection.y(0));
       ctx.restore();
     }
   }
@@ -246,7 +286,8 @@ const drawTurretHead = (ctx, structure, state, assets, projection, color, garden
     : defaultAngle;
   const angle = smoothAimAngle(structure, desiredAngle, state.time);
   const shotAge = state.time - structure.lastShotAt;
-  const recoil = shotAge >= 0 && shotAge < 0.16 ? Math.sin(shotAge / 0.16 * Math.PI) * 3.5 : 0;
+  const firing = shotAge >= 0 && shotAge < 0.2;
+  const recoil = firing ? Math.sin(shotAge / 0.2 * Math.PI) * (gardenTurret ? 6 : 4.2) : 0;
   const sprite = asset(assets, gardenTurret ? "structure-turret-head-garden" : "structure-turret-head");
   ctx.save();
   ctx.globalAlpha = 0.34;
@@ -263,7 +304,24 @@ const drawTurretHead = (ctx, structure, state, assets, projection, color, garden
   ctx.globalAlpha = 1;
   if (sprite) {
     ctx.rotate(angle + Math.PI / 2);
+    if (gardenTurret) ctx.globalCompositeOperation = "screen";
     ctx.drawImage(sprite, -27, -34 + recoil, 54, 54);
+    ctx.globalCompositeOperation = "source-over";
+    if (firing) {
+      const flash = 1 - shotAge / 0.2;
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = flash;
+      for (const barrelX of [-6.2, 6.2]) {
+        const glow = ctx.createRadialGradient(barrelX, -27 + recoil, 0, barrelX, -27 + recoil, 8);
+        glow.addColorStop(0, "rgba(255,252,221,1)");
+        glow.addColorStop(0.32, structure.team === TEAM.PLAYER ? "rgba(121,242,248,0.92)" : "rgba(255,151,115,0.92)");
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(barrelX - 9, -36 + recoil, 18, 18);
+      }
+      ctx.restore();
+    }
   } else {
     ctx.rotate(angle);
     ctx.fillStyle = "#7c8da3";
@@ -520,6 +578,51 @@ const drawProjectile = (ctx, projectile, projection, model) => {
     ctx.fillRect(x - 16, y - 16, 32, 32);
     ctx.restore();
   }
+  if (projectile.projectileType === "scout_pulse") {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const pulse = ctx.createRadialGradient(x, y, 0, x, y, 7 + techLevel);
+    pulse.addColorStop(0, "rgba(255,255,238,0.96)");
+    pulse.addColorStop(0.35, projectile.ownerTeam === TEAM.PLAYER ? "rgba(111,239,244,0.9)" : "rgba(255,126,103,0.9)");
+    pulse.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = pulse;
+    ctx.fillRect(x - 9, y - 9, 18, 18);
+    ctx.restore();
+  } else if (projectile.projectileType === "fighter_laser") {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const laserColor = projectile.ownerTeam === TEAM.PLAYER ? "#7ff6ff" : "#ff927d";
+    const length = 25 + techLevel * 3;
+    ctx.strokeStyle = laserColor;
+    ctx.globalAlpha = 0.34;
+    ctx.lineWidth = 6 + techLevel;
+    ctx.beginPath();
+    ctx.moveTo(x - Math.cos(angle) * length, y - Math.sin(angle) * length);
+    ctx.lineTo(x + Math.cos(angle) * 5, y + Math.sin(angle) * 5);
+    ctx.stroke();
+    ctx.globalAlpha = 0.98;
+    ctx.strokeStyle = "#fffbe9";
+    ctx.lineWidth = 1.6 + techLevel * 0.2;
+    ctx.stroke();
+    ctx.restore();
+  } else if (projectile.projectileType === "heavy_cannon" || projectile.projectileType === "heavy_bolt") {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    const heavyColor = projectile.ownerTeam === TEAM.PLAYER ? "#d7c2ff" : "#ffbb89";
+    ctx.strokeStyle = heavyColor;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 5 + techLevel * 0.6;
+    ctx.beginPath();
+    ctx.moveTo(x - Math.cos(angle) * 14, y - Math.sin(angle) * 14);
+    ctx.lineTo(x + Math.cos(angle) * 6, y + Math.sin(angle) * 6);
+    ctx.stroke();
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = "#fff1cb";
+    ctx.beginPath();
+    ctx.arc(x, y, 3.2 + techLevel * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
   const sprite = visual ? asset(assets, visual.assetKey) : null;
   if (visual && sprite) {
     const frame = Math.floor(projectile.age * visual.fps) % visual.frameCount;
@@ -596,7 +699,7 @@ export const renderEntityLayer = (ctx, model) => {
     ctx.globalAlpha = 0.62 + launchProgress * 0.38;
     ctx.scale(0.78 + launchProgress * 0.22, 0.78 + launchProgress * 0.22);
     ctx.rotate(renderRotation);
-    if (simulation.state.time - unit.lastDamagedAt < 0.12) ctx.filter = "brightness(2.2) saturate(0.35)";
+    if (simulation.state.time - unit.lastDamagedAt < 0.18) ctx.filter = "brightness(2.45) saturate(0.28)";
     ctx.globalCompositeOperation = "screen";
     if (visual?.engine) drawStripFrame(ctx, asset(model.assets, visual.engine.assetKey), visual.engine, frameSize, simulation.state.time, displaySize);
     ctx.globalCompositeOperation = "source-over";
@@ -634,13 +737,19 @@ export const renderEntityLayer = (ctx, model) => {
     }
     if (visual?.shield) drawTimedStrip(ctx, asset(model.assets, visual.shield.assetKey), visual.shield, frameSize, simulation.state.time - unit.lastDamagedAt, displaySize, unit.unitType === "frigate" ? 0.82 : 0.62);
     const damageAge = simulation.state.time - unit.lastDamagedAt;
-    if ((unit.unitType === "frigate" || unit.unitType === "bomber") && damageAge >= 0 && damageAge < 0.34) {
+    if (damageAge >= 0 && damageAge < 0.34) {
       ctx.globalCompositeOperation = "screen";
-      ctx.globalAlpha = (1 - damageAge / 0.34) * 0.72;
-      ctx.strokeStyle = teamColor(unit.team);
-      ctx.lineWidth = 1.6;
+      const damageProgress = damageAge / 0.34;
+      ctx.globalAlpha = (1 - damageProgress) * 0.82;
+      ctx.fillStyle = "rgba(255,245,214,0.46)";
       ctx.beginPath();
-      ctx.ellipse(0, 0, size * 0.48, size * 0.38, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, size * 0.34, size * 0.26, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = (1 - damageProgress) * 0.9;
+      ctx.strokeStyle = unit.team === TEAM.PLAYER ? "#a9f5f2" : "#ffad8e";
+      ctx.lineWidth = unit.unitType === "frigate" ? 2.2 : 1.6;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * (0.43 + damageProgress * 0.16), size * (0.34 + damageProgress * 0.13), 0, 0, Math.PI * 2);
       ctx.stroke();
     }
     ctx.globalCompositeOperation = "source-over";
@@ -701,9 +810,18 @@ export const renderEffectsLayer = (ctx, model) => {
         ctx.stroke();
       }
     } else if (effect.type === "hit") {
+      const heavy = effect.projectileType === "siege_missile" || effect.projectileType === "heavy_cannon" || effect.projectileType === "heavy_bolt";
+      const flashRadius = heavy ? 22 : effect.projectileType === "fighter_laser" ? 15 : 11;
+      ctx.globalCompositeOperation = "screen";
+      const impactGlow = ctx.createRadialGradient(effect.x, y, 0, effect.x, y, flashRadius * (0.65 + progress));
+      impactGlow.addColorStop(0, `rgba(255,248,218,${0.9 * alpha})`);
+      impactGlow.addColorStop(0.28, effect.team === TEAM.PLAYER ? `rgba(114,236,242,${0.66 * alpha})` : `rgba(255,142,111,${0.66 * alpha})`);
+      impactGlow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = impactGlow;
+      ctx.fillRect(effect.x - flashRadius * 2, y - flashRadius * 2, flashRadius * 4, flashRadius * 4);
       ctx.strokeStyle = effect.projectileType === "siege_missile" ? "#ffd096" : "#f7f4d7";
-      ctx.lineWidth = 1.6;
-      const count = effect.projectileType === "siege_missile" ? 9 : 6;
+      ctx.lineWidth = heavy ? 2.2 : 1.6;
+      const count = effect.projectileType === "siege_missile" ? 11 : heavy ? 8 : 6;
       for (let index = 0; index < count; index += 1) {
         const angle = seededAngle(effect.seed, index);
         const inner = 2 + progress * 3;

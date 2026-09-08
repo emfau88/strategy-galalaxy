@@ -17,7 +17,7 @@ import { acquireStructureTarget, acquireUnitTarget } from "../src/simulation/tar
 import { ASSET_GROUPS } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { SoundSystem } from "../src/audio/soundSystem.js";
-import { commandActionAt, commandUiLayout, fullscreenActionAt, titleActionAt, utilityActionAt } from "../src/ui/commandUi.js";
+import { commandActionAt, commandUiLayout, endActionAt, fullscreenActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "../src/ui/commandUi.js";
 import { cameraNavigatorRatioAt } from "../src/ui/cameraUi.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
@@ -179,6 +179,16 @@ hardpointSimulation.step(0.16);
 assert.equal(hardpointSimulation.state.events.filter((event) => event.type === "shot").length, 2);
 hardpointSimulation.step(0.15);
 assert.equal(hardpointSimulation.state.events.filter((event) => event.type === "shot").length, 3);
+
+const splitSquadSimulation = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
+const splitSquad = splitSquadSimulation.spawnFormation(TEAM.PLAYER, LANE.CENTER, ["scout", "fighter"], 77);
+splitSquad.forEach((unit) => { unit.launching = false; });
+splitSquad[0].state = "HOLDING";
+splitSquad[1].state = "ADVANCING";
+const splitSquadAnchor = splitSquadSimulation.squads.get(splitSquad[0].formationId);
+const anchorBefore = splitSquadAnchor.y;
+splitSquadSimulation.advanceSquadAnchors(0.5);
+assert.ok(splitSquadAnchor.y < anchorBefore, "one holding ship no longer freezes advancing squadmates");
 
 const boundedEvents = new BattleSimulation();
 for (let index = 0; index < 1100; index += 1) emitSimulationEvent(boundedEvents.state, { type: "stress_event" });
@@ -476,12 +486,20 @@ assert.deepEqual(utilityActionAt({ x: 355, y: 26 }), { type: "TOGGLE_SOUND" });
 assert.deepEqual(titleActionAt({ x: 210, y: 414 }), { type: "CYCLE_LEVEL" });
 assert.deepEqual(titleActionAt({ x: 210, y: 454 }), { type: "CYCLE_DIFFICULTY" });
 assert.deepEqual(titleActionAt({ x: 210, y: 497 }), { type: "START_MATCH" });
+assert.deepEqual(pauseActionAt({ x: 146, y: 407 }), { type: "RESUME_MATCH" });
+assert.deepEqual(pauseActionAt({ x: 274, y: 407 }), { type: "RETURN_TO_TITLE" });
+assert.deepEqual(endActionAt({ x: 146, y: 419 }), { type: "RESTART_MATCH" });
+assert.deepEqual(endActionAt({ x: 274, y: 419 }), { type: "RETURN_TO_TITLE" });
 
 const gardenMatch = new MatchDirector({ mapDefinition: ORBITAL_GARDEN });
 gardenMatch.start();
 assert.deepEqual([...gardenMatch.simulation.state.lanes.keys()], [LANE.CENTER]);
 assert.equal(gardenMatch.simulation.state.lanes.get(LANE.CENTER).unitIds.get(TEAM.PLAYER).length, 2);
 assert.equal(gardenMatch.economy.reinforcementLimit(TEAM.PLAYER), 3);
+assert.equal(gardenMatch.pause(), true);
+assert.equal(gardenMatch.returnToTitle(), true);
+assert.equal(gardenMatch.state, MATCH_STATE.TITLE);
+assert.equal(gardenMatch.simulation, null);
 
 const sound = new SoundSystem();
 assert.equal(sound.userInteracted, false);

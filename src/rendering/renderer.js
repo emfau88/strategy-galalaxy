@@ -1,6 +1,15 @@
 import { renderBackground, renderBattlefieldLayer, renderEffectsLayer, renderEntityLayer } from "./battlefieldRenderer.js";
 import { renderUiLayer } from "./uiRenderer.js";
 
+const drawCover = (ctx, image, width, height, verticalAnchor = 0.5) => {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const sourceWidth = width / scale;
+  const sourceHeight = height / scale;
+  const sourceX = (image.naturalWidth - sourceWidth) / 2;
+  const sourceY = (image.naturalHeight - sourceHeight) * verticalAnchor;
+  ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
+};
+
 export class Renderer {
   constructor(canvas, context) {
     this.canvas = canvas;
@@ -24,11 +33,17 @@ export class Renderer {
     const sceneModel = { ...model, width: transform.designWidth, height: transform.designHeight };
     renderBackground(ctx, transform.designWidth, transform.designHeight, model.frameTime, model.assets);
     if (model.state === "TITLE" && model.mapDefinition?.visualTheme === "orbital_garden") {
-      const garden = model.assets?.get("background-orbital-garden");
+      const garden = model.assets?.get("background-orbital-garden-player") ?? model.assets?.get("background-orbital-garden");
       if (garden) {
         ctx.save();
-        ctx.globalAlpha = 0.9;
-        ctx.drawImage(garden, 0, 0, transform.designWidth, transform.designHeight);
+        ctx.globalAlpha = 0.92;
+        drawCover(ctx, garden, transform.designWidth, transform.designHeight, 0.72);
+        const shade = ctx.createLinearGradient(0, 0, 0, transform.designHeight);
+        shade.addColorStop(0, "rgba(5,14,30,0.12)");
+        shade.addColorStop(0.48, "rgba(5,14,30,0.42)");
+        shade.addColorStop(1, "rgba(5,14,30,0.66)");
+        ctx.fillStyle = shade;
+        ctx.fillRect(0, 0, transform.designWidth, transform.designHeight);
         ctx.restore();
       }
     }

@@ -1,6 +1,6 @@
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
 import { UNIT_DEFINITIONS } from "../data/definitions.js";
-import { commandUiLayout } from "../ui/commandUi.js";
+import { commandUiLayout, overlayUiLayout } from "../ui/commandUi.js";
 import { cameraNavigatorLayout } from "../ui/cameraUi.js";
 
 const C = Object.freeze({
@@ -247,13 +247,20 @@ const title = (ctx, model) => {
   box(ctx, { x: 343, y: 12, width: 30, height: 34 }, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
   text(ctx, model.soundEnabled ? "♪" : "×", 358, 29, 13, model.soundEnabled ? C.text : C.muted, "center");
   const singleLane = model.mapDefinition?.lanes.length === 1;
-  box(ctx, { x: 52, y: 248 + offsetY, width: model.width - 104, height: 280 }, "rgba(16, 33, 58, 0.84)", C.player, 12);
-  text(ctx, "STRATEGY GALALAXY", model.width / 2, 278 + offsetY, 19, C.text, "center");
-  text(ctx, "PLAN · DEPLOY · WATCH THE LINE", model.width / 2, 304 + offsetY, 11, C.muted, "center");
-  text(ctx, "1  DRAG TO EXPLORE THE FRONT", model.width / 2, 334 + offsetY, 10, C.text, "center", 600);
-  text(ctx, singleLane ? "2  HOLD THE ORBITAL SUNWELL" : "2  PICK LEFT OR RIGHT", model.width / 2, 354 + offsetY, 10, C.text, "center", 600);
-  text(ctx, singleLane ? "3  BUILD A THREE-SHIP WAVE" : "3  QUEUE UP TO 4 SHIPS", model.width / 2, 374 + offsetY, 10, C.text, "center", 600);
-  box(ctx, { x: 104, y: 398 + offsetY, width: 212, height: 32 }, "rgba(83,78,65,0.88)", "rgba(239,199,127,0.56)", 8);
+  const halo = ctx.createRadialGradient(model.width / 2, 224 + offsetY, 8, model.width / 2, 224 + offsetY, 150);
+  halo.addColorStop(0, "rgba(239,199,127,0.28)");
+  halo.addColorStop(1, "rgba(239,199,127,0)");
+  ctx.fillStyle = halo;
+  ctx.fillRect(38, 78 + offsetY, model.width - 76, 292);
+  text(ctx, "ORBITAL COMMAND", model.width / 2, 166 + offsetY, 9, C.gold, "center", 650);
+  text(ctx, "STRATEGY", model.width / 2, 201 + offsetY, 30, C.text, "center");
+  text(ctx, "GALALAXY", model.width / 2, 233 + offsetY, 30, C.text, "center");
+  text(ctx, "BUILD A FLEET · HOLD THE LINE", model.width / 2, 265 + offsetY, 10, C.muted, "center", 650);
+  box(ctx, { x: 52, y: 288 + offsetY, width: model.width - 104, height: 240 }, "rgba(12, 28, 48, 0.88)", "rgba(239,199,127,0.5)", 14);
+  text(ctx, singleLane ? "ONE LANE · ONE SUNWELL · LIVE COMBAT" : "TWO LANES · LIVE COMBAT", model.width / 2, 315 + offsetY, 9, C.text, "center", 600);
+  text(ctx, "SWIPE THE MAP · PLAN EACH 22s WAVE", model.width / 2, 337 + offsetY, 8, C.muted, "center", 600);
+  text(ctx, "‹  MISSION  ›", model.width / 2, 382 + offsetY, 8, C.gold, "center", 650);
+  box(ctx, { x: 104, y: 398 + offsetY, width: 212, height: 32 }, "rgba(83,78,65,0.9)", "rgba(239,199,127,0.62)", 8);
   text(ctx, `LEVEL ${model.selectedLevel ?? 1} · ${model.mapDefinition?.title ?? "ORBITAL GARDEN"}`, model.width / 2, 414 + offsetY, 10, C.gold, "center");
   box(ctx, { ...ui.fullscreen, x: 104, y: 438 + offsetY, width: 212, height: 32 }, "rgba(37,72,93,0.82)", "rgba(190,229,239,0.32)", 8);
   const difficulty = { cadet: "CADET · RELAXED", tactician: "TACTICIAN · NORMAL", admiral: "ADMIRAL · HARD" }[model.aiProfile] ?? "TACTICIAN · NORMAL";
@@ -264,18 +271,27 @@ const title = (ctx, model) => {
 const endState = (ctx, model) => {
   const win = model.state === MATCH_STATE.VICTORY;
   const draw = model.state === MATCH_STATE.DRAW;
-  const offsetY = model.height / 2 - 380;
   const color = draw ? C.gold : win ? C.player : C.enemy;
-  box(ctx, { x: 72, y: 324 + offsetY, width: model.width - 144, height: 118 }, "rgba(16,33,58,0.84)", color, 12);
-  text(ctx, draw ? "STALEMATE" : win ? "VICTORY" : "DEFEAT", model.width / 2, 360 + offsetY, 24, color, "center");
-  text(ctx, "TAP FOR A NEW MATCH", model.width / 2, 408 + offsetY, 11, C.text, "center");
+  const ui = overlayUiLayout(model.height);
+  box(ctx, ui.endPanel, "rgba(10,24,43,0.94)", color, 14);
+  text(ctx, draw ? "STALEMATE" : win ? "VICTORY" : "DEFEAT", model.width / 2, model.height / 2 - 48, 24, color, "center");
+  text(ctx, "THE ORBITAL FRONT IS QUIET", model.width / 2, model.height / 2 - 15, 9, C.muted, "center", 600);
+  box(ctx, ui.endRestart, "rgba(54,139,145,0.88)", "#b8edf0", 9);
+  text(ctx, "PLAY AGAIN", ui.endRestart.x + ui.endRestart.width / 2, ui.endRestart.y + 23, 10, C.text, "center");
+  box(ctx, ui.endMenu, "rgba(83,78,65,0.9)", "rgba(239,199,127,0.62)", 9);
+  text(ctx, "MAIN MENU", ui.endMenu.x + ui.endMenu.width / 2, ui.endMenu.y + 23, 10, C.gold, "center");
 };
 
 const paused = (ctx, model) => {
+  const ui = overlayUiLayout(model.height);
   const y = model.height / 2;
-  box(ctx, { x: 112, y: y - 42, width: 196, height: 84 }, "rgba(10,22,42,0.9)", C.gold, 12);
-  text(ctx, "PAUSED", model.width / 2, y - 10, 22, C.gold, "center");
-  text(ctx, "PRESS P TO RESUME", model.width / 2, y + 20, 10, C.text, "center");
+  box(ctx, ui.pausePanel, "rgba(10,24,43,0.95)", C.gold, 14);
+  text(ctx, "PAUSED", model.width / 2, y - 58, 22, C.gold, "center");
+  text(ctx, "THE BATTLE IS ON HOLD", model.width / 2, y - 27, 9, C.muted, "center", 600);
+  box(ctx, ui.pauseResume, "rgba(54,139,145,0.88)", "#b8edf0", 9);
+  text(ctx, "RESUME", ui.pauseResume.x + ui.pauseResume.width / 2, ui.pauseResume.y + 23, 10, C.text, "center");
+  box(ctx, ui.pauseMenu, "rgba(83,78,65,0.9)", "rgba(239,199,127,0.62)", 9);
+  text(ctx, "MAIN MENU", ui.pauseMenu.x + ui.pauseMenu.width / 2, ui.pauseMenu.y + 23, 10, C.gold, "center");
 };
 
 export const renderUiLayer = (ctx, model) => {

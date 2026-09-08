@@ -12,7 +12,7 @@ import { PresentationEffects } from "./rendering/presentationEffects.js";
 import { SoundSystem } from "./audio/soundSystem.js";
 import { MatchDirector } from "./simulation/matchDirector.js";
 import { InputRouter } from "./ui/inputRouter.js";
-import { commandActionAt, containsPoint, titleActionAt, utilityActionAt } from "./ui/commandUi.js";
+import { commandActionAt, containsPoint, endActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "./ui/commandUi.js";
 import { cameraNavigatorRatioAt } from "./ui/cameraUi.js";
 import { AI_PROFILES } from "./simulation/opponentAi.js";
 import { CLASSIC_LANES, ORBITAL_GARDEN } from "./data/definitions.js";
@@ -128,6 +128,30 @@ export class Game {
 
   receiveInput(input) {
     this.lastInput = input;
+    if (input.kind === "down" && this.match.state === MATCH_STATE.PAUSED) {
+      const action = pauseActionAt(input, this.transform?.designHeight);
+      if (action?.type === "RESUME_MATCH") {
+        this.match.resume();
+        this.sound.play("select");
+        this.syncMatchState();
+        return;
+      }
+      if (action?.type === "RETURN_TO_TITLE") {
+        this.returnToTitle();
+        return;
+      }
+    }
+    if (input.kind === "down" && [MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(this.match.state)) {
+      const action = endActionAt(input, this.transform?.designHeight);
+      if (action?.type === "RETURN_TO_TITLE") {
+        this.returnToTitle();
+        return;
+      }
+      if (action?.type === "RESTART_MATCH") {
+        this.restartMatch();
+        return;
+      }
+    }
     if (this.handleCameraInput(input)) return;
     if (input.kind !== "down") return;
     this.sound.unlock().catch(() => {});
@@ -175,15 +199,30 @@ export class Game {
       this.sound.vibrate([12, 24, 18]);
     }
     else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight, this.match.mapDefinition.lanes.map((lane) => lane.id)));
-    else if ([MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(this.match.state)) {
-      this.match.restart();
-      this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
-      this.camera.reset("player");
-      this.effects.reset();
-      this.sound.reset();
-      this.sound.play("deploy");
-    }
     this.syncMatchState();
+  }
+
+  restartMatch() {
+    if (!this.match.restart()) return false;
+    this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
+    this.camera.reset("player");
+    this.effects.reset();
+    this.sound.reset();
+    this.sound.play("deploy");
+    this.syncMatchState();
+    return true;
+  }
+
+  returnToTitle() {
+    if (!this.match.returnToTitle()) return false;
+    this.cameraGesture = null;
+    this.commandMenu = "units";
+    this.commandFeedback = null;
+    this.effects.reset();
+    this.sound.reset();
+    this.sound.play("select");
+    this.syncMatchState();
+    return true;
   }
 
   handleCameraInput(input) {
@@ -302,7 +341,7 @@ export class Game {
       if (this.match.state === MATCH_STATE.PAUSED) this.match.resume();
       else this.match.pause();
     }
-    if (event.key.toLowerCase() === "r" && this.match.restart()) this.effects.reset();
+    if (event.key.toLowerCase() === "r") this.restartMatch();
     this.syncMatchState();
   }
 

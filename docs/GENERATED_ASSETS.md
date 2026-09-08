@@ -49,7 +49,7 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
 - **Method / mode:** Built-in ImageGen, production 2D game asset mode, using the approved `level-1-orbital-garden-concept-v1.png` as the visual reference.
 - **Purpose:** Restore the tall scrollable Level-1 battlefield without stretching, give the rival HQ a correct downward-facing authored view, and resolve the map/ship perspective mismatch with a strictly orthographic modular turret.
 - **Prompt direction:** Two complementary portrait sectors with an open central flight corridor, edge-hugging garden asteroids, mist and warm navigation lights; lower sector with the mockup's planet limb. Rival garden HQ facing down toward the battlefield with coral identity. Turret base and twin-barrel head viewed at a strict 90-degree top-down angle, in ivory stone, brass and living garden materials, isolated on black for Canvas screen compositing. No ships, UI, text or logos.
-- **Runtime:** Each `932×1688` sector is aspect-cropped into one `420×590` world half. The player sector uses its lower crop and the rival sector its upper crop, preserving geometry across the full `420×1180` scroll world. HQs, Sunwell, turret bases and rotating heads remain independent runtime layers.
+- **Runtime:** Each `932×1688` sector is aspect-cropped into one `420×640` world section. The sections overlap by 100 world pixels and are blended once into a cached `420×1180` canvas, preserving geometry without a hard seam or per-frame multi-pass cost. HQs, Sunwell, turret bases and rotating heads remain independent runtime layers.
 - **Status:** Active Level-1 runtime assets.
 
 ## `orbital-garden-turret-v1.png` (superseded)

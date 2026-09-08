@@ -130,8 +130,21 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 - [x] Bomberstart, Rakete, Rauchspur und Einschlag als klar lesbare Sequenz verstärken.
 - [x] Projektilgeschwindigkeit global senken und Lebensdauer für die bisherige Reichweite kompensieren.
 - [x] Drei Frigate-Breitseitenschüsse über `0,30 s` als echte Salve nacheinander starten.
-- [ ] Foundation-, Asset- und Mobile-Browserprüfung bestehen.
-- [ ] Ergebnis committen und auf `main` pushen.
+- [x] Foundation-, Asset- und Mobile-Browserprüfung bestehen.
+- [x] Ergebnis als testbaren Zwischenstand committen und pushen (`aab30af`).
+
+## UX- und Kampflesbarkeits-Polish
+
+- [x] Hauptmenü visuell näher an die warme Orbital-Garden-Art-Direction bringen.
+- [x] Proportionales Title-Art-Cropping statt verzerrtem Hintergrund einsetzen.
+- [x] Pause-Menü um klare Aktionen für Fortsetzen und Hauptmenü ergänzen.
+- [x] Ergebnisbildschirm in getrennte Aktionen für neues Match und Hauptmenü aufteilen.
+- [x] Direkte Treffer mit längerem Hull-Flash, Schildimpuls und Projektil-starkem Impact sichtbar machen.
+- [x] Scout-Pulse, Fighter-Laser, Bomber-Rakete und Frigate-Geschütz visuell klar trennen.
+- [x] Garten-Turret-Rückstoß verstärken und beide Rohrmündungen aufblitzen lassen.
+- [x] Squad-Anker entkoppeln, damit ein haltendes/erfassendes Schiff nicht alle Kameraden stoppt.
+- [x] Foundation-, Asset- und Mobile-Browserprüfung nach dem UX-Pass bestehen.
+- [x] Abschluss committen und auf `main` pushen.
 
 - [ ] HQ antippbar machen und ein kontextuelles Kommandomenü als Prototyp öffnen.
 - [ ] Schiffstypen als Drag-and-drop-Chips vom HQ auf Left/Right anbieten.

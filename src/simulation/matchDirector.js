@@ -176,6 +176,16 @@ export class MatchDirector {
     return this.start();
   }
 
+  returnToTitle() {
+    if (this.state === MATCH_STATE.TITLE) return false;
+    this.state = MATCH_STATE.TITLE;
+    this.resumeState = null;
+    this.simulation = null;
+    this.activeMatchSeconds = 0;
+    this.events.push({ type: "RETURNED_TO_TITLE" });
+    return true;
+  }
+
   get queuedWaves() { return this.deployment.queuedWaves; }
   get baseWaveBacklog() { return this.deployment.baseWaveBacklog; }
   get nextQueueSequence() { return this.deployment.nextQueueSequence; }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createReadStream, existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { createServer as createNetServer } from "node:net";
 import { extname, normalize, resolve } from "node:path";
@@ -35,10 +35,12 @@ await new Promise((resolveListen) => portProbe.listen(0, "127.0.0.1", resolveLis
 const debugPort = portProbe.address().port;
 await new Promise((resolveClose) => portProbe.close(resolveClose));
 await mkdir(output, { recursive: true });
+const browserProfile = resolve(output, "profile");
 
 const browserProcess = spawn(browser, [
   "--headless=new", "--disable-crash-reporter", "--no-first-run", "--hide-scrollbars",
-  `--remote-debugging-port=${debugPort}`, "--remote-allow-origins=*", `--user-data-dir=${resolve(output, "profile")}`,
+  "--disable-gpu-shader-disk-cache", "--disk-cache-size=1048576", "--media-cache-size=1048576",
+  `--remote-debugging-port=${debugPort}`, "--remote-allow-origins=*", `--user-data-dir=${browserProfile}`,
   "about:blank",
 ], { stdio: "ignore" });
 
@@ -138,6 +140,14 @@ try {
   await touch(210, 497);
   titleState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.state", returnByValue: true });
   assert.equal(titleState.result.value, "LIVE_MATCH", "start button begins a live match");
+  await touch(323, 29);
+  titleState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.state", returnByValue: true });
+  assert.equal(titleState.result.value, "PAUSED", "pause button opens the in-match menu");
+  const pauseScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "pause-menu-420x760.png"), Buffer.from(pauseScreenshot.data, "base64"));
+  await touch(274, 407);
+  titleState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.state", returnByValue: true });
+  assert.equal(titleState.result.value, "TITLE", "the pause menu returns to the main menu");
 
   loaded = waitEvent("Page.loadEventFired");
   await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&level=1&seed=640` });
@@ -272,4 +282,5 @@ try {
   socket?.close();
   browserProcess.kill();
   staticServer.close();
+  await rm(browserProfile, { recursive: true, force: true, maxRetries: 4, retryDelay: 125 }).catch(() => {});
 }

@@ -2,11 +2,11 @@
 
 **[▶ Strategy Galalaxy spielen](https://emfau88.github.io/strategy-galalaxy/)**
 
-Strategy Galalaxy ist ein eigenständiges, Mobile-First Space-Lane-Wars-Spiel im Portraitformat. Zwei Flotten kämpfen kontinuierlich in persistenten Korridoren, während der Spieler die nächste Verstärkungswelle vorbereitet. Beide Seiten deployen automatisch und gleichzeitig alle 22 Sekunden; die letzten zwei Sekunden sind gesperrt.
+Strategy Galalaxy ist ein eigenständiges, Mobile-First Space-Lane-Wars-Spiel im Portraitformat. Zwei Flotten kämpfen kontinuierlich auf einer hohen, vertikal erkundbaren Karte, während der Spieler die nächste Verstärkungswelle vorbereitet. Beide Seiten deployen automatisch und gleichzeitig alle 22 Sekunden; die letzten zwei Sekunden sind gesperrt.
 
 ```text
-Beide Lanes beobachten
-  → bis zu 4 gekaufte Verstärkungen planen
+Die Front beobachten
+  → je nach Karte 3–4 Verstärkungen planen
   → Queue bis zum Lock-in anpassen
   → simultanes Deployment nach 22 Sekunden
   → Überlebende kämpfen weiter
@@ -18,20 +18,22 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 ## Aktueller Spielstand
 
 - Kontinuierlicher `LIVE_MATCH` mit 22-Sekunden-Deployment und Zwei-Sekunden-Lock-in.
-- Zwei nebeneinander sichtbare Lanes auf einem höheren Schlachtfeld mit direktem vertikalem Touch-Panning.
+- Zwei wählbare Karten: Level 1 „Orbital Garden“ als großzügige Ein-Lane-Front und Level 2 „Twin Fronts“ mit zwei parallelen Lanes; beide nutzen eine `420 x 1180` Scroll-Welt.
 - Eine schmale strategische Kartenleiste zeigt Fronten, Strukturen, Nodes und den aktuellen Kameraausschnitt.
-- Drei schwache automatische Drones pro Lane und Deployment sowie vier gemeinsame, gekaufte Verstärkungsslots; Scouts bleiben wertvolle Capture-Spezialisten.
+- Schwache automatische Drones pro Lane und Deployment sowie kartenabhängig drei oder vier gekaufte Verstärkungsslots; Scouts bleiben wertvolle Capture-Spezialisten.
 - Sofortige Energiereservierung, vollständige Rückerstattung vor Lock-in und Upgrade-Aktivierung am nächsten Deployment.
-- Gedeckelte Economy mit 300 Startenergie, 16 Basisenergie/s, 7 Energie/s pro Node und maximal 780 gespeicherter Energie.
+- Gedeckelte Economy mit 270 Startenergie in Level 1 beziehungsweise 300 in Level 2, 16 Basisenergie/s, 7 Energie/s pro Node und maximal 780 gespeicherter Energie.
 - Vier konkurrierende, konkret beschriftete Investitionen: Reactor-Einkommen, Arsenal-Flottenschaden, Bastion-Turret-Feuerkraft und zusätzliche Hangar-Slots. Pro Welle kann ein Projekt vorbereitet werden; es wird an der nächsten Deployment-Grenze hörbar und sichtbar aktiv.
 - Regelgebundene KI mit denselben Kosten, Slots, Timern, Kapazitäten und Upgrade-Regeln wie der Spieler, drei wählbaren Profilen und genau einer Neubewertung kurz vor dem Lock-in.
 - Scout, Fighter, Bomber und Frigate mit eigenen Rollen, Formationen, Zielprioritäten und Capture-Stärken.
 - Nairan- und Kla'ed-Flotten mit animierten Engines, Weapon-, Shield- und Destruction-Layern.
-- Rollen- und fraktionsabhängige animierte Projektile, schadensneutrale Mehrfachsalven, echte Breitseiten-Hardpoints, bounded Homing, begrenzte Trails, Muzzle Flashes, Treffer- und Explosionseffekte.
-- Modulare Defense Turrets mit eigenem weich nachgeführtem Geschütz, Laufmündungs-Projektilen und Schussrückstoß sowie hochwertige Headquarters mit zwei lane-seitigen Hangars: Schiffe starten sichtbar aus dem passenden Tor, das sich nur bei tatsächlicher Auslieferung öffnet und wieder schließt.
+- Klar getrennte Waffenbilder: kompakte Scout-Plasmapulse, lange Fighter-Lasertracer, große Bomber-Homing-Raketen und schwere Frigate-Geschosse. Mehrfachsalven bleiben schadensneutral; Frigate-Breitseiten starten sichtbar nacheinander von drei Hardpoints.
+- Deutliches Schadensfeedback durch Hull-Flash, expandierende Schildkontur, projektilabhängigen Impact-Glow, Funken und situative Healthbars.
+- Modulare Defense Turrets mit eigenem weich nachgeführtem Geschütz, sichtbarem Doppelmündungsfeuer und Schussrückstoß. Level 1 nutzt ein strikt top-down gezeichnetes Garten-Turret und zwei eigenständig ausgerichtete Headquarters statt einer kopfstehenden Spiegelung.
 - Keine großflächigen Team-Neonringe oder dekorativen Orbit-Ellipsen; Nodes zeigen Capture-Fortschritt kompakt unterhalb des Sprites.
 - Faire Projektilbudgets pro Team und Lane sowie globale Sicherheitsgrenzen für mobile Geräte; die Kartenleiste pulsiert bei frischen Offscreen-Treffern und Zerstörungen.
-- Responsive Canvas-Höhe mit bildschirmfestem HUD, größer dargestellten Schiffen und einer davon entkoppelten `420 x 1180` Spielwelt.
+- Responsive Canvas-Höhe mit bildschirmfestem HUD und einer davon entkoppelten `420 x 1180` Spielwelt. Die beiden Level-1-Hintergrundsektoren werden proportional beschnitten und weich überblendet, nicht auf Mobile verzerrt.
+- Über das Pause-Menü kann jederzeit zum Hauptmenü zurückgekehrt werden; der Ergebnisbildschirm bietet getrennt „Play Again“ und „Main Menu“.
 - Größere Mobile-Touchflächen, direkt in den Lane-Tabs sichtbarer Druckvergleich sowie ein kurzer Drei-Schritte-Einstieg auf dem Startbildschirm.
 - Schaltbare, synthetisierte Combat-Sounds und an echte Nutzergesten gebundenes Haptik-Feedback ohne zusätzliche Audio-Lizenzabhängigkeit.
 - Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt nur den kuratierten aktuellen Ausschnitt.
@@ -68,7 +70,7 @@ Das Projekt nutzt native Browsermodule und benötigt keinen Build-Schritt.
 python -m http.server 8765 --directory .
 ```
 
-Anschließend `http://127.0.0.1:8765/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste, wählt Left oder Right, reiht Einheiten ein, entfernt den letzten Queue-Eintrag mit Undo oder wechselt zu Upgrades. `P` pausiert, das Symbol oben rechts fordert Browser-Fullscreen an.
+Anschließend `http://127.0.0.1:8765/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste, wählt die verfügbare Lane, reiht Einheiten ein, entfernt den letzten Queue-Eintrag mit Undo oder wechselt zu Upgrades. `P` pausiert; das Pause-Menü kann fortsetzen oder zum Hauptmenü zurückkehren. Das Symbol oben rechts fordert Browser-Fullscreen an.
 
 ## Prüfen
 
@@ -97,4 +99,4 @@ Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Forschung, Captu
 
 ## Status
 
-Die verbindlichen Umbau-Meilensteine 1 bis 5 sind umgesetzt: Tall-world-Kamera, langsamere Squad-Formationen, automatische Drones, konkurrierende Economy-/Forschungswege und die verdichtete Schlachtinszenierung mit Mehrfachsalven und Breitseiten-Hardpoints. Foundation-, Asset-, Stress- und Mobile-Browserprüfungen laufen grün. Die frühere 100-Match-Referenz endete 50:50; nach dem Umbau wird die neue große Balance-Referenz erst nach manuellem Spielgefühl-Test festgeschrieben. Das optionale HQ-Kommandomenü bleibt als Meilenstein 6 in der [Umbau-Roadmap](IMPLEMENTATION_ROADMAP.md) vorgemerkt.
+Die verbindlichen Umbau-Meilensteine 1 bis 5 und der Orbital-Garden-Polish sind umgesetzt: Tall-world-Kamera, langsamere entkoppelte Squad-Formationen, automatische Drones, konkurrierende Economy-/Forschungswege, mockup-nahe Level-1-Sektoren und lesbare klassenspezifische Waffen. Foundation-, Asset-, Stress- und Mobile-Browserprüfungen laufen grün. Die frühere 100-Match-Referenz endete 50:50; nach dem Umbau wird die neue große Balance-Referenz erst nach manuellem Spielgefühl-Test festgeschrieben. Das optionale HQ-Kommandomenü bleibt als Meilenstein 6 in der [Umbau-Roadmap](IMPLEMENTATION_ROADMAP.md) vorgemerkt.
