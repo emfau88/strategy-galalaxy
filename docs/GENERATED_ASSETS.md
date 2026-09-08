@@ -1,5 +1,13 @@
 # Generated Assets
 
+## Integrated HQ command HUD mockups
+
+- **Destinations:** `docs/mockups/hud-integrated-collapsed-v1.png`, `docs/mockups/hud-integrated-hq-command-v1.png`
+- **Method / mode:** Built-in ImageGen, high-fidelity `ui-mockup`, using the current Level-1 browser render as layout target and the approved Orbital Garden concept as art-direction reference.
+- **Purpose:** Explore a hybrid HUD in which the normal battle view keeps only a compact command dock, while selecting the player HQ expands a touch-sized fleet/upgrade console without obscuring most of the battle.
+- **Prompt direction:** Preserve the current portrait battlefield and right navigator; reduce the permanent lower HUD to HQ Command, queue icons and slots. In the expanded state, connect the selected HQ visually to a warm navy, ivory and brass console with Fleet/Upgrades tabs, four ship choices and a compact queue. Keep cyan/coral team readability, exact mobile-scale labels and at least 58% of the battle visible. Avoid generic neon, tiny controls and a full-screen menu.
+- **Status:** Approved-direction concept only; not yet implemented in runtime UI.
+
 ## `strategy-galaxy-background-v1.png`
 
 - **Destination:** `assets/environment/strategy-galaxy-background-v1.png`
