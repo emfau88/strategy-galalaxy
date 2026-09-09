@@ -91,7 +91,7 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
 - **Method / mode:** Built-in ImageGen, `stylized-concept`, using the approved Orbital Garden mockup as material and perspective reference.
 - **Purpose:** Replace Level 1's cold blue mechanical turret base with a readable garden defense platform that belongs to the Sunwell/HQ family.
 - **Prompt direction:** Compact ivory-stone and brass emplacement, dark rotating socket, planted garden beds, warm lamps and neutral cyan conduits on a uniform black compositing background; no mounted weapon, ships, UI or scenery.
-- **Runtime:** The existing rotating turret head remains code-driven. Team ownership is added as a strong Cyan/Coral ring, central glow and four perimeter beacons.
+- **Runtime:** The existing rotating turret head remains code-driven. The former Cyan/Coral ring and central glow were removed; only four compact diamond beacons remain as ownership cues.
 - **Status:** Retained as source history. Level 1 now uses the strict top-down v2 base and matching independent head; Level 2 keeps its original modular turret set.
 
 ## `defense-turret-head-topdown-v3.png`
@@ -101,3 +101,23 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
 - **Purpose:** Independent rotating twin-barrel layer. Canvas controls pivot alignment, smooth target tracking, recoil, team indicator and damage response; simulation projectiles originate at the muzzle.
 - **Prompt:** “Create one premium compact twin-barrel orbital defense cannon head only, perfectly top-down and forward-facing toward the top edge, centered for a code-driven rotation pivot. Crisp polished high-resolution pixel-art hybrid, neutral silver/blue-gray/pale-lavender armor with restrained practical lighting, readable at 38–44 pixels, transparent background. No platform, projectile, muzzle flash, UI, text, shadow, aura, team ring, watermark, perspective or excessive bloom.”
 - **Status:** Active runtime asset.
+
+## Unified fleet engine animation strips
+
+- **Destinations:** `assets/effects/player-engine-strip-v1.png`, `assets/effects/enemy-engine-strip-v1.png`
+- **Method / mode:** Built-in ImageGen, new raster VFX generation, followed by deterministic grid extraction and normalization with `scripts/process-vfx-atlas.py`.
+- **Purpose:** Replace the temporary procedural exhaust ellipses with authored, time-varying engine art that remains crisp behind the new high-resolution hulls.
+- **Player prompt direction:** “Professional 2D game VFX sprite sheet on pure black, strict 4×2 grid with eight chronological phases of one top-down spaceship engine plume pointing downward. Cyan-white plasma core, restrained electric-blue bloom and tiny warm-gold sparks, polished premium mobile strategy-game art, isolated effect only, consistent nozzle origin, no ship, UI, text, border or checkerboard.”
+- **Rival prompt direction:** “Professional 2D game VFX sprite sheet on pure black, strict 4×2 grid with eight chronological phases of one top-down spaceship engine plume pointing downward. White-hot core, orange-red and coral flame, sparse copper sparks, aggressive but clean premium mobile strategy-game art, isolated effect only, consistent nozzle origin, no ship, UI, text, border or checkerboard.”
+- **Runtime:** Each normalized `1024×256` strip contains eight `128×256` frames. The renderer cycles at 12 FPS with a stable per-unit phase offset and class-specific hardpoints.
+- **Status:** Active runtime assets.
+
+## Unified faction projectile families
+
+- **Destinations:** `assets/projectiles/unified/player-{scout-pulse,fighter-laser,siege-missile,heavy-cannon}-v1.png`, `assets/projectiles/unified/enemy-{scout-pulse,fighter-laser,siege-missile,heavy-cannon}-v1.png`
+- **Method / mode:** Built-in ImageGen, new raster game-asset generation, then deterministic 2×2 atlas extraction to individual `192×192` black-backed sprites with `scripts/process-vfx-atlas.py`.
+- **Purpose:** Make weapon class and firing faction readable from silhouette and palette, not only from a thin code-drawn streak.
+- **Player prompt direction:** “Professional top-down 2D projectile asset sheet on pure black, strict 2×2 grid: compact cyan orbital scout plasma pulse; long narrow cyan-white fighter laser lance; ivory-and-brass guided missile with cyan stripe and exhaust; broad cyan crystal heavy cannon shell with brass casing. Cohesive premium mobile strategy-game style, isolated centered projectiles pointing upward, restrained bloom, no ships, UI, text, border or checkerboard.”
+- **Rival prompt direction:** “Professional top-down 2D projectile asset sheet on pure black, strict 2×2 grid: angular coral scout energy shard; forked coral-red fighter beam; charcoal-and-copper torpedo with coral stripe and exhaust; chunky copper/crimson heavy cannon shell. Cohesive premium mobile strategy-game style, isolated centered projectiles pointing upward, restrained bloom, no ships, UI, text, border or checkerboard.”
+- **Runtime:** Projectile bodies rotate along their velocity vector. Existing bounded trails and hit glows remain supplemental effects; they no longer define the projectile silhouette.
+- **Status:** Active runtime assets.

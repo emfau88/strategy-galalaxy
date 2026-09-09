@@ -90,10 +90,10 @@ The repository separates three asset tiers:
 
 The unlicensed/undocumented `assets/music/track1.ogg` reference file is excluded. Source lineage is recorded in `docs/SOURCE_PROVENANCE.md`.
 
-`FleetVisualProfile` metadata declares frame size, frame count, FPS and weapon release frame. The renderer composes:
+`FleetVisualProfile` metadata declares frame size, frame count, FPS and weapon release frame for legacy fallbacks. Unified runtime hulls use project-native engine and projectile atlases. The renderer composes:
 
 ```text
-engine → hull → weapon → shield hit → destruction/effects
+raster engine atlas → hull → raster projectile body + trail → shield hit → destruction/effects
 ```
 
 Missing optional layers fall back safely to hull and Canvas effects. The asset verifier checks existence, PNG headers, strip dimensions and the expected library count.

@@ -164,12 +164,24 @@ Der vom Nutzer freigegebene Mockup-Aufbau ist als neuer Standard umgesetzt. Drag
 - [x] Alle acht Hüllen verlustarm als transparente `384×384` Runtime-Sprites normalisieren.
 - [x] Fleet-Karten und Schlachtfeld auf exakt dieselben Hüllen umstellen.
 - [x] Alte 64-Pixel-Engine-, Weapon-, Shield- und Destruction-Strips aus dem aktiven Ladepfad entfernen.
-- [x] Triebwerke, Schilde, Treffer, Zerstörung und Klassenwaffen in einer gemeinsamen Canvas-Effektsprache rendern.
+- [x] Schilde, Treffer und Zerstörung in einer gemeinsamen Präsentationssprache rendern.
 - [x] Eigenes Garten-/Messing-Energy-Relay für Level 2 integrieren.
 - [x] HQs und Turrets in beiden Levels auf dieselbe Struktur-Materialfamilie umstellen.
 - [x] Orbital-Garden-Hintergrund mit zurückhaltendem gemeinsamen Color-Grading versehen.
 - [x] Foundation-, Asset- und Fünf-Viewport-Browserprüfung bestehen.
 - [x] Art-Unification-Pass committen und pushen.
+
+## Raster-VFX-Polish – Flottenidentität und Gebäudelesbarkeit
+
+- [x] Neue Schiffe in echten Mobile-Browser-Captures auf Skalierung, Rotation und Lesbarkeit prüfen.
+- [x] Player- und Rivalen-Triebwerke als professionelle achtphasige Raster-Atlanten erzeugen.
+- [x] Klassenspezifische Triebwerk-Hardpoints für Scout/Drone, Fighter, Bomber und Frigate integrieren.
+- [x] Acht unterschiedliche Projektil-Sprites für beide Flotten und alle vier Waffenfamilien erzeugen.
+- [x] Cyan/Elfenbein/Messing gegen Coral/Kupfer/Anthrazit auch im laufenden Feuerbild durchsetzen.
+- [x] Dekorative Code-Ringe an HQ, Turrets und HQ-Auswahl entfernen; Teamidentität über Lampen und Eckmarken erhalten.
+- [x] Fehlerhafte Projektilspur-Abhängigkeit reparieren und alle neuen Runtime-Assets validieren.
+- [x] Fünf Mobile-Viewports ohne Asset-, Konsolen-, Kamera- oder Touchfehler prüfen.
+- [x] Raster-VFX-Polish committen und pushen.
 
 ## Durchgehende Qualitäts-Gates
 

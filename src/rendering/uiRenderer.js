@@ -248,9 +248,25 @@ const commandSelectionLink = (ctx, model, ui) => {
   ctx.save();
   ctx.strokeStyle = "rgba(110,255,247,0.88)";
   ctx.shadowColor = C.player; ctx.shadowBlur = 9; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.ellipse(hq.x, screenY, 74, 49, 0, 0, Math.PI * 2); ctx.stroke();
+  const halfWidth = 72;
+  const halfHeight = 47;
+  const cornerLength = 15;
+  ctx.beginPath();
+  ctx.moveTo(hq.x - halfWidth, screenY - halfHeight + cornerLength);
+  ctx.lineTo(hq.x - halfWidth, screenY - halfHeight);
+  ctx.lineTo(hq.x - halfWidth + cornerLength, screenY - halfHeight);
+  ctx.moveTo(hq.x + halfWidth - cornerLength, screenY - halfHeight);
+  ctx.lineTo(hq.x + halfWidth, screenY - halfHeight);
+  ctx.lineTo(hq.x + halfWidth, screenY - halfHeight + cornerLength);
+  ctx.moveTo(hq.x - halfWidth, screenY + halfHeight - cornerLength);
+  ctx.lineTo(hq.x - halfWidth, screenY + halfHeight);
+  ctx.lineTo(hq.x - halfWidth + cornerLength, screenY + halfHeight);
+  ctx.moveTo(hq.x + halfWidth - cornerLength, screenY + halfHeight);
+  ctx.lineTo(hq.x + halfWidth, screenY + halfHeight);
+  ctx.lineTo(hq.x + halfWidth, screenY + halfHeight - cornerLength);
+  ctx.stroke();
   ctx.shadowColor = C.gold; ctx.strokeStyle = "rgba(255,214,121,0.9)"; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(hq.x, screenY + 50); ctx.lineTo(model.width / 2, ui.panel.y - 1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(hq.x, screenY + halfHeight + 3); ctx.lineTo(model.width / 2, ui.panel.y - 1); ctx.stroke();
   ctx.restore();
 };
 

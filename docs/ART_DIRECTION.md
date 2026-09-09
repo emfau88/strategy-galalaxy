@@ -26,6 +26,8 @@ Team identity comes from emissive cores, engines, projectiles and structure beac
 - Fighter: long, narrow white-hot laser with team-colored bloom.
 - Bomber: readable ceramic/metal missile body, fins, team stripe and persistent exhaust trail.
 - Frigate: slower heavy bolt with a broad luminous core and sequential hardpoint release.
+- Player projectile bodies use cyan, warm ivory and brass; rival bodies use coral, charcoal and copper. Their silhouettes differ as well as their colors.
+- Engines use generated eight-frame raster strips: clean cyan-white plasma with restrained gold sparks for the player, hotter coral-orange combustion for the rival. Class hardpoints place one, two or three plumes behind the authored hull.
 - Shield and hit feedback are procedural Canvas effects so both fleets share timing, line weight and color logic.
 - Legacy 64-pixel animated faction strips remain in the licensed source library, but are no longer loaded into the active match.
 
