@@ -12,16 +12,25 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const angleDelta = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 const LAUNCH_DURATION_SECONDS = 0.62;
 const PROJECTILE_TRAIL_LIMIT = Object.freeze({
-  scout_pulse: 8,
-  light_bolt: 8,
-  fighter_laser: 13,
+  scout_pulse: 10,
+  light_bolt: 9,
+  fighter_laser: 16,
   siege_missile: 18,
-  heavy_cannon: 14,
-  heavy_bolt: 14,
+  heavy_cannon: 16,
+  heavy_bolt: 16,
+});
+const COMBAT_SPEED_SCALE = Object.freeze({
+  drone: 0.48,
+  scout: 0.5,
+  fighter: 0.52,
+  bomber: 0.6,
+  frigate: 0.55,
+  battlecruiser: 0.52,
+  dreadnought: 0.48,
 });
 
 const FORMATION = Object.freeze({
-  drone: Object.freeze({ forward: 92, lateral: [0, -48, 48, -24, 24, -68, 68] }),
+  drone: Object.freeze({ forward: 92, lateral: [-34, 34, 0, -68, 68, -96, 96] }),
   scout: Object.freeze({ forward: 74, lateral: [0, -64, 64, -32, 32] }),
   frigate: Object.freeze({ forward: 34, lateral: [0, -48, 48] }),
   fighter: Object.freeze({ forward: 2, lateral: [-62, 62, -25, 25] }),
@@ -33,6 +42,32 @@ const vectorLimit = (x, y, maximum) => {
   const magnitude = Math.hypot(x, y);
   if (magnitude <= maximum || magnitude === 0) return { x, y };
   return { x: x / magnitude * maximum, y: y / magnitude * maximum };
+};
+const interceptPoint = (origin, target, projectileSpeed, maximumTime) => {
+  const relativeX = target.x - origin.x;
+  const relativeY = target.y - origin.y;
+  const targetVx = target.vx ?? 0;
+  const targetVy = target.vy ?? 0;
+  const a = targetVx ** 2 + targetVy ** 2 - projectileSpeed ** 2;
+  const b = 2 * (relativeX * targetVx + relativeY * targetVy);
+  const c = relativeX ** 2 + relativeY ** 2;
+  let interceptTime = null;
+  if (Math.abs(a) < 1e-6) {
+    if (Math.abs(b) > 1e-6) interceptTime = -c / b;
+  } else {
+    const discriminant = b ** 2 - 4 * a * c;
+    if (discriminant >= 0) {
+      const root = Math.sqrt(discriminant);
+      const candidates = [(-b - root) / (2 * a), (-b + root) / (2 * a)].filter((time) => time > 0);
+      if (candidates.length) interceptTime = Math.min(...candidates);
+    }
+  }
+  if (!Number.isFinite(interceptTime) || interceptTime <= 0 || interceptTime > maximumTime) return target;
+  return {
+    ...target,
+    x: target.x + targetVx * interceptTime,
+    y: target.y + targetVy * interceptTime,
+  };
 };
 
 export class BattleSimulation {
@@ -106,7 +141,7 @@ export class BattleSimulation {
     this.advanceSquadAnchors(dt);
     this.resolveLaneSpacing();
     const positions = new Map([
-      ...[...this.state.units.values()].map((entity) => [entity.id, { x: entity.x, y: entity.y }]),
+      ...[...this.state.units.values()].map((entity) => [entity.id, { x: entity.x, y: entity.y, vx: entity.vx, vy: entity.vy }]),
       ...[...this.state.structures.values()].map((entity) => [entity.id, { x: entity.x, y: entity.y }]),
     ]);
     const direction = this.stepNumber % 2 === 0 ? -1 : 1;
@@ -234,6 +269,7 @@ export class BattleSimulation {
       return;
     }
     const tactical = this.tacticalPosition(unit, targetPosition, definition);
+    tactical.speedLimit = motionDefinition.speed * (COMBAT_SPEED_SCALE[unit.unitType] ?? 0.55);
     this.steerUnit(unit, tactical, motionDefinition, dt, tactical.heading);
     this.constrainToLane(unit);
     const aligned = !definition.broadside || Math.abs(angleDelta(unit.heading, tactical.heading)) <= 0.32;
@@ -246,16 +282,20 @@ export class BattleSimulation {
     const direction = forwardDirection(unit.team);
     const standoff = definition.attackRange * (definition.broadside ? 0.9 : definition.role === "siege" ? 0.94 : 0.91);
     const formationLateral = clamp(unit.slotOffsetX * 0.55, -44, 44);
+    const lane = this.state.map.lanes.find((item) => item.id === unit.laneId);
+    const laneCenter = lane?.centerX ?? unit.x - unit.slotOffsetX;
     const targetBearing = Math.atan2(target.y - unit.y, target.x - unit.x);
     if (definition.broadside) {
+      const broadsideOffset = Math.min(standoff * 0.88, (lane?.width ?? standoff * 2) * 0.32);
+      const forwardOffset = Math.sqrt(Math.max(0, standoff ** 2 - broadsideOffset ** 2));
       return {
-        x: target.x + unit.broadsideSide * standoff,
-        y: target.y - direction * formationLateral * 0.55,
+        x: laneCenter + unit.broadsideSide * broadsideOffset,
+        y: target.y - direction * (forwardOffset + formationLateral * 0.3),
         heading: targetBearing + unit.broadsideSide * direction * Math.PI / 2,
       };
     }
     return {
-      x: target.x + formationLateral,
+      x: laneCenter + formationLateral,
       y: target.y - direction * standoff,
       heading: targetBearing,
     };
@@ -324,8 +364,11 @@ export class BattleSimulation {
     const projectileDefinition = PROJECTILE_DEFINITIONS[definition.projectileId];
     const ownerPosition = positions?.get(owner.id) ?? owner;
     const targetPosition = positions?.get(target.id) ?? target;
-    const dx = targetPosition.x - ownerPosition.x;
-    const dy = targetPosition.y - ownerPosition.y;
+    const aimPosition = projectileDefinition.homing
+      ? targetPosition
+      : interceptPoint(ownerPosition, targetPosition, projectileDefinition.speed, projectileDefinition.lifetime);
+    const dx = aimPosition.x - ownerPosition.x;
+    const dy = aimPosition.y - ownerPosition.y;
     const magnitude = Math.hypot(dx, dy) || 1;
     const firingAngle = Math.atan2(dy, dx);
     const hardpointAxis = definition.broadside && Number.isFinite(owner.heading) ? owner.heading : firingAngle + Math.PI / 2;

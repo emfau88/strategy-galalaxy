@@ -8,7 +8,7 @@ import { computeViewportTransform, responsivePortraitDesignHeight, toDesignPoint
 import { AssetLoader } from "../src/rendering/assetLoader.js";
 import { BattleSimulation, createDemoBattle } from "../src/simulation/battleSimulation.js";
 import { LANE, TEAM } from "../src/core/constants.js";
-import { CLASSIC_LANES, ORBITAL_GARDEN, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../src/data/definitions.js";
+import { CLASSIC_LANES, ORBITAL_GARDEN, PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../src/data/definitions.js";
 import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 import { AI_PROFILES } from "../src/simulation/opponentAi.js";
@@ -253,6 +253,22 @@ for (let index = 0; index < 60; index += 1) formationSimulation.step(1 / 60);
 assert.ok(formation.every((unit) => !unit.launching));
 assert.ok(new Set(formation.map((unit) => `${unit.x},${unit.y}`)).size >= 5);
 assert.ok(formation.every((unit) => Math.abs(unit.x - CLASSIC_LANES.lanes[0].centerX) <= CLASSIC_LANES.lanes[0].width / 2));
+
+const droneDuel = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
+const duelDrones = [
+  ...droneDuel.spawnFormation(TEAM.PLAYER, LANE.CENTER, ["drone", "drone"], 81),
+  ...droneDuel.spawnFormation(TEAM.ENEMY, LANE.CENTER, ["drone", "drone"], 81),
+];
+let maximumCombatLaneOffset = 0;
+for (let index = 0; index < 60 * 12; index += 1) {
+  droneDuel.step(1 / 60);
+  for (const drone of duelDrones) {
+    if (drone.state === "ENGAGING") maximumCombatLaneOffset = Math.max(maximumCombatLaneOffset, Math.abs(drone.x - ORBITAL_GARDEN.lanes[0].centerX));
+  }
+}
+assert.ok(maximumCombatLaneOffset < 55, "opposing drone pairs hold lane-relative combat slots instead of dragging each other to an edge");
+assert.ok(UNIT_DEFINITIONS.drone.attackRange / PROJECTILE_DEFINITIONS.scout_pulse.speed >= 0.33, "drone pulses remain visible for at least a third of a second at firing range");
+assert.ok(UNIT_DEFINITIONS.fighter.attackRange / PROJECTILE_DEFINITIONS.fighter_laser.speed >= 0.37, "fighter lasers remain readable across their normal firing range");
 
 const accelerationSimulation = new BattleSimulation();
 for (const structure of accelerationSimulation.state.structures.values()) {

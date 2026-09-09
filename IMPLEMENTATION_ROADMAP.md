@@ -190,11 +190,22 @@ Der vom Nutzer freigegebene Mockup-Aufbau ist als neuer Standard umgesetzt. Drag
 - [x] Drone, Scout, Fighter und Bomber visuell um rund 10–15 Prozent vergrößern.
 - [x] Formationsoffsets, Reihenabstand, Mindestabstand und taktische Querpositionen entzerren.
 - [x] Schussabstand für Frontwaffen, Siege-Schiffe und Breitseiten etwas großzügiger halten.
-- [x] Projektilspuren nach Klasse auf 8–18 Punkte staffeln und als eigene Bewegungsformen rendern.
+- [x] Projektilspuren nach Klasse staffeln und als eigene Bewegungsformen rendern; nach dem Geschwindigkeits-Pass 9–18 Punkte verwenden.
 - [x] Player- und Rivalen-Turret als getrennte Assets mit physisch integrierten Teamlampen erzeugen.
 - [x] Letzte persistente Code-Teammarker von HQ und Turret entfernen.
 - [x] Foundation-, Asset-, Stress- und Fünf-Viewport-Browserprüfung bestehen.
 - [x] Combat-Presentation-Pass committen und pushen.
+
+## Combat-Motion-Follow-up – stabile Feuerlinien und lesbare Geschosse
+
+- [x] Seitliches Randrutschen früher Drone-Duelle reproduzieren und numerisch belegen.
+- [x] Taktische Kampfpositionen an der Lane statt an der beweglichen Gegnerposition verankern.
+- [x] Erste automatische Drone-Welle symmetrisch links und rechts staffeln.
+- [x] Kampfgeschwindigkeit je Schiffsklasse dämpfen, ohne die Reisegeschwindigkeit weiter zu reduzieren.
+- [x] Leichte Projektile nochmals verlangsamen und ihre Reichweite über die Lebensdauer erhalten.
+- [x] Zielvorhalt für nicht-lenkende Projektile ergänzen.
+- [x] Regressionstest gegen erneutes Randrutschen und zu kurze Projektilsichtbarkeit ergänzen.
+- [x] Foundation-, Stress- und Fünf-Viewport-Browserprüfung bestehen.
 
 ## Durchgehende Qualitäts-Gates
 
@@ -261,3 +272,11 @@ Upgrade-/Cozy-Zwischenpass, je zwei Matches für fünf Investitionspaarungen:
 - alle zehn Matches endeten ohne Draw oder Timeout
 - durchschnittliche Matchdauer je Paarung lag zwischen 210,9 und 335,4 Sekunden
 - Foundation-/Assetprüfung und alle fünf Mobile-Browser-Viewports bestanden
+
+Combat-Motion-Follow-up:
+
+- kontrolliertes Level-1-Drone-Duell stabilisiert sich bei `x=191,3` und `x=228,7` statt bis zur Lane-Grenze `x=55` zu driften
+- maximale seitliche Abweichung vom Lane-Zentrum sank im Test von 155 auf 34 Welt-Einheiten
+- typische sichtbare Flugzeit: Drone 0,33 s, Scout/Fighter 0,37–0,38 s, Frigate 0,68 s, Bomber 1,32 s
+- dichter 90-Sekunden-Stresstest: maximal 134 Projektile, keine Budgetverletzung
+- Foundation- und Browserprüfung auf allen fünf Mobile-Viewports bestanden

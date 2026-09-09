@@ -13,12 +13,12 @@ export const UNIT_DEFINITIONS = freeze({
 });
 
 export const PROJECTILE_DEFINITIONS = freeze({
-  scout_pulse: freeze({ id: "scout_pulse", speed: 255, lifetime: 1.48, hitRadius: 3, color: "#c7f5ff", visual: "pulse" }),
-  fighter_laser: freeze({ id: "fighter_laser", speed: 350, lifetime: 1.38, hitRadius: 3, color: "#8ee7ff", visual: "laser" }),
-  siege_missile: freeze({ id: "siege_missile", speed: 118, lifetime: 3.55, hitRadius: 6, color: "#ffc27d", visual: "missile", homing: true, turnRate: 2.8, acceleration: 32 }),
-  heavy_cannon: freeze({ id: "heavy_cannon", speed: 220, lifetime: 2.15, hitRadius: 5, color: "#d9caff", visual: "heavy" }),
-  light_bolt: freeze({ id: "light_bolt", speed: 245, lifetime: 1.75, hitRadius: 4, color: "#b9f4ff", visual: "pulse" }),
-  heavy_bolt: freeze({ id: "heavy_bolt", speed: 185, lifetime: 2.28, hitRadius: 5, color: "#ffd27b", visual: "heavy" }),
+  scout_pulse: freeze({ id: "scout_pulse", speed: 205, lifetime: 1.84, hitRadius: 3, color: "#c7f5ff", visual: "pulse" }),
+  fighter_laser: freeze({ id: "fighter_laser", speed: 280, lifetime: 1.73, hitRadius: 3, color: "#8ee7ff", visual: "laser" }),
+  siege_missile: freeze({ id: "siege_missile", speed: 112, lifetime: 3.75, hitRadius: 6, color: "#ffc27d", visual: "missile", homing: true, turnRate: 2.8, acceleration: 32 }),
+  heavy_cannon: freeze({ id: "heavy_cannon", speed: 195, lifetime: 2.43, hitRadius: 5, color: "#d9caff", visual: "heavy" }),
+  light_bolt: freeze({ id: "light_bolt", speed: 210, lifetime: 2.04, hitRadius: 4, color: "#b9f4ff", visual: "pulse" }),
+  heavy_bolt: freeze({ id: "heavy_bolt", speed: 165, lifetime: 2.56, hitRadius: 5, color: "#ffd27b", visual: "heavy" }),
 });
 
 export const STRUCTURE_DEFINITIONS = freeze({
