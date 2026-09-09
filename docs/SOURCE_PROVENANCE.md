@@ -30,12 +30,12 @@ The imported Foozle pack readmes identify the artwork as CC0. They remain next t
 | Fleet and projectile metadata in reference data modules | `7f90d17…` | `src/data/visuals.js` | Adapted frame size/count, FPS, release-frame and orientation metadata to renderer-only profiles. |
 | `src/entities/projectile.js`, projectile data and FX systems | `7f90d17…` | `src/simulation/battleSimulation.js`, `src/data/definitions.js`, `src/rendering/` | Adapted bounded homing, acceleration and presentation vocabulary to deterministic lane combat; damage remains simulation-owned. |
 
-The portrait background and all structure images outside `assets/library/galalaxy/` were generated specifically for Strategy Galalaxy and are not Galalaxy reference assets. Active generated structure bases are `assets/structures/command-hq-topdown-v3.png` and `assets/structures/defense-turret-base-topdown-v2.png`; their prompts and runtime adaptations are recorded in `docs/GENERATED_ASSETS.md`.
+The portrait backgrounds, all structures outside `assets/library/galalaxy/`, the eight hulls under `assets/factions/unified/` and the command medallion were generated specifically for Strategy Galalaxy and are not Galalaxy reference assets. Active generated structures include the Orbital Garden HQ pair, modular Garden turret and unified energy relay. Their prompts and runtime adaptations are recorded in `docs/GENERATED_ASSETS.md`; common rendering rules are recorded in `docs/ART_DIRECTION.md`.
 
 ## Rules for future reuse
 
 - Record the exact inspected commit and explicit source/destination paths.
 - Keep copied licenses/readmes with their source groups.
 - Separate byte-for-byte copies, normalized aliases, adapted code and conceptual inspiration.
-- Register only assets used by the current runtime; library presence never implies automatic loading.
+- Keep active assets in the boot manifest and retained fallback/source assets in named validation groups; library presence never implies automatic loading.
 - Verify licensing before distribution and continue excluding material with unclear rights.

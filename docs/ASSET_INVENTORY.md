@@ -9,7 +9,7 @@ The complete licensed asset import comes from read-only Galalaxy commit `7f90d17
 | `assets/library/galalaxy/` | 516 | 20,808,162 | Development/source library; never bulk-loaded |
 | Foozle packs inside library | 502 | 14,218,222 | CC0 source art, previews and editable files |
 | Optional Galalaxy UI inside library | 14 | 6,589,940 | Preserved for reference; not in current manifest |
-| Registered Strategy Galalaxy runtime manifest | 56 | verified by script | Only current background, modular structures, core fleet layers and projectiles |
+| Registered Strategy Galalaxy asset manifest | 74 | verified by script | 37 current boot assets are loaded; legacy animation groups remain registered for source validation only |
 
 The reference contains one additional file, `assets/music/track1.ogg` (5,937,850 bytes). It is deliberately excluded because its distribution license is undocumented. Therefore 516 files is the expected and enforced library count.
 
@@ -29,24 +29,18 @@ Formats across the imported reference library include runtime PNGs, editable Ase
 
 ## Active fleet runtime
 
-Nairan and Kla'ed each register the following layers for Scout, Fighter, Bomber and Frigate:
+Player and rival each use one unified `384×384` transparent hull for Scout, Fighter, Bomber and Frigate. Drones reuse the Scout silhouette at a smaller gameplay scale. All eight hulls share the same strict top-down camera, upper-left warm key light, cool lower-right fill, material hierarchy and class scale. The player uses ivory/brass/cyan with planted accents; the rival uses charcoal/copper/burgundy/coral.
 
-- base/hull;
-- animated engine;
-- shield hit;
-- destruction strip;
-- weapon strip where supplied by the pack (Scout, Fighter and Frigate).
-
-The current renderer uses explicit metadata from `src/data/visuals.js`. Core ships use 64-pixel source cells; frame counts, FPS and weapon release frames are stored per faction/class rather than inferred from filenames. Capital ships remain in the source library but are not registered or enabled.
+Engine bloom, weapon release, shields, damage and destruction are now procedural Canvas layers. This avoids placing the former 64-pixel animation strips over the new silhouettes. The licensed Nairan/Kla'ed strips and metadata remain registered and verified as fallback/source material but are not loaded into an active match.
 
 ## Active projectile runtime
 
-| Role | Nairan visual | Kla'ed visual | Behavior |
-| --- | --- | --- | --- |
-| Scout | Bolt | Bullet | small, light control shot |
-| Fighter | Ray/Bolt family | Ray/Bullet family | fast anti-light salvo |
-| Bomber | Rocket/Torpedo | Torpedo | visible accelerating bounded-homing missile with position trail |
-| Frigate | Ray/Torpedo family | Big Bullet/Wave family | slower, visually heavier shot |
+| Role | Shared rendering language | Behavior |
+| --- | --- | --- |
+| Scout | white-hot round pulse with cyan/coral bloom | small, light control shot |
+| Fighter | narrow ivory laser core with cyan/coral trail | fast anti-light salvo |
+| Bomber | ivory/charcoal missile body, brass fins and team stripe | visible accelerating bounded-homing missile with position trail |
+| Frigate | broad luminous heavy bolt | slower sequential broadside shot |
 
 Mechanics remain faction-symmetric even when art differs. Each team/lane has an independent projectile budget; a higher global limit is a safety guard. Trails retain at most ten positions.
 
@@ -56,6 +50,9 @@ Mechanics remain faction-symmetric even when art differs. Each team/lane has an 
 - `assets/structures/command-hq-topdown-v3.png`: production HQ base with two lane-facing hangars; doors, practical lights and damage presentation are composed in Canvas.
 - `assets/structures/defense-turret-base-topdown-v2.png`: barrel-free modular turret platform; the aiming weapon head and recoil are composed in Canvas.
 - `assets/structures/defense-turret-head-topdown-v3.png`: independent top-down twin-barrel head rotated and recoiled around the turret socket in Canvas.
+- `assets/factions/unified/`: eight normalized high-resolution hulls used by both maps and the command UI.
+- `assets/structures/energy-relay-unified-v1.png`: shared capturable relay in the same ivory/brass/garden material family.
+- `assets/ui/orbital-command-medallion-v1.png`: command identity shared by the HQ and contextual dock.
 - `assets/structures/command-hq-topdown-v1.png`, `defense-turret-topdown-v1.png` and `energy-relay-topdown-v1.png`: retained project-native first-pass sources; only the relay remains active.
 - normalized environment aliases and earlier curated fleet bases remain available to the runtime.
 
@@ -69,4 +66,4 @@ npm.cmd run verify:assets
 
 The verifier reads PNG headers without browser dependencies, checks every manifest path, validates sprite-strip dimensions against frame metadata and asserts the exact 516-file library boundary. This catches missing copies, accidental music inclusion and metadata drift before deployment.
 
-Exact origins and adaptation notes are recorded in [`SOURCE_PROVENANCE.md`](SOURCE_PROVENANCE.md).
+Exact origins and adaptation notes are recorded in [`SOURCE_PROVENANCE.md`](SOURCE_PROVENANCE.md). The binding palette, lighting and compositing rules live in [`ART_DIRECTION.md`](ART_DIRECTION.md).

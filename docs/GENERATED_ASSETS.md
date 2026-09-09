@@ -1,5 +1,22 @@
 # Generated Assets
 
+## Unified fleet families
+
+- **Destinations:** `assets/factions/unified/player-scout-v1.png`, `player-fighter-v1.png`, `player-bomber-v1.png`, `player-frigate-v1.png`, plus the corresponding four `enemy-*-v1.png` sprites.
+- **Method / mode:** Built-in ImageGen, `stylized-concept`, followed by deterministic alpha-bounds extraction and normalization to transparent `384×384` runtime canvases with `scripts/split-fleet-atlas.py`.
+- **Purpose:** Replace the mixed 64-pixel Nairan/Kla'ed hull vocabulary with two factions drawn at the same source resolution, camera angle, light direction, detail density and class scale.
+- **Player prompt:** “Create exactly four distinct player fleet hull sprites in a perfectly regular 2-by-2 grid: Scout, Fighter, Bomber and Frigate, all pointing upward. Crisp high-resolution hand-painted 2D game assets, strict 90-degree top-down geometry, warm upper-left key light, cool navy fill, warm ivory ceramic armor, brushed brass trim, small living-green planted details, deep navy recesses and restrained cyan lamps. Transparent background; no text, UI, scenery, projectiles, perspective or overlap.”
+- **Rival prompt:** “Create exactly four rival spacecraft matching the player sheet's orthographic camera, scale progression and lighting: Scout, Fighter, Bomber and Frigate. Use charcoal blue-black ceramic armor, copper/brass trim, muted burgundy panels and coral-red engines and team lights. Transparent background; no text, UI, scenery, projectiles, perspective or overlap.”
+- **Status:** Active runtime hull and command-card assets. Legacy animation sheets remain source/fallback assets only and are no longer loaded during a match.
+
+## `energy-relay-unified-v1.png`
+
+- **Destination:** `assets/structures/energy-relay-unified-v1.png`
+- **Method / mode:** Built-in ImageGen, `background-extraction`, then alpha-preserving downscale to `384×384`.
+- **Purpose:** Bring Level 2's capturable relay into the same ivory ceramic, brass, glass and botanical material family as Orbital Garden.
+- **Prompt:** “Create one compact neutral orbital energy relay in a strict 90-degree top-down view: a circular floating platform with four short cardinal arms, dark mechanical center, faceted pale aqua crystal, tiny planted moss/flower beds and restrained brass navigation lamps. Warm upper-left key light, cool navy fill, transparent background; no team logo, aura, capture ring, progress bar, ship, scenery, UI or watermark.”
+- **Status:** Active runtime asset; ownership color and capture progress remain code-driven.
+
 ## Integrated HQ command HUD mockups
 
 - **Destinations:** `docs/mockups/hud-integrated-collapsed-v1.png`, `docs/mockups/hud-integrated-hq-command-v1.png`

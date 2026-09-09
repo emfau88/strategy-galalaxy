@@ -26,7 +26,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Vier konkurrierende, konkret beschriftete Investitionen: Reactor-Einkommen, Arsenal-Flottenschaden, Bastion-Turret-Feuerkraft und zusätzliche Hangar-Slots. Pro Welle kann ein Projekt vorbereitet werden; es wird an der nächsten Deployment-Grenze hörbar und sichtbar aktiv.
 - Regelgebundene KI mit denselben Kosten, Slots, Timern, Kapazitäten und Upgrade-Regeln wie der Spieler, drei wählbaren Profilen und genau einer Neubewertung kurz vor dem Lock-in.
 - Scout, Fighter, Bomber und Frigate mit eigenen Rollen, Formationen, Zielprioritäten und Capture-Stärken.
-- Nairan- und Kla'ed-Flotten mit animierten Engines, Weapon-, Shield- und Destruction-Layern.
+- Zwei vereinheitlichte hochauflösende Flottenfamilien mit identischer Draufsicht und Beleuchtung: Elfenbein/Messing/Cyan für den Spieler, Anthrazit/Kupfer/Coral für den Rivalen. Engines, Weapon-, Shield- und Destruction-Feedback werden passend dazu prozedural gerendert.
 - Klar getrennte Waffenbilder: kompakte Scout-Plasmapulse, lange Fighter-Lasertracer, große Bomber-Homing-Raketen und schwere Frigate-Geschosse. Mehrfachsalven bleiben schadensneutral; Frigate-Breitseiten starten sichtbar nacheinander von drei Hardpoints.
 - Deutliches Schadensfeedback durch Hull-Flash, expandierende Schildkontur, projektilabhängigen Impact-Glow, Funken und situative Healthbars.
 - Modulare Defense Turrets mit eigenem weich nachgeführtem Geschütz, sichtbarem Doppelmündungsfeuer und Schussrückstoß. Level 1 nutzt ein strikt top-down gezeichnetes Garten-Turret und zwei eigenständig ausgerichtete Headquarters statt einer kopfstehenden Spiegelung.
@@ -96,6 +96,7 @@ Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Forschung, Captu
 - [Architektur-Vertrag](docs/ARCHITECTURE.md)
 - [Referenz-Audit](docs/REFERENCE_AUDIT.md)
 - [Asset-Inventar](docs/ASSET_INVENTORY.md)
+- [Verbindliche Art Direction](docs/ART_DIRECTION.md)
 - [Repository-Regeln](docs/REPOSITORY_RULES.md)
 
 ## Status

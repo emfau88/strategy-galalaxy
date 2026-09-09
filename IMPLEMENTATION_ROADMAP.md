@@ -156,6 +156,21 @@ Der vom Nutzer freigegebene Mockup-Aufbau ist als neuer Standard umgesetzt. Drag
 - [x] Mockup-nahe Auswahlverbindung, warme Konsole und eigenes Command-Medaillon integrieren.
 - [x] Als neuen Standard übernehmen, committen und pushen.
 
+## Art-Unification-Pass – gemeinsame visuelle Sprache
+
+- [x] Verbindliche Regeln für Draufsicht, Lichtquelle, Materialien, Teamfarben und Effekte dokumentieren.
+- [x] Vier hochauflösende Player-Hüllen in Elfenbein, Messing, Cyan und Gartenmaterial erzeugen.
+- [x] Vier geometrisch gleichwertige Rivalen-Hüllen in Anthrazit, Kupfer, Burgund und Coral erzeugen.
+- [x] Alle acht Hüllen verlustarm als transparente `384×384` Runtime-Sprites normalisieren.
+- [x] Fleet-Karten und Schlachtfeld auf exakt dieselben Hüllen umstellen.
+- [x] Alte 64-Pixel-Engine-, Weapon-, Shield- und Destruction-Strips aus dem aktiven Ladepfad entfernen.
+- [x] Triebwerke, Schilde, Treffer, Zerstörung und Klassenwaffen in einer gemeinsamen Canvas-Effektsprache rendern.
+- [x] Eigenes Garten-/Messing-Energy-Relay für Level 2 integrieren.
+- [x] HQs und Turrets in beiden Levels auf dieselbe Struktur-Materialfamilie umstellen.
+- [x] Orbital-Garden-Hintergrund mit zurückhaltendem gemeinsamen Color-Grading versehen.
+- [x] Foundation-, Asset- und Fünf-Viewport-Browserprüfung bestehen.
+- [x] Art-Unification-Pass committen und pushen.
+
 ## Durchgehende Qualitäts-Gates
 
 - [ ] Keine Simulation hängt von Kamera, Animation oder Framerate ab.

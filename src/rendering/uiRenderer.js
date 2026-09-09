@@ -71,9 +71,12 @@ const header = (ctx, model, ui) => {
 };
 
 const drawShipIcon = (ctx, model, unitType, x, y, size = 22) => {
-  const sprite = model.assets?.get(`nairan-${unitType}`);
+  const spriteType = unitType === "drone" ? "scout" : unitType;
+  const unifiedSprite = model.assets?.get(`unified-player-${spriteType}`);
+  const sprite = unifiedSprite ?? model.assets?.get(`nairan-${spriteType}`);
   const crop = { scout: [20, 23, 24, 22], fighter: [17, 20, 30, 27], bomber: [16, 18, 32, 30], frigate: [11, 9, 42, 42] }[unitType] ?? [0, 0, 64, 64];
-  if (sprite) { ctx.save(); ctx.globalCompositeOperation = "screen"; ctx.drawImage(sprite, ...crop, x - size / 2, y - size / 2, size, size); ctx.restore(); }
+  if (unifiedSprite) ctx.drawImage(unifiedSprite, x - size / 2, y - size / 2, size, size);
+  else if (sprite) { ctx.save(); ctx.globalCompositeOperation = "screen"; ctx.drawImage(sprite, ...crop, x - size / 2, y - size / 2, size, size); ctx.restore(); }
   else { ctx.fillStyle = UNIT_DEFINITIONS[unitType]?.color ?? C.player; ctx.beginPath(); ctx.arc(x, y, size * 0.3, 0, Math.PI * 2); ctx.fill(); }
 };
 
@@ -206,9 +209,9 @@ const unitCard = (ctx, model, rect) => {
   const affordable = model.economy.get(TEAM.PLAYER).energy >= def.cost && slotsOpen && !model.queueLocked;
   box(ctx, rect, affordable ? C.card : "rgba(35, 45, 58, 0.76)", affordable ? C.outline : null, 8);
   const role = { scout: "CAPTURE", fighter: "ANTI-LIGHT", bomber: "SIEGE", frigate: "FRONTLINE" }[rect.unitType];
-  drawShipIcon(ctx, model, rect.unitType, rect.x + 22, rect.y + 25, 30);
-  text(ctx, def.id.toUpperCase(), rect.x + 42, rect.y + 16, 11, affordable ? C.text : C.muted);
-  text(ctx, `${role} · ${def.cost} E`, rect.x + 42, rect.y + 35, 8, affordable ? C.gold : C.muted, "left", 650);
+  drawShipIcon(ctx, model, rect.unitType, rect.x + 24, rect.y + 25, 38);
+  text(ctx, def.id.toUpperCase(), rect.x + 49, rect.y + 16, 11, affordable ? C.text : C.muted);
+  text(ctx, `${role} · ${def.cost} E`, rect.x + 49, rect.y + 35, 8, affordable ? C.gold : C.muted, "left", 650);
 };
 
 const upgradeCard = (ctx, model, rect) => {

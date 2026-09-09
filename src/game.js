@@ -1,4 +1,4 @@
-import { ASSET_GROUPS, mergeAssetGroups } from "./assets.js";
+import { ASSET_GROUPS } from "./assets.js";
 import { CONFIG } from "./config.js";
 import { GameClock } from "./core/clock.js";
 import { BattlefieldCamera } from "./core/battlefieldCamera.js";
@@ -31,7 +31,7 @@ export class Game {
     this.clock = new GameClock(CONFIG.timing);
     this.simulationRng = new SeededRng(options.seed);
     this.visualRng = new SeededRng(options.seed ^ 0x9e3779b9);
-    this.loader = new AssetLoader(mergeAssetGroups(ASSET_GROUPS.boot, ASSET_GROUPS.ships, ASSET_GROUPS.effects));
+    this.loader = new AssetLoader(ASSET_GROUPS.boot);
     this.renderer = new Renderer(canvas, context);
     this.effects = new PresentationEffects();
     this.sound = new SoundSystem();
