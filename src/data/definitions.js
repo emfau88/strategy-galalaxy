@@ -61,6 +61,7 @@ export const CLASSIC_LANES = freeze({
   id: "classic_lanes",
   level: 2,
   title: "TWIN FRONTS",
+  visualTheme: "twin_foundries",
   bounds: freeze({ width: 420, height: 1180 }),
   lanes: freeze([
     freeze({ id: LANE.LEFT, centerX: 105, width: 170, node: freeze({ id: "left-node", x: 105, y: 590, radius: 42 }), playerSpawn: freeze({ x: 105, y: 1000 }), enemySpawn: freeze({ x: 105, y: 180 }) }),

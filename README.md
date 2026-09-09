@@ -90,6 +90,8 @@ Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Forschung, Captu
 
 - [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md)
 - [Aktuelle Umbau-Roadmap](IMPLEMENTATION_ROADMAP.md)
+- [Aktuelle Product-Polish-Gesamt-To-do-Liste](docs/PRODUCT_POLISH_ROADMAP.md)
+- [Level-2-Art-Direction und gewählte Hybridrichtung](docs/LEVEL_2_VISUAL_DIRECTIONS.md)
 - [Level-1-Konzept: Orbital Garden](docs/LEVEL_1_ORBITAL_GARDEN_CONCEPT.md)
 - [Umsetzungsplan](ROADMAP.md)
 - [Game-Design-Vertrag](docs/GAME_DESIGN.md)

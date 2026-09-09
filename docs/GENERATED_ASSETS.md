@@ -172,3 +172,28 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
   pockets and restrained faction-colored foliage.
 - **Status:** Visual targets only, not runtime assets. Direction comparison and production
   recommendation are documented in `docs/LEVEL_2_VISUAL_DIRECTIONS.md`.
+
+## Twin Foundries / Cloud Rift final target and runtime sectors
+
+- **Destinations:** `docs/mockups/level-2-twin-foundries-cloud-rift-final-v1.png`,
+  `assets/environment/twin-foundries-rival-sector-v1.png`, and
+  `assets/environment/twin-foundries-player-sector-v1.png`.
+- **Method / mode:** Built-in ImageGen. The final target used the earlier Twin Foundries
+  and Cloudsea concepts as references. The two runtime images were separate
+  background-only extraction/generation passes from that approved target.
+- **Final target prompt direction:** Combine the foundry identity with only restrained
+  cloud depth: 55–60% open dark navy/black combat space, 25–30% edge-weighted foundry
+  architecture and 10–15% low-contrast violet-blue cloud rift. Keep small gardens and
+  warm lamps; avoid a bright cloud ocean, full orange coverage or dense machinery in
+  either firing corridor.
+- **Rival-sector prompt direction:** Remove all ships, HQs, turrets, UI and text. Keep
+  charcoal/copper rival foundry architecture at the edges, sparse coral practical
+  lamps, protected dark corridors at 25% and 75% width and a calm lower overlap zone.
+- **Player-sector prompt direction:** Produce the complementary ivory/brass lower
+  foundry with restrained cyan lamps and conduits, the same protected corridors and a
+  calm upper overlap zone. No gameplay objects or baked ownership markers.
+- **Runtime:** Both portrait sectors are aspect-cropped and blended into the existing
+  `420×1180` world. Simulation geometry is unchanged. Subtle code-driven lane beacons
+  remain separate from the art.
+- **Status:** Active Level-2 runtime background family. Final real-device seam/contrast
+  tuning remains in the Product Polish Roadmap.

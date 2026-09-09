@@ -175,6 +175,78 @@ try {
   const gardenScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(resolve(output, "level-1-orbital-garden-420x760.png"), Buffer.from(gardenScreenshot.data, "base64"));
 
+  loaded = waitEvent("Page.loadEventFired");
+  await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&level=2&seed=842` });
+  await loaded;
+  await waitForGame();
+  const levelTwoState = await send("Runtime.evaluate", {
+    expression: `(() => { const g = window.__strategyGalalaxy; return { map: g.match.simulation.state.map.id, theme: g.match.simulation.state.map.visualTheme, lanes: [...g.match.simulation.state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, assetFailures: g.loader.errors.length }; })()`,
+    returnByValue: true,
+  });
+  assert.deepEqual(levelTwoState.result.value, { map: "classic_lanes", theme: "twin_foundries", lanes: ["LANE_LEFT", "LANE_RIGHT"], worldHeight: 1180, assetFailures: 0 });
+  for (const [region, worldY] of [["player", 1090], ["center", 590], ["rival", 90]]) {
+    await send("Runtime.evaluate", { expression: `window.__strategyGalalaxy.camera.jumpToWorld(${worldY})` });
+    await delay(60);
+    const levelTwoScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+    await writeFile(resolve(output, `level-2-${region}-sector-420x760.png`), Buffer.from(levelTwoScreenshot.data, "base64"));
+  }
+  const droneQa = await send("Runtime.evaluate", {
+    expression: `(() => {
+      const g = window.__strategyGalalaxy;
+      const simulation = g.match.simulation;
+      const state = simulation.state;
+      state.units.clear(); state.projectiles.clear(); simulation.squads.clear();
+      for (const lane of state.lanes.values()) {
+        lane.unitIds.set('TEAM_PLAYER', []); lane.unitIds.set('TEAM_ENEMY', []); lane.projectileIds = [];
+      }
+      for (const [x, slot] of [[76, -29], [134, 29]]) {
+        simulation.spawnUnit('TEAM_PLAYER', 'LANE_LEFT', 'drone', { x, y: 624, slotOffsetX: slot, spawnCycle: 901 });
+        simulation.spawnUnit('TEAM_ENEMY', 'LANE_LEFT', 'drone', { x, y: 556, slotOffsetX: slot, spawnCycle: 902 });
+      }
+      for (let step = 0; step < 89; step += 1) simulation.step(1 / 60);
+      g.camera.jumpToWorld(590);
+      return { units: state.units.size, projectiles: state.projectiles.size };
+    })()`,
+    returnByValue: true,
+  });
+  assert.equal(droneQa.result.value.units, 4, "deterministic drone readability scene contains both pairs");
+  assert.ok(droneQa.result.value.projectiles > 0, "deterministic drone readability scene captures live pulses");
+  await delay(60);
+  const droneQaScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "level-2-qa-drone-duel-420x760.png"), Buffer.from(droneQaScreenshot.data, "base64"));
+
+  const mixedQa = await send("Runtime.evaluate", {
+    expression: `(() => {
+      const g = window.__strategyGalalaxy;
+      const simulation = g.match.simulation;
+      const state = simulation.state;
+      state.units.clear(); state.projectiles.clear(); simulation.squads.clear();
+      for (const lane of state.lanes.values()) {
+        lane.unitIds.set('TEAM_PLAYER', []); lane.unitIds.set('TEAM_ENEMY', []); lane.projectileIds = [];
+      }
+      const spawn = (team, lane, type, x, y, slot, cycle) => simulation.spawnUnit(team, lane, type, { x, y, slotOffsetX: slot, spawnCycle: cycle });
+      spawn('TEAM_PLAYER', 'LANE_LEFT', 'fighter', 78, 666, -27, 911);
+      spawn('TEAM_PLAYER', 'LANE_LEFT', 'bomber', 132, 690, 27, 911);
+      spawn('TEAM_ENEMY', 'LANE_LEFT', 'fighter', 78, 522, -27, 912);
+      spawn('TEAM_ENEMY', 'LANE_LEFT', 'bomber', 132, 500, 27, 912);
+      spawn('TEAM_PLAYER', 'LANE_RIGHT', 'frigate', 286, 660, -29, 913);
+      spawn('TEAM_PLAYER', 'LANE_RIGHT', 'scout', 344, 678, 29, 913);
+      spawn('TEAM_ENEMY', 'LANE_RIGHT', 'frigate', 286, 520, -29, 914);
+      spawn('TEAM_ENEMY', 'LANE_RIGHT', 'scout', 344, 502, 29, 914);
+      for (let step = 0; step < 120; step += 1) simulation.step(1 / 60);
+      for (const unit of state.units.values()) unit.fireCooldown = 0;
+      simulation.step(1 / 60);
+      g.camera.jumpToWorld(590);
+      return { units: state.units.size, projectileTypes: [...new Set([...state.projectiles.values()].map((projectile) => projectile.projectileType))] };
+    })()`,
+    returnByValue: true,
+  });
+  assert.ok(mixedQa.result.value.units >= 6, "deterministic mixed-fleet scene retains readable combatants");
+  assert.ok(mixedQa.result.value.projectileTypes.length >= 2, "deterministic mixed-fleet scene displays multiple weapon families");
+  await delay(60);
+  const mixedQaScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "level-2-qa-mixed-combat-420x760.png"), Buffer.from(mixedQaScreenshot.data, "base64"));
+
   const reports = [];
   for (const [width, height] of viewports) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: true, screenWidth: width, screenHeight: height });

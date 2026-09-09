@@ -1,241 +1,324 @@
-# Product Polish Roadmap
+# Product-Polish-Roadmap – aktuelle Gesamt-To-do-Liste
 
-This roadmap turns the current visual review into implementation-sized work packages.
-The order is deliberate: readability rules and reusable systems come first; expensive
-map and asset production follows only after those rules are measurable.
+Stand: 9. September 2026
 
-## Bulk 1 – Readability baseline and visual budgets
+Diese Datei ist ab jetzt die kanonische Liste aller noch offenen Produktarbeiten. Die
+ältere `IMPLEMENTATION_ROADMAP.md` dokumentiert die bereits abgeschlossenen großen
+Umbauten; hier stehen nur der aktuelle Befund, die sinnvollste Reihenfolge und die
+Abnahmekriterien für den nächsten Ausbau.
 
-**Goal:** Establish objective limits before producing more artwork, so richer scenes do
-not make combat harder to read.
+## Aktueller Befund
 
-- [ ] Define protected combat corridors for both levels: maximum background brightness,
-  saturation and local detail behind normal engagement bands.
-- [ ] Record reference captures at 360×800, 390×844, 412×915 and 420×760 for top,
-  center and bottom camera positions.
-- [ ] Add deterministic QA scenes for early Drones, mixed fleets, bomber attacks,
-  Frigate broadsides, damaged structures and active upgrades.
-- [ ] Measure minimum on-screen sizes for ship silhouettes, projectile bodies, health
-  bars and navigation-rail markers.
-- [ ] Establish a visual-priority order: critical combat feedback, units, structures,
-  world landmarks, environmental decoration.
+- [x] Level 1 ist eine große, scrollbar bleibende Ein-Lane-Map mit eigenständigen HQs,
+  Top-down-Turrets und größeren Flotten.
+- [x] Level 2 besitzt nun die ausgewählte Hybridrichtung **Twin Foundries / Cloud Rift**:
+  warme Foundry-Ränder, dunkle Gefechtskorridore und eine zurückhaltende violette
+  Wolkenkluft statt einer orangefarbenen Vollfläche.
+- [x] Für beide Maps existieren feste Mobile-Viewports und deterministische
+  Gefechtsszenen; der Lesbarkeitsvertrag liegt in `VISUAL_READABILITY_CONTRACT.md`.
+- [x] Reisegeschwindigkeit, Projektilflugzeit, Formationsabstand und seitliches
+  Randrutschen wurden bereits deutlich beruhigt.
+- [ ] Die neuen Hüllen sind visuell noch nicht vollständig mit Triebwerken,
+  Geschossen, Treffern und Todeseffekten zu einem professionellen Ganzen verbunden.
+- [ ] Das reale Smartphone-Spielspaß- und Balance-Gate bleibt offen.
 
-**Deliverable:** A small capture matrix and a written contrast/density contract used by
-all later bulks.
+## Technischer Audit der neu gemeldeten Punkte
 
-**Done when:** Every later asset can be checked against the same scenes without relying
-only on taste or a single screenshot.
+### Triebwerksflammen
 
-## Bulk 2 – Level 2 environment rebuild
+Der Eindruck ist korrekt. Die Flammen benutzen momentan geschätzte, normalisierte
+Hardpoints pro **Klasse**. Die tatsächlichen Düsen liegen aber je Hülle und Fraktion an
+leicht anderen Pixelpositionen. Deshalb kann die Animation neben oder zu weit hinter
+dem Triebwerk beginnen. Der richtige Fix ist ein Asset-Metadatensatz in Pixelkoordinaten
+für jede Hülle, nicht weiteres Verschieben nach Augenmaß in einer gemeinsamen Tabelle.
 
-**Goal:** Raise Twin Fronts from functional prototype quality to the visual standard of
-Orbital Garden while preserving its clearer two-lane tactics.
+### Rückwärtsflug und „Push“-Situationen
 
-- [ ] Select one direction from
-  [Level 2 Visual Directions](LEVEL_2_VISUAL_DIRECTIONS.md); recommended base is Lantern
-  Trade Routes.
-- [ ] Design separate rival, neutral and player regions across the full `420 × 1180`
-  scroll world.
-- [ ] Generate or paint background-only sectors with edge-weighted scenery and open
-  firing corridors.
-- [ ] Create an independent low-contrast mist/parallax layer and sparse beacon overlay.
-- [ ] Introduce one landmark per lane in the contested middle instead of one object
-  spanning both fronts.
-- [ ] Add restrained faction progression: coral/copper in the upper region, neutral gold
-  in the center, cyan/ivory in the lower region.
-- [ ] Tune cropping, overlap and blending so no mobile viewport stretches the artwork.
-- [ ] Validate top, center, bottom and dense-combat captures on all target viewports.
+Der Eindruck ist ebenfalls korrekt. Eine Einheit steuert frei zu ihrer taktischen
+Standoff-Position. Wenn Ziel, Abstand oder Separation dieses Ziel hinter die aktuelle
+Schiffsposition verschieben, bleibt die Waffenausrichtung zum Gegner bestehen, während
+die Physik das Schiff rückwärts bewegt. Das ist kein beabsichtigter Rückzug, sondern
+eine Folge der Positionskorrektur.
 
-**Deliverable:** A complete Level-2 background family plus optional mist/beacon overlays,
-integrated without changing simulation geometry.
+Im normalen Zustand `ENGAGING` soll deshalb kein sichtbarer Rückzug stattfinden:
+Schiffe bremsen, halten die Linie oder lösen Übernähe seitlich in einen begrenzten
+Ausweichbogen auf. Rückwärtsbewegung bleibt nur für einen späteren, ausdrücklich
+kommunizierten Zustand wie `DISENGAGING` erlaubt. Bloßes Nullsetzen der Geschwindigkeit
+reicht nicht, weil es erneut Stapel und blockierte Einheiten erzeugen würde.
 
-**Done when:** Level 2 is visually recognizable in isolation, both lanes remain readable
-at 360 pixels wide and no combat class loses silhouette contrast.
+### Projektile und Galalaxy-Vergleich
 
-## Bulk 3 – Unit hierarchy and Drone identity
+Die alte Galalaxy-Bibliothek ist technisch niedriger aufgelöst, aber als Spielgrafik
+oft sauberer vorbereitet: enge transparente Bounds, animierte Strips, klare
+Bewegungsachse und wenig leere Fläche. Beispiele sind der `45×9` Nairan-Bolt und die
+`72×38` Ray-Strips. Die neuen vereinheitlichten Geschosse sind dagegen jeweils
+`192×192` große RGB-Konzeptkacheln auf Schwarz. Im Renderer werden sie zusätzlich mit
+langen Canvas-Linien, Glows, Kreisen und Bögen ergänzt. Gerade auf Level 1 wirkt dadurch
+manches Geschoss gleichzeitig übergroß, weich und generisch.
 
-**Goal:** Make fleet composition understandable before the user reads labels.
+Das Ziel ist nicht, einfach die alten kleinen Grafiken zurückzuschalten. Ihre engen
+Bounds, zeitliche Animation und prägnanten Formen werden als Produktionsstandard
+übernommen; die aktuelle Fraktionspalette und die neue Hüllenqualität bleiben erhalten.
 
-- [ ] Author a dedicated Drone hull smaller and simpler than the Scout, with one clear
-  engine and reduced ornament.
-- [ ] Preserve faction material rules while giving each class a unique outer contour.
-- [ ] Recheck battlefield scale, selection cards, queue icons and damage silhouettes for
-  all eight active faction/class combinations plus Drones.
-- [ ] Keep formation spacing large enough that adjacent silhouettes do not merge into
-  one thorn-like mass.
-- [ ] Ensure Player cyan accents remain visible over Level 1's blue nebula and ivory
-  structures; use a thin dark keyline or warmer white core where required.
-- [ ] Keep Rival coral equally readable without letting it dominate the entire scene.
+### Todesanimationen
 
-**Deliverable:** Dedicated player/rival Drone assets and a revised class-size/contrast
-table shared by battlefield and command UI.
+Die Galalaxy-Destruction-Strips sind noch im Repository und in den Visual-Profilen
+beschrieben. Bei einer aktiven neuen Unified-Hülle unterdrückt der Renderer diese
+Strips jedoch ausdrücklich, damit nicht kurz die alte Schiffsform erscheint. Übrig
+bleibt nur eine kurze prozedurale Explosion. Daher fehlt der wahrgenommene
+Zerstörungsablauf tatsächlich.
 
-**Done when:** A tester can distinguish Drone, Scout, Fighter, Bomber and Frigate from a
-native-resolution combat capture without seeing their names.
+Wir brauchen neue, hüllenkompatible Todessequenzen: lesbarer Primärblitz, aufbrechende
+Silhouette, klassengerechte Trümmer, sekundäre Explosionen und ein kurzes Nachglühen.
+Timing und Staffelung der alten 8–18-Frame-Strips sind dafür eine gute Referenz; die
+alten Hüllenbilder selbst werden nicht über die neuen Schiffe gelegt.
 
-## Bulk 4 – Turrets and structure ownership
+### Lesbarkeit der Spielerflotte auf Level 1
 
-**Goal:** Make every defensive structure read as an armed, team-owned gameplay object
-rather than a decorative shrine.
+Sie wurde durch größere Darstellung, Elfenbeinflächen und stärkere Cyan-Akzente
+verbessert, aber **noch nicht gezielt fertig korrigiert**. Es gibt derzeit keinen
+Level-1-spezifischen dunklen Silhouetten-Keyline-/Kontrastpass. Vor der blauen Nebelzone
+können vor allem kleine Cyan-Anteile weiterhin verschwimmen. Dieser Punkt bleibt daher
+offen und wird nicht als erledigt verbucht.
 
-- [ ] Redesign Level-1 and Level-2 turret heads with an unmistakable barrel axis and
-  readable muzzle at 40–60 display pixels.
-- [ ] Preserve physical recoil and make it originate from the authored barrel assembly.
-- [ ] Increase integrated cyan/coral ownership lights without returning to floating code
-  rings or diamonds.
-- [ ] Give Level 2 a structure material variant appropriate to the selected environment,
-  while retaining the same collision and weapon logic.
-- [ ] Create visually escalating turret states for Bastion levels: additional armor,
-  brighter capacitors or reinforced barrel housing.
-- [ ] Verify intact, firing, recoiling, damaged and destroyed states over both maps.
+## Bulk 1 – P0: Bewegungsintegrität und echte Hardpoints
 
-**Deliverable:** Clearly armed modular turrets, team variants and Bastion progression
-states for both map families.
+**Ziel:** Jede Bewegung sieht beabsichtigt aus; Flammen entstehen sichtbar an den
+Düsen.
 
-**Done when:** Ownership and facing direction are readable without a health bar or HUD
-marker.
+- [ ] Debug-Overlay für sichtbare Hull-Bounds, Pivot, Düsen, Waffenmündungen,
+  Vorwärtsachse, Standoff-Ziel und Separation-Vektor ergänzen.
+- [ ] Engine-Hardpoints je Fraktion **und** Klasse direkt an den finalen V2-Pixeln
+  kalibrieren; Mehrfachdüsen einzeln erfassen.
+- [ ] Größe, Rotation, Ursprung und Tiefenreihenfolge der achtphasigen Flammen je
+  Hardpoint speichern.
+- [ ] Flammenintensität an Vorwärtsschub koppeln: Reise stark, Bremsen kurz, Halten
+  niedrig; niemals volle Vorwärtsflamme während sichtbarer Rückwärtsbewegung.
+- [ ] `ENGAGING`-Bewegung auf Vorwärts-/Seitwärtskomponenten aufteilen und dauerhafte
+  negative Vorwärtsgeschwindigkeit verhindern.
+- [ ] Bei zu geringem Abstand: erst bremsen, dann seitlich entflechten, danach wieder
+  auf die Feuerlinie einschwenken; kein rückwärts gleitender Standoff-Ausgleich.
+- [ ] Separation so projizieren, dass Nachbarn ein Schiff nicht entlang der Lane
+  rückwärts durch den Verband drücken.
+- [ ] Broadside-Schiffe lateral ausrichten und halten; Siege-Schiffe bremsen früh;
+  leichte Schiffe dürfen kurze, begrenzte Ausweichbögen fliegen, aber nicht endlos
+  orbiten.
+- [ ] Stillstandswächter für lebende Einheiten ergänzen: legitimes Halten von echtem
+  Feststecken unterscheiden und nur blockierte Einheiten neu positionieren.
+- [ ] Regressionen mit Drone-Duell, gemischter Flotte, Basisverteidigung und engem
+  Turret-Kampf prüfen; gemessen wird Rückwärtszeit statt nur ein Screenshot.
 
-## Bulk 5 – Projectile, damage and combat-feedback hierarchy
+**Abnahme:** In einem 90-Sekunden-Gefecht gibt es keinen sichtbaren Rückwärtsflug im
+normalen Kampfzustand, keine Endlosorbits und keine Flamme neben einer Düse.
 
-**Goal:** Preserve the improved pacing while making every weapon family and hit result
-instantly understandable.
+## Bulk 2 – P0: Professionelle Projektilfamilien
 
-- [ ] Tune Player projectile cores against bright cyan/blue backgrounds; retain faction
-  color in the bloom, but use a warm-white central body for contrast.
-- [ ] Shorten only the visually excessive full-screen streaks while preserving slower
-  projectile travel and class identity.
-- [ ] Keep Scout pulses compact, Fighter lances narrow, missiles segmented and heavy
-  shells broad and sequential.
-- [ ] Strengthen hull-local hit flashes, shield ripples, sparks and short damage trails so
-  feedback stays attached to the damaged ship.
-- [ ] Add escalating persistent damage states for large ships and structures without
-  covering their silhouette.
-- [ ] Verify projectile caps and trail budgets in dense 90-second stress scenes.
+**Ziel:** Fraktion und Waffenklasse sind am Schussbild erkennbar, ohne dass Canvas-Glow
+die eigentliche Form ersetzen muss.
 
-**Deliverable:** A balanced combat-feedback pass with team-readable projectiles and
-damage states that remain clear over both environments.
+- [ ] Alle acht Unified-Projektile auf enge transparente Bounds normalisieren; schwarze
+  192er-Quadrate dürfen keine Runtime-Silhouette bestimmen.
+- [ ] Pro Klasse 4–8 kleine Animationsphasen oder eine klar definierte Body-/Trail-
+  Kombination anlegen, orientiert an den Galalaxy-Strips.
+- [ ] Scout: kleiner, schneller Puls mit kurzer rhythmischer Nachspur.
+- [ ] Fighter: schmale, helle Impulslanze oder klar getrennte kurze Salve.
+- [ ] Bomber: sichtbar mechanischer Flugkörper mit eigener Flamme, Rauchimpulsen und
+  deutlichem Aufschlag; keine bloße leuchtende Kugel.
+- [ ] Frigate: schwerer Körper mit langsamem, gewichtigen Rhythmus und klarer
+  Breitseitenfolge.
+- [ ] Player über warmweißen Kern + Cyan/Gold-Bloom, Rival über hellen Kern +
+  Coral/Kupfer-Bloom codieren; Form bleibt zusätzlich unterschiedlich.
+- [ ] Überlange Linien, weiche Vollkreise und doppelte Glows im Canvas-Renderer abbauen.
+- [ ] Geschwindigkeiten erst nach der neuen visuellen Größe feinjustieren; die bereits
+  langsamere Grundkadenz bleibt bestehen.
+- [ ] Muzzle, Flugkörper und Impact als eine zusammenhängende Ereigniskette prüfen.
 
-**Done when:** Testers can identify firing faction, weapon class and damaged target from
-the animation alone.
+**Abnahme:** Auf Level 1 und 2 kann man bei nativer 360-Pixel-Breite Schütze und
+Waffenrolle aus drei aufeinanderfolgenden Schüssen erkennen.
 
-## Bulk 6 – Navigation rail and battlefield awareness
+## Bulk 3 – P0: Treffer-, Schaden- und Todesfeedback
 
-**Goal:** Make the tall map understandable without turning the rail into a traditional
-mini-map full of noise.
+**Ziel:** Treffer fühlen sich materiell an und jede zerstörte Einheit endet sichtbar.
 
-- [ ] Widen the interactive rail slightly on narrow screens while keeping the visible
-  footprint restrained.
-- [ ] Replace ambiguous dots with a small, consistent legend of fleet, turret, HQ,
-  impact and camera-window shapes.
-- [ ] Cluster large fleets rather than drawing every unit individually.
-- [ ] Emphasize offscreen damage, structure danger and active major battles through short
-  pulses, not permanent brightness.
-- [ ] Make lane separation explicit on Level 2 and keep the single route unmistakable on
-  Level 1.
-- [ ] Add a first-match contextual hint that disappears permanently after successful use.
+- [ ] Hull-lokalen Hit-Flash kürzer und härter zeichnen; Schildtreffer als separate
+  Ripple-Schicht erhalten.
+- [ ] Impact-Typen für Energie, Projektil, Rakete und schwere Kanone unterscheiden.
+- [ ] Neue neutrale/faktionsspezifische Explosionsatlanten mit Alpha erzeugen und eng
+  zuschneiden.
+- [ ] Todesablauf staffeln: Drone/Scout kurz, Fighter mittel, Bomber mehrstufig,
+  Frigate mit Sekundärexplosionen und Trümmern.
+- [ ] Unified-Hülle während der Sequenz sichtbar aufbrechen/ausblenden, statt auf die
+  alte Nairan-/Kla'ed-Hülle umzuschalten.
+- [ ] Strukturen erhalten längere, aber räumlich begrenzte Zerstörung mit Funken,
+  Rauch und ausfallenden Lampen.
+- [ ] Effekte pro Lane und Team budgetieren; dichte Schlachten dürfen Rückmeldung nicht
+  nach „first come“ verlieren.
 
-**Deliverable:** A more readable navigation rail with touch-safe scrolling and event
-signals.
+**Abnahme:** Jeder Kill ist ohne Healthbar wahrnehmbar, verdeckt aber weder das nächste
+Ziel noch die Navigation.
 
-**Done when:** A new user can find an offscreen battle and return to their HQ without
-trial-and-error dragging.
+## Bulk 4 – P0/P1: Level-1-Kontrast und Einheitenhierarchie
 
-## Bulk 7 – Integrated HUD and message cleanup
+**Ziel:** Player-Schiffe bleiben vor allen Nebel-, Garten- und HQ-Zonen lesbar; Drone,
+Scout, Fighter, Bomber und Frigate sind sofort unterscheidbar.
 
-**Goal:** Reduce debug-like text and make resource, AI and wave information readable at
-a glance.
+- [ ] Dunkle, sehr dünne Silhouetten-Keyline oder gerichteten Kontaktschatten für helle
+  Player-Hüllen testen, ohne einen codehaften Teamring einzuführen.
+- [ ] Cyan nur als Teamlicht/Bloom verwenden; wichtige Konturflächen warmweiß oder
+  messingfarben gegen die blaue Nebelzone führen.
+- [ ] Einen dedizierten, kleineren Drone-Hull statt der Scout-Ableitung produzieren.
+- [ ] Klassenkonturen, optische Masse und Healthbar-Abstand über beiden Maps prüfen.
+- [ ] Rivalen-Coral gleichwertig lesbar halten, ohne den Hintergrund rot zu überstrahlen.
+- [ ] Captures oben, Mitte, unten sowie in früher und dichter Schlacht gegeneinander
+  vergleichen.
 
-- [ ] Replace abbreviations such as `N7` and unexplained `RIVAL +1` with icons, concise
-  labels or contextual tooltips/tutorial moments.
-- [ ] Move AI status messages out of the center firing area into a compact tactical-status
-  slot near the command console or navigation rail.
-- [ ] Resolve message priority so errors, upgrade activation, wave lock and AI intent do
-  not overlap one another.
-- [ ] Increase the smallest upgrade and economy text to the agreed mobile minimum.
-- [ ] Keep the collapsed HQ console compact; preserve the larger panel only while the
-  user is actively choosing fleets or upgrades.
-- [ ] Add selected, pending, unaffordable and activating states with consistent brass,
-  cyan and muted treatments.
+**Abnahme:** Alle fünf Rollen werden ohne Namen erkannt und keine Fraktion besitzt
+einen systematischen Kontrastvorteil.
 
-**Deliverable:** A single HUD hierarchy for resources, wave timing, tactical information
-and actionable feedback.
+## Bulk 5 – P1: Strukturen, Turrets und sichtbare Upgrades
 
-**Done when:** No important message overlaps ships or structures and first-time players
-can explain every persistent HUD value.
+**Ziel:** Gebäude sind top-down, bewaffnet, teamzugehörig und ihr Ausbau ist im
+Schlachtfeld sichtbar.
 
-## Bulk 8 – Visible upgrade progression
+- [ ] Turret-Kopf und Rohrformen beider Mapfamilien bei 40–60 Pixeln vereinfachen und
+  den Lauf klarer absetzen.
+- [ ] Rückstoß, Muzzle und Projektilursprung auf echte Waffen-Hardpoints kalibrieren.
+- [ ] Teamzugehörigkeit über physische Cyan-/Coral-Lampen und Materialeinsätze erhöhen,
+  nicht über schwebende Codekreise.
+- [ ] Bastion-Stufen durch zusätzliche Panzerung, Kondensatoren und Rohrgehäuse zeigen.
+- [ ] Reactor-, Arsenal- und Hangar-Stufen am HQ als echte Bauteil-/Lichtzustände
+  deutlich machen.
+- [ ] Pending-Ausbau unvollständig anzeigen und an der Wave-Grenze sichtbar aktivieren.
 
-**Goal:** Make investment choices feel tangible in the world, not merely numerical.
+**Abnahme:** Eigentümer, Schussrichtung und mindestens ein aktiver Upgrade-Pfad sind
+ohne geöffnetes Menü erkennbar.
 
-- [ ] Reactor: brighten and expand authored energy conduits on the HQ and reflect the
-  increased income through a restrained activation pulse.
-- [ ] Arsenal: enhance muzzle hardware, projectile core and impact signature per level.
-- [ ] Bastion: use the turret armor/capacitor states produced in Bulk 4.
-- [ ] Hangar: visibly open or illuminate additional HQ bays as wave slots increase.
-- [ ] Show pending upgrades physically but incompletely before the next wave, then play a
-  clear activation transition.
-- [ ] Keep each upgrade readable at normal camera distance and color-safe for both teams.
+## Bulk 6 – P1: Level-2-Abschluss und Umweltbewegung
 
-**Deliverable:** Level-based HQ, turret and weapon presentation tied directly to existing
-economy state.
+**Ziel:** Die neue Twin-Foundries-/Cloud-Rift-Map wird vom integrierten Zielbild zum
+fertigen, ruhigen Spielraum.
 
-**Done when:** A screenshot comparison can reveal which upgrade path a player chose
-without opening the upgrade panel.
+- [x] Hybridrichtung aus warmen Foundries und zurückhaltender Wolkenkluft festlegen.
+- [x] Getrennte Rivalen- und Player-Sektoren für die `420×1180`-Welt integrieren.
+- [x] Zwei dunkle Gefechtskorridore und eine violette zentrale Trennung erhalten.
+- [x] Top-, Center-, Bottom- sowie Drone-/Mixed-Combat-Captures erzeugen.
+- [ ] Naht, Hintergrundhelligkeit und Landmark-Dichte nach echtem Smartphone-Test
+  einmalig feinjustieren.
+- [ ] Sehr langsame, separate Nebel-/Staubparallaxe und einzelne warme Fensterimpulse
+  ergänzen; keine Bewegung direkt hinter kleinen Einheiten.
+- [ ] Level-2-Turrets/HQs mit Bulk 5 endgültig in die Foundry-Materialsprache überführen.
 
-## Bulk 9 – Main menu and level selection polish
+**Abnahme:** Level 2 ist sofort wiedererkennbar, wirkt weniger fantasyhaft als das
+Cloudsea-Mockup und bleibt in beiden Lanes ruhiger als Level 1.
 
-**Goal:** Turn the good atmospheric title screen into a distinctive, honest storefront
-for both maps.
+## Bulk 7 – P1: Navigator, HUD und Mobile-Bedienung
 
-- [ ] Create a bespoke `Strategy Galalaxy` wordmark or title lockup that remains readable
-  at 360 pixels wide.
-- [ ] Replace the plain level field with two compact preview cards using actual Level-1
-  and final Level-2 artwork.
-- [ ] Show lane count and one-line tactical identity without tiny descriptive copy.
-- [ ] Integrate music/fullscreen controls into the same brass/navy panel language as the
-  central menu.
-- [ ] Improve difficulty selection with a short behavioral description and clear selected
-  state.
-- [ ] Keep the menu background performant and avoid promising scenery that a selected
-  level does not deliver.
+**Ziel:** Die große Welt lässt sich überblicken, ohne wieder eine permanente große
+HUD-Leiste einzuführen.
 
-**Deliverable:** Branded title lockup, honest level-preview selection and unified utility
-controls.
+- [ ] Navigator-Hitbox auf schmalen Screens etwas verbreitern und Lane-Symbole
+  vereinheitlichen.
+- [ ] Flotten clustern; Turret, HQ, Kampf, Offscreen-Schaden und Kameraausschnitt mit
+  einer kleinen festen Formensprache anzeigen.
+- [ ] Unklare Kürzel und AI-Statusmeldungen aus dem Kampfzentrum entfernen.
+- [ ] Meldungspriorität für Fehler, Wave-Lock, Upgrade-Aktivierung und gegnerische
+  Aktivität festlegen.
+- [ ] Kleine Economy-/Upgrade-Texte auf die vereinbarte Mobile-Mindestgröße bringen.
+- [ ] Optionalen Drag-and-drop-Versuch vom HQ auf die Lane erst nach stabiler
+  Tap-Steuerung als A/B-Prototyp bauen; Tap bleibt vollständig spielbar.
 
-**Done when:** The first screen communicates brand, selected map, difficulty and primary
-action in under five seconds on the smallest viewport.
+**Abnahme:** Ein neuer Spieler findet einen Offscreen-Kampf und kehrt zum HQ zurück,
+ohne dass zentrale Gefechte von Text oder Panels verdeckt werden.
 
-## Bulk 10 – Final cohesion, performance and release gate
+## Bulk 8 – P1: Economy, Upgrade-Wirkung und Balance-Gate
 
-**Goal:** Validate the product as one coherent mobile experience after all visual work.
+**Ziel:** Ausbau, Forschung und sofortige Flottenstärke sind drei fühlbar konkurrierende
+Entscheidungen.
 
-- [ ] Run full match captures on both levels at every target viewport and camera region.
-- [ ] Test early, mid and late battle density with all upgrade paths represented.
-- [ ] Compare Player/Rival readability under equivalent situations and correct any color
-  or contrast advantage.
-- [ ] Verify background cache size, memory use, draw-call count, projectile caps and long
-  session stability on mobile-class hardware.
-- [ ] Run short blind tests for class recognition, structure ownership, navigation and
-  upgrade recognition.
-- [ ] Update README screenshots, art-direction rules, asset inventory, generated-asset
-  provenance and roadmap completion state.
+- [ ] Echte Smartphone-Sessions für Rush, Economy, Arsenal/Bastion und Logistics
+  beobachten; nicht nur AI-Mittelwerte verwenden.
+- [ ] Amortisationszeit, Wave-Slots, Energie-Cap und Upgrade-Aktivierungszeit so
+  abstimmen, dass kein Pfad offensichtlich immer korrekt ist.
+- [ ] Jede aktive Stufe mit Bulk 5 und den Projektilen aus Bulk 2 sichtbar verknüpfen.
+- [ ] Upgrade-Vergleiche in gleichen Seeds und gespiegelten Teamseiten auswerten.
+- [ ] Stagnation, Snowballing, ungenutzte Energie und Kompositionsvielfalt dokumentieren.
 
-**Deliverable:** Final comparison gallery and a signed-off release checklist.
+**Abnahme:** Mindestens zwei plausible Ausgabenpläne pro typischer Spielsituation und
+keine unsichtbare „+Prozent“-Forschung ohne wahrnehmbaren Effekt.
 
-**Done when:** Both maps, the title screen and all major gameplay states meet the same
-readability and art-direction standard without performance regression.
+## Bulk 9 – P2: Flotten-Spezialisierungen und Carrier-Konzept
 
-## Recommended delivery sequence
+**Ziel:** Flottenverbände später individualisieren, ohne den aktuellen Kern mit einer
+neuen Einheitenschicht zu überladen. Dieser Bulk ist **Planung, noch keine sofortige
+Implementierung**.
 
-1. **Foundation:** Bulk 1.
-2. **Largest visual gap:** Bulk 2.
-3. **Core combat readability:** Bulks 3–5.
-4. **User orientation and controls:** Bulks 6–7.
-5. **Progression payoff:** Bulk 8.
-6. **Front door and final cohesion:** Bulks 9–10.
+### Empfohlene Grundidee
 
-Bulks 3 and 4 can be produced in parallel after Bulk 1, but integration should still be
-validated against the final Level-2 contrast zones from Bulk 2. Bulk 8 intentionally
-depends on the final HQ and turret structure language rather than creating temporary
-upgrade overlays.
+Nicht das geschützte Design oder den Namen eines StarCraft-II-Protoss-Carriers kopieren,
+sondern die lesbare Rollenidee übernehmen: ein großes rückwärtiges Trägerschiff setzt
+eine begrenzte Gruppe autonomer Abfangdrohnen aus.
 
+- [ ] Datengetriebene `HullSpecialization` entwerfen, die Grundhülle, Kosten,
+  Direktwaffe, Verhalten, sichtbare Module und Drone-Kapazität verändert.
+- [ ] Frigate als erste Verzweigung vorschlagen:
+  **Broadside Cruiser** (direkte schwere Salven) oder **Fleet Tender/Carrier**
+  (geringe Direktwaffe, 3–5 gebundene Interceptors).
+- [ ] Interceptors klar von den kostenlosen Lane-Drones unterscheiden: kleiner
+  Staffelverband, zum Carrier geleast, eigenes Schussbild, zerstörbar und nur mit
+  Cooldown/Energie ersetzbar.
+- [ ] Carrier weit hinter der Front halten, aber durch Bomber und Durchbrüche
+  angreifbar machen; kein endloses kostenloses Drone-Spawning.
+- [ ] Upgrade als teure Hangar-/Logistics-Entscheidung anbieten, die mit Broadside,
+  Bastion oder sofortiger Flottenmasse konkurriert.
+- [ ] Weitere spätere Verzweigungen skizzieren: Scout→Relay Wing,
+  Fighter→Interceptor/Ace, Bomber→Torpedo Tender; zunächst nur eine Verzweigung
+  prototypisieren.
+- [ ] UI nur mit einer Wahl pro Klasse belasten und die Spezialisierung direkt am
+  Schiff zeigen (Hangarbuchten, Eskorte, Waffenmodule), nicht als abstraktes Icon allein.
+- [ ] Simulation für Drone-Leash, Zielpriorität, Ersatzcooldown, Performancebudget und
+  Kill-Credit spezifizieren, bevor Assets erzeugt werden.
+
+**Abnahme vor Implementierungsfreigabe:** Bulks 1–4 sind abgeschlossen, der Kampf ist
+auf echter Hardware gut lesbar und das Economy-Gate aus Bulk 8 zeigt genügend Raum für
+eine teure Spezialisierungsentscheidung.
+
+## Bulk 10 – P2: Hauptmenü, Marke und Levelauswahl
+
+**Ziel:** Das Frontend verspricht exakt die Qualität und Stimmung, die beide Maps
+anschließend liefern.
+
+- [ ] Eigenständigen `Strategy Galalaxy`-Schriftzug/Lockup erstellen.
+- [ ] Levelwahl als zwei kompakte Karten mit echten finalen Screenshots umsetzen.
+- [ ] Lane-Zahl und taktische Identität in einem Satz lesbar machen.
+- [ ] Schwierigkeit, Musik und Vollbild in dieselbe warme Navy-/Elfenbein-/Messing-
+  Formensprache integrieren.
+- [ ] Pause-, Ergebnis- und Zurück-zum-Hauptmenü-Flows erneut auf fünf Viewports prüfen.
+
+## Bulk 11 – Release-Gate
+
+- [ ] Beide Levels oben, mittig und unten in frühen, gemischten und dichten Gefechten
+  auf den fünf Ziel-Viewports erfassen.
+- [ ] Keine Simulation von Kamera, Animation oder Framerate abhängig machen.
+- [ ] Symmetrie, Ressourcen, Slots, Refunds und Matchende reproduzierbar halten.
+- [ ] Framezeit, Bildspeicher, Projektile, Trails, Engine- und Explosionslayer auf
+  mobilem Gerät prüfen.
+- [ ] Kurze Blindtests für Klasse, Fraktion, Waffe, Schaden, Struktur und Upgrade
+  durchführen.
+- [ ] README-Screenshots, Assetinventar, Provenance und diese Roadmap aktualisieren.
+
+## Verbindliche Reihenfolge
+
+1. **Bulk 1:** Bewegungsintegrität und Triebwerks-/Waffen-Hardpoints.
+2. **Bulks 2–3:** Projektile sowie Treffer-/Todesfeedback als gemeinsamer Combat-VFX-
+   Pass.
+3. **Bulk 4:** Level-1-Kontrast und echte Drone-/Klassenhierarchie.
+4. **Bulks 5–6:** Strukturen/Upgrade-Sichtbarkeit und Level-2-Abschluss.
+5. **Bulks 7–8:** Orientierung, HUD, Economy und Spielspaß.
+6. **Bulk 9:** Carrier-/Spezialisierungs-Prototyp erst nach bestandenem Kern-Gate.
+7. **Bulks 10–11:** Hauptmenü und Release-Polish.
+
+Die ersten drei Schritte sind absichtlich vor neuem Content eingeordnet: Ein Carrier
+würde zusätzliche Kleinschiffe, Projektile und Zielwechsel erzeugen und damit genau die
+noch offenen Schwächen bei Bewegung und Gefechtsfeedback verstärken. Sobald der
+vorhandene Kampf zuverlässig gut aussieht, ist diese Spezialisierung dagegen ein sehr
+starker nächster Ausbau.

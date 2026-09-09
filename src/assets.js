@@ -5,6 +5,8 @@ export const ASSET_GROUPS = Object.freeze({
     "background-orbital-garden": "assets/environment/orbital-garden-background-v1.png",
     "background-orbital-garden-rival": "assets/environment/orbital-garden-rival-sector-v1.png",
     "background-orbital-garden-player": "assets/environment/orbital-garden-player-sector-v1.png",
+    "background-twin-foundries-rival": "assets/environment/twin-foundries-rival-sector-v1.png",
+    "background-twin-foundries-player": "assets/environment/twin-foundries-player-sector-v1.png",
     "background-void": "assets/environment/void.png",
     "background-stars": "assets/environment/stars.png",
     "background-planet": "assets/environment/planet.png",

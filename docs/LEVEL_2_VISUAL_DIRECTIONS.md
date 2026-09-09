@@ -115,19 +115,24 @@ dreamlike science-fantasy world.
 - Use constellation gates as off-lane landmarks, never as apparent obstacles.
 - Treat clouds as slow parallax or masked overlays, with minimal movement near units.
 
-## Recommendation
+## Selected production direction
 
-Use **Lantern Trade Routes** as the production basis. It is the strongest compromise
-between brand continuity, cozy atmosphere, two-lane readability and implementation
-risk. Borrow only two ideas from the other directions:
+After comparing the three concepts in-game, the selected direction is a restrained
+**Twin Foundries / Cloud Rift hybrid**. Twin Foundries supplies the identity and edge
+architecture; Cloudsea contributes only the depth and violet-blue central atmosphere.
+The final target deliberately avoids the original foundry mockup's full orange density
+and the Cloudsea mockup's bright fantasy landscape.
 
-- From Twin Foundries: a more mechanical neutral center and clearer industrial hints
-  around Arsenal/Bastion upgrades.
-- From Cloudsea Sanctuaries: soft cloud depth and one recognizable celestial gate per
-  lane, kept outside the firing corridors.
+The runtime interpretation keeps roughly 55–60% of the world as open navy/black combat
+space, confines charcoal/copper and ivory/brass foundry structures to the outer edges,
+and uses a narrow low-contrast cloud rift to separate the two lanes. Small gardens and
+warm practical lamps retain the cozy handcrafted identity established by Level 1.
 
-The result should not combine all three mockups literally. Direction A remains the
-silhouette, palette and density authority; the borrowed elements are secondary flavor.
+![Selected Twin Foundries / Cloud Rift target](mockups/level-2-twin-foundries-cloud-rift-final-v1.png)
+
+The background sectors are now integrated. Remaining work is limited to real-device
+contrast/seam tuning, restrained parallax and final structure variants; those items are
+tracked in `PRODUCT_POLISH_ROADMAP.md`.
 
 ## Production acceptance criteria
 
@@ -138,4 +143,3 @@ silhouette, palette and density authority; the borrowed elements are secondary f
   normal engagement band.
 - The top, middle and bottom camera positions each contain one recognizable landmark.
 - Level 2 feels related to Level 1 without looking like a mirrored or recolored copy.
-

@@ -139,10 +139,10 @@ const drawGardenSector = (ctx, image, projection, worldY, width, height, cropEdg
   ctx.drawImage(image, 0, sourceY, image.naturalWidth, sourceHeight, 0, projection.y(worldY), width, height);
 };
 
-let gardenWorldCache = null;
-const composeGardenWorld = (rivalSector, playerSector, width, height) => {
-  if (gardenWorldCache?.rivalSector === rivalSector && gardenWorldCache?.playerSector === playerSector
-    && gardenWorldCache.width === width && gardenWorldCache.height === height) return gardenWorldCache.canvas;
+let sectorWorldCache = null;
+const composeSectorWorld = (rivalSector, playerSector, width, height) => {
+  if (sectorWorldCache?.rivalSector === rivalSector && sectorWorldCache?.playerSector === playerSector
+    && sectorWorldCache.width === width && sectorWorldCache.height === height) return sectorWorldCache.canvas;
   if (!rivalSector?.naturalWidth || !playerSector?.naturalWidth) return null;
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -176,7 +176,7 @@ const composeGardenWorld = (rivalSector, playerSector, width, height) => {
   seamMist.addColorStop(1, "rgba(8,18,38,0)");
   worldCtx.fillStyle = seamMist;
   worldCtx.fillRect(0, height / 2 - 68, width, 136);
-  gardenWorldCache = { rivalSector, playerSector, width, height, canvas };
+  sectorWorldCache = { rivalSector, playerSector, width, height, canvas };
   return canvas;
 };
 
@@ -229,17 +229,35 @@ export const renderBattlefieldLayer = (ctx, model) => {
   const view = model.camera?.viewport ?? { x: 0, y: 0, width: model.width, height: model.height };
   const top = view.y;
   const bottom = view.y + view.height;
-  if (map.visualTheme === "orbital_garden") {
-    const rivalSector = asset(model.assets, "background-orbital-garden-rival");
-    const playerSector = asset(model.assets, "background-orbital-garden-player");
-    const gardenWorld = composeGardenWorld(rivalSector, playerSector, map.bounds.width, map.bounds.height);
-    if (gardenWorld) {
+  const illustratedWorld = map.visualTheme === "orbital_garden" || map.visualTheme === "twin_foundries";
+  if (illustratedWorld) {
+    const prefix = map.visualTheme === "orbital_garden" ? "background-orbital-garden" : "background-twin-foundries";
+    const rivalSector = asset(model.assets, `${prefix}-rival`);
+    const playerSector = asset(model.assets, `${prefix}-player`);
+    const world = composeSectorWorld(rivalSector, playerSector, map.bounds.width, map.bounds.height);
+    if (world) {
       ctx.save();
       ctx.globalAlpha = 0.99;
-      ctx.filter = "saturate(1.12) contrast(1.05) brightness(1.03)";
-      ctx.drawImage(gardenWorld, 0, projection.y(0));
+      ctx.filter = map.visualTheme === "orbital_garden"
+        ? "saturate(1.12) contrast(1.05) brightness(1.03)"
+        : "saturate(1.05) contrast(1.08) brightness(0.88)";
+      ctx.drawImage(world, 0, projection.y(0));
       ctx.restore();
     }
+  }
+  if (map.visualTheme === "twin_foundries") {
+    ctx.save();
+    for (const lane of map.lanes) {
+      const corridor = ctx.createLinearGradient(lane.centerX - 68, 0, lane.centerX + 68, 0);
+      corridor.addColorStop(0, "rgba(2,7,17,0)");
+      corridor.addColorStop(0.25, "rgba(2,7,17,0.07)");
+      corridor.addColorStop(0.5, "rgba(2,7,17,0.15)");
+      corridor.addColorStop(0.75, "rgba(2,7,17,0.07)");
+      corridor.addColorStop(1, "rgba(2,7,17,0)");
+      ctx.fillStyle = corridor;
+      ctx.fillRect(lane.centerX - 68, projection.y(0), 136, map.bounds.height);
+    }
+    ctx.restore();
   }
   const fade = ctx.createLinearGradient(0, top, 0, bottom);
   fade.addColorStop(0, "rgba(202,224,239,0)");
@@ -250,7 +268,7 @@ export const renderBattlefieldLayer = (ctx, model) => {
   ctx.lineWidth = 1;
   ctx.setLineDash([2, 22]);
   for (const lane of map.lanes) {
-    if (map.visualTheme === "orbital_garden") continue;
+    if (illustratedWorld) continue;
     ctx.beginPath();
     ctx.moveTo(lane.centerX, projection.y(0));
     ctx.lineTo(lane.centerX, projection.y(map.bounds.height));
@@ -278,11 +296,14 @@ export const renderBattlefieldLayer = (ctx, model) => {
       const y = projection.y(worldY);
       if (y < top - 10 || y > bottom + 10) continue;
       const side = Math.floor(worldY / 92) % 2 ? -1 : 1;
-      const pulse = 0.06 + (Math.sin(model.frameTime * 1.4 + worldY) + 1) * 0.025;
+      const foundryRoute = map.visualTheme === "twin_foundries";
+      const pulse = (foundryRoute ? 0.12 : 0.06) + (Math.sin(model.frameTime * 1.4 + worldY) + 1) * (foundryRoute ? 0.035 : 0.025);
       ctx.globalAlpha = pulse;
-      ctx.fillStyle = "#f1cb88";
+      ctx.fillStyle = foundryRoute
+        ? worldY < map.bounds.height * 0.36 ? "#f2a08b" : worldY > map.bounds.height * 0.64 ? "#89e7ee" : "#f1cb88"
+        : "#f1cb88";
       ctx.beginPath();
-      ctx.arc(lane.centerX + side * 34, y, 1.25, 0, Math.PI * 2);
+      ctx.arc(lane.centerX + side * (foundryRoute ? 48 : 34), y, foundryRoute ? 1.45 : 1.25, 0, Math.PI * 2);
       ctx.fill();
     }
   }

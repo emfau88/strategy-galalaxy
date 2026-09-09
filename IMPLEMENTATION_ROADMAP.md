@@ -219,13 +219,15 @@ Der vom Nutzer freigegebene Mockup-Aufbau ist als neuer Standard umgesetzt. Drag
 ## Aktueller nächster Schritt
 
 Die verbindlichen Meilensteine 1 bis 6, der sichtbare Upgrade-/Cozy-Zwischenpass, der
-Orbital-Garden-Polish und der Combat-Motion-Follow-up sind umgesetzt. Der nächste
-größere Produktionsabschnitt ist in der
-[Product Polish Roadmap](docs/PRODUCT_POLISH_ROADMAP.md) gebündelt. Für Level 2 liegen
-drei vergleichbare [Visual Directions](docs/LEVEL_2_VISUAL_DIRECTIONS.md) vor;
-`Lantern Trade Routes` ist die empfohlene Produktionsbasis. Drag-and-drop bleibt
-optional, solange die direkte Tap-Steuerung auf kleinen Geräten schneller und
-eindeutiger ist.
+Orbital-Garden-Polish und der erste Combat-Motion-Follow-up sind umgesetzt. Der nächste
+Produktionsabschnitt ist vollständig in der
+[aktuellen Product-Polish-Roadmap](docs/PRODUCT_POLISH_ROADMAP.md) gebündelt. Level 2
+nutzt inzwischen die ausgewählte Hybridrichtung aus Twin Foundries und einer
+zurückhaltenden Cloud Rift. Vorrang haben nun echte Hull-Hardpoints, Bewegungsintegrität,
+professionelle Projectile-/Death-VFX und Level-1-Kontrast. Carrier-ähnliche
+Flottenspezialisierungen bleiben ein späterer datengetriebener Ausbau nach diesem
+Combat-Polish. Drag-and-drop bleibt optional, solange die direkte Tap-Steuerung auf
+kleinen Geräten schneller und eindeutiger ist.
 
 ## Letzte verifizierte Messung
 
