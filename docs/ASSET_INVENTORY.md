@@ -9,7 +9,7 @@ The complete licensed asset import comes from read-only Galalaxy commit `7f90d17
 | `assets/library/galalaxy/` | 516 | 20,808,162 | Development/source library; never bulk-loaded |
 | Foozle packs inside library | 502 | 14,218,222 | CC0 source art, previews and editable files |
 | Optional Galalaxy UI inside library | 14 | 6,589,940 | Preserved for reference; not in current manifest |
-| Registered Strategy Galalaxy asset manifest | 84 | verified by script | 47 current boot assets are loaded; legacy animation groups remain registered for source validation only |
+| Registered Strategy Galalaxy asset manifest | 86 | verified by script | 49 current boot assets are loaded; legacy animation groups remain registered for source validation only |
 
 The reference contains one additional file, `assets/music/track1.ogg` (5,937,850 bytes). It is deliberately excluded because its distribution license is undocumented. Therefore 516 files is the expected and enforced library count.
 
@@ -29,7 +29,7 @@ Formats across the imported reference library include runtime PNGs, editable Ase
 
 ## Active fleet runtime
 
-Player and rival each use one unified `384×384` transparent hull for Scout, Fighter, Bomber and Frigate. Drones reuse the Scout silhouette at a smaller gameplay scale. All eight hulls share the same strict top-down camera, upper-left warm key light, cool lower-right fill, material hierarchy and class scale. The player uses ivory/brass/cyan with planted accents; the rival uses charcoal/copper/burgundy/coral.
+Player and rival each use one unified `384×384` transparent `v2` hull for Scout, Fighter, Bomber and Frigate. Drones reuse the Scout silhouette at a smaller gameplay scale. All eight hulls share the same strict top-down camera, upper-left warm key light, cool lower-right fill, material hierarchy and class scale. The player uses ivory/brass/cyan with planted accents; the rival uses charcoal/copper/burgundy/coral. Static emitted flames were removed and the exposed nozzle mouths were reconstructed before normalization.
 
 Engine thrust now comes from two project-native eight-frame `1024×256` raster strips. Runtime hardpoints place the animated plume behind each unified hull without procedurally drawing its shape. Shields, damage and destruction remain lightweight presentation effects. The licensed Nairan/Kla'ed strips and metadata remain registered and verified as fallback/source material but are not loaded into an active match.
 
@@ -42,7 +42,7 @@ Engine thrust now comes from two project-native eight-frame `1024×256` raster s
 | Bomber | ivory-brass cyan missile / charcoal-copper coral torpedo | visible accelerating bounded-homing missile with position trail |
 | Frigate | broad cyan crystal shell / chunky copper-crimson heavy shell | slower sequential broadside shot |
 
-Mechanics remain faction-symmetric even when art differs. Each team/lane has an independent projectile budget; a higher global limit is a safety guard. Trails retain at most ten positions.
+Mechanics remain faction-symmetric even when art differs. Each team/lane has an independent projectile budget; a higher global limit is a safety guard. Class-specific trails retain 8–18 positions: short pulse echoes, long laser streaks, segmented missile exhaust and dashed heavy-cannon wakes.
 
 ## Project-native presentation assets
 
@@ -54,6 +54,7 @@ Mechanics remain faction-symmetric even when art differs. Each team/lane has an 
 - `assets/effects/*-engine-strip-v1.png`: two eight-phase raster engine atlases, authored separately for player and rival exhaust identity.
 - `assets/projectiles/unified/`: eight class- and faction-specific raster projectile bodies; procedural trails only supplement their readability.
 - `assets/structures/energy-relay-unified-v1.png`: shared capturable relay in the same ivory/brass/garden material family.
+- `assets/structures/orbital-garden-turret-{player,rival}-v3.png`: team-authored bases whose cyan/coral practical lamps replace all persistent code-drawn ownership markers.
 - `assets/ui/orbital-command-medallion-v1.png`: command identity shared by the HQ and contextual dock.
 - `assets/structures/command-hq-topdown-v1.png`, `defense-turret-topdown-v1.png` and `energy-relay-topdown-v1.png`: retained project-native first-pass sources; only the relay remains active.
 - normalized environment aliases and earlier curated fleet bases remain available to the runtime.

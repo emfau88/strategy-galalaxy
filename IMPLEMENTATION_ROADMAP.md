@@ -183,6 +183,19 @@ Der vom Nutzer freigegebene Mockup-Aufbau ist als neuer Standard umgesetzt. Drag
 - [x] Fünf Mobile-Viewports ohne Asset-, Konsolen-, Kamera- oder Touchfehler prüfen.
 - [x] Raster-VFX-Polish committen und pushen.
 
+## Combat-Presentation-Pass – Raum, Maßstab und integrierte Signale
+
+- [x] Alle acht Hüllen einzeln flammenfrei editieren und mechanische Düsen rekonstruieren.
+- [x] Editierte Hüllen als transparente, symmetrisch skalierte `384×384`-Sprites normalisieren.
+- [x] Drone, Scout, Fighter und Bomber visuell um rund 10–15 Prozent vergrößern.
+- [x] Formationsoffsets, Reihenabstand, Mindestabstand und taktische Querpositionen entzerren.
+- [x] Schussabstand für Frontwaffen, Siege-Schiffe und Breitseiten etwas großzügiger halten.
+- [x] Projektilspuren nach Klasse auf 8–18 Punkte staffeln und als eigene Bewegungsformen rendern.
+- [x] Player- und Rivalen-Turret als getrennte Assets mit physisch integrierten Teamlampen erzeugen.
+- [x] Letzte persistente Code-Teammarker von HQ und Turret entfernen.
+- [x] Foundation-, Asset-, Stress- und Fünf-Viewport-Browserprüfung bestehen.
+- [x] Combat-Presentation-Pass committen und pushen.
+
 ## Durchgehende Qualitäts-Gates
 
 - [ ] Keine Simulation hängt von Kamera, Animation oder Framerate ab.

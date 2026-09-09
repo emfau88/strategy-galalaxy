@@ -28,6 +28,7 @@ Team identity comes from emissive cores, engines, projectiles and structure beac
 - Frigate: slower heavy bolt with a broad luminous core and sequential hardpoint release.
 - Player projectile bodies use cyan, warm ivory and brass; rival bodies use coral, charcoal and copper. Their silhouettes differ as well as their colors.
 - Engines use generated eight-frame raster strips: clean cyan-white plasma with restrained gold sparks for the player, hotter coral-orange combustion for the rival. Class hardpoints place one, two or three plumes behind the authored hull.
+- Active `v2` hulls end at mechanically reconstructed, dark nozzle mouths and contain no emitted flame; every visible plume therefore comes from the animated atlas.
 - Shield and hit feedback are procedural Canvas effects so both fleets share timing, line weight and color logic.
 - Legacy 64-pixel animated faction strips remain in the licensed source library, but are no longer loaded into the active match.
 
@@ -36,3 +37,4 @@ Team identity comes from emissive cores, engines, projectiles and structure beac
 - Orbital Garden receives a restrained `saturate(1.12) contrast(1.05) brightness(1.03)` background grade.
 - HUD surfaces use opaque navy enamel, warm ivory text, brass selection edges and limited cyan/coral status accents.
 - UI icons use the same normalized hull files as the battlefield; separate lower-quality thumbnails are forbidden.
+- Ship-card icons use alpha-bound source crops so the same hull art remains legible in the compact command console.

@@ -18,7 +18,7 @@ for (let index = 0; index < 60 * 90 && !simulation.state.terminalTeam; index += 
   peakProjectiles = Math.max(peakProjectiles, simulation.state.projectiles.size);
   assert.ok(simulation.state.projectiles.size <= CONFIG.caps.projectiles);
   assert.ok(simulation.state.events.length <= 1024);
-  assert.ok([...simulation.state.projectiles.values()].every((projectile) => projectile.trail.length <= 10));
+  assert.ok([...simulation.state.projectiles.values()].every((projectile) => projectile.trail.length <= 18));
   for (const laneId of [LANE.LEFT, LANE.RIGHT]) {
     for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
       const active = [...simulation.state.projectiles.values()].filter((projectile) => projectile.laneId === laneId && projectile.ownerTeam === team).length;

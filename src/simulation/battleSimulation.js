@@ -11,13 +11,21 @@ const targetDefinition = (entity) => entity.structureType ? STRUCTURE_DEFINITION
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const angleDelta = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 const LAUNCH_DURATION_SECONDS = 0.62;
+const PROJECTILE_TRAIL_LIMIT = Object.freeze({
+  scout_pulse: 8,
+  light_bolt: 8,
+  fighter_laser: 13,
+  siege_missile: 18,
+  heavy_cannon: 14,
+  heavy_bolt: 14,
+});
 
 const FORMATION = Object.freeze({
-  drone: Object.freeze({ forward: 86, lateral: [0, -42, 42, -21, 21, -60, 60] }),
-  scout: Object.freeze({ forward: 70, lateral: [0, -56, 56, -28, 28] }),
-  frigate: Object.freeze({ forward: 30, lateral: [0, -40, 40] }),
-  fighter: Object.freeze({ forward: 4, lateral: [-52, 52, -20, 20] }),
-  bomber: Object.freeze({ forward: -50, lateral: [36, -36, 0] }),
+  drone: Object.freeze({ forward: 92, lateral: [0, -48, 48, -24, 24, -68, 68] }),
+  scout: Object.freeze({ forward: 74, lateral: [0, -64, 64, -32, 32] }),
+  frigate: Object.freeze({ forward: 34, lateral: [0, -48, 48] }),
+  fighter: Object.freeze({ forward: 2, lateral: [-62, 62, -25, 25] }),
+  bomber: Object.freeze({ forward: -58, lateral: [44, -44, 0] }),
 });
 
 const squadIdFor = (team, laneId, spawnCycle) => `${team}:${laneId}:${spawnCycle}`;
@@ -80,7 +88,7 @@ export class BattleSimulation {
       typeCounts.set(unitType, typeIndex + 1);
       const row = Math.floor(typeIndex / pattern.lateral.length);
       const lateral = pattern.lateral[typeIndex % pattern.lateral.length];
-      const longitudinal = direction * (pattern.forward - row * 30 + ((index + spawnCycle) % 2 ? 3 : -3));
+      const longitudinal = direction * (pattern.forward - row * 36 + ((index + spawnCycle) % 2 ? 4 : -4));
       return this.spawnUnit(team, laneId, unitType, {
         slotOffsetX: lateral,
         slotOffsetY: longitudinal,
@@ -154,14 +162,14 @@ export class BattleSimulation {
             const right = units[second];
             const leftSpacing = UNIT_DEFINITIONS[left.unitType].spacingRadius ?? UNIT_DEFINITIONS[left.unitType].collisionRadius;
             const rightSpacing = UNIT_DEFINITIONS[right.unitType].spacingRadius ?? UNIT_DEFINITIONS[right.unitType].collisionRadius;
-            const minimum = (leftSpacing + rightSpacing) * (this.state.map.spacingScale ?? 1) + 4;
+            const minimum = (leftSpacing + rightSpacing) * (this.state.map.spacingScale ?? 1) + 6;
             const dx = right.x - left.x || (second % 2 ? 0.5 : -0.5);
             const dy = right.y - left.y || (second % 2 ? 0.25 : -0.25);
             const current = Math.hypot(dx, dy);
             if (current >= minimum) continue;
             const push = (minimum - current) * 0.5;
             const horizontal = dx / current * push;
-            const vertical = dy / current * push * 0.42;
+            const vertical = dy / current * push * 0.5;
             const minX = laneDefinition.centerX - laneDefinition.width / 2 + 9;
             const maxX = laneDefinition.centerX + laneDefinition.width / 2 - 9;
             left.x = Math.max(minX, Math.min(maxX, left.x - horizontal));
@@ -236,13 +244,13 @@ export class BattleSimulation {
 
   tacticalPosition(unit, target, definition) {
     const direction = forwardDirection(unit.team);
-    const standoff = definition.attackRange * (definition.broadside ? 0.84 : 0.86);
-    const formationLateral = clamp(unit.slotOffsetX * 0.4, -34, 34);
+    const standoff = definition.attackRange * (definition.broadside ? 0.9 : definition.role === "siege" ? 0.94 : 0.91);
+    const formationLateral = clamp(unit.slotOffsetX * 0.55, -44, 44);
     const targetBearing = Math.atan2(target.y - unit.y, target.x - unit.x);
     if (definition.broadside) {
       return {
         x: target.x + unit.broadsideSide * standoff,
-        y: target.y - direction * formationLateral * 0.45,
+        y: target.y - direction * formationLateral * 0.55,
         heading: targetBearing + unit.broadsideSide * direction * Math.PI / 2,
       };
     }
@@ -386,7 +394,8 @@ export class BattleSimulation {
       projectile.previousX = projectile.x;
       projectile.previousY = projectile.y;
       projectile.trail.push({ x: projectile.x, y: projectile.y });
-      if (projectile.trail.length > 10) projectile.trail.shift();
+      const trailLimit = PROJECTILE_TRAIL_LIMIT[projectile.projectileType] ?? 10;
+      if (projectile.trail.length > trailLimit) projectile.trail.shift();
       const definition = PROJECTILE_DEFINITIONS[projectile.projectileType];
       const target = getEntity(this.state, projectile.targetId);
       if (definition.homing && target?.alive) {

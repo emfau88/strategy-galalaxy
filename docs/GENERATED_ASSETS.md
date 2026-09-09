@@ -112,6 +112,25 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
 - **Runtime:** Each normalized `1024×256` strip contains eight `128×256` frames. The renderer cycles at 12 FPS with a stable per-unit phase offset and class-specific hardpoints.
 - **Status:** Active runtime assets.
 
+## Unified no-exhaust fleet hulls, v2
+
+- **Destinations:** `assets/factions/unified/player-{scout,fighter,bomber,frigate}-v2.png` and `assets/factions/unified/enemy-{scout,fighter,bomber,frigate}-v2.png`
+- **Method / mode:** Eight separate Built-in ImageGen `precise-object-edit` passes, followed by deterministic checkerboard extraction and class-aligned transparent normalization with `scripts/normalize-generated-cutout.py`.
+- **Purpose:** Remove the baked static flame from every hull, reconstruct credible dark nozzle mouths and let the existing eight-frame engine atlases own all emitted thrust.
+- **Player prompt set:** For each player Scout, Fighter, Bomber and Frigate: “Remove only every bright cyan engine exhaust flame extending outside the ship below its rear nozzle or nozzles. Reconstruct clean closed rear nozzle mouths and transparent space immediately behind them. Preserve exactly the strict top-down silhouette, class identity, ivory ceramic, brass trim, cyan hull lamps, planted flowers, lighting and framing. No redesign, new parts, crop, shadow, external glow, exhaust, smoke, UI, text or watermark.”
+- **Rival prompt set:** The equivalent four per-class edits, preserving charcoal/navy ceramic, copper/brass, burgundy panels and coral hull lamps while removing only emitted red/coral plumes and reconstructing the nozzle mouths.
+- **Runtime:** All sprites share a `384×384` transparent canvas and class-specific bottom alignment, so the animated plume begins exactly at the rear hardware. Earlier `v1` hulls remain retained source history.
+- **Status:** Active runtime hull and command-card assets.
+
+## Team-integrated Orbital Garden turret bases, v3
+
+- **Destinations:** `assets/structures/orbital-garden-turret-player-v3.png`, `assets/structures/orbital-garden-turret-rival-v3.png`
+- **Method / mode:** Two separate Built-in ImageGen `precise-object-edit` passes from `orbital-garden-turret-base-v2.png`.
+- **Purpose:** Replace the last persistent code-drawn ownership diamonds with physical practical lights mounted inside the authored structure.
+- **Player prompt:** “Change only the existing rectangular amber practical lamps around the platform and its four cardinal modules to restrained cyan/aqua emission. Keep the warm amber sun medallions and architectural light unchanged. Preserve exact geometry, empty central rotation socket, strict top-down camera, ivory stone, brass, garden beds, lighting and black compositing background. No external marker, ring, floating beacon, weapon, UI or text.”
+- **Rival prompt:** The same constrained edit with coral-red practical lamps instead of cyan/aqua.
+- **Status:** Active runtime turret bases for both maps; the independent rotating head, recoil and muzzle flash remain shared.
+
 ## Unified faction projectile families
 
 - **Destinations:** `assets/projectiles/unified/player-{scout-pulse,fighter-laser,siege-missile,heavy-cannon}-v1.png`, `assets/projectiles/unified/enemy-{scout-pulse,fighter-laser,siege-missile,heavy-cannon}-v1.png`

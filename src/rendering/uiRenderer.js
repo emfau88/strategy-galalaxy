@@ -75,7 +75,17 @@ const drawShipIcon = (ctx, model, unitType, x, y, size = 22) => {
   const unifiedSprite = model.assets?.get(`unified-player-${spriteType}`);
   const sprite = unifiedSprite ?? model.assets?.get(`nairan-${spriteType}`);
   const crop = { scout: [20, 23, 24, 22], fighter: [17, 20, 30, 27], bomber: [16, 18, 32, 30], frigate: [11, 9, 42, 42] }[unitType] ?? [0, 0, 64, 64];
-  if (unifiedSprite) ctx.drawImage(unifiedSprite, x - size / 2, y - size / 2, size, size);
+  const unifiedCrop = {
+    drone: [115, 100, 155, 185], scout: [115, 100, 155, 185],
+    fighter: [68, 60, 248, 232], bomber: [78, 50, 228, 250], frigate: [105, 18, 174, 298],
+  }[unitType] ?? [0, 0, 384, 384];
+  if (unifiedSprite) {
+    const [, , sourceWidth, sourceHeight] = unifiedCrop;
+    const scale = size / Math.max(sourceWidth, sourceHeight);
+    const width = sourceWidth * scale;
+    const height = sourceHeight * scale;
+    ctx.drawImage(unifiedSprite, ...unifiedCrop, x - width / 2, y - height / 2, width, height);
+  }
   else if (sprite) { ctx.save(); ctx.globalCompositeOperation = "screen"; ctx.drawImage(sprite, ...crop, x - size / 2, y - size / 2, size, size); ctx.restore(); }
   else { ctx.fillStyle = UNIT_DEFINITIONS[unitType]?.color ?? C.player; ctx.beginPath(); ctx.arc(x, y, size * 0.3, 0, Math.PI * 2); ctx.fill(); }
 };
