@@ -10,7 +10,8 @@ export const CONFIG = Object.freeze({
   }),
   camera: Object.freeze({
     battlefieldTopInset: 64,
-    battlefieldBottomInset: 194,
+    battlefieldBottomInset: 74,
+    battlefieldCommandBottomInset: 234,
     dragThreshold: 7,
     inertiaDamping: 9,
     maximumInertiaSpeed: 720,

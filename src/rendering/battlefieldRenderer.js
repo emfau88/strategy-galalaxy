@@ -157,7 +157,8 @@ export const renderBattlefieldLayer = (ctx, model) => {
     const gardenWorld = composeGardenWorld(rivalSector, playerSector, map.bounds.width, map.bounds.height);
     if (gardenWorld) {
       ctx.save();
-      ctx.globalAlpha = 0.97;
+      ctx.globalAlpha = 0.99;
+      ctx.filter = "saturate(1.12) contrast(1.05) brightness(1.03)";
       ctx.drawImage(gardenWorld, 0, projection.y(0));
       ctx.restore();
     }

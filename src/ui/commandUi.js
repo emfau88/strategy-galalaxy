@@ -4,68 +4,78 @@ export const COMMAND_UI = Object.freeze({
   fullscreen: Object.freeze({ x: 378, y: 12, width: 34, height: 34 }),
   pause: Object.freeze({ x: 308, y: 12, width: 30, height: 34 }),
   sound: Object.freeze({ x: 343, y: 12, width: 30, height: 34 }),
-  lanes: Object.freeze([
-    Object.freeze({ laneId: LANE.LEFT, x: 16, y: 586, width: 70, height: 44 }),
-    Object.freeze({ laneId: LANE.RIGHT, x: 92, y: 586, width: 70, height: 44 }),
-  ]),
-  undo: Object.freeze({ x: 172, y: 586, width: 112, height: 44 }),
-  menu: Object.freeze({ x: 292, y: 586, width: 112, height: 44 }),
-  units: Object.freeze([
-    Object.freeze({ unitType: "scout", x: 16, y: 638, width: 132, height: 50 }),
-    Object.freeze({ unitType: "fighter", x: 154, y: 638, width: 132, height: 50 }),
-    Object.freeze({ unitType: "bomber", x: 16, y: 696, width: 132, height: 50 }),
-    Object.freeze({ unitType: "frigate", x: 154, y: 696, width: 132, height: 50 }),
-  ]),
-  upgrades: Object.freeze([
-    Object.freeze({ upgradeId: "economy", x: 16, y: 638, width: 132, height: 50 }),
-    Object.freeze({ upgradeId: "weapons", x: 154, y: 638, width: 132, height: 50 }),
-    Object.freeze({ upgradeId: "turret", x: 16, y: 696, width: 132, height: 50 }),
-    Object.freeze({ upgradeId: "logistics", x: 154, y: 696, width: 132, height: 50 }),
-  ]),
-  deploy: Object.freeze({ x: 294, y: 638, width: 110, height: 108 }),
   titleLevel: Object.freeze({ x: 104, y: 398, width: 212, height: 32 }),
   titleDifficulty: Object.freeze({ x: 104, y: 438, width: 212, height: 32 }),
   titleStart: Object.freeze({ x: 104, y: 478, width: 212, height: 38 }),
 });
 
-const shiftVertically = (rect, offsetY) => Object.freeze({ ...rect, y: rect.y + offsetY });
+const freezeRect = (rect) => Object.freeze(rect);
 
-export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT]) => {
-  const lowerOffset = Math.max(0, height - 760);
-  const lanes = laneIds.length === 1
-    ? [Object.freeze({ laneId: laneIds[0], x: 16, y: 586, width: 146, height: 44 })]
-    : COMMAND_UI.lanes.filter((rect) => laneIds.includes(rect.laneId));
+export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT], expanded = false) => {
+  if (!expanded) {
+    const y = height - 66;
+    return Object.freeze({
+      expanded: false,
+      fullscreen: COMMAND_UI.fullscreen,
+      panel: freezeRect({ x: 8, y: height - 68, width: 404, height: 60 }),
+      command: freezeRect({ x: 14, y, width: 126, height: 48 }),
+      queue: freezeRect({ x: 146, y, width: 150, height: 48 }),
+      status: freezeRect({ x: 302, y, width: 104, height: 48 }),
+      feedbackY: height - 80,
+      debugY: height - 102,
+      lanes: Object.freeze([]), units: Object.freeze([]), upgrades: Object.freeze([]),
+    });
+  }
+
+  const y = height - 226;
+  const laneWidth = laneIds.length === 1 ? 90 : 43;
+  const lanes = laneIds.map((laneId, index) => freezeRect({ laneId, x: 16 + index * (laneWidth + 4), y: y + 174, width: laneWidth, height: 36 }));
+  const cards = (key, ids) => ids.map((id, index) => freezeRect({
+    [key]: id,
+    x: index % 2 ? 210 : 16,
+    y: y + 60 + Math.floor(index / 2) * 56,
+    width: index % 2 ? 194 : 188,
+    height: 50,
+  }));
   return Object.freeze({
+    expanded: true,
     fullscreen: COMMAND_UI.fullscreen,
-    lanes: Object.freeze(lanes.map((rect) => shiftVertically(rect, lowerOffset))),
-    panel: Object.freeze({ x: 8, y: 576 + lowerOffset, width: 404, height: 176 }),
-    feedbackY: 566 + lowerOffset,
-    debugY: 544 + lowerOffset,
-    undo: shiftVertically(COMMAND_UI.undo, lowerOffset),
-    menu: shiftVertically(COMMAND_UI.menu, lowerOffset),
-    units: Object.freeze(COMMAND_UI.units.map((rect) => shiftVertically(rect, lowerOffset))),
-    upgrades: Object.freeze(COMMAND_UI.upgrades.map((rect) => shiftVertically(rect, lowerOffset))),
-    deploy: shiftVertically(COMMAND_UI.deploy, lowerOffset),
+    panel: freezeRect({ x: 8, y, width: 404, height: 218 }),
+    close: freezeRect({ x: 198, y: y + 11, width: 16, height: 40 }),
+    fleetTab: freezeRect({ x: 16, y: y + 10, width: 186, height: 42 }),
+    upgradeTab: freezeRect({ x: 210, y: y + 10, width: 194, height: 42 }),
+    lanes: Object.freeze(lanes),
+    undo: freezeRect({ x: 112, y: y + 174, width: 58, height: 36 }),
+    queue: freezeRect({ x: 174, y: y + 174, width: 126, height: 36 }),
+    status: freezeRect({ x: 304, y: y + 174, width: 100, height: 36 }),
+    units: Object.freeze(cards("unitType", ["scout", "fighter", "bomber", "frigate"])),
+    upgrades: Object.freeze(cards("upgradeId", ["economy", "weapons", "turret", "logistics"])),
+    feedbackY: y - 20,
+    debugY: y - 42,
   });
 };
 
 export const overlayUiLayout = (height = 760) => {
   const centerY = height / 2;
   return Object.freeze({
-    pausePanel: Object.freeze({ x: 68, y: centerY - 104, width: 284, height: 208 }),
-    pauseResume: Object.freeze({ x: 88, y: centerY + 4, width: 116, height: 46 }),
-    pauseMenu: Object.freeze({ x: 216, y: centerY + 4, width: 116, height: 46 }),
-    endPanel: Object.freeze({ x: 68, y: centerY - 100, width: 284, height: 200 }),
-    endRestart: Object.freeze({ x: 88, y: centerY + 16, width: 116, height: 46 }),
-    endMenu: Object.freeze({ x: 216, y: centerY + 16, width: 116, height: 46 }),
+    pausePanel: freezeRect({ x: 68, y: centerY - 104, width: 284, height: 208 }),
+    pauseResume: freezeRect({ x: 88, y: centerY + 4, width: 116, height: 46 }),
+    pauseMenu: freezeRect({ x: 216, y: centerY + 4, width: 116, height: 46 }),
+    endPanel: freezeRect({ x: 68, y: centerY - 100, width: 284, height: 200 }),
+    endRestart: freezeRect({ x: 88, y: centerY + 16, width: 116, height: 46 }),
+    endMenu: freezeRect({ x: 216, y: centerY + 16, width: 116, height: 46 }),
   });
 };
 
 export const containsPoint = (rect, point) => point.x >= rect.x && point.x <= rect.x + rect.width && point.y >= rect.y && point.y <= rect.y + rect.height;
 const containsWithSlop = (rect, point, slop = 3) => containsPoint({ x: rect.x - slop, y: rect.y - slop, width: rect.width + slop * 2, height: rect.height + slop * 2 }, point);
 
-export const commandActionAt = (point, menu = "units", height = 760, laneIds = [LANE.LEFT, LANE.RIGHT]) => {
-  const layout = commandUiLayout(height, laneIds);
+export const commandActionAt = (point, menu = "units", height = 760, laneIds = [LANE.LEFT, LANE.RIGHT], expanded = false) => {
+  const layout = commandUiLayout(height, laneIds, expanded);
+  if (!expanded) return containsPoint(layout.command, point) || containsPoint(layout.queue, point) ? { type: "TOGGLE_COMMAND_DOCK" } : null;
+  if (containsPoint(layout.close, point)) return { type: "TOGGLE_COMMAND_DOCK" };
+  if (containsPoint(layout.fleetTab, point)) return { type: "SET_COMMAND_MENU", menu: "units" };
+  if (containsPoint(layout.upgradeTab, point)) return { type: "SET_COMMAND_MENU", menu: "upgrades" };
   const lane = layout.lanes.find((rect) => containsWithSlop(rect, point));
   if (lane) return { type: "SELECT_LANE", laneId: lane.laneId };
   if (menu === "units") {
@@ -76,7 +86,6 @@ export const commandActionAt = (point, menu = "units", height = 760, laneIds = [
     if (upgrade) return { type: "BUY_UPGRADE", upgradeId: upgrade.upgradeId };
   }
   if (containsPoint(layout.undo, point)) return { type: "REMOVE_LAST_UNIT" };
-  if (containsPoint(layout.menu, point)) return { type: "TOGGLE_MENU" };
   return null;
 };
 

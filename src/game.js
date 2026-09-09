@@ -39,6 +39,7 @@ export class Game {
     this.levelIndex = Math.max(0, LEVELS.findIndex((level) => level.level === options.level));
     this.selectedLaneId = LEVELS[this.levelIndex].lanes[0].id;
     this.commandMenu = "units";
+    this.commandDockOpen = false;
     this.commandFeedback = null;
     this.commandFeedbackUntil = 0;
     this.fullscreenActive = false;
@@ -123,6 +124,7 @@ export class Game {
       designHeight,
     });
     this.camera.resize(CONFIG.app.designWidth, designHeight);
+    this.syncCommandViewport();
     this.renderer.resize(this.transform);
   }
 
@@ -198,12 +200,13 @@ export class Game {
       this.sound.play("deploy");
       this.sound.vibrate([12, 24, 18]);
     }
-    else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight, this.match.mapDefinition.lanes.map((lane) => lane.id)));
+    else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight, this.match.mapDefinition.lanes.map((lane) => lane.id), this.commandDockOpen));
     this.syncMatchState();
   }
 
   restartMatch() {
     if (!this.match.restart()) return false;
+    this.setCommandDockOpen(false);
     this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
     this.camera.reset("player");
     this.effects.reset();
@@ -217,6 +220,7 @@ export class Game {
     if (!this.match.returnToTitle()) return false;
     this.cameraGesture = null;
     this.commandMenu = "units";
+    this.setCommandDockOpen(false);
     this.commandFeedback = null;
     this.effects.reset();
     this.sound.reset();
@@ -273,7 +277,13 @@ export class Game {
 
     if (input.kind === "up") {
       if (this.cameraGesture.moved) this.camera.endPan();
-      else this.camera.cancelPan();
+      else {
+        this.camera.cancelPan();
+        if (this.match.state === MATCH_STATE.LIVE_MATCH && this.playerHqContains({ x: this.cameraGesture.originX, y: this.cameraGesture.originY })) {
+          this.setCommandDockOpen(!this.commandDockOpen);
+          this.sound.play("select");
+        }
+      }
       this.cameraGesture = null;
       return true;
     }
@@ -305,16 +315,20 @@ export class Game {
 
   executeCommandAction(action) {
     if (!action) return;
+    if (action.type === "TOGGLE_COMMAND_DOCK") {
+      this.setCommandDockOpen(!this.commandDockOpen);
+      this.sound.play("select");
+      return;
+    }
+    if (action.type === "SET_COMMAND_MENU") {
+      this.commandMenu = action.menu;
+      this.sound.play("select");
+      return;
+    }
     if (action.type === "SELECT_LANE") {
       this.selectedLaneId = action.laneId;
       const laneLabel = action.laneId === LANE.CENTER ? "MAIN" : action.laneId === LANE.LEFT ? "LEFT" : "RIGHT";
       this.showFeedback(`${laneLabel} LANE SELECTED`);
-      this.sound.play("select");
-      return;
-    }
-    if (action.type === "TOGGLE_MENU") {
-      this.commandMenu = this.commandMenu === "units" ? "upgrades" : "units";
-      this.showFeedback(this.commandMenu === "units" ? "SHIP REINFORCEMENTS" : "UPGRADES");
       this.sound.play("select");
       return;
     }
@@ -334,6 +348,23 @@ export class Game {
 
   commandFailureLabel(reason) {
     return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", CAPACITY_RESERVED: "LANE CAPACITY RESERVED", REINFORCEMENT_LIMIT: "ALL REINFORCEMENT SLOTS USED", RESEARCH_SLOT_USED: "ONE PROJECT PER WAVE", QUEUE_LOCKED: "DEPLOYMENT LOCKED", WRONG_PHASE: "PLANNING UNAVAILABLE", MAX_LEVEL: "UPGRADE ALREADY MAXED" })[reason] ?? "COMMAND UNAVAILABLE";
+  }
+
+  setCommandDockOpen(open) {
+    this.commandDockOpen = Boolean(open);
+    this.syncCommandViewport();
+  }
+
+  syncCommandViewport() {
+    if (!this.camera) return;
+    this.camera.setBottomInset(this.commandDockOpen ? CONFIG.camera.battlefieldCommandBottomInset : CONFIG.camera.battlefieldBottomInset);
+  }
+
+  playerHqContains(point) {
+    const hq = this.match.simulation?.state.structures.get("player-hq");
+    if (!hq?.alive) return false;
+    const screenY = this.camera.worldToScreenY(hq.y);
+    return Math.abs(point.x - hq.x) <= 76 && Math.abs(point.y - screenY) <= 62;
   }
 
   handleKeyDown(event) {
@@ -392,6 +423,7 @@ export class Game {
       selectedLevel: this.match.mapDefinition.level,
       selectedLaneId: this.selectedLaneId,
       commandMenu: this.commandMenu,
+      commandDockOpen: this.commandDockOpen,
       fullscreenActive: this.fullscreenActive,
       soundEnabled: this.sound.enabled,
       queueLocked: this.match.queueLocked,

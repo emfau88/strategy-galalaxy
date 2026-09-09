@@ -102,7 +102,7 @@ Missing optional layers fall back safely to hull and Canvas effects. The asset v
 
 The logical width remains 420. Portrait design height expands to the viewport aspect ratio with a minimum of 760, so tall phones use their complete screen instead of centering a short fixed canvas. Rendering and pointer conversion share the same transform. The lower planning panel is anchored to the responsive bottom edge.
 
-The simulation world is taller than the design viewport. Only the battlefield layer is clipped and translated by the bounded vertical camera; title, HUD, planning controls, overlays and strategic navigator remain in screen space. Both lanes therefore stay visible horizontally while direct touch drag reveals the taller engagement space.
+The simulation world is taller than the design viewport. Only the battlefield layer is clipped and translated by the bounded vertical camera; title, HUD, contextual planning controls, overlays and strategic navigator remain in screen space. The compact command dock reserves 74 design pixels at the bottom; opening the HQ console raises that inset to 234 while preserving the camera's lower world edge. Both lanes therefore stay visible horizontally while direct touch drag reveals the taller engagement space.
 
 Device pixel ratio is capped, with a lower coarse-pointer target, to control decoded surface and fill cost. Fullscreen and resize rebuild the transform without mutating simulation state.
 

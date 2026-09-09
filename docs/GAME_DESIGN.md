@@ -84,7 +84,7 @@ Budgets are bounded. In particular, each team and lane has its own projectile al
 
 ## Mobile interface
 
-The top HUD prioritizes both HQ health values and the deployment countdown. Energy, income and shared slots remain compact. The bottom planning panel is always available during the live match and provides:
+The top HUD prioritizes both HQ health values and the deployment countdown. Energy and income remain compact. The normal battle view keeps only a slim Command, queue and slot dock; tapping the player HQ or Command expands the contextual planning console and provides:
 
 - Left/Right selection and visible friendly queue icons;
 - Scout, Fighter, Bomber and Frigate purchase buttons;

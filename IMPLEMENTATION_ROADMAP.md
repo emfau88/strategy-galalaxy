@@ -95,10 +95,6 @@ committet und gepusht, damit er direkt getestet werden kann.
 - [x] Kurze gespiegelte Investment-Matrix nach dem Economy-Umbau ausführen.
 - [x] Zwischenmeilenstein committen und pushen.
 
-## Meilenstein 6 – alternatives HQ-Kommandomenü (Experiment)
-
-Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
-
 ## Meilenstein 5.5 – Level 1 „Orbital Garden“
 
 - [x] Neue breite Ein-Lane-Karte als reguläres Level 1 definieren.
@@ -146,14 +142,19 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 - [x] Foundation-, Asset- und Mobile-Browserprüfung nach dem UX-Pass bestehen.
 - [x] Abschluss committen und auf `main` pushen.
 
-- [ ] HQ antippbar machen und ein kontextuelles Kommandomenü als Prototyp öffnen.
+## Meilenstein 6 – integriertes HQ-Kommandomenü
+
+Der vom Nutzer freigegebene Mockup-Aufbau ist als neuer Standard umgesetzt. Drag-and-drop bleibt eine optionale spätere Interaktionsvariante; die robuste Tap-Steuerung ist vollständig spielbar.
+
+- [x] HQ antippbar machen und ein kontextuelles Kommandomenü öffnen.
 - [ ] Schiffstypen als Drag-and-drop-Chips vom HQ auf Left/Right anbieten.
-- [ ] Tap-Fallback für Drag-and-drop und klare Abbruch-/Refund-Regeln vorsehen.
-- [ ] Upgrades in ein eigenes HQ-Untermenü verschieben.
-- [ ] Permanente untere HUD-Leiste gegen das HQ-Menü auf 360–420 px Breite vergleichen.
-- [ ] Erreichbarkeit, Einhandbedienung, Kampfbeobachtung und Queue-Klarheit testen.
-- [ ] Nur bei besserem Playtest-Ergebnis als Standard übernehmen.
-- [ ] Meilenstein committen und pushen.
+- [x] Vollständige Tap-Steuerung und bestehende Undo-/Refund-Regeln erhalten.
+- [x] Upgrades in einen eigenen HQ-Tab verschieben.
+- [x] Permanente untere HUD-Leiste durch einen kompakten Command-/Queue-/Status-Dock ersetzen.
+- [x] Kamera dynamisch von 622 Pixel Kampfviewport auf 462 Pixel bei geöffneter Konsole umstellen.
+- [x] Erreichbarkeit, Kampfbeobachtung und Queue-Klarheit auf fünf Mobile-Viewports prüfen.
+- [x] Mockup-nahe Auswahlverbindung, warme Konsole und eigenes Command-Medaillon integrieren.
+- [x] Als neuen Standard übernehmen, committen und pushen.
 
 ## Durchgehende Qualitäts-Gates
 
@@ -166,10 +167,10 @@ Dieser Schritt folgt erst, wenn der neue Kampfmaßstab spielerisch trägt.
 
 ## Aktueller nächster Schritt
 
-Die verbindlichen Meilensteine 1 bis 5 und der sichtbare Upgrade-/Cozy-Zwischenpass
-sind umgesetzt. Als nächstes folgt ein manueller Playtest des neuen Kampfmaßstabs und
-der stärkeren Entscheidungsanzeige; das alternative HQ-Kommandomenü aus Meilenstein 6
-bleibt bis zu diesem Spielgefühl-Test bewusst ein Experiment.
+Die verbindlichen Meilensteine 1 bis 6, der sichtbare Upgrade-/Cozy-Zwischenpass und
+der Orbital-Garden-Polish sind umgesetzt. Als nächstes folgt ein manueller Playtest des
+neuen HQ-Docks; Drag-and-drop bleibt optional, solange die direkte Tap-Steuerung auf
+kleinen Geräten schneller und eindeutiger ist.
 
 ## Letzte verifizierte Messung
 

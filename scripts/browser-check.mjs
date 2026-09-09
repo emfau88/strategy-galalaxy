@@ -160,9 +160,16 @@ try {
   assert.deepEqual(gardenState.result.value, { map: "orbital_garden", lanes: ["LANE_CENTER"], worldHeight: 1180, playerUnits: 2, slots: 3, assetFailures: 0 });
   const gardenPlayerScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(resolve(output, "level-1-player-sector-420x760.png"), Buffer.from(gardenPlayerScreenshot.data, "base64"));
-  await touch(70, 675);
+  const playerHqTap = await send("Runtime.evaluate", { expression: "(() => { const g = window.__strategyGalalaxy; const h = g.match.simulation.state.structures.get('player-hq'); return { x: h.x, y: g.camera.worldToScreenY(h.y) }; })()", returnByValue: true });
+  await touch(playerHqTap.result.value.x, playerHqTap.result.value.y);
+  const hqOpened = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.commandDockOpen", returnByValue: true });
+  assert.equal(hqOpened.result.value, true, "tapping the player HQ opens its command console");
+  const commandScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "hq-command-expanded-420x760.png"), Buffer.from(commandScreenshot.data, "base64"));
+  await touch(70, 619);
   const gardenQueue = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.queuedWaves.get('TEAM_PLAYER').get('LANE_CENTER').length", returnByValue: true });
   assert.equal(gardenQueue.result.value, 1, "Orbital Garden main-lane queue is touch-operable");
+  await touch(206, 565);
   await send("Runtime.evaluate", { expression: "(() => { const g = window.__strategyGalalaxy; for (let step = 0; step < 60 * 36 && g.state === 'LIVE_MATCH'; step += 1) g.match.advanceLive(1 / 60); g.camera.jumpToWorld(640); })()" });
   await delay(100);
   const gardenScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
@@ -195,12 +202,14 @@ try {
     assert.ok(Math.abs(snapshot.camera.y - snapshot.camera.maximumY) < 0.01, "match begins focused on the player sector");
 
     const designHeight = snapshot.transform.designHeight;
-    const lowerOffset = Math.max(0, designHeight - 760);
     const touchX = 70 * snapshot.transform.scale;
-    const touchY = (675 + lowerOffset) * snapshot.transform.scale;
-    await touch(touchX, touchY);
+    await touch(touchX, (designHeight - 42) * snapshot.transform.scale);
+    const openResult = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.commandDockOpen", returnByValue: true });
+    assert.equal(openResult.result.value, true, `${width}x${height} compact command dock expands`);
+    await touch(touchX, (designHeight - 141) * snapshot.transform.scale);
     const queueResult = await send("Runtime.evaluate", { expression: "[...window.__strategyGalalaxy.match.queuedWaves.get('TEAM_PLAYER').values()].flat().length", returnByValue: true });
     assert.equal(queueResult.result.value, 1, `${width}x${height} touch reaches Scout control`);
+    await touch(206 * snapshot.transform.scale, (designHeight - 195) * snapshot.transform.scale);
 
     const panX = 210 * snapshot.transform.scale;
     const panFromY = (snapshot.camera.viewport.y + 110) * snapshot.transform.scale;
@@ -228,11 +237,12 @@ try {
       await touch(358, 29);
       const soundRestored = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.sound.enabled", returnByValue: true });
       assert.equal(soundRestored.result.value, soundBefore.result.value, "sound control restores its prior state");
-      await touch(348, 608);
+      await touch(70, 718);
+      await touch(300, 565);
       const upgradeMenu = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.commandMenu", returnByValue: true });
       assert.equal(upgradeMenu.result.value, "upgrades", "upgrade projects are touch-operable");
       await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').energy = 300" });
-      await touch(82, 663);
+      await touch(82, 619);
       const pendingUpgrade = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.pendingUpgradeCount('TEAM_PLAYER')", returnByValue: true });
       assert.equal(pendingUpgrade.result.value, 1, "one visible upgrade project can be prepared per wave");
       const pendingScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
@@ -245,7 +255,7 @@ try {
       await delay(60);
       const activeScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
       await writeFile(resolve(output, "upgrades-active-420x760.png"), Buffer.from(activeScreenshot.data, "base64"));
-      await touch(348, 608);
+      await touch(206, 565);
     }
 
     const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });

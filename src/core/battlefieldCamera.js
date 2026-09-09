@@ -1,18 +1,21 @@
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
 
-export const battlefieldViewport = (designWidth, designHeight, config) => Object.freeze({
+export const battlefieldViewport = (designWidth, designHeight, config, bottomInset = config.battlefieldBottomInset) => Object.freeze({
   x: 0,
   y: config.battlefieldTopInset,
   width: designWidth,
-  height: Math.max(120, designHeight - config.battlefieldTopInset - config.battlefieldBottomInset),
+  height: Math.max(120, designHeight - config.battlefieldTopInset - bottomInset),
 });
 
 /** Keeps the tall simulation world independent from fixed screen-space HUD. */
 export class BattlefieldCamera {
   constructor({ worldHeight, designWidth, designHeight, config }) {
     this.config = config;
+    this.designWidth = designWidth;
+    this.designHeight = designHeight;
+    this.bottomInset = config.battlefieldBottomInset;
     this.worldHeight = worldHeight;
-    this.viewport = battlefieldViewport(designWidth, designHeight, config);
+    this.viewport = battlefieldViewport(designWidth, designHeight, config, this.bottomInset);
     this.y = 0;
     this.velocityY = 0;
     this.dragging = false;
@@ -27,8 +30,19 @@ export class BattlefieldCamera {
 
   resize(designWidth, designHeight) {
     const previousCenter = this.y + this.viewport.height / 2;
-    this.viewport = battlefieldViewport(designWidth, designHeight, this.config);
+    this.designWidth = designWidth;
+    this.designHeight = designHeight;
+    this.viewport = battlefieldViewport(designWidth, designHeight, this.config, this.bottomInset);
     this.y = clamp(previousCenter - this.viewport.height / 2, 0, this.maximumY);
+  }
+
+  setBottomInset(bottomInset) {
+    const nextInset = Math.max(0, bottomInset);
+    if (nextInset === this.bottomInset) return;
+    const previousBottom = this.y + this.viewport.height;
+    this.bottomInset = nextInset;
+    this.viewport = battlefieldViewport(this.designWidth, this.designHeight, this.config, this.bottomInset);
+    this.y = clamp(previousBottom - this.viewport.height, 0, this.maximumY);
   }
 
   setWorldHeight(worldHeight) {

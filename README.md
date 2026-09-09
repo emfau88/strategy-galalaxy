@@ -35,6 +35,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Responsive Canvas-Höhe mit bildschirmfestem HUD und einer davon entkoppelten `420 x 1180` Spielwelt. Die beiden Level-1-Hintergrundsektoren werden proportional beschnitten und weich überblendet, nicht auf Mobile verzerrt.
 - Über das Pause-Menü kann jederzeit zum Hauptmenü zurückgekehrt werden; der Ergebnisbildschirm bietet getrennt „Play Again“ und „Main Menu“.
 - Größere Mobile-Touchflächen, direkt in den Lane-Tabs sichtbarer Druckvergleich sowie ein kurzer Drei-Schritte-Einstieg auf dem Startbildschirm.
+- Integriertes HQ-Kommandomenü: Der Normalzustand zeigt nur einen kompakten Command-/Queue-/Status-Dock; ein Tap auf das eigene HQ oder „Command“ öffnet Fleet- und Upgrade-Tabs. Die Kamera gibt geschlossen 120 zusätzliche Design-Pixel für die Schlacht frei.
 - Schaltbare, synthetisierte Combat-Sounds und an echte Nutzergesten gebundenes Haptik-Feedback ohne zusätzliche Audio-Lizenzabhängigkeit.
 - Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt nur den kuratierten aktuellen Ausschnitt.
 
@@ -70,7 +71,7 @@ Das Projekt nutzt native Browsermodule und benötigt keinen Build-Schritt.
 python -m http.server 8765 --directory .
 ```
 
-Anschließend `http://127.0.0.1:8765/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste, wählt die verfügbare Lane, reiht Einheiten ein, entfernt den letzten Queue-Eintrag mit Undo oder wechselt zu Upgrades. `P` pausiert; das Pause-Menü kann fortsetzen oder zum Hauptmenü zurückkehren. Das Symbol oben rechts fordert Browser-Fullscreen an.
+Anschließend `http://127.0.0.1:8765/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste. Ein Tap auf das eigene HQ oder den unteren Command-Dock öffnet Fleet und Upgrades; dort werden Lane, Einheiten, Forschung und Undo gewählt. Der kleine Pfeil zwischen den Tabs schließt die Konsole wieder. `P` pausiert; das Pause-Menü kann fortsetzen oder zum Hauptmenü zurückkehren. Das Symbol oben rechts fordert Browser-Fullscreen an.
 
 ## Prüfen
 
@@ -99,4 +100,4 @@ Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Forschung, Captu
 
 ## Status
 
-Die verbindlichen Umbau-Meilensteine 1 bis 5 und der Orbital-Garden-Polish sind umgesetzt: Tall-world-Kamera, langsamere entkoppelte Squad-Formationen, automatische Drones, konkurrierende Economy-/Forschungswege, mockup-nahe Level-1-Sektoren und lesbare klassenspezifische Waffen. Foundation-, Asset-, Stress- und Mobile-Browserprüfungen laufen grün. Die frühere 100-Match-Referenz endete 50:50; nach dem Umbau wird die neue große Balance-Referenz erst nach manuellem Spielgefühl-Test festgeschrieben. Das optionale HQ-Kommandomenü bleibt als Meilenstein 6 in der [Umbau-Roadmap](IMPLEMENTATION_ROADMAP.md) vorgemerkt.
+Die verbindlichen Umbau-Meilensteine 1 bis 6 und der Orbital-Garden-Polish sind umgesetzt: Tall-world-Kamera, langsamere entkoppelte Squad-Formationen, automatische Drones, konkurrierende Economy-/Forschungswege, mockup-nahe Level-1-Sektoren, lesbare klassenspezifische Waffen und das integrierte HQ-Kommandomenü. Foundation-, Asset- und Mobile-Browserprüfungen laufen grün. Die frühere 100-Match-Referenz endete 50:50; nach dem Umbau wird die neue große Balance-Referenz erst nach manuellem Spielgefühl-Test festgeschrieben.

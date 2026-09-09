@@ -28,6 +28,7 @@ export const ASSET_GROUPS = Object.freeze({
     "klaed-frigate": "assets/factions/klaed/frigate.png",
     "nairan-bolt": "assets/projectiles/nairan-bolt.png",
     "klaed-bullet": "assets/projectiles/klaed-bullet.png",
+    "ui-command-medallion": "assets/ui/orbital-command-medallion-v1.png",
   }),
   ships: Object.freeze({
     "nairan-scout-engine": "assets/factions/nairan/scout-engine.png",

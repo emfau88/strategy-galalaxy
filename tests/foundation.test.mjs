@@ -43,7 +43,7 @@ const camera = new BattlefieldCamera({
   designHeight: CONFIG.app.designHeight,
   config: CONFIG.camera,
 });
-assert.equal(camera.viewport.height, 502);
+assert.equal(camera.viewport.height, 622);
 assert.equal(camera.y, camera.maximumY, "camera begins at the player HQ sector");
 camera.beginPan(180, 0);
 camera.panTo(380, 16);
@@ -55,8 +55,12 @@ assert.ok(camera.y < releasedCameraY, "released camera retains bounded inertia")
 camera.jumpToRatio(0.5);
 assert.ok(Math.abs(camera.screenToWorldY(camera.worldToScreenY(590)) - 590) < 0.0001);
 assert.ok(Math.abs(cameraNavigatorRatioAt({ x: 405, y: camera.viewport.y + camera.viewport.height / 2 }, camera.viewport) - 0.5) < 0.02);
+camera.setBottomInset(CONFIG.camera.battlefieldCommandBottomInset);
+assert.equal(camera.viewport.height, 462);
 camera.resize(CONFIG.app.designWidth, 909);
-assert.equal(camera.viewport.height, 651);
+assert.equal(camera.viewport.height, 611);
+camera.setBottomInset(CONFIG.camera.battlefieldBottomInset);
+assert.equal(camera.viewport.height, 771);
 assert.ok(camera.y >= 0 && camera.y <= camera.maximumY);
 
 const clock = new GameClock(timing);
@@ -463,22 +467,22 @@ assert.equal(effects.effects.length, 3);
 effects.update(1);
 assert.equal(effects.effects.length, 1);
 
-assert.deepEqual(commandActionAt({ x: 50, y: 628 }), { type: "SELECT_LANE", laneId: LANE.LEFT });
-assert.deepEqual(commandActionAt({ x: 126, y: 628 }), { type: "SELECT_LANE", laneId: LANE.RIGHT });
-assert.deepEqual(commandActionAt({ x: 24, y: 662 }), { type: "QUEUE_UNIT", unitType: "scout" });
-assert.deepEqual(commandActionAt({ x: 160, y: 662 }), { type: "QUEUE_UNIT", unitType: "fighter" });
-assert.deepEqual(commandActionAt({ x: 300, y: 620 }), { type: "TOGGLE_MENU" });
-assert.deepEqual(commandActionAt({ x: 160, y: 662 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "weapons" });
-assert.deepEqual(commandActionAt({ x: 24, y: 720 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "turret" });
-assert.deepEqual(commandActionAt({ x: 160, y: 720 }, "upgrades"), { type: "BUY_UPGRADE", upgradeId: "logistics" });
-assert.equal(commandActionAt({ x: 300, y: 662 }), null);
-assert.deepEqual(commandActionAt({ x: 80, y: 610 }, "units", 760, [LANE.CENTER]), { type: "SELECT_LANE", laneId: LANE.CENTER });
-const tallCommandUi = commandUiLayout(909);
-assert.equal(tallCommandUi.panel.y, 725);
-assert.equal(tallCommandUi.deploy.y + tallCommandUi.deploy.height, 895);
-assert.equal(tallCommandUi.lanes[0].y, 735);
-assert.deepEqual(commandActionAt({ x: 24, y: 803 }, "units", 909), { type: "QUEUE_UNIT", unitType: "scout" });
-assert.equal(commandActionAt({ x: 300, y: 811 }, "units", 909), null);
+assert.deepEqual(commandActionAt({ x: 50, y: 718 }), { type: "TOGGLE_COMMAND_DOCK" });
+assert.equal(commandActionAt({ x: 24, y: 620 }), null, "ship cards stay hidden in the compact dock");
+assert.deepEqual(commandActionAt({ x: 40, y: 726 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "SELECT_LANE", laneId: LANE.LEFT });
+assert.deepEqual(commandActionAt({ x: 82, y: 726 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "SELECT_LANE", laneId: LANE.RIGHT });
+assert.deepEqual(commandActionAt({ x: 24, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "QUEUE_UNIT", unitType: "scout" });
+assert.deepEqual(commandActionAt({ x: 220, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "QUEUE_UNIT", unitType: "fighter" });
+assert.deepEqual(commandActionAt({ x: 300, y: 565 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "SET_COMMAND_MENU", menu: "upgrades" });
+assert.deepEqual(commandActionAt({ x: 220, y: 620 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "weapons" });
+assert.deepEqual(commandActionAt({ x: 24, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "turret" });
+assert.deepEqual(commandActionAt({ x: 220, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "logistics" });
+assert.deepEqual(commandActionAt({ x: 80, y: 726 }, "units", 760, [LANE.CENTER], true), { type: "SELECT_LANE", laneId: LANE.CENTER });
+const tallCommandUi = commandUiLayout(909, [LANE.LEFT, LANE.RIGHT], true);
+assert.equal(tallCommandUi.panel.y, 683);
+assert.equal(tallCommandUi.status.y + tallCommandUi.status.height, 893);
+assert.equal(tallCommandUi.lanes[0].y, 857);
+assert.deepEqual(commandActionAt({ x: 24, y: 769 }, "units", 909, [LANE.LEFT, LANE.RIGHT], true), { type: "QUEUE_UNIT", unitType: "scout" });
 assert.deepEqual(fullscreenActionAt({ x: 380, y: 26 }), { type: "TOGGLE_FULLSCREEN" });
 assert.equal(fullscreenActionAt({ x: 210, y: 26 }), null);
 assert.deepEqual(utilityActionAt({ x: 320, y: 26 }), { type: "TOGGLE_PAUSE" });
