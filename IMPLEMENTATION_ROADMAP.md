@@ -218,10 +218,14 @@ Der vom Nutzer freigegebene Mockup-Aufbau ist als neuer Standard umgesetzt. Drag
 
 ## Aktueller nächster Schritt
 
-Die verbindlichen Meilensteine 1 bis 6, der sichtbare Upgrade-/Cozy-Zwischenpass und
-der Orbital-Garden-Polish sind umgesetzt. Als nächstes folgt ein manueller Playtest des
-neuen HQ-Docks; Drag-and-drop bleibt optional, solange die direkte Tap-Steuerung auf
-kleinen Geräten schneller und eindeutiger ist.
+Die verbindlichen Meilensteine 1 bis 6, der sichtbare Upgrade-/Cozy-Zwischenpass, der
+Orbital-Garden-Polish und der Combat-Motion-Follow-up sind umgesetzt. Der nächste
+größere Produktionsabschnitt ist in der
+[Product Polish Roadmap](docs/PRODUCT_POLISH_ROADMAP.md) gebündelt. Für Level 2 liegen
+drei vergleichbare [Visual Directions](docs/LEVEL_2_VISUAL_DIRECTIONS.md) vor;
+`Lantern Trade Routes` ist die empfohlene Produktionsbasis. Drag-and-drop bleibt
+optional, solange die direkte Tap-Steuerung auf kleinen Geräten schneller und
+eindeutiger ist.
 
 ## Letzte verifizierte Messung
 

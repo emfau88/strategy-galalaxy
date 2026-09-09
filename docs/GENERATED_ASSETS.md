@@ -140,3 +140,35 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
 - **Rival prompt direction:** “Professional top-down 2D projectile asset sheet on pure black, strict 2×2 grid: angular coral scout energy shard; forked coral-red fighter beam; charcoal-and-copper torpedo with coral stripe and exhaust; chunky copper/crimson heavy cannon shell. Cohesive premium mobile strategy-game style, isolated centered projectiles pointing upward, restrained bloom, no ships, UI, text, border or checkerboard.”
 - **Runtime:** Projectile bodies rotate along their velocity vector. Existing bounded trails and hit glows remain supplemental effects; they no longer define the projectile silhouette.
 - **Status:** Active runtime assets.
+
+## Level 2 visual-direction mockups
+
+- **Destinations:** `docs/mockups/level-2-lantern-trade-routes-v1.png`,
+  `docs/mockups/level-2-twin-foundries-v1.png`, and
+  `docs/mockups/level-2-cloudsea-sanctuaries-v1.png`
+- **Method / mode:** Three separate Built-in ImageGen `precise-object-edit` passes using
+  the current `420×760` Level-2 browser capture as the authoritative composition and UI
+  reference.
+- **Purpose:** Compare three production directions for the Twin Fronts environment while
+  holding the two-lane layout, mobile HUD, ships, structures and navigation rail as
+  constant as possible.
+- **Shared prompt contract:** “Redesign only the playable world behind and around the
+  existing gameplay objects. Preserve the portrait mobile composition, top and bottom
+  HUD, right navigation rail, two-lane geometry, HQs, turrets, ships, projectiles and
+  health bars. Keep open contrast pockets around combat. No new UI, text, labels,
+  watermark, landscape framing, distorted HUD or generic empty starfield.”
+- **Lantern Trade Routes prompt direction:** Two inhabited orbital-garden trade routes
+  guided by cultivated islands, warm lantern chains, sparse bridges and botanical
+  stations, divided by a dark blue-violet rift. Premium painterly ivory, brass,
+  vegetation and restrained cyan/coral faction accents; cozy but less dense than Level
+  1.
+- **Twin Foundries prompt direction:** Two fortified industrial routes surrounding a
+  fractured ancient solar forge, with aged brass rails, foundry platforms, furnace
+  windows and cargo lights. Warm handcrafted machinery rather than sterile gray science
+  fiction; the brightest forge material remains in the central divide.
+- **Cloudsea Sanctuaries prompt direction:** Two sanctuary routes above a luminous
+  violet-blue cloud ocean, with pale terraces, copper observatories, gardens, pennants
+  and ancient constellation gates. Dreamlike science fantasy with protected dark combat
+  pockets and restrained faction-colored foliage.
+- **Status:** Visual targets only, not runtime assets. Direction comparison and production
+  recommendation are documented in `docs/LEVEL_2_VISUAL_DIRECTIONS.md`.
