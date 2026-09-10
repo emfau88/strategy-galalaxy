@@ -16,7 +16,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 
 ## Aktueller Spielstand
 
-Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Bulks 1 bis 4 sind umgesetzt: Die Runtime nutzt sofortiges Squad-Deployment mit Cooldowns und davon unabhängige automatische Drone-Waves. Core-Maps enthalten keine Nodes oder Turrets mehr und werden von randständigen Command Carriern gerahmt.
+Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Bulks 1 bis 5 sind umgesetzt: Die Runtime nutzt sofortiges Squad-Deployment, davon unabhängige automatische Drone-Waves und eine kontinuierlich reagierende Live-KI. Core-Maps enthalten keine Nodes oder Turrets mehr und werden von randständigen Command Carriern gerahmt.
 
 - Kontinuierlicher `LIVE_MATCH` ohne Kauf-Queue, Lock-in, Refund oder bezahlte Wave-Slots.
 - Scout Wings mit drei und Fighter Wings mit zwei individuell verwundbaren Schiffen starten unmittelbar in der gewählten Lane. Bomber und Frigate bleiben Einzelschiffe; eine kurze gemeinsame Hangar-Traversal inszeniert den Launch.
@@ -24,7 +24,7 @@ Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_
 - Kosten und Cooldown werden atomar erst nach erfolgreichem Spawn gesetzt.
 - Kostenlose symmetrische Drone-Waves starten unabhängig davon initial alle 22 Sekunden und besitzen einen eigenen Kapazitäts-Backlog.
 - Reactor- und Weapons-Upgrades können jederzeit gekauft werden und wirken unmittelbar. Frühere Logistics-Slots sind entfernt; Turret-Upgrades sind auf Core-Maps nicht verfügbar.
-- Die KI verwendet für ihre vorläufigen Wave-Entscheidungen denselben Live-Deployment-Befehl, dieselben Kosten und Cooldowns.
+- Die KI entscheidet je nach Schwierigkeit ungefähr alle 1,2 bis 2,2 Sekunden, reagiert auf grobe gegnerische Zusammensetzungen und spart regelmäßig auf einen Zwei-Kauf-Push. Alle Aktionen verwenden denselben Live-Deployment-Befehl, dieselben Kosten, Cooldowns und Lane-Grenzen wie der Spieler.
 - Zwei wählbare Karten: Level 1 „Orbital Garden“ mit einer Lane und Level 2 „Twin Fronts“ mit zwei Lanes; beide nutzen eine `420 × 1180` Scroll-Welt.
 - Eine schmale strategische Kartenleiste zeigt Flottenfronten, Command Carrier und den aktuellen Kameraausschnitt; optionale Strukturen erscheinen nur auf dafür aktivierten Maps.
 - Gedeckelte Economy mit 270 Startenergie in Level 1 beziehungsweise 300 in Level 2, 16 Basisenergie/s und maximal 780 gespeicherter Energie; Node-Einkommen ist auf den Core-Maps deaktiviert.
@@ -109,4 +109,4 @@ Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische
 
 ## Status
 
-Bulks 1 bis 4 des neuen Core-Reworks sind abgeschlossen: Bezahlte Wings starten sofort, automatische Waves bleiben getrennt und optionale Map-Features sind vollständig isoliert. Große Stations-HQs wurden durch teilweise außerhalb der Welt liegende, codebasierte Command-Carrier-Placeholder ersetzt; eine dunkle Mittelzone hält die Flotten und Waffen im visuellen Vordergrund. Bulk 5 schärft HUD-Sperrgründe und stellt die KI auf laufende Echtzeitreaktionen um.
+Bulks 1 bis 5 des neuen Core-Reworks sind abgeschlossen: Bezahlte Wings starten sofort, automatische Waves bleiben getrennt und optionale Map-Features sind vollständig isoliert. Das HUD nennt Energiefehlbetrag, Rest-Cooldown oder fehlende Lane-Slots direkt an der Unit Card. Die KI reagiert live, kann sparen und vorbereitete Pushes starten. Bulk 6 stimmt Kampflesbarkeit, Time-to-kill und Matchdauer ab und bildet die finale Core-Slice-Abnahme.

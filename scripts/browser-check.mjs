@@ -195,6 +195,8 @@ try {
   await touch(70, 619);
   const gardenUnits = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.simulation.state.lanes.get('LANE_CENTER').unitIds.get('TEAM_PLAYER').length", returnByValue: true });
   assert.equal(gardenUnits.result.value, 5, "Orbital Garden main-lane Scout Wing deployment is touch-operable");
+  const cooldownScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "hq-command-cooldown-420x760.png"), Buffer.from(cooldownScreenshot.data, "base64"));
   await touch(206, 565);
   await send("Runtime.evaluate", { expression: "(() => { const g = window.__strategyGalalaxy; for (let step = 0; step < 60 * 36 && g.state === 'LIVE_MATCH'; step += 1) g.match.advanceLive(1 / 60); g.camera.jumpToWorld(640); })()" });
   await delay(100);

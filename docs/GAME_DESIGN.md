@@ -129,7 +129,7 @@ Queue-Symbole, Slot-Zähler, Undo und Lock-in-Anzeigen sind nicht Teil des Ziels
 
 ## KI-Fairness
 
-Die KI benutzt denselben öffentlichen Deployment-Befehl, dieselben Kosten, Cooldowns, Lane-Kapazitäten und Energiegrenzen wie der Spieler. Sie darf Energie sparen, grobe Counter bevorzugen und gelegentlich einen teureren Push vorbereiten. Sie erhält keine permanenten Ressourcenboni und umgeht keine Cooldowns.
+Die KI benutzt denselben öffentlichen Deployment-Befehl, dieselben Kosten, Cooldowns, Lane-Kapazitäten und Energiegrenzen wie der Spieler. Ihr eigener, schwierigkeitsabhängiger Live-Takt ist vom automatischen Wave-Timer unabhängig. Sie bevorzugt grobe Composition-Counter, spart zeitweise sichtbar auf ein Energielimit und löst anschließend einen kleinen Zwei-Kauf-Push in einer Lane aus. Sie erhält keine permanenten Ressourcenboni und umgeht keine Cooldowns.
 
 ## Scope-Grenze und Qualitätsziel
 

@@ -64,11 +64,13 @@ const runMatch = (index) => {
     investmentBias: playerInvestmentBias,
   });
   let playerDecision = playerAi.plan(director).decision;
-  let knownCycle = director.cycle;
+  let playerDecisionRemaining = playerAi.decisionIntervalSeconds(runConfig.timing.aiDecisionIntervalSeconds);
+  let enemyDecisionNumber = director.lastAiDecision?.decisionNumber ?? 0;
+  recordDecision(director.lastAiDecision);
+  recordDecision(playerDecision);
   let firstTurretLoss = null;
 
   while (director.state === MATCH_STATE.LIVE_MATCH && director.activeMatchSeconds < maximumSeconds) {
-    const enemyDecisionBeforeStep = director.lastAiDecision;
     director.advanceLive(step);
     metrics.peakUnits = Math.max(metrics.peakUnits, director.simulation.state.units.size);
     metrics.peakProjectiles = Math.max(metrics.peakProjectiles, director.simulation.state.projectiles.size);
@@ -80,11 +82,15 @@ const runMatch = (index) => {
       const turretLost = [...director.simulation.state.structures.values()].some((structure) => structure.structureType === "turret" && !structure.alive);
       if (turretLost) firstTurretLoss = director.activeMatchSeconds;
     }
-    if (director.state === MATCH_STATE.LIVE_MATCH && director.cycle !== knownCycle) {
-      recordDecision(enemyDecisionBeforeStep);
-      recordDecision(playerDecision);
-      knownCycle = director.cycle;
+    if ((director.lastAiDecision?.decisionNumber ?? 0) !== enemyDecisionNumber) {
+      enemyDecisionNumber = director.lastAiDecision.decisionNumber;
+      recordDecision(director.lastAiDecision);
+    }
+    playerDecisionRemaining -= step;
+    if (director.state === MATCH_STATE.LIVE_MATCH && playerDecisionRemaining <= Number.EPSILON) {
       playerDecision = playerAi.plan(director).decision;
+      recordDecision(playerDecision);
+      playerDecisionRemaining += playerAi.decisionIntervalSeconds(runConfig.timing.aiDecisionIntervalSeconds);
     }
   }
 

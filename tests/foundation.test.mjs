@@ -483,6 +483,9 @@ const energyBeforeCooldownFailure = economyMatch.economy.get(TEAM.PLAYER).energy
 const unitsBeforeCooldownFailure = economyMatch.simulation.state.units.size;
 const cooldownFailure = economyMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.RIGHT, unitType: "fighter" });
 assert.equal(cooldownFailure.reason, "COOLDOWN_ACTIVE");
+const cooldownAvailability = economyMatch.liveDeployment.availability({ simulation: economyMatch.simulation, economy: economyMatch.economy, team: TEAM.PLAYER, laneId: LANE.RIGHT, unitType: "fighter" });
+assert.equal(cooldownAvailability.reason, "COOLDOWN_ACTIVE");
+assert.ok(cooldownAvailability.cooldownRemaining > 0);
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, energyBeforeCooldownFailure, "failed cooldown checks do not spend Energy");
 assert.equal(economyMatch.simulation.state.units.size, unitsBeforeCooldownFailure, "failed cooldown checks do not create units");
 
@@ -503,6 +506,11 @@ for (const [laneId, unitType] of [[LANE.LEFT, "scout"], [LANE.RIGHT, "fighter"],
   assert.equal(noSlotMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId, unitType }).ok, true);
 }
 assert.equal(noSlotMatch.simulation.state.units.size, unitsBeforeNoSlotLaunches + 7, "four paid decisions launch seven visible ships according to their squad sizes");
+const noEnergyMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 0 } } });
+noEnergyMatch.start();
+const energyAvailability = noEnergyMatch.liveDeployment.availability({ simulation: noEnergyMatch.simulation, economy: noEnergyMatch.economy, team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "fighter" });
+assert.equal(energyAvailability.reason, "INSUFFICIENT_ENERGY");
+assert.equal(energyAvailability.missingEnergy, UNIT_DEFINITIONS.fighter.cost);
 
 const upgradeMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 900 } } });
 upgradeMatch.start();
@@ -585,6 +593,8 @@ capacityMatch.start();
 assert.equal(capacityMatch.baseWaveBacklog.get(TEAM.PLAYER).get(LANE.LEFT).length, 1, "only the unspawned automatic Drone enters the wave backlog");
 const rejected = capacityMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
 assert.deepEqual(rejected, { ok: false, reason: "LANE_CAPACITY" });
+const capacityAvailability = capacityMatch.liveDeployment.availability({ simulation: capacityMatch.simulation, economy: capacityMatch.economy, team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
+assert.deepEqual({ reason: capacityAvailability.reason, active: capacityAvailability.active, requiredCapacity: capacityAvailability.requiredCapacity }, { reason: "LANE_CAPACITY", active: 2, requiredCapacity: 3 });
 assert.equal(capacityMatch.economy.get(TEAM.PLAYER).energy, 300);
 assert.equal(capacityMatch.liveDeployment.cooldownRemaining(TEAM.PLAYER, "scout"), 0, "an atomically rejected Wing starts no cooldown");
 capacityMatch.forceWave();
@@ -604,10 +614,18 @@ assert.equal(cadetMatch.lastAiDecision.upgrades.length, 0);
 for (const purchase of aiMatch.lastAiDecision.purchases) {
   assert.ok(purchase.spawnedIds.every((id) => aiMatch.simulation.state.units.has(id)), "AI purchases use the same immediate spawn path");
 }
+const initialAiDecisionNumber = aiMatch.lastAiDecision.decisionNumber;
+for (let index = 0; index < Math.ceil(CONFIG.timing.aiDecisionIntervalSeconds * 60) + 1; index += 1) aiMatch.advanceLive(1 / 60);
+assert.ok(aiMatch.lastAiDecision.decisionNumber > initialAiDecisionNumber, "AI makes live decisions before the next automatic Wave");
+assert.equal(aiMatch.cycle, 1, "live AI cadence is independent of the automatic Wave cadence");
 for (let index = 0; index < CONFIG.timing.deploymentIntervalSeconds * 60; index += 1) aiMatch.advanceLive(1 / 60);
 assert.equal(aiMatch.state, MATCH_STATE.LIVE_MATCH);
 assert.equal(aiMatch.cycle, 2);
-assert.equal(aiMatch.lastAiDecision.cycle, 2);
+assert.ok(aiMatch.lastAiDecision.decisionNumber >= 10);
+for (let index = 0; index < 20 * 60; index += 1) aiMatch.advanceLive(1 / 60);
+const aiModes = aiMatch.events.filter((event) => event.type === "AI_PLANNED").map((event) => event.decision.mode);
+assert.ok(aiModes.includes("saving"), "AI visibly banks Energy for a planned push");
+assert.ok(aiModes.includes("push"), "AI releases a saved multi-unit push through live deployment");
 assert.ok(aiMatch.economy.get(TEAM.ENEMY).energy >= 0);
 
 for (const level of [1, 2]) {

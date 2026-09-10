@@ -6,7 +6,7 @@ Dieses Dokument beschreibt die Zielarchitektur des Core-Gameplay-Reworks. Die Pr
 
 ## Migrationsstatus
 
-Bulks 1 bis 4 sind umgesetzt. Die Runtime besitzt keine Kauf-Queue, kein Lock-in, keinen Refund und keine bezahlten Wave-Slots mehr. Der `DeploymentDirector` verwaltet ausschließlich kostenlose Waves; `LiveDeploymentSystem` löst eine Kaufentscheidung datengetrieben in ein oder mehrere Mitglieder auf und verwaltet bezahlte Sofortstarts sowie Cooldowns. Core-Maps erzeugen nur Units, Projektile und die zwei randständigen Command Carrier; optionale Objectives und Turrets bleiben hinter Map-Flags erhalten.
+Bulks 1 bis 5 sind umgesetzt. Die Runtime besitzt keine Kauf-Queue, kein Lock-in, keinen Refund und keine bezahlten Wave-Slots mehr. Der `DeploymentDirector` verwaltet ausschließlich kostenlose Waves; `LiveDeploymentSystem` löst eine Kaufentscheidung datengetrieben in ein oder mehrere Mitglieder auf und liefert dem Command-Pfad sowie HUD dieselben Verfügbarkeitsgründe. Core-Maps erzeugen nur Units, Projektile und die zwei randständigen Command Carrier; die KI reagiert in einem unabhängigen Live-Takt und kann Energie für Pushes reservieren.
 
 Jeder folgende Bulk muss die Tests gleichzeitig mit dem betroffenen System migrieren. Ein vorübergehend dokumentierter Zielzustand ist zulässig; ein teilweise migriertes öffentliches Kommando ohne Tests ist es nicht.
 
@@ -58,7 +58,7 @@ Live-Deployments besitzen eigene datengetriebene Cooldowns. Eine optionale Launc
 | `src/simulation/economySystem.js` | Energie, Basiseinkommen, Ausgaben und aktive Upgrades |
 | `src/simulation/battleSimulation.js` | Bewegung, Formation, Targeting, Feuer, Projektile und Schaden |
 | `src/simulation/captureSystem.js` | Optionales Capture; läuft nur bei aktivem Map-Feature |
-| `src/simulation/opponentAi.js` | Regelgebundene Entscheidungen ausschließlich über öffentliche Kommandos |
+| `src/simulation/opponentAi.js` | Regelgebundene Live-Entscheidungen, Counter, Sparziele und Pushes ausschließlich über öffentliche Kommandos |
 | `src/rendering/battlefieldRenderer.js` | Welt, Flotten, Carrier, optionale Strukturen, Projektile und Trails |
 | `src/rendering/presentationEffects.js` | Ereignisgetriebene kurzlebige Darstellungseffekte |
 | `src/rendering/uiRenderer.js` | Energie, Auto-Wave-Timer, Lane-Wahl, Einheiten, Kosten und Cooldowns |

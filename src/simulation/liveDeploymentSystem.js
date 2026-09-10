@@ -41,7 +41,7 @@ export class LiveDeploymentSystem {
     }
   }
 
-  deploy({ simulation, economy, team, laneId, unitType }) {
+  availability({ simulation, economy, team, laneId, unitType }) {
     const definition = UNIT_DEFINITIONS[unitType];
     if (!definition || definition.enabled === false || definition.purchasable === false || definition.cost <= 0) {
       return { ok: false, reason: "UNAVAILABLE_UNIT" };
@@ -52,20 +52,33 @@ export class LiveDeploymentSystem {
 
     const cooldown = this.cooldownRemaining(team, unitType);
     if (cooldown > Number.EPSILON) {
-      return { ok: false, reason: "COOLDOWN_ACTIVE", cooldownRemaining: cooldown };
+      return { ok: false, reason: "COOLDOWN_ACTIVE", cooldownRemaining: cooldown, cost: definition.cost };
     }
 
     const memberTypes = Array.from({ length: definition.squadSize ?? 1 }, () => unitType);
     const lane = simulation.state.lanes.get(laneId);
     const active = lane.unitIds.get(team).length;
     if (active + memberTypes.length > this.config.caps.unitsPerLaneTeam) {
-      return { ok: false, reason: "LANE_CAPACITY" };
+      return { ok: false, reason: "LANE_CAPACITY", cost: definition.cost, active, requiredCapacity: memberTypes.length };
     }
 
     const teamEconomy = economy.get(team);
     if (teamEconomy.energy < definition.cost) {
-      return { ok: false, reason: "INSUFFICIENT_ENERGY" };
+      return { ok: false, reason: "INSUFFICIENT_ENERGY", cost: definition.cost, missingEnergy: definition.cost - teamEconomy.energy };
     }
+
+    return { ok: true, definition, memberTypes, cost: definition.cost };
+  }
+
+  deploy({ simulation, economy, team, laneId, unitType }) {
+    const availability = this.availability({ simulation, economy, team, laneId, unitType });
+    if (!availability.ok) {
+      return availability.reason === "COOLDOWN_ACTIVE"
+        ? { ok: false, reason: availability.reason, cooldownRemaining: availability.cooldownRemaining }
+        : { ok: false, reason: availability.reason };
+    }
+    const { definition, memberTypes } = availability;
+    const teamEconomy = economy.get(team);
 
     const formationSequence = -this.nextFormationSequence;
     const spawned = simulation.spawnFormation(team, laneId, memberTypes, formationSequence);

@@ -21,6 +21,7 @@ export const CONFIG = Object.freeze({
     maxFrameDeltaSeconds: 0.1,
     maxCatchUpSteps: 6,
     deploymentIntervalSeconds: 22,
+    aiDecisionIntervalSeconds: 1.5,
   }),
   caps: Object.freeze({
     unitsPerLaneTeam: 40,

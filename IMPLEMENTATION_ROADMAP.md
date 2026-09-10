@@ -36,9 +36,9 @@ Die verbindliche Zielrichtung steht in [STRATEGY_GALALAXY_CORE_VISION.md](STRATE
 
 ### Bulk 5 – HUD und Live-KI
 
-- [ ] Kosten, Cooldowns, Sperrgründe, Energie, Einkommen und Auto-Wave-Timer mobile-lesbar darstellen.
-- [ ] Lane-Wahl für variable Lane-Anzahlen beibehalten.
-- [ ] KI über denselben Live-Deployment-Pfad reagieren, sparen und Pushes vorbereiten lassen.
+- [x] Kosten, Cooldowns, Sperrgründe, Energie, Einkommen und Auto-Wave-Timer mobile-lesbar darstellen.
+- [x] Lane-Wahl für variable Lane-Anzahlen beibehalten.
+- [x] KI über denselben Live-Deployment-Pfad reagieren, sparen und Pushes vorbereiten lassen.
 
 ### Bulk 6 – Combat-Tuning und Core-Slice-Abnahme
 

@@ -32,6 +32,7 @@ export class MatchDirector {
     this.events = [];
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
+    this.aiDecisionRemaining = 0;
   }
 
   start() {
@@ -45,10 +46,12 @@ export class MatchDirector {
     this.events = [{ type: "MATCH_STARTED", state: this.state }];
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
+    this.aiDecisionRemaining = 0;
 
     // Free pressure starts immediately; paid commands remain independent of this cadence.
     this.deployWaves();
     this.planAi();
+    this.aiDecisionRemaining = this.ai.decisionIntervalSeconds(this.config.timing.aiDecisionIntervalSeconds);
     return true;
   }
 
@@ -72,9 +75,16 @@ export class MatchDirector {
       return true;
     }
 
-    if (!this.deployment.advance(step)) return false;
+    this.aiDecisionRemaining -= step;
+    let liveDecision = false;
+    if (this.aiDecisionRemaining <= Number.EPSILON) {
+      this.planAi();
+      this.aiDecisionRemaining += this.ai.decisionIntervalSeconds(this.config.timing.aiDecisionIntervalSeconds);
+      liveDecision = true;
+    }
+
+    if (!this.deployment.advance(step)) return liveDecision;
     this.deployWaves();
-    this.planAi();
     return true;
   }
 
@@ -82,7 +92,6 @@ export class MatchDirector {
   forceWave() {
     if (this.state !== MATCH_STATE.LIVE_MATCH) return false;
     this.deployWaves();
-    this.planAi();
     return true;
   }
 

@@ -240,15 +240,33 @@ const strategicNavigator = (ctx, model) => {
 
 const unitCard = (ctx, model, rect) => {
   const def = UNIT_DEFINITIONS[rect.unitType];
-  const cooldown = model.director?.liveDeployment.cooldownRemaining(TEAM.PLAYER, rect.unitType) ?? 0;
-  const affordable = model.economy.get(TEAM.PLAYER).energy >= def.cost && cooldown <= Number.EPSILON;
-  box(ctx, rect, affordable ? C.card : "rgba(35, 45, 58, 0.76)", affordable ? C.outline : null, 8);
+  const availability = model.director?.liveDeployment.availability({
+    simulation: model.simulation,
+    economy: model.economy,
+    team: TEAM.PLAYER,
+    laneId: model.selectedLaneId,
+    unitType: rect.unitType,
+  }) ?? { ok: false, reason: "UNAVAILABLE_UNIT" };
+  box(ctx, rect, availability.ok ? C.card : "rgba(35, 45, 58, 0.82)", availability.ok ? C.outline : "rgba(132,151,166,0.2)", 8);
   const role = { scout: "SCREEN", fighter: "ANTI-LIGHT", bomber: "SIEGE", frigate: "FRONTLINE" }[rect.unitType];
   drawShipIcon(ctx, model, rect.unitType, rect.x + 24, rect.y + 25, 38);
-  text(ctx, def.deploymentLabel ?? def.id.toUpperCase(), rect.x + 49, rect.y + 16, 10, affordable ? C.text : C.muted);
+  text(ctx, def.deploymentLabel ?? def.id.toUpperCase(), rect.x + 49, rect.y + 16, 10, availability.ok ? C.text : C.muted);
   const count = def.squadSize > 1 ? ` ×${def.squadSize}` : "";
-  const detail = cooldown > Number.EPSILON ? `${cooldown.toFixed(1)}s COOLDOWN` : `${role}${count} · ${def.cost} E`;
-  text(ctx, detail, rect.x + 49, rect.y + 35, 8, affordable ? C.gold : C.muted, "left", 650);
+  const detail = availability.reason === "COOLDOWN_ACTIVE"
+    ? `CD ${availability.cooldownRemaining.toFixed(1)}s · ${def.cost} E`
+    : availability.reason === "INSUFFICIENT_ENERGY"
+      ? `NEED ${Math.ceil(availability.missingEnergy)} E · COST ${def.cost}`
+      : availability.reason === "LANE_CAPACITY"
+        ? `LANE FULL · NEED ${def.squadSize ?? 1} SLOTS`
+        : `${role}${count} · ${def.cost} E`;
+  text(ctx, detail, rect.x + 49, rect.y + 35, 8, availability.ok ? C.gold : availability.reason === "COOLDOWN_ACTIVE" ? C.enemy : C.muted, "left", 650);
+  if (availability.reason === "COOLDOWN_ACTIVE") {
+    const ratio = Math.max(0, Math.min(1, availability.cooldownRemaining / def.deploymentCooldownSeconds));
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fillRect(rect.x + 49, rect.y + rect.height - 5, rect.width - 58, 2);
+    ctx.fillStyle = C.enemy;
+    ctx.fillRect(rect.x + 49, rect.y + rect.height - 5, (rect.width - 58) * ratio, 2);
+  }
 };
 
 const upgradeCard = (ctx, model, rect) => {
@@ -261,7 +279,9 @@ const upgradeCard = (ctx, model, rect) => {
   box(ctx, rect, affordable ? "rgba(55, 94, 88, 0.88)" : "rgba(45, 48, 62, 0.82)", affordable ? C.outline : null, 8);
   text(ctx, upgrade.label, rect.x + 10, rect.y + 11, 9, affordable ? C.text : C.muted);
   text(ctx, upgrade.effect(model.economy.balance), rect.x + 10, rect.y + 27, 8, affordable ? C.gold : C.muted, "left", 650);
-  const detail = cost === null ? `MAX · LV ${level}` : `LV ${level} · ${cost} E · INSTANT`;
+  const detail = cost === null
+    ? `MAX · LV ${level}`
+    : affordable ? `LV ${level} · ${cost} E · INSTANT` : `LV ${level} · NEED ${Math.ceil(cost - economy.energy)} E`;
   text(ctx, detail, rect.x + 10, rect.y + 42, 8, affordable ? C.text : C.muted, "left", 650);
 };
 
