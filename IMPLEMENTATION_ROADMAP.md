@@ -215,7 +215,7 @@ Der vom Nutzer freigegebene Mockup-Aufbau ist als neuer Standard umgesetzt. Drag
 - [x] Fehlende VFX-Verknüpfung schließen und Gebäude-/HUD-Fallbacks professionalisieren.
 - [x] Deployment-Artefakt auf die aktive 44-Bilder-Union reduzieren.
 - [x] Foundation-, Assetbudget- und Browser-Pixeltests ergänzen.
-- [ ] Öffentliche GitHub-Pages-Version nach dem Deployment cachelos bestätigen.
+- [x] Öffentliche GitHub-Pages-Version nach dem Deployment cachelos bestätigen.
 
 ## Durchgehende Qualitäts-Gates
 

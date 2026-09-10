@@ -41,7 +41,7 @@ Abnahmekriterien für den nächsten Ausbau.
   dem Upload erzwingen.
 - [x] Asset-Budgets, Retry/Late-Load und reale Browser-Pixel statt bloßer Dateipfade
   automatisiert prüfen.
-- [ ] Den neuen Commit nach erfolgreichem Pages-Deployment noch einmal cachelos auf
+- [x] Den neuen Commit nach erfolgreichem Pages-Deployment noch einmal cachelos auf
   der öffentlichen URL abnehmen.
 
 ## Technischer Audit der neu gemeldeten Punkte
