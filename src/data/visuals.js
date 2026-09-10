@@ -2,7 +2,26 @@ import { TEAM } from "../core/constants.js";
 
 const freeze = (value) => Object.freeze(value);
 const layer = (assetKey, frameCount, fps, releaseFrame = null) => freeze({ assetKey, frameCount, fps, releaseFrame });
+const engine = (x, y, scale = 1) => freeze({ x, y, scale });
 
+// Pixel-space nozzle metadata is authored against the 384×384 unified hulls. The
+// emitted flame itself comes from Galalaxy's original animated Nairan/Kla'ed layers.
+export const UNIFIED_HULL_VISUALS = freeze({
+  player: freeze({
+    drone: freeze({ engineHardpoints: freeze([engine(192, 306, 0.72)]) }),
+    scout: freeze({ engineHardpoints: freeze([engine(192, 309, 0.78)]) }),
+    fighter: freeze({ engineHardpoints: freeze([engine(192, 305, 0.8), engine(118, 270, 0.46), engine(266, 270, 0.46)]) }),
+    bomber: freeze({ engineHardpoints: freeze([engine(100, 293, 0.72), engine(284, 293, 0.72), engine(146, 305, 0.42), engine(238, 305, 0.42)]) }),
+    frigate: freeze({ engineHardpoints: freeze([engine(192, 329, 0.84), engine(119, 306, 0.62), engine(265, 306, 0.62)]) }),
+  }),
+  enemy: freeze({
+    drone: freeze({ engineHardpoints: freeze([engine(192, 306, 0.72)]) }),
+    scout: freeze({ engineHardpoints: freeze([engine(192, 310, 0.78)]) }),
+    fighter: freeze({ engineHardpoints: freeze([engine(192, 305, 0.8), engine(119, 270, 0.46), engine(266, 270, 0.46)]) }),
+    bomber: freeze({ engineHardpoints: freeze([engine(100, 293, 0.72), engine(284, 293, 0.72), engine(147, 306, 0.42), engine(239, 306, 0.42)]) }),
+    frigate: freeze({ engineHardpoints: freeze([engine(192, 330, 0.84), engine(119, 315, 0.62), engine(265, 315, 0.62)]) }),
+  }),
+});
 export const FLEET_VISUALS = freeze({
   nairan: freeze({
     scout: freeze({ frameSize: 64, engine: layer("nairan-scout-engine", 8, 10), weapon: layer("nairan-scout-weapon", 6, 10, 2), shield: layer("nairan-scout-shield", 18, 10), destruction: layer("nairan-scout-destruction", 16, 14) }),
@@ -46,3 +65,4 @@ export const fleetVisualFor = (team, unitType) => {
   return FLEET_VISUALS[team === TEAM.PLAYER ? "nairan" : "klaed"]?.[visualType] ?? null;
 };
 export const projectileVisualFor = (team, projectileType) => PROJECTILE_VISUALS[projectileType]?.[team] ?? null;
+export const unifiedHullVisualFor = (team, unitType) => UNIFIED_HULL_VISUALS[team === TEAM.PLAYER ? "player" : "enemy"]?.[unitType] ?? null;

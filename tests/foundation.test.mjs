@@ -19,6 +19,7 @@ import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { SoundSystem } from "../src/audio/soundSystem.js";
 import { commandActionAt, commandUiLayout, endActionAt, fullscreenActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "../src/ui/commandUi.js";
 import { cameraNavigatorRatioAt } from "../src/ui/cameraUi.js";
+import { fleetVisualFor, unifiedHullVisualFor } from "../src/data/visuals.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
@@ -270,6 +271,47 @@ assert.ok(maximumCombatLaneOffset < 55, "opposing drone pairs hold lane-relative
 assert.ok(UNIT_DEFINITIONS.drone.attackRange / PROJECTILE_DEFINITIONS.scout_pulse.speed >= 0.33, "drone pulses remain visible for at least a third of a second at firing range");
 assert.ok(UNIT_DEFINITIONS.fighter.attackRange / PROJECTILE_DEFINITIONS.fighter_laser.speed >= 0.37, "fighter lasers remain readable across their normal firing range");
 
+for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
+  for (const unitType of ["drone", "scout", "fighter", "bomber", "frigate"]) {
+    const visual = fleetVisualFor(team, unitType);
+    const hull = unifiedHullVisualFor(team, unitType);
+    assert.ok(visual?.engine?.frameCount >= 8, `${team} ${unitType} uses a multi-frame Galalaxy engine layer`);
+    assert.ok(visual?.destruction?.frameCount >= 8, `${team} ${unitType} uses its Galalaxy destruction sequence`);
+    assert.ok(visual.engine.fps >= 10 && visual.destruction.fps >= 14, `${team} ${unitType} VFX timing remains readable`);
+    assert.ok(hull?.engineHardpoints.length > 0, `${team} ${unitType} retains explicit nozzle alignment for the imported flame`);
+  }
+}
+
+const noReverseSimulation = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
+for (const structure of noReverseSimulation.state.structures.values()) structure.alive = false;
+const closePlayer = noReverseSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "fighter", { x: 210, y: 615, spawnCycle: 701 });
+const closeEnemy = noReverseSimulation.spawnUnit(TEAM.ENEMY, LANE.CENTER, "fighter", { x: 210, y: 575, spawnCycle: 701 });
+let minimumEngagementForwardSpeed = Infinity;
+for (let index = 0; index < 180; index += 1) {
+  noReverseSimulation.step(1 / 60);
+  for (const [unit, target] of [[closePlayer, closeEnemy], [closeEnemy, closePlayer]]) {
+    if (!unit.alive || !target.alive || unit.state !== "ENGAGING") continue;
+    const bearing = Math.atan2(target.y - unit.y, target.x - unit.x);
+    minimumEngagementForwardSpeed = Math.min(minimumEngagementForwardSpeed, unit.vx * Math.cos(bearing) + unit.vy * Math.sin(bearing));
+  }
+}
+assert.ok(minimumEngagementForwardSpeed >= -1e-7, "engaging ships brake or sidestep instead of flying backwards from their target");
+
+const stalledSimulation = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
+const stalledUnit = stalledSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "drone", { x: 210, y: 610, spawnCycle: 704 });
+stalledUnit.launching = false;
+stalledUnit.state = "ADVANCING";
+for (let index = 0; index < 72; index += 1) stalledSimulation.observeUnitMobility(stalledUnit, stalledUnit.x, stalledUnit.y, 1 / 60);
+assert.ok(stalledSimulation.state.events.some((event) => event.type === "unit_unstuck" && event.entityId === stalledUnit.id), "the mobility watchdog nudges only a genuinely stalled advancing unit");
+
+const spacingSimulation = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
+for (const structure of spacingSimulation.state.structures.values()) structure.alive = false;
+const spacingLeft = spacingSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "fighter", { x: 210, y: 700, spawnCycle: 702 });
+const spacingRight = spacingSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "fighter", { x: 210, y: 700, spawnCycle: 702 });
+spacingSimulation.resolveLaneSpacing();
+assert.equal(spacingLeft.y, 700);
+assert.equal(spacingRight.y, 700, "same-team separation never pushes one ship backwards along the lane");
+
 const accelerationSimulation = new BattleSimulation();
 for (const structure of accelerationSimulation.state.structures.values()) {
   if (structure.team === TEAM.ENEMY) structure.alive = false;
@@ -482,6 +524,17 @@ assert.ok(effects.effects.some((effect) => effect.type === "upgrade" && effect.u
 assert.equal(effects.effects.length, 3);
 effects.update(1);
 assert.equal(effects.effects.length, 1);
+const laneEffects = new PresentationEffects();
+laneEffects.observe(Array.from({ length: 30 }, (_, index) => ({
+  type: "hit", x: 80 + index, y: 220, team: TEAM.PLAYER, laneId: LANE.LEFT, projectileType: "scout_pulse",
+})));
+assert.equal(laneEffects.effects.length, 24, "presentation feedback is capped independently per lane and team");
+const budgetedEffects = new PresentationEffects();
+budgetedEffects.observe(Array.from({ length: 30 }, (_, index) => ({
+  type: "hit", x: index, y: 100, team: TEAM.PLAYER, laneId: LANE.LEFT,
+  projectileType: "scout_pulse", sequence: index + 1,
+})));
+assert.equal(budgetedEffects.effects.length, 24, "presentation feedback keeps an independent lane/team budget");
 
 assert.deepEqual(commandActionAt({ x: 50, y: 718 }), { type: "TOGGLE_COMMAND_DOCK" });
 assert.equal(commandActionAt({ x: 24, y: 620 }), null, "ship cards stay hidden in the compact dock");

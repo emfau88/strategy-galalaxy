@@ -23,7 +23,7 @@ export const PROJECTILE_DEFINITIONS = freeze({
 
 export const STRUCTURE_DEFINITIONS = freeze({
   hq: freeze({ id: "hq", maxHp: 1800, collisionRadius: 45, attackRange: 150, targetLeash: 185, damage: 12, fireInterval: 1.65, projectileId: "heavy_cannon", color: "#e2f3ff" }),
-  turret: freeze({ id: "turret", maxHp: 340, collisionRadius: 25, attackRange: 142, targetLeash: 172, damage: 9, fireInterval: 1.25, projectileId: "fighter_laser", color: "#95d4ff" }),
+  turret: freeze({ id: "turret", maxHp: 340, collisionRadius: 25, attackRange: 142, targetLeash: 172, damage: 9, fireInterval: 1.25, projectileId: "fighter_laser", muzzleOffset: 29, color: "#95d4ff" }),
 });
 
 export const ORBITAL_GARDEN = freeze({

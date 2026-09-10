@@ -247,6 +247,55 @@ try {
   const mixedQaScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(resolve(output, "level-2-qa-mixed-combat-420x760.png"), Buffer.from(mixedQaScreenshot.data, "base64"));
 
+  for (const [team, y, direction] of [['TEAM_PLAYER', 610, -1], ['TEAM_ENEMY', 535, 1]]) {
+    await send("Runtime.evaluate", {
+      expression: `(() => {
+        const g = window.__strategyGalalaxy;
+        const simulation = g.match.simulation;
+        const state = simulation.state;
+        state.units.clear(); state.projectiles.clear(); state.events.length = 0; simulation.squads.clear(); g.effects.reset();
+        for (const lane of state.lanes.values()) {
+          lane.unitIds.set('TEAM_PLAYER', []); lane.unitIds.set('TEAM_ENEMY', []); lane.projectileIds = [];
+        }
+        ['drone', 'scout', 'fighter', 'bomber', 'frigate'].forEach((type, index) => {
+          const unit = simulation.spawnUnit('${team}', index < 3 ? 'LANE_LEFT' : 'LANE_RIGHT', type, { x: 52 + index * 78, y: ${y}, spawnCycle: 940 + index });
+          unit.launching = false; unit.heading = ${direction} < 0 ? -Math.PI / 2 : Math.PI / 2;
+          unit.vx = 0; unit.vy = (${direction}) * 28; unit.state = 'ADVANCING'; unit.fireCooldown = 99; unit.lastDamagedAt = -999;
+        });
+        g.camera.jumpToWorld(580);
+      })()`,
+    });
+    await delay(80);
+    const engineScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+    await writeFile(resolve(output, `level-2-qa-${team === 'TEAM_PLAYER' ? 'player' : 'enemy'}-engines-420x760.png`), Buffer.from(engineScreenshot.data, "base64"));
+  }
+
+  const destructionQa = await send("Runtime.evaluate", {
+    expression: `(() => {
+      const g = window.__strategyGalalaxy;
+      const simulation = g.match.simulation;
+      const state = simulation.state;
+      state.units.clear(); state.projectiles.clear(); simulation.squads.clear();
+      for (const lane of state.lanes.values()) {
+        lane.unitIds.set('TEAM_PLAYER', []); lane.unitIds.set('TEAM_ENEMY', []); lane.projectileIds = [];
+      }
+      const attacker = simulation.spawnUnit('TEAM_PLAYER', 'LANE_LEFT', 'frigate', { x: 82, y: 635, slotOffsetX: -23, spawnCycle: 921 });
+      const fighter = simulation.spawnUnit('TEAM_ENEMY', 'LANE_LEFT', 'fighter', { x: 94, y: 532, slotOffsetX: -11, spawnCycle: 922 });
+      const bomber = simulation.spawnUnit('TEAM_ENEMY', 'LANE_LEFT', 'bomber', { x: 133, y: 548, slotOffsetX: 28, spawnCycle: 922 });
+      fighter.hp = 1; bomber.hp = 1; attacker.fireCooldown = 0;
+      for (let step = 0; step < 150 && !state.events.some((event) => event.type === 'destroyed' && event.time > state.time - 2); step += 1) simulation.step(1 / 60);
+      g.effects.observe(state.events);
+      g.camera.jumpToWorld(590);
+      return { destroyed: state.events.filter((event) => event.type === 'destroyed').slice(-2).map((event) => event.entityType), effects: g.effects.effects.filter((effect) => effect.type === 'destroyed').length };
+    })()`,
+    returnByValue: true,
+  });
+  assert.ok(destructionQa.result.value.destroyed.length > 0, "deterministic destruction scene kills at least one ship");
+  assert.ok(destructionQa.result.value.effects > 0, "destruction events create authored presentation effects");
+  await delay(180);
+  const destructionQaScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "level-2-qa-destruction-420x760.png"), Buffer.from(destructionQaScreenshot.data, "base64"));
+
   const reports = [];
   for (const [width, height] of viewports) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: true, screenWidth: width, screenHeight: height });

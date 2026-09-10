@@ -204,13 +204,10 @@ export class BattleSimulation {
             if (current >= minimum) continue;
             const push = (minimum - current) * 0.5;
             const horizontal = dx / current * push;
-            const vertical = dy / current * push * 0.5;
             const minX = laneDefinition.centerX - laneDefinition.width / 2 + 9;
             const maxX = laneDefinition.centerX + laneDefinition.width / 2 - 9;
             left.x = Math.max(minX, Math.min(maxX, left.x - horizontal));
             right.x = Math.max(minX, Math.min(maxX, right.x + horizontal));
-            left.y -= vertical;
-            right.y += vertical;
           }
         }
       }
@@ -220,6 +217,8 @@ export class BattleSimulation {
   updateUnit(unit, dt, positions = null) {
     if (!unit.alive) return;
     if (unit.launching) return;
+    const startX = unit.x;
+    const startY = unit.y;
     const definition = UNIT_DEFINITIONS[unit.unitType];
     const movementScale = this.state.map.movementScale ?? 1;
     const motionDefinition = movementScale === 1 ? definition : {
@@ -266,16 +265,42 @@ export class BattleSimulation {
         }, motionDefinition, dt);
       }
       this.constrainToLane(unit);
+      this.observeUnitMobility(unit, startX, startY, dt);
       return;
     }
     const tactical = this.tacticalPosition(unit, targetPosition, definition);
     tactical.speedLimit = motionDefinition.speed * (COMBAT_SPEED_SCALE[unit.unitType] ?? 0.55);
     this.steerUnit(unit, tactical, motionDefinition, dt, tactical.heading);
     this.constrainToLane(unit);
+    this.observeUnitMobility(unit, startX, startY, dt);
     const aligned = !definition.broadside || Math.abs(angleDelta(unit.heading, tactical.heading)) <= 0.32;
     if (inRange(unitPosition, targetPosition, definition.attackRange) && aligned && unit.fireCooldown === 0) {
       this.fire(unit, target, definition, positions);
     }
+  }
+
+  observeUnitMobility(unit, startX, startY, dt) {
+    const moved = Math.hypot(unit.x - startX, unit.y - startY);
+    if (unit.state !== UNIT_STATE.ADVANCING || moved > 0.025) {
+      unit.mobilityStallTime = 0;
+      return;
+    }
+    unit.mobilityStallTime = (unit.mobilityStallTime ?? 0) + dt;
+    if (unit.mobilityStallTime < 1.15) return;
+    const lane = this.state.map.lanes.find((item) => item.id === unit.laneId);
+    const laneCenter = lane?.centerX ?? unit.x;
+    const awayFromBoundary = Math.abs(unit.x - laneCenter) > (lane?.width ?? 160) * 0.32
+      ? Math.sign(laneCenter - unit.x)
+      : unit.broadsideSide || 1;
+    const definition = UNIT_DEFINITIONS[unit.unitType];
+    unit.vx = awayFromBoundary * Math.min(9, definition.speed * 0.2);
+    unit.vy = forwardDirection(unit.team) * Math.min(7, definition.speed * 0.16);
+    unit.x += unit.vx * Math.max(dt, 1 / 60);
+    this.constrainToLane(unit);
+    unit.mobilityStallTime = 0;
+    emitSimulationEvent(this.state, {
+      type: "unit_unstuck", entityId: unit.id, team: unit.team, laneId: unit.laneId, x: unit.x, y: unit.y,
+    });
   }
 
   tacticalPosition(unit, target, definition) {
@@ -294,10 +319,21 @@ export class BattleSimulation {
         heading: targetBearing + unit.broadsideSide * direction * Math.PI / 2,
       };
     }
+    const distance = Math.hypot(target.x - unit.x, target.y - unit.y);
+    if (distance < standoff * 0.72) {
+      const breakDistance = Math.min(36, Math.max(14, (standoff - distance) * 0.58));
+      return {
+        x: clamp(laneCenter + formationLateral + unit.broadsideSide * breakDistance, laneCenter - (lane?.width ?? 160) * 0.38, laneCenter + (lane?.width ?? 160) * 0.38),
+        y: unit.y,
+        heading: targetBearing,
+        preventReverseHeading: targetBearing,
+      };
+    }
     return {
       x: laneCenter + formationLateral,
       y: target.y - direction * standoff,
       heading: targetBearing,
+      preventReverseHeading: targetBearing,
     };
   }
 
@@ -313,10 +349,28 @@ export class BattleSimulation {
       desiredVx += dx / magnitude * correctionSpeed;
       desiredVy += dy / magnitude * correctionSpeed;
     }
+    if (Number.isFinite(destination.preventReverseHeading)) {
+      const forwardX = Math.cos(destination.preventReverseHeading);
+      const forwardY = Math.sin(destination.preventReverseHeading);
+      const reverseComponent = desiredVx * forwardX + desiredVy * forwardY;
+      if (reverseComponent < 0) {
+        desiredVx -= forwardX * reverseComponent;
+        desiredVy -= forwardY * reverseComponent;
+      }
+    }
     const desired = vectorLimit(desiredVx, desiredVy, speedLimit);
     const velocityChange = vectorLimit(desired.x - unit.vx, desired.y - unit.vy, definition.acceleration * dt);
     unit.vx += velocityChange.x;
     unit.vy += velocityChange.y;
+    if (Number.isFinite(destination.preventReverseHeading)) {
+      const forwardX = Math.cos(destination.preventReverseHeading);
+      const forwardY = Math.sin(destination.preventReverseHeading);
+      const reverseComponent = unit.vx * forwardX + unit.vy * forwardY;
+      if (reverseComponent < 0) {
+        unit.vx -= forwardX * reverseComponent;
+        unit.vy -= forwardY * reverseComponent;
+      }
+    }
     unit.x += unit.vx * dt;
     unit.y += unit.vy * dt;
     const movementHeading = Math.hypot(unit.vx, unit.vy) > 1 ? Math.atan2(unit.vy, unit.vx) : unit.heading;

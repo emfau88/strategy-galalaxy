@@ -102,15 +102,15 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
 - **Prompt:** “Create one premium compact twin-barrel orbital defense cannon head only, perfectly top-down and forward-facing toward the top edge, centered for a code-driven rotation pivot. Crisp polished high-resolution pixel-art hybrid, neutral silver/blue-gray/pale-lavender armor with restrained practical lighting, readable at 38–44 pixels, transparent background. No platform, projectile, muzzle flash, UI, text, shadow, aura, team ring, watermark, perspective or excessive bloom.”
 - **Status:** Active runtime asset.
 
-## Unified fleet engine animation strips
+## Unified fleet engine animation strips (removed)
 
 - **Destinations:** `assets/effects/player-engine-strip-v1.png`, `assets/effects/enemy-engine-strip-v1.png`
 - **Method / mode:** Built-in ImageGen, new raster VFX generation, followed by deterministic grid extraction and normalization with `scripts/process-vfx-atlas.py`.
 - **Purpose:** Replace the temporary procedural exhaust ellipses with authored, time-varying engine art that remains crisp behind the new high-resolution hulls.
 - **Player prompt direction:** “Professional 2D game VFX sprite sheet on pure black, strict 4×2 grid with eight chronological phases of one top-down spaceship engine plume pointing downward. Cyan-white plasma core, restrained electric-blue bloom and tiny warm-gold sparks, polished premium mobile strategy-game art, isolated effect only, consistent nozzle origin, no ship, UI, text, border or checkerboard.”
 - **Rival prompt direction:** “Professional 2D game VFX sprite sheet on pure black, strict 4×2 grid with eight chronological phases of one top-down spaceship engine plume pointing downward. White-hot core, orange-red and coral flame, sparse copper sparks, aggressive but clean premium mobile strategy-game art, isolated effect only, consistent nozzle origin, no ship, UI, text, border or checkerboard.”
-- **Runtime:** Each normalized `1024×256` strip contains eight `128×256` frames. The renderer cycles at 12 FPS with a stable per-unit phase offset and class-specific hardpoints.
-- **Status:** Active runtime assets.
+- **Historical runtime:** Each normalized `1024×256` strip contained eight `128×256` frames and cycled at 12 FPS.
+- **Status:** Removed on 9 September 2026. Direct mobile comparison exposed broad gray fan shapes and weaker nozzle registration. Runtime now uses tight crops from the original CC0 Galalaxy/Foozle Nairan and Kla'ed engine frames, placed on the same hull-specific hardpoints.
 
 ## Unified no-exhaust fleet hulls, v2
 
@@ -121,6 +121,15 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
 - **Rival prompt set:** The equivalent four per-class edits, preserving charcoal/navy ceramic, copper/brass, burgundy panels and coral hull lamps while removing only emitted red/coral plumes and reconstructing the nozzle mouths.
 - **Runtime:** All sprites share a `384×384` transparent canvas and class-specific bottom alignment, so the animated plume begins exactly at the rear hardware. Earlier `v1` hulls remain retained source history.
 - **Status:** Active runtime hull and command-card assets.
+
+## Dedicated automatic Drone hulls
+
+- **Destinations:** `assets/factions/unified/player-drone-v1.png`, `assets/factions/unified/enemy-drone-v1.png`.
+- **Method / mode:** Two separate Built-in ImageGen `stylized-concept` generations followed by alpha-preserving normalization with `scripts/normalize-generated-cutout.py`.
+- **Purpose:** Stop representing the free automatic lane unit as a shrunken Scout and make the five combat roles readable by silhouette.
+- **Player prompt direction:** One tiny strict top-down autonomous orbital Drone, visibly weaker and simpler than the Scout, ivory ceramic and brass with restrained cyan lamps, a single clear rear nozzle, no exhaust, shadow, UI, text or scenery, transparent background.
+- **Rival prompt direction:** Matching tiny autonomous Drone in charcoal/navy armor, copper trim and restrained coral lamps, weaker and simpler than the Rival Scout, one clear rear nozzle, no exhaust, shadow, UI, text or scenery, transparent background.
+- **Status:** Active runtime and navigator assets.
 
 ## Team-integrated Orbital Garden turret bases, v3
 
@@ -133,12 +142,12 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
 
 ## Unified faction projectile families
 
-- **Destinations:** `assets/projectiles/unified/player-{scout-pulse,fighter-laser,siege-missile,heavy-cannon}-v1.png`, `assets/projectiles/unified/enemy-{scout-pulse,fighter-laser,siege-missile,heavy-cannon}-v1.png`
+- **Destinations:** Source `v1` files plus active alpha-normalized `assets/projectiles/unified/player-{scout-pulse,fighter-laser,siege-missile,heavy-cannon}-v2.png` and corresponding Rival `v2` files.
 - **Method / mode:** Built-in ImageGen, new raster game-asset generation, then deterministic 2×2 atlas extraction to individual `192×192` black-backed sprites with `scripts/process-vfx-atlas.py`.
 - **Purpose:** Make weapon class and firing faction readable from silhouette and palette, not only from a thin code-drawn streak.
 - **Player prompt direction:** “Professional top-down 2D projectile asset sheet on pure black, strict 2×2 grid: compact cyan orbital scout plasma pulse; long narrow cyan-white fighter laser lance; ivory-and-brass guided missile with cyan stripe and exhaust; broad cyan crystal heavy cannon shell with brass casing. Cohesive premium mobile strategy-game style, isolated centered projectiles pointing upward, restrained bloom, no ships, UI, text, border or checkerboard.”
 - **Rival prompt direction:** “Professional top-down 2D projectile asset sheet on pure black, strict 2×2 grid: angular coral scout energy shard; forked coral-red fighter beam; charcoal-and-copper torpedo with coral stripe and exhaust; chunky copper/crimson heavy cannon shell. Cohesive premium mobile strategy-game style, isolated centered projectiles pointing upward, restrained bloom, no ships, UI, text, border or checkerboard.”
-- **Runtime:** Projectile bodies rotate along their velocity vector. Existing bounded trails and hit glows remain supplemental effects; they no longer define the projectile silhouette.
+- **Runtime:** The `v2` pass converts black backing to true alpha and crops visual content before centering it on the existing canvas. Projectile bodies render at tight class-specific sizes, rotate along velocity and use short bounded trails; Canvas glows no longer define their silhouette.
 - **Status:** Active runtime assets.
 
 ## Level 2 visual-direction mockups

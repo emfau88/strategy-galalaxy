@@ -9,7 +9,7 @@ The complete licensed asset import comes from read-only Galalaxy commit `7f90d17
 | `assets/library/galalaxy/` | 516 | 20,808,162 | Development/source library; never bulk-loaded |
 | Foozle packs inside library | 502 | 14,218,222 | CC0 source art, previews and editable files |
 | Optional Galalaxy UI inside library | 14 | 6,589,940 | Preserved for reference; not in current manifest |
-| Registered Strategy Galalaxy asset manifest | 86 | verified by script | 49 current boot assets are loaded; legacy animation groups remain registered for source validation only |
+| Registered Strategy Galalaxy asset manifest | 88 | verified by script | Unified hulls/projectiles plus active Galalaxy engine and destruction groups |
 
 The reference contains one additional file, `assets/music/track1.ogg` (5,937,850 bytes). It is deliberately excluded because its distribution license is undocumented. Therefore 516 files is the expected and enforced library count.
 
@@ -29,9 +29,9 @@ Formats across the imported reference library include runtime PNGs, editable Ase
 
 ## Active fleet runtime
 
-Player and rival each use one unified `384×384` transparent `v2` hull for Scout, Fighter, Bomber and Frigate. Drones reuse the Scout silhouette at a smaller gameplay scale. All eight hulls share the same strict top-down camera, upper-left warm key light, cool lower-right fill, material hierarchy and class scale. The player uses ivory/brass/cyan with planted accents; the rival uses charcoal/copper/burgundy/coral. Static emitted flames were removed and the exposed nozzle mouths were reconstructed before normalization.
+Player and rival each use one unified `384×384` transparent hull for Drone, Scout, Fighter, Bomber and Frigate. All ten hulls share the same strict top-down camera, upper-left warm key light, cool lower-right fill, material hierarchy and class scale. The player uses ivory/brass/cyan with planted accents; the rival uses charcoal/copper/burgundy/coral. Static emitted flames were removed and the exposed nozzle mouths were reconstructed before normalization.
 
-Engine thrust now comes from two project-native eight-frame `1024×256` raster strips. Runtime hardpoints place the animated plume behind each unified hull without procedurally drawing its shape. Shields, damage and destruction remain lightweight presentation effects. The licensed Nairan/Kla'ed strips and metadata remain registered and verified as fallback/source material but are not loaded into an active match.
+Engine thrust now reuses the original CC0 Galalaxy/Foozle Nairan and Kla'ed engine animation frames at 10 FPS. The renderer takes a tight transparent crop from the real source frame and places it at explicit per-faction/per-class nozzle hardpoints; the flame shape itself is never drawn procedurally. Ship kills likewise play the original class-specific 8–18-frame Galalaxy destruction sequences at 14 FPS. The player-requested source animation is allowed to replace the unified hull for the short death sequence; structures keep a separate bounded blast because the fleet strips contain ship silhouettes.
 
 ## Active projectile runtime
 
@@ -50,8 +50,9 @@ Mechanics remain faction-symmetric even when art differs. Each team/lane has an 
 - `assets/structures/command-hq-topdown-v3.png`: production HQ base with two lane-facing hangars; doors, practical lights and damage presentation are composed in Canvas.
 - `assets/structures/defense-turret-base-topdown-v2.png`: barrel-free modular turret platform; the aiming weapon head and recoil are composed in Canvas.
 - `assets/structures/defense-turret-head-topdown-v3.png`: independent top-down twin-barrel head rotated and recoiled around the turret socket in Canvas.
-- `assets/factions/unified/`: eight normalized high-resolution hulls used by both maps and the command UI.
-- `assets/effects/*-engine-strip-v1.png`: two eight-phase raster engine atlases, authored separately for player and rival exhaust identity.
+- `assets/factions/unified/`: ten normalized high-resolution hulls used by both maps and the command UI, including dedicated Drones.
+- `assets/factions/{nairan,klaed}/*-engine.png`: active original Galalaxy/Foozle engine frames; Scout flames are cropped and positioned on every unified nozzle.
+- `assets/factions/{nairan,klaed}/*-destruction.png`: active original class-specific Galalaxy/Foozle death sequences.
 - `assets/projectiles/unified/`: eight class- and faction-specific raster projectile bodies; procedural trails only supplement their readability.
 - `assets/structures/energy-relay-unified-v1.png`: shared capturable relay in the same ivory/brass/garden material family.
 - `assets/structures/orbital-garden-turret-{player,rival}-v3.png`: team-authored bases whose cyan/coral practical lamps replace all persistent code-drawn ownership markers.

@@ -9,6 +9,8 @@ from scipy import ndimage
 
 
 def isolate_subject(image: Image.Image) -> Image.Image:
+    if image.mode == "RGBA" and image.getchannel("A").getextrema()[0] < 255:
+        return image.copy()
     rgb = np.asarray(image.convert("RGB"), dtype=np.int16)
     maximum = rgb.max(axis=2)
     minimum = rgb.min(axis=2)
@@ -38,7 +40,7 @@ def isolate_subject(image: Image.Image) -> Image.Image:
 
 def normalize(source: Path, destination: Path, target_height: int, target_bottom: int) -> None:
     isolated = isolate_subject(Image.open(source))
-    bbox = isolated.getchannel("A").getbbox()
+    bbox = isolated.getchannel("A").point(lambda value: 255 if value > 16 else 0).getbbox()
     if not bbox:
         raise ValueError(f"No alpha bounds in {source}")
     subject = isolated.crop(bbox)

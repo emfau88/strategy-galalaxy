@@ -56,12 +56,12 @@ const header = (ctx, model, ui) => {
   box(ctx, { x: 8, y: 8, width: model.width - 16, height: 48 }, C.panel, "rgba(190,224,236,0.3)", 10);
   text(ctx, `YOU  ${Math.round(ratio(playerHq) * 100)}%`, 18, 22, 11, C.player);
   miniBar(ctx, 18, 31, 102, ratio(playerHq), C.player);
-  text(ctx, `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s · N${nodeIncome}`, 18, 44, 9, C.text);
+  text(ctx, `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s · NODE ${nodeIncome}`, 18, 44, 8, C.text);
   text(ctx, model.queueLocked ? "LOCKED" : "NEXT WAVE", 158, 22, 9, model.queueLocked ? C.gold : C.text, "center");
   text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, 158, 42, 14, model.queueLocked ? C.gold : C.text, "center");
   text(ctx, `${Math.round(ratio(enemyHq) * 100)}%  RIVAL`, 300, 22, 10, C.enemy, "right");
   miniBar(ctx, 300, 31, 92, ratio(enemyHq), C.enemy, "right");
-  text(ctx, `RIVAL +${purchasedCount(model, TEAM.ENEMY)}`, 300, 44, 8, C.muted, "right", 600);
+  text(ctx, `${purchasedCount(model, TEAM.ENEMY)} INCOMING`, 300, 44, 8, C.muted, "right", 600);
   box(ctx, { x: 308, y: 12, width: 30, height: 34 }, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
   text(ctx, model.state === MATCH_STATE.PAUSED ? "▶" : "Ⅱ", 323, 29, 12, C.text, "center");
   box(ctx, { x: 343, y: 12, width: 30, height: 34 }, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
@@ -71,12 +71,12 @@ const header = (ctx, model, ui) => {
 };
 
 const drawShipIcon = (ctx, model, unitType, x, y, size = 22) => {
-  const spriteType = unitType === "drone" ? "scout" : unitType;
+  const spriteType = unitType;
   const unifiedSprite = model.assets?.get(`unified-player-${spriteType}`);
   const sprite = unifiedSprite ?? model.assets?.get(`nairan-${spriteType}`);
   const crop = { scout: [20, 23, 24, 22], fighter: [17, 20, 30, 27], bomber: [16, 18, 32, 30], frigate: [11, 9, 42, 42] }[unitType] ?? [0, 0, 64, 64];
   const unifiedCrop = {
-    drone: [115, 100, 155, 185], scout: [115, 100, 155, 185],
+    drone: [101, 116, 182, 190], scout: [115, 100, 155, 185],
     fighter: [68, 60, 248, 232], bomber: [78, 50, 228, 250], frigate: [105, 18, 174, 298],
   }[unitType] ?? [0, 0, 384, 384];
   if (unifiedSprite) {
@@ -156,7 +156,11 @@ const strategicNavigator = (ctx, model) => {
   for (const node of state.nodes.values()) {
     ctx.fillStyle = node.ownerTeam === TEAM.PLAYER ? C.player : node.ownerTeam === TEAM.ENEMY ? C.enemy : C.muted;
     ctx.globalAlpha = 0.82;
-    ctx.fillRect(laneX(node.laneId) - 2, trackY(node.y) - 2, 4, 4);
+    ctx.save();
+    ctx.translate(laneX(node.laneId), trackY(node.y));
+    ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-2.2, -2.2, 4.4, 4.4);
+    ctx.restore();
   }
   ctx.globalAlpha = 1;
 
@@ -166,7 +170,16 @@ const strategicNavigator = (ctx, model) => {
     ctx.fillStyle = color;
     ctx.globalAlpha = structure.alive ? 0.9 : 0.22;
     if (structure.structureType === "hq") ctx.fillRect(track.x + 2, y - 1.5, track.width - 4, 3);
-    else ctx.fillRect(laneX(structure.laneId) - 2, y - 1.5, 4, 3);
+    else {
+      const x = laneX(structure.laneId);
+      const direction = structure.team === TEAM.PLAYER ? -1 : 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y + direction * -3);
+      ctx.lineTo(x - 2.7, y + direction * 2.5);
+      ctx.lineTo(x + 2.7, y + direction * 2.5);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
   ctx.globalAlpha = 1;
 
@@ -178,8 +191,11 @@ const strategicNavigator = (ctx, model) => {
       const averageY = units.reduce((sum, unit) => sum + unit.y, 0) / units.length;
       const radius = Math.min(4, 1.5 + Math.sqrt(units.length) * 0.45);
       ctx.fillStyle = team === TEAM.PLAYER ? C.player : C.enemy;
+      const x = laneX(laneId) + (team === TEAM.PLAYER ? -1.5 : 1.5);
+      const y = trackY(averageY);
       ctx.beginPath();
-      ctx.arc(laneX(laneId) + (team === TEAM.PLAYER ? -1.5 : 1.5), trackY(averageY), radius, 0, Math.PI * 2);
+      if (ctx.roundRect) ctx.roundRect(x - radius * 0.72, y - radius, radius * 1.44, radius * 2, radius * 0.72);
+      else ctx.rect(x - radius * 0.7, y - radius, radius * 1.4, radius * 2);
       ctx.fill();
     }
   }
@@ -208,6 +224,8 @@ const strategicNavigator = (ctx, model) => {
 
   const windowTop = trackY(camera.y);
   const windowBottom = trackY(camera.y + camera.viewport.height);
+  ctx.fillStyle = "rgba(255,214,121,0.055)";
+  ctx.fillRect(track.x - 2, windowTop, track.width + 4, Math.max(8, windowBottom - windowTop));
   ctx.strokeStyle = C.gold;
   ctx.lineWidth = 1.5;
   ctx.strokeRect(track.x - 2, windowTop, track.width + 4, Math.max(8, windowBottom - windowTop));
@@ -398,5 +416,5 @@ export const renderUiLayer = (ctx, model) => {
     commandPanel(ctx, model, ui);
     if (model.state === MATCH_STATE.PAUSED) paused(ctx, model);
   } else if ([MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(model.state)) endState(ctx, model);
-  if (model.debugEnabled && model.lastAiDecision) text(ctx, `AI: ${laneName(model.lastAiDecision.defenseLane)} DEFEND · ${laneName(model.lastAiDecision.pushLane)} PUSH`, model.width / 2, ui.debugY, 9, "#d6c8ec", "center");
+  if (model.debugEnabled && model.lastAiDecision) text(ctx, `QA · AI ${laneName(model.lastAiDecision.defenseLane)} HOLD / ${laneName(model.lastAiDecision.pushLane)} PUSH`, model.width / 2, ui.debugY, 8, "#b8afcf", "center");
 };
