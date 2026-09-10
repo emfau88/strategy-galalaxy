@@ -35,7 +35,7 @@ const metrics = {
   durations: [],
   cycles: [],
   purchases: Object.fromEntries(teams.map((team) => [team, Object.fromEntries(unitTypes.map((type) => [type, 0]))])),
-  upgrades: Object.fromEntries(teams.map((team) => [team, { economy: 0, weapons: 0, turret: 0, logistics: 0 }])),
+  upgrades: Object.fromEntries(teams.map((team) => [team, { economy: 0, weapons: 0, turret: 0 }])),
   spending: Object.fromEntries(teams.map((team) => [team, { fleet: 0, economy: 0, research: 0 }])),
   finalEnergy: Object.fromEntries(teams.map((team) => [team, []])),
   nodeControlSeconds: Object.fromEntries(teams.map((team) => [team, 0])),
@@ -48,14 +48,6 @@ const recordDecision = (decision) => {
   if (!decision) return;
   for (const purchase of decision.purchases) metrics.purchases[decision.team][purchase.unitType] += 1;
   for (const upgrade of decision.upgrades) metrics.upgrades[decision.team][upgrade.upgradeId] += 1;
-};
-
-const clearQueue = (director, team) => {
-  for (const laneId of [LANE.LEFT, LANE.RIGHT]) {
-    for (const entry of [...director.queuedWaves.get(team).get(laneId)].reverse()) {
-      director.executeCommand({ type: "REMOVE_QUEUED_UNIT", team, laneId, queueEntryId: entry.id });
-    }
-  }
 };
 
 const runMatch = (index) => {
@@ -72,7 +64,6 @@ const runMatch = (index) => {
     investmentBias: playerInvestmentBias,
   });
   let playerDecision = playerAi.plan(director).decision;
-  let playerReplannedForCycle = null;
   let knownCycle = director.cycle;
   let firstTurretLoss = null;
 
@@ -94,14 +85,6 @@ const runMatch = (index) => {
       recordDecision(playerDecision);
       knownCycle = director.cycle;
       playerDecision = playerAi.plan(director).decision;
-      playerReplannedForCycle = null;
-    } else if (director.state === MATCH_STATE.LIVE_MATCH
-      && !director.queueLocked
-      && playerReplannedForCycle !== director.cycle
-      && director.phaseRemaining <= director.config.timing.aiReplanSecondsBeforeDeployment) {
-      clearQueue(director, TEAM.PLAYER);
-      playerDecision = playerAi.plan(director).decision;
-      playerReplannedForCycle = director.cycle;
     }
   }
 
@@ -146,7 +129,6 @@ const report = {
   peaks: { units: metrics.peakUnits, projectiles: metrics.peakProjectiles },
   configuration: {
     deploymentIntervalSeconds: CONFIG.timing.deploymentIntervalSeconds,
-    lockSeconds: CONFIG.timing.deploymentLockSeconds,
     maximumMatchSeconds: maximumSeconds,
     baseIncomePerSecond: runConfig.balance.baseIncomePerSecond,
     nodeIncomePerSecond: runConfig.balance.nodeIncomePerSecond,

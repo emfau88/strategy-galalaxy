@@ -8,7 +8,7 @@ import { computeViewportTransform, responsivePortraitDesignHeight, toDesignPoint
 import { AssetLoader } from "../src/rendering/assetLoader.js";
 import { BattleSimulation, createDemoBattle } from "../src/simulation/battleSimulation.js";
 import { LANE, TEAM } from "../src/core/constants.js";
-import { CLASSIC_LANES, ORBITAL_GARDEN, PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../src/data/definitions.js";
+import { CLASSIC_LANES, CORE_SLICE_FEATURES, ORBITAL_GARDEN, PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../src/data/definitions.js";
 import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 import { AI_PROFILES } from "../src/simulation/opponentAi.js";
@@ -23,6 +23,24 @@ import { fleetVisualFor, unifiedHullVisualFor } from "../src/data/visuals.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
+
+assert.equal(ORBITAL_GARDEN.lanes.length, 1, "level 1 keeps its single-lane identity");
+assert.equal(CLASSIC_LANES.lanes.length, 2, "level 2 keeps its two-lane identity");
+assert.equal(ORBITAL_GARDEN.bounds.height, 1180, "level 1 keeps the tall scroll world");
+assert.equal(CLASSIC_LANES.bounds.height, 1180, "level 2 keeps the tall scroll world");
+for (const map of [ORBITAL_GARDEN, CLASSIC_LANES]) {
+  assert.equal(map.features, CORE_SLICE_FEATURES, `${map.id} declares the shared fleet-combat feature set`);
+  assert.deepEqual(map.features, {
+    captureNodes: false,
+    economyBuildings: false,
+    defensiveTurrets: false,
+    neutralStructures: false,
+    commandCarriers: true,
+    centerDecorations: false,
+    edgeDecorations: true,
+  });
+}
+
 for (const [viewportWidth, viewportHeight] of targetViewports) {
   const transform = computeViewportTransform({ viewportWidth, viewportHeight, designWidth: 420, designHeight: 760, devicePixelRatio: 2, maxDevicePixelRatio: 1.5 });
   assert.ok(transform.scale > 0, `${viewportWidth}x${viewportHeight} receives a positive scale`);
@@ -138,7 +156,8 @@ assert.ok(UNIT_DEFINITIONS.frigate.maxHp > UNIT_DEFINITIONS.fighter.maxHp);
 assert.ok(UNIT_DEFINITIONS.bomber.damage > UNIT_DEFINITIONS.fighter.damage);
 assert.ok(UNIT_DEFINITIONS.fighter.fireInterval < UNIT_DEFINITIONS.frigate.fireInterval);
 assert.equal(CONFIG.timing.deploymentIntervalSeconds, 22);
-assert.equal(CONFIG.timing.deploymentLockSeconds, 2);
+assert.ok(UNIT_DEFINITIONS.scout.deploymentCooldownSeconds > 0);
+assert.ok(UNIT_DEFINITIONS.frigate.deploymentCooldownSeconds > UNIT_DEFINITIONS.scout.deploymentCooldownSeconds);
 assert.equal(CONFIG.caps.projectilesPerLaneTeam, 64);
 assert.equal((CLASSIC_LANES.structures.find((structure) => structure.id === "player-hq").y + CLASSIC_LANES.structures.find((structure) => structure.id === "enemy-hq").y) / 2, CLASSIC_LANES.lanes[0].node.y);
 assert.equal(UNIT_DEFINITIONS.battlecruiser.enabled, false);
@@ -234,13 +253,14 @@ assert.equal(boundedEvents.state.events.length, 1024);
 assert.equal(boundedEvents.state.events[0].sequence, 77);
 assert.equal(boundedEvents.state.events.at(-1).sequence, 1100);
 
-const match = new MatchDirector({ config: { ...CONFIG, timing: { ...CONFIG.timing, deploymentIntervalSeconds: 0.2, deploymentLockSeconds: 0.05 } } });
+const match = new MatchDirector({ config: { ...CONFIG, timing: { ...CONFIG.timing, deploymentIntervalSeconds: 0.2 }, balance: { ...CONFIG.balance, startingEnergy: 0 } } });
 match.start();
 assert.equal(match.state, MATCH_STATE.LIVE_MATCH);
 assert.equal(match.cycle, 1);
 assert.equal(match.lastDeploymentAt, 0);
 assert.equal(match.lastDeploymentAtFor(TEAM.PLAYER, LANE.LEFT), 0);
 assert.equal(match.lastDeploymentAtFor(TEAM.ENEMY, LANE.RIGHT), 0);
+assert.equal("queuedWaves" in match.deployment, false, "automatic wave scheduling owns no paid-unit queue");
 assert.equal(match.simulation.state.units.size, 12);
 assert.equal(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.PLAYER).length, 3);
 assert.ok([...match.simulation.state.units.values()].every((unit) => unit.unitType === "drone"), "the automatic opening wave contains only skirmisher drones");
@@ -263,7 +283,7 @@ terminalMatch.advanceLive(1 / 60);
 assert.equal(terminalMatch.state, MATCH_STATE.VICTORY);
 terminalMatch.restart();
 assert.equal(terminalMatch.state, MATCH_STATE.LIVE_MATCH);
-assert.equal(terminalMatch.simulation.state.units.size, 12);
+assert.equal([...terminalMatch.simulation.state.units.values()].filter((unit) => unit.unitType === "drone").length, 12, "restart creates a fresh automatic opening wave");
 
 const simultaneousHqLoss = new BattleSimulation();
 simultaneousHqLoss.applyDamage([
@@ -272,12 +292,15 @@ simultaneousHqLoss.applyDamage([
 ]);
 assert.equal(simultaneousHqLoss.state.terminalTeam, TEAM.DRAW, "same-step HQ destruction is a draw rather than an update-order advantage");
 
-const lockMatch = new MatchDirector();
-lockMatch.start();
-assert.deepEqual(lockMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "drone" }), { ok: false, reason: "UNAVAILABLE_UNIT" });
-lockMatch.deployment.timeUntilDeployment = CONFIG.timing.deploymentLockSeconds;
-assert.equal(lockMatch.queueLocked, true);
-assert.deepEqual(lockMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" }), { ok: false, reason: "QUEUE_LOCKED" });
+const liveWindowMatch = new MatchDirector();
+liveWindowMatch.start();
+assert.deepEqual(liveWindowMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "drone" }), { ok: false, reason: "UNAVAILABLE_UNIT" });
+liveWindowMatch.deployment.timeUntilDeployment = 0.001;
+const liveBeforeWave = liveWindowMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
+assert.equal(liveBeforeWave.ok, true, "paid deployment remains available immediately before an automatic wave");
+liveWindowMatch.advanceLive(1 / 60);
+assert.equal(liveWindowMatch.cycle, 2);
+assert.ok(liveWindowMatch.simulation.state.units.has(liveBeforeWave.spawnedIds[0]), "the independent automatic wave does not replace a paid launch");
 
 const formationSimulation = new BattleSimulation();
 const formation = formationSimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["scout", "scout", "scout", "scout", "scout", "scout"]);
@@ -400,40 +423,53 @@ assert.ok([...laneBounds.state.units.values()].every((unit) => unit.laneId === L
 const economyMatch = new MatchDirector();
 economyMatch.start();
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
-const queued = economyMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "fighter" });
-assert.equal(queued.ok, true);
+const unitsBeforeLiveDeployment = economyMatch.simulation.state.units.size;
+const waveTimerBeforeLiveDeployment = economyMatch.phaseRemaining;
+const deployed = economyMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "fighter" });
+assert.equal(deployed.ok, true);
+assert.equal(deployed.spawnedIds.length, 1);
+assert.equal(economyMatch.simulation.state.units.size, unitsBeforeLiveDeployment + 1, "paid units spawn immediately instead of entering a queue");
+assert.equal(economyMatch.simulation.state.units.get(deployed.spawnedIds[0]).launching, true, "the immediate spawn may still use a short launch traversal");
+assert.equal(economyMatch.phaseRemaining, waveTimerBeforeLiveDeployment, "paid deployment does not reset or delay the automatic wave timer");
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 210);
-const removed = economyMatch.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, queueEntryId: queued.entry.id });
-assert.deepEqual({ ok: removed.ok, refunded: removed.refunded }, { ok: true, refunded: 90 });
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
-assert.deepEqual(economyMatch.economy.get(TEAM.PLAYER).spending, { fleet: 0, economy: 0, research: 0 });
+assert.deepEqual(economyMatch.economy.get(TEAM.PLAYER).spending, { fleet: 90, economy: 0, research: 0 });
+const energyBeforeCooldownFailure = economyMatch.economy.get(TEAM.PLAYER).energy;
+const unitsBeforeCooldownFailure = economyMatch.simulation.state.units.size;
+const cooldownFailure = economyMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.RIGHT, unitType: "fighter" });
+assert.equal(cooldownFailure.reason, "COOLDOWN_ACTIVE");
+assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, energyBeforeCooldownFailure, "failed cooldown checks do not spend Energy");
+assert.equal(economyMatch.simulation.state.units.size, unitsBeforeCooldownFailure, "failed cooldown checks do not create units");
 
-const slotMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 1000 } } });
-slotMatch.start();
+const cooldownBeforePause = economyMatch.liveDeployment.cooldownRemaining(TEAM.PLAYER, "fighter");
+economyMatch.pause();
+assert.equal(economyMatch.advanceLive(1), false);
+assert.equal(economyMatch.liveDeployment.cooldownRemaining(TEAM.PLAYER, "fighter"), cooldownBeforePause, "pause freezes live-deployment cooldowns");
+economyMatch.resume();
+economyMatch.advanceLive(1);
+assert.ok(economyMatch.liveDeployment.cooldownRemaining(TEAM.PLAYER, "fighter") < cooldownBeforePause);
+while (economyMatch.liveDeployment.cooldownRemaining(TEAM.PLAYER, "fighter") > Number.EPSILON) economyMatch.advanceLive(1 / 60);
+assert.equal(economyMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.RIGHT, unitType: "fighter" }).ok, true, "the same unit type can launch again after its cooldown");
+
+const noSlotMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 2000 } } });
+noSlotMatch.start();
+const unitsBeforeNoSlotLaunches = noSlotMatch.simulation.state.units.size;
 for (const [laneId, unitType] of [[LANE.LEFT, "scout"], [LANE.RIGHT, "fighter"], [LANE.LEFT, "bomber"], [LANE.RIGHT, "frigate"]]) {
-  assert.equal(slotMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId, unitType }).ok, true);
+  assert.equal(noSlotMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId, unitType }).ok, true);
 }
-const overSlotLimit = slotMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
-assert.deepEqual(overSlotLimit, { ok: false, reason: "REINFORCEMENT_LIMIT" });
-const rightQueue = slotMatch.queuedWaves.get(TEAM.PLAYER).get(LANE.RIGHT);
-const slotUndo = slotMatch.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.PLAYER, laneId: LANE.RIGHT, queueEntryId: rightQueue.at(-1).id });
-assert.equal(slotUndo.ok, true);
-assert.equal(slotMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" }).ok, true, "undo reopens a shared reinforcement slot");
-const economyUpgrade = economyMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" });
+assert.equal(noSlotMatch.simulation.state.units.size, unitsBeforeNoSlotLaunches + 4, "four paid launches add units directly with no reinforcement-slot queue");
+
+const upgradeMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 900 } } });
+upgradeMatch.start();
+const economyUpgrade = upgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" });
 assert.deepEqual({ ok: economyUpgrade.ok, cost: economyUpgrade.cost, level: economyUpgrade.level }, { ok: true, cost: 220, level: 1 });
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 80);
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).spending.economy, 220);
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).economyLevel, 0);
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).pendingEconomyLevels, 1);
-assert.equal(economyMatch.economy.incomePerSecond(economyMatch.simulation.state, TEAM.PLAYER, 0), 16);
-economyMatch.forceDeployment();
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).economyLevel, 1);
-assert.ok(economyMatch.simulation.state.events.some((event) => event.type === "upgrade_activated" && event.upgradeId === "economy" && event.level === 1));
-economyMatch.advanceLive(1);
-assert.ok(Math.abs(economyMatch.economy.get(TEAM.PLAYER).energy - 99.52) < 0.000001);
-economyMatch.economy.get(TEAM.PLAYER).energy = CONFIG.balance.energyCap - 1;
-economyMatch.advanceLive(1);
-assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, CONFIG.balance.energyCap, "passive income respects the energy cap");
+assert.equal(upgradeMatch.economy.get(TEAM.PLAYER).energy, 680);
+assert.equal(upgradeMatch.economy.get(TEAM.PLAYER).spending.economy, 220);
+assert.equal(upgradeMatch.economy.get(TEAM.PLAYER).economyLevel, 1, "upgrades activate immediately during combat");
+assert.equal(upgradeMatch.economy.incomePerSecond(upgradeMatch.simulation.state, TEAM.PLAYER, 0), 19.52);
+assert.ok(upgradeMatch.simulation.state.events.some((event) => event.type === "upgrade_activated" && event.upgradeId === "economy" && event.level === 1));
+upgradeMatch.economy.get(TEAM.PLAYER).energy = CONFIG.balance.energyCap - 1;
+upgradeMatch.advanceLive(1);
+assert.equal(upgradeMatch.economy.get(TEAM.PLAYER).energy, CONFIG.balance.energyCap, "passive income respects the energy cap");
 
 const escalatingWaveMatch = new MatchDirector();
 assert.equal(escalatingWaveMatch.deployment.baseWaveSize(0), 3);
@@ -464,7 +500,6 @@ cappedUpgradeMatch.start();
 cappedUpgradeMatch.economy.get(TEAM.PLAYER).energy = 3000;
 for (let level = 0; level < CONFIG.balance.economyUpgradeMaxLevel; level += 1) {
   assert.equal(cappedUpgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" }).ok, true);
-  cappedUpgradeMatch.forceDeployment();
 }
 assert.deepEqual(cappedUpgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" }), { ok: false, reason: "MAX_LEVEL" });
 
@@ -473,36 +508,11 @@ researchMatch.start();
 const researchFighter = researchMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 105, y: 820, spawnCycle: 80 });
 const baseWeaponDamage = researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter);
 assert.equal(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "weapons" }).ok, true);
-assert.deepEqual(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "logistics" }), { ok: false, reason: "RESEARCH_SLOT_USED" });
-assert.equal(researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter), baseWeaponDamage, "research waits for the deployment boundary");
-researchMatch.forceDeployment();
+assert.deepEqual(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "logistics" }), { ok: false, reason: "UNAVAILABLE_UPGRADE" });
+assert.deepEqual(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "turret" }), { ok: false, reason: "UNAVAILABLE_UPGRADE" });
 assert.equal(researchMatch.economy.get(TEAM.PLAYER).weaponLevel, 1);
-assert.equal(researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter), baseWeaponDamage * 1.12);
+assert.equal(researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter), baseWeaponDamage * 1.12, "weapons research affects combat immediately");
 assert.equal(researchMatch.economy.get(TEAM.PLAYER).spending.research, 220);
-
-const logisticsMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 900 } } });
-logisticsMatch.start();
-assert.equal(logisticsMatch.economy.reinforcementLimit(TEAM.PLAYER), 4);
-assert.equal(logisticsMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "logistics" }).ok, true);
-assert.equal(logisticsMatch.economy.reinforcementLimit(TEAM.PLAYER), 4, "pending logistics does not grant an early slot");
-logisticsMatch.forceDeployment();
-assert.equal(logisticsMatch.economy.reinforcementLimit(TEAM.PLAYER), 5);
-logisticsMatch.economy.get(TEAM.PLAYER).energy = 900;
-for (let index = 0; index < 5; index += 1) {
-  assert.equal(logisticsMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: index % 2 ? LANE.RIGHT : LANE.LEFT, unitType: "scout" }).ok, true);
-}
-assert.deepEqual(logisticsMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" }), { ok: false, reason: "REINFORCEMENT_LIMIT" });
-
-const replanMatch = new MatchDirector({ aiProfile: AI_PROFILES.ADMIRAL });
-replanMatch.start();
-const firstEnemyQueueIds = [LANE.LEFT, LANE.RIGHT].flatMap((laneId) => replanMatch.queuedWaves.get(TEAM.ENEMY).get(laneId).map((entry) => entry.id));
-replanMatch.deployment.timeUntilDeployment = CONFIG.timing.aiReplanSecondsBeforeDeployment + 0.01;
-replanMatch.advanceLive(1 / 60);
-const revisedEnemyQueueIds = [LANE.LEFT, LANE.RIGHT].flatMap((laneId) => replanMatch.queuedWaves.get(TEAM.ENEMY).get(laneId).map((entry) => entry.id));
-assert.equal(replanMatch.aiReplannedForCycle, replanMatch.cycle);
-assert.ok(revisedEnemyQueueIds.length > 0);
-assert.ok(revisedEnemyQueueIds.every((id) => !firstEnemyQueueIds.includes(id)), "AI revises through refunded public queue commands");
-assert.ok(replanMatch.economy.get(TEAM.ENEMY).energy >= 0);
 
 const scoutCapture = new MatchDirector();
 scoutCapture.start();
@@ -515,20 +525,23 @@ fighterCapture.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: capt
 fighterCapture.capture.advance(fighterCapture.simulation.state, 0.5);
 assert.ok(scoutCapture.simulation.state.nodes.get("left-node").progress > fighterCapture.simulation.state.nodes.get("left-node").progress, "scouts capture faster than fighters");
 
-const turretMatch = new MatchDirector();
+const turretEnabledMap = { ...CLASSIC_LANES, features: { ...CLASSIC_LANES.features, defensiveTurrets: true } };
+const turretMatch = new MatchDirector({ mapDefinition: turretEnabledMap });
 turretMatch.start();
 const turretUpgrade = turretMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "turret" });
 assert.equal(turretUpgrade.ok, true);
 const playerTurret = turretMatch.simulation.state.structures.get("player-left-turret");
-assert.equal(turretMatch.simulation.damageFor(playerTurret, STRUCTURE_DEFINITIONS.turret), STRUCTURE_DEFINITIONS.turret.damage);
-turretMatch.forceDeployment();
 assert.equal(turretMatch.simulation.damageFor(playerTurret, STRUCTURE_DEFINITIONS.turret), STRUCTURE_DEFINITIONS.turret.damage * 1.2);
+assert.deepEqual(new MatchDirector().executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "turret" }), { ok: false, reason: "WRONG_PHASE" });
 
 const capacityMatch = new MatchDirector({ config: { ...CONFIG, caps: { ...CONFIG.caps, unitsPerLaneTeam: 2 } } });
 capacityMatch.start();
-const rejected = capacityMatch.executeCommand({ type: "QUEUE_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
-assert.deepEqual(rejected, { ok: false, reason: "CAPACITY_RESERVED" });
+assert.equal(capacityMatch.baseWaveBacklog.get(TEAM.PLAYER).get(LANE.LEFT).length, 1, "only the unspawned automatic Drone enters the wave backlog");
+const rejected = capacityMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
+assert.deepEqual(rejected, { ok: false, reason: "LANE_CAPACITY" });
 assert.equal(capacityMatch.economy.get(TEAM.PLAYER).energy, 300);
+capacityMatch.forceWave();
+assert.equal(capacityMatch.baseWaveBacklog.get(TEAM.PLAYER).get(LANE.LEFT).length, 4, "later automatic Drones accumulate without creating a paid queue");
 
 const aiMatch = new MatchDirector();
 aiMatch.start();
@@ -541,13 +554,13 @@ const cadetMatch = new MatchDirector({ aiProfile: AI_PROFILES.CADET });
 cadetMatch.start();
 assert.ok(cadetMatch.lastAiDecision.purchases.length <= 2);
 assert.equal(cadetMatch.lastAiDecision.upgrades.length, 0);
-const aiQueuedBeforeBattle = [LANE.LEFT, LANE.RIGHT].flatMap((laneId) => aiMatch.queuedWaves.get(TEAM.ENEMY).get(laneId));
-assert.equal(aiQueuedBeforeBattle.length, aiMatch.lastAiDecision.purchases.length);
-assert.ok(aiQueuedBeforeBattle.length <= CONFIG.balance.maxPurchasedReinforcementsPerDeployment);
+for (const purchase of aiMatch.lastAiDecision.purchases) {
+  assert.ok(purchase.spawnedIds.every((id) => aiMatch.simulation.state.units.has(id)), "AI purchases use the same immediate spawn path");
+}
 for (let index = 0; index < CONFIG.timing.deploymentIntervalSeconds * 60; index += 1) aiMatch.advanceLive(1 / 60);
 assert.equal(aiMatch.state, MATCH_STATE.LIVE_MATCH);
 assert.equal(aiMatch.cycle, 2);
-assert.equal(aiMatch.lastAiDecision.cycle, 3);
+assert.equal(aiMatch.lastAiDecision.cycle, 2);
 assert.ok(aiMatch.economy.get(TEAM.ENEMY).energy >= 0);
 
 for (const level of [1, 2]) {
@@ -578,18 +591,18 @@ assert.deepEqual(commandActionAt({ x: 50, y: 718 }), { type: "TOGGLE_COMMAND_DOC
 assert.equal(commandActionAt({ x: 24, y: 620 }), null, "ship cards stay hidden in the compact dock");
 assert.deepEqual(commandActionAt({ x: 40, y: 726 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "SELECT_LANE", laneId: LANE.LEFT });
 assert.deepEqual(commandActionAt({ x: 82, y: 726 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "SELECT_LANE", laneId: LANE.RIGHT });
-assert.deepEqual(commandActionAt({ x: 24, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "QUEUE_UNIT", unitType: "scout" });
-assert.deepEqual(commandActionAt({ x: 220, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "QUEUE_UNIT", unitType: "fighter" });
+assert.deepEqual(commandActionAt({ x: 24, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "DEPLOY_UNIT", unitType: "scout" });
+assert.deepEqual(commandActionAt({ x: 220, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "DEPLOY_UNIT", unitType: "fighter" });
 assert.deepEqual(commandActionAt({ x: 300, y: 565 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "SET_COMMAND_MENU", menu: "upgrades" });
 assert.deepEqual(commandActionAt({ x: 220, y: 620 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "weapons" });
-assert.deepEqual(commandActionAt({ x: 24, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "turret" });
-assert.deepEqual(commandActionAt({ x: 220, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "logistics" });
+assert.equal(commandActionAt({ x: 24, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), null);
+assert.equal(commandActionAt({ x: 220, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), null);
 assert.deepEqual(commandActionAt({ x: 80, y: 726 }, "units", 760, [LANE.CENTER], true), { type: "SELECT_LANE", laneId: LANE.CENTER });
 const tallCommandUi = commandUiLayout(909, [LANE.LEFT, LANE.RIGHT], true);
 assert.equal(tallCommandUi.panel.y, 683);
 assert.equal(tallCommandUi.status.y + tallCommandUi.status.height, 893);
 assert.equal(tallCommandUi.lanes[0].y, 857);
-assert.deepEqual(commandActionAt({ x: 24, y: 769 }, "units", 909, [LANE.LEFT, LANE.RIGHT], true), { type: "QUEUE_UNIT", unitType: "scout" });
+assert.deepEqual(commandActionAt({ x: 24, y: 769 }, "units", 909, [LANE.LEFT, LANE.RIGHT], true), { type: "DEPLOY_UNIT", unitType: "scout" });
 assert.deepEqual(fullscreenActionAt({ x: 380, y: 26 }), { type: "TOGGLE_FULLSCREEN" });
 assert.equal(fullscreenActionAt({ x: 210, y: 26 }), null);
 assert.deepEqual(utilityActionAt({ x: 320, y: 26 }), { type: "TOGGLE_PAUSE" });
@@ -606,7 +619,9 @@ const gardenMatch = new MatchDirector({ mapDefinition: ORBITAL_GARDEN });
 gardenMatch.start();
 assert.deepEqual([...gardenMatch.simulation.state.lanes.keys()], [LANE.CENTER]);
 assert.equal(gardenMatch.simulation.state.lanes.get(LANE.CENTER).unitIds.get(TEAM.PLAYER).length, 2);
-assert.equal(gardenMatch.economy.reinforcementLimit(TEAM.PLAYER), 3);
+const gardenLiveDeployment = gardenMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.CENTER, unitType: "fighter" });
+assert.equal(gardenLiveDeployment.ok, true);
+assert.equal(gardenMatch.simulation.state.lanes.get(LANE.CENTER).unitIds.get(TEAM.PLAYER).length, 3);
 assert.equal(gardenMatch.pause(), true);
 assert.equal(gardenMatch.returnToTitle(), true);
 assert.equal(gardenMatch.state, MATCH_STATE.TITLE);

@@ -10,11 +10,6 @@ export class EconomySystem {
       economyLevel: 0,
       turretLevel: 0,
       weaponLevel: 0,
-      logisticsLevel: 0,
-      pendingEconomyLevels: 0,
-      pendingTurretLevels: 0,
-      pendingWeaponLevels: 0,
-      pendingLogisticsLevels: 0,
       spending: { fleet: 0, economy: 0, research: 0 },
     }]));
   }
@@ -47,37 +42,19 @@ export class EconomySystem {
     }
   }
 
-  reinforcementLimit(team) {
-    return this.balance.maxPurchasedReinforcementsPerDeployment
-      + this.get(team).logisticsLevel * this.balance.logisticsUpgradeSlotBonus;
-  }
-
   weaponDamageMultiplier(team) {
     return 1 + this.get(team).weaponLevel * this.balance.weaponUpgradeDamageBonus;
-  }
-
-  pendingUpgradeCount(team) {
-    const economy = this.get(team);
-    return economy.pendingEconomyLevels
-      + economy.pendingTurretLevels
-      + economy.pendingWeaponLevels
-      + economy.pendingLogisticsLevels;
   }
 
   recordFleetPurchase(team, amount) {
     this.get(team).spending.fleet += amount;
   }
 
-  recordFleetRefund(team, amount) {
-    this.get(team).spending.fleet = Math.max(0, this.get(team).spending.fleet - amount);
-  }
-
   upgradeFields(upgradeId) {
     return {
-      economy: ["economyLevel", "pendingEconomyLevels", "economyUpgradeBaseCost", "economyUpgradeCostGrowth", "economyUpgradeMaxLevel"],
-      weapons: ["weaponLevel", "pendingWeaponLevels", "weaponUpgradeBaseCost", "weaponUpgradeCostGrowth", "weaponUpgradeMaxLevel"],
-      turret: ["turretLevel", "pendingTurretLevels", "turretUpgradeBaseCost", "turretUpgradeCostGrowth", "turretUpgradeMaxLevel"],
-      logistics: ["logisticsLevel", "pendingLogisticsLevels", "logisticsUpgradeBaseCost", "logisticsUpgradeCostGrowth", "logisticsUpgradeMaxLevel"],
+      economy: ["economyLevel", "economyUpgradeBaseCost", "economyUpgradeCostGrowth", "economyUpgradeMaxLevel"],
+      weapons: ["weaponLevel", "weaponUpgradeBaseCost", "weaponUpgradeCostGrowth", "weaponUpgradeMaxLevel"],
+      turret: ["turretLevel", "turretUpgradeBaseCost", "turretUpgradeCostGrowth", "turretUpgradeMaxLevel"],
     }[upgradeId] ?? null;
   }
 
@@ -85,43 +62,22 @@ export class EconomySystem {
     const economy = this.get(team);
     const fields = this.upgradeFields(upgradeId);
     if (!fields) return null;
-    const [activeKey, pendingKey, baseCostKey, growthKey, maximumKey] = fields;
-    const level = economy[activeKey] + economy[pendingKey];
+    const [activeKey, baseCostKey, growthKey, maximumKey] = fields;
+    const level = economy[activeKey];
     return level >= this.balance[maximumKey] ? null : Math.ceil(this.balance[baseCostKey] * this.balance[growthKey] ** level);
   }
 
   buyUpgrade(team, upgradeId) {
     const fields = this.upgradeFields(upgradeId);
     if (!fields) return { ok: false, reason: "UNKNOWN_UPGRADE" };
-    if (this.pendingUpgradeCount(team) > 0) return { ok: false, reason: "RESEARCH_SLOT_USED" };
     const cost = this.upgradeCost(team, upgradeId);
     if (cost === null) return { ok: false, reason: "MAX_LEVEL" };
     const economy = this.get(team);
     if (economy.energy < cost) return { ok: false, reason: "INSUFFICIENT_ENERGY" };
     economy.energy -= cost;
-    const [activeKey, pendingKey] = fields;
-    economy[pendingKey] += 1;
+    const [activeKey] = fields;
+    economy[activeKey] += 1;
     economy.spending[upgradeId === "economy" ? "economy" : "research"] += cost;
-    const level = economy[activeKey] + economy[pendingKey];
-    return { ok: true, cost, level, activatesNextDeployment: true };
-  }
-
-  activatePendingUpgrades() {
-    const activated = [];
-    for (const team of teams) {
-      const economy = this.get(team);
-      if (economy.pendingEconomyLevels || economy.pendingTurretLevels || economy.pendingWeaponLevels || economy.pendingLogisticsLevels) {
-        activated.push({ team, economy: economy.pendingEconomyLevels, turret: economy.pendingTurretLevels, weapons: economy.pendingWeaponLevels, logistics: economy.pendingLogisticsLevels });
-      }
-      economy.economyLevel += economy.pendingEconomyLevels;
-      economy.turretLevel += economy.pendingTurretLevels;
-      economy.weaponLevel += economy.pendingWeaponLevels;
-      economy.logisticsLevel += economy.pendingLogisticsLevels;
-      economy.pendingEconomyLevels = 0;
-      economy.pendingTurretLevels = 0;
-      economy.pendingWeaponLevels = 0;
-      economy.pendingLogisticsLevels = 0;
-    }
-    return activated;
+    return { ok: true, cost, level: economy[activeKey], activatesImmediately: true };
   }
 }

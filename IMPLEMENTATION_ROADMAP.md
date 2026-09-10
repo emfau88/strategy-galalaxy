@@ -1,6 +1,52 @@
-# Strategy Galalaxy – aktuelle Umbau-Roadmap
+# Strategy Galalaxy – Core Gameplay Rework Roadmap
 
-Stand: 2026-09-09
+Stand: 2026-09-10
+
+## Aktiver Rework
+
+Die verbindliche Zielrichtung steht in [STRATEGY_GALALAXY_CORE_VISION.md](STRATEGY_GALALAXY_CORE_VISION.md). Die darunter dokumentierten früheren Meilensteine bleiben als Historie des stabilen Ausgangsstands erhalten, sind aber keine Produktvorgabe für das neue Live-Deployment.
+
+### Bulk 1 – Vertrag und Map-Konfiguration
+
+- [x] Das Queue-/Lock-in-Modell durch Live-Deployment plus unabhängige Auto-Waves als verbindliche Core-Vision ersetzen.
+- [x] Level 1 mit einer und Level 2 mit zwei Lanes festschreiben.
+- [x] Die vorhandene Weltlänge und vertikale Mobile-Kamera als Invariante erhalten.
+- [x] Map-Feature-Flags für Capture Nodes, Gebäude, Turrets, Carrier und Dekorationszonen einführen.
+- [x] Game-Design- und Architekturvertrag auf den Zielzustand umstellen und den Migrationsstatus ausweisen.
+- [x] Foundation-Regressionen für Lane-Zahlen, Weltlänge und Feature-Deklaration ergänzen.
+
+### Bulk 2 – Auto-Wave und Live-Deployment trennen
+
+- [x] Den DeploymentDirector auf kostenlose automatische Waves und deren Backlog reduzieren.
+- [x] Bezahlte Einheiten unmittelbar über einen atomaren Live-Deployment-Pfad starten.
+- [x] Queue, Refund, Lock-in und bezahlte Wave-Slots aus Simulation und Tests entfernen.
+- [x] Datengetriebene Cooldowns und jederzeit kaufbare Upgrades einführen.
+
+### Bulk 3 – Squad-Käufe und Formationen
+
+- [ ] Eine Kaufentscheidung auf ein oder mehrere sichtbare Squad-Mitglieder abbilden.
+- [ ] Gemeinsame Kosten, Lane, Launch und Cooldown mit individuellen HP und Verlusten verbinden.
+- [ ] Formationen und Kapazitätsprüfungen für zehn bis zwanzig sichtbare Schiffe absichern.
+
+### Bulk 4 – Core-Maps und Carrier
+
+- [ ] Deaktivierte Map-Features vollständig aus Erzeugung, Simulation, KI, HUD und Rendering isolieren.
+- [ ] Headquarters als teilweise außerhalb der Karte liegende Command Carrier präsentieren.
+- [ ] Ruhige Spielfeldmitte und randgebundene Dekoration herstellen.
+
+### Bulk 5 – HUD und Live-KI
+
+- [ ] Kosten, Cooldowns, Sperrgründe, Energie, Einkommen und Auto-Wave-Timer mobile-lesbar darstellen.
+- [ ] Lane-Wahl für variable Lane-Anzahlen beibehalten.
+- [ ] KI über denselben Live-Deployment-Pfad reagieren, sparen und Pushes vorbereiten lassen.
+
+### Bulk 6 – Combat-Tuning und Core-Slice-Abnahme
+
+- [ ] Battle Zones, Rollen, Time-to-kill, Abstände, Größenhierarchie und Waffenlesbarkeit abstimmen.
+- [ ] Foundation-, Stress- und Browserprüfungen auf das neue System migrieren.
+- [ ] Level 1 und 2 auf realen Mobile-Viewports entlang des neuen Kernloops abnehmen.
+
+## Historischer Ausgangsstand
 
 Diese Datei ist der lebende Arbeitsplan für den Umbau zu größeren, langsameren und
 lesbareren Weltraumschlachten. Abgeschlossene Punkte werden erst nach automatischer

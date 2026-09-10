@@ -2,12 +2,25 @@ import { LANE, TEAM } from "../core/constants.js";
 
 const freeze = (value) => Object.freeze(value);
 
+// Product-level switches for the fleet-combat core slice. The declarations are
+// intentionally map-owned so later levels can opt back into objectives and
+// structures without teaching the simulation that every map has the same shape.
+export const CORE_SLICE_FEATURES = freeze({
+  captureNodes: false,
+  economyBuildings: false,
+  defensiveTurrets: false,
+  neutralStructures: false,
+  commandCarriers: true,
+  centerDecorations: false,
+  edgeDecorations: true,
+});
+
 export const UNIT_DEFINITIONS = freeze({
   drone: freeze({ id: "drone", role: "skirmisher", cost: 0, purchasable: false, maxHp: 28, speed: 64, acceleration: 160, turnRate: 6.2, collisionRadius: 5, spacingRadius: 11, attackRange: 68, aggroRange: 110, targetLeash: 142, damage: 2, fireInterval: 1.45, projectileId: "scout_pulse", muzzleOffset: 6, captureStrength: 0.2, color: "#b8f4ff" }),
-  scout: freeze({ id: "scout", role: "screen", cost: 50, maxHp: 62, speed: 70, acceleration: 150, turnRate: 5.4, collisionRadius: 7, spacingRadius: 14, attackRange: 76, aggroRange: 130, targetLeash: 166, damage: 4, fireInterval: 1.2, projectileId: "scout_pulse", muzzleOffset: 8, salvoCount: 2, salvoSpread: 0.035, hardpointSpacing: 4, captureStrength: 2, color: "#9cecff" }),
-  fighter: freeze({ id: "fighter", role: "escort", cost: 90, maxHp: 112, speed: 56, acceleration: 112, turnRate: 4.4, collisionRadius: 9, spacingRadius: 18, attackRange: 105, aggroRange: 170, targetLeash: 210, damage: 7, fireInterval: 0.72, projectileId: "fighter_laser", muzzleOffset: 11, salvoCount: 3, salvoSpread: 0.026, hardpointSpacing: 6, captureStrength: 1, color: "#c7e8ff" }),
-  bomber: freeze({ id: "bomber", role: "siege", cost: 140, maxHp: 96, speed: 34, acceleration: 58, turnRate: 2.6, collisionRadius: 11, spacingRadius: 21, attackRange: 148, aggroRange: 215, targetLeash: 260, damage: 34, fireInterval: 2.25, projectileId: "siege_missile", muzzleOffset: 14, captureStrength: 0.5, color: "#ffd5a0" }),
-  frigate: freeze({ id: "frigate", role: "heavy", cost: 180, maxHp: 390, speed: 27, acceleration: 40, turnRate: 1.7, collisionRadius: 14, spacingRadius: 28, attackRange: 132, aggroRange: 190, targetLeash: 230, damage: 18, fireInterval: 1.32, projectileId: "heavy_cannon", muzzleOffset: 18, salvoCount: 3, salvoInterval: 0.15, salvoSpread: 0.018, hardpointSpacing: 13, captureStrength: 0.75, broadside: true, color: "#c4b9ff" }),
+  scout: freeze({ id: "scout", role: "screen", cost: 50, deploymentCooldownSeconds: 2.5, maxHp: 62, speed: 70, acceleration: 150, turnRate: 5.4, collisionRadius: 7, spacingRadius: 14, attackRange: 76, aggroRange: 130, targetLeash: 166, damage: 4, fireInterval: 1.2, projectileId: "scout_pulse", muzzleOffset: 8, salvoCount: 2, salvoSpread: 0.035, hardpointSpacing: 4, captureStrength: 2, color: "#9cecff" }),
+  fighter: freeze({ id: "fighter", role: "escort", cost: 90, deploymentCooldownSeconds: 4, maxHp: 112, speed: 56, acceleration: 112, turnRate: 4.4, collisionRadius: 9, spacingRadius: 18, attackRange: 105, aggroRange: 170, targetLeash: 210, damage: 7, fireInterval: 0.72, projectileId: "fighter_laser", muzzleOffset: 11, salvoCount: 3, salvoSpread: 0.026, hardpointSpacing: 6, captureStrength: 1, color: "#c7e8ff" }),
+  bomber: freeze({ id: "bomber", role: "siege", cost: 140, deploymentCooldownSeconds: 6, maxHp: 96, speed: 34, acceleration: 58, turnRate: 2.6, collisionRadius: 11, spacingRadius: 21, attackRange: 148, aggroRange: 215, targetLeash: 260, damage: 34, fireInterval: 2.25, projectileId: "siege_missile", muzzleOffset: 14, captureStrength: 0.5, color: "#ffd5a0" }),
+  frigate: freeze({ id: "frigate", role: "heavy", cost: 180, deploymentCooldownSeconds: 8, maxHp: 390, speed: 27, acceleration: 40, turnRate: 1.7, collisionRadius: 14, spacingRadius: 28, attackRange: 132, aggroRange: 190, targetLeash: 230, damage: 18, fireInterval: 1.32, projectileId: "heavy_cannon", muzzleOffset: 18, salvoCount: 3, salvoInterval: 0.15, salvoSpread: 0.018, hardpointSpacing: 13, captureStrength: 0.75, broadside: true, color: "#c4b9ff" }),
   battlecruiser: freeze({ id: "battlecruiser", role: "capital", cost: 320, maxHp: 480, speed: 23, acceleration: 30, turnRate: 1.35, collisionRadius: 22, spacingRadius: 30, attackRange: 154, aggroRange: 220, targetLeash: 266, damage: 46, fireInterval: 0.9, projectileId: "heavy_bolt", muzzleOffset: 24, salvoCount: 5, salvoInterval: 0.12, salvoSpread: 0.016, hardpointSpacing: 14, broadside: true, color: "#d4b5ff", enabled: false }),
   dreadnought: freeze({ id: "dreadnought", role: "capital", cost: 520, maxHp: 880, speed: 18, acceleration: 22, turnRate: 1.05, collisionRadius: 29, spacingRadius: 36, attackRange: 176, aggroRange: 245, targetLeash: 294, damage: 82, fireInterval: 1.15, projectileId: "heavy_bolt", muzzleOffset: 30, salvoCount: 7, salvoInterval: 0.11, salvoSpread: 0.014, hardpointSpacing: 15, broadside: true, color: "#f0b5ff", enabled: false }),
 });
@@ -30,12 +43,12 @@ export const ORBITAL_GARDEN = freeze({
   id: "orbital_garden",
   level: 1,
   title: "ORBITAL GARDEN",
+  features: CORE_SLICE_FEATURES,
   visualTheme: "orbital_garden",
   movementScale: 0.78,
   spacingScale: 1.22,
   balanceOverrides: freeze({
     baseWaveDronesPerLane: 2,
-    maxPurchasedReinforcementsPerDeployment: 3,
     startingEnergy: 270,
   }),
   bounds: freeze({ width: 420, height: 1180 }),
@@ -61,6 +74,7 @@ export const CLASSIC_LANES = freeze({
   id: "classic_lanes",
   level: 2,
   title: "TWIN FRONTS",
+  features: CORE_SLICE_FEATURES,
   visualTheme: "twin_foundries",
   bounds: freeze({ width: 420, height: 1180 }),
   lanes: freeze([

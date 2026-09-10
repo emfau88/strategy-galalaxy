@@ -7,7 +7,6 @@ const variants = [
   { id: "rush", player: "fleet", enemy: "balanced" },
   { id: "greed", player: "economy", enemy: "fleet" },
   { id: "weapons-tech", player: "weapons", enemy: "economy" },
-  { id: "logistics-tech", player: "logistics", enemy: "weapons" },
   { id: "mixed", player: "balanced", enemy: "balanced" },
 ];
 

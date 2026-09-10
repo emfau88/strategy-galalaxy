@@ -1,11 +1,12 @@
 import { CONFIG } from "../config.js";
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
-import { createBattleState, emitSimulationEvent } from "./battleState.js";
+import { createBattleState } from "./battleState.js";
 import { BattleSimulation } from "./battleSimulation.js";
 import { CaptureSystem } from "./captureSystem.js";
 import { CommandSystem } from "./commandSystem.js";
 import { DeploymentDirector } from "./deploymentDirector.js";
 import { EconomySystem } from "./economySystem.js";
+import { LiveDeploymentSystem } from "./liveDeploymentSystem.js";
 import { AI_PROFILES, INVESTMENT_BIASES, OpponentAi } from "./opponentAi.js";
 import { CLASSIC_LANES } from "../data/definitions.js";
 
@@ -25,11 +26,10 @@ export class MatchDirector {
     this.capture = new CaptureSystem({ captureRatePerSecond: this.config.balance.nodeCaptureRatePerSecond });
     this.commands = new CommandSystem();
     this.deployment = new DeploymentDirector({ config: this.config, laneIds: mapDefinition.lanes.map((lane) => lane.id) });
+    this.liveDeployment = new LiveDeploymentSystem({ config: this.config });
     this.events = [];
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
-    this.aiReplannedForCycle = null;
-    this.lastUpgradeActivations = [];
   }
 
   start() {
@@ -37,15 +37,14 @@ export class MatchDirector {
     this.resumeState = null;
     this.activeMatchSeconds = 0;
     this.economy = new EconomySystem({ balance: this.config.balance });
-    this.simulation = new BattleSimulation({ state: createBattleState({ map: this.mapDefinition }), economy: this.economy });
+    this.simulation = new BattleSimulation({ state: createBattleState({ map: this.mapDefinition }), economy: this.economy, config: this.config });
     this.deployment = new DeploymentDirector({ config: this.config, laneIds: this.mapDefinition.lanes.map((lane) => lane.id) });
+    this.liveDeployment = new LiveDeploymentSystem({ config: this.config });
     this.events = [{ type: "MATCH_STARTED", state: this.state }];
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
-    this.aiReplannedForCycle = null;
-    this.lastUpgradeActivations = [];
 
-    // Start with symmetric free pressure; the first paid planning window begins immediately.
+    // Free pressure starts immediately; paid commands remain independent of this cadence.
     this.deployWaves();
     this.planAi();
     return true;
@@ -58,6 +57,7 @@ export class MatchDirector {
   advanceLive(step) {
     if (this.state !== MATCH_STATE.LIVE_MATCH) return false;
     this.economy.advance(this.simulation.state, step, this.activeMatchSeconds);
+    this.liveDeployment.advance(step);
     this.simulation.step(step);
     this.capture.advance(this.simulation.state, step);
     this.activeMatchSeconds += step;
@@ -70,20 +70,15 @@ export class MatchDirector {
       return true;
     }
 
-    if (!this.deployment.advance(step)) {
-      this.maybeReplanAi();
-      return false;
-    }
-    this.activatePendingUpgrades();
+    if (!this.deployment.advance(step)) return false;
     this.deployWaves();
     this.planAi();
     return true;
   }
 
-  /** QA helper. Normal gameplay deploys only through the continuous timer. */
-  forceDeployment() {
+  /** QA helper. Normal automatic waves deploy only through the continuous timer. */
+  forceWave() {
     if (this.state !== MATCH_STATE.LIVE_MATCH) return false;
-    this.activatePendingUpgrades();
     this.deployWaves();
     this.planAi();
     return true;
@@ -95,57 +90,13 @@ export class MatchDirector {
     return result;
   }
 
-  activatePendingUpgrades() {
-    const fields = {
-      economy: ["economy", "economyLevel"],
-      weapons: ["weapons", "weaponLevel"],
-      turret: ["turret", "turretLevel"],
-      logistics: ["logistics", "logisticsLevel"],
-    };
-    this.lastUpgradeActivations = [];
-    for (const activation of this.economy.activatePendingUpgrades()) {
-      const headquarters = this.simulation.state.structures.get(activation.team === TEAM.PLAYER ? "player-hq" : "enemy-hq");
-      for (const [upgradeId, [amountKey, levelKey]] of Object.entries(fields)) {
-        if (!activation[amountKey]) continue;
-        const event = {
-          type: "upgrade_activated",
-          team: activation.team,
-          upgradeId,
-          level: this.economy.get(activation.team)[levelKey],
-          x: headquarters?.x,
-          y: headquarters?.y,
-        };
-        this.lastUpgradeActivations.push(event);
-        emitSimulationEvent(this.simulation.state, event);
-      }
-    }
-    return this.lastUpgradeActivations;
-  }
-
-  planAi({ revise = false } = {}) {
-    if (revise) {
-      for (const laneId of this.mapDefinition.lanes.map((lane) => lane.id)) {
-        for (const entry of [...this.queuedWaves.get(TEAM.ENEMY).get(laneId)].reverse()) {
-          this.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.ENEMY, laneId, queueEntryId: entry.id });
-        }
-      }
-    }
+  planAi() {
     const result = this.ai.plan(this);
     if (result.ok) {
       this.lastAiDecision = result.decision;
       this.events.push({ type: "AI_PLANNED", decision: result.decision });
     }
     return result;
-  }
-
-  maybeReplanAi() {
-    if (this.queueLocked || this.aiReplannedForCycle === this.cycle) return false;
-    if (this.phaseRemaining > this.config.timing.aiReplanSecondsBeforeDeployment) return false;
-    const result = this.planAi({ revise: true });
-    if (!result.ok) return false;
-    this.aiReplannedForCycle = this.cycle;
-    this.events.push({ type: "AI_REPLANNED", cycle: this.cycle, decision: result.decision });
-    return true;
   }
 
   setAiProfile(profile) {
@@ -186,14 +137,16 @@ export class MatchDirector {
     return true;
   }
 
-  get queuedWaves() { return this.deployment.queuedWaves; }
   get baseWaveBacklog() { return this.deployment.baseWaveBacklog; }
-  get nextQueueSequence() { return this.deployment.nextQueueSequence; }
-  set nextQueueSequence(value) { this.deployment.nextQueueSequence = value; }
   get cycle() { return this.deployment.cycleNumber; }
   get lastDeploymentAt() { return this.deployment.lastDeploymentAt; }
-  lastDeploymentAtFor(team, laneId) { return this.deployment.lastDeploymentAtByTeamLane.get(team)?.get(laneId) ?? null; }
+  lastDeploymentAtFor(team, laneId) {
+    const waveAt = this.deployment.lastDeploymentAtByTeamLane.get(team)?.get(laneId);
+    const liveAt = this.liveDeployment.lastDeploymentAtFor(team, laneId);
+    if (waveAt === null || waveAt === undefined) return liveAt;
+    if (liveAt === null || liveAt === undefined) return waveAt;
+    return Math.max(waveAt, liveAt);
+  }
   get phaseRemaining() { return this.deployment.timeUntilDeployment; }
-  get queueLocked() { return this.deployment.locked; }
   get activeBattleSeconds() { return this.activeMatchSeconds; }
 }

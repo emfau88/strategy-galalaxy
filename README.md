@@ -2,52 +2,55 @@
 
 **[▶ Strategy Galalaxy spielen](https://emfau88.github.io/strategy-galalaxy/)**
 
-Strategy Galalaxy ist ein eigenständiges, Mobile-First Space-Lane-Wars-Spiel im Portraitformat. Zwei Flotten kämpfen kontinuierlich auf einer hohen, vertikal erkundbaren Karte, während der Spieler die nächste Verstärkungswelle vorbereitet. Beide Seiten deployen automatisch und gleichzeitig alle 22 Sekunden; die letzten zwei Sekunden sind gesperrt.
+Strategy Galalaxy ist ein eigenständiges Mobile-First-Space-Lane-Wars-Spiel im Portraitformat. Zwei Flotten kämpfen kontinuierlich auf einer hohen, vertikal erkundbaren Karte. Energie entsteht permanent, kostenlose Drone-Waves halten die Front aktiv und bezahlte Einheiten beziehungsweise Squads sollen unmittelbar nach der Entscheidung starten.
 
 ```text
 Die Front beobachten
-  → je nach Karte 3–4 Verstärkungen planen
-  → Queue bis zum Lock-in anpassen
-  → simultanes Deployment nach 22 Sekunden
-  → Überlebende kämpfen weiter
-  → sofort die nächste Welle planen
+  → Einheit oder Squad und gegebenenfalls Lane wählen
+  → Verstärkung sofort losschicken
+  → sichtbare Wirkung an der Front beobachten
+  → auf die gegnerische Reaktion antworten
 ```
 
-Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. Bewegung, Schüsse, Capture und Einkommen laufen bis zur Zerstörung eines Headquarters weiter.
+Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. Die automatische Wave und das Live-Deployment sind getrennte Systeme. Level 1 besitzt eine Lane, Level 2 zwei Lanes; weitere Maps dürfen andere Lane-Strukturen verwenden.
 
 ## Aktueller Spielstand
 
-- Kontinuierlicher `LIVE_MATCH` mit 22-Sekunden-Deployment und Zwei-Sekunden-Lock-in.
-- Zwei wählbare Karten: Level 1 „Orbital Garden“ als großzügige Ein-Lane-Front und Level 2 „Twin Fronts“ mit zwei parallelen Lanes; beide nutzen eine `420 x 1180` Scroll-Welt.
+Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Bulks 1 und 2 sind umgesetzt: Die Runtime nutzt bereits sofortiges Deployment mit Cooldowns und davon unabhängige automatische Drone-Waves. Nodes, Turrets und die bisherige HQ-Darstellung werden im späteren Map-/Carrier-Bulk deaktiviert beziehungsweise ersetzt.
+
+- Kontinuierlicher `LIVE_MATCH` ohne Kauf-Queue, Lock-in, Refund oder bezahlte Wave-Slots.
+- Scout, Fighter, Bomber und Frigate starten unmittelbar in der gewählten Lane; eine kurze Hangar-Traversal inszeniert den Launch.
+- Eigene datengetriebene Cooldowns pro Einheitentyp laufen ausschließlich in aktiver Simulationszeit.
+- Kosten und Cooldown werden atomar erst nach erfolgreichem Spawn gesetzt.
+- Kostenlose symmetrische Drone-Waves starten unabhängig davon initial alle 22 Sekunden und besitzen einen eigenen Kapazitäts-Backlog.
+- Reactor- und Weapons-Upgrades können jederzeit gekauft werden und wirken unmittelbar. Frühere Logistics-Slots sind entfernt; Turret-Upgrades sind auf Core-Maps nicht verfügbar.
+- Die KI verwendet für ihre vorläufigen Wave-Entscheidungen denselben Live-Deployment-Befehl, dieselben Kosten und Cooldowns.
+- Zwei wählbare Karten: Level 1 „Orbital Garden“ mit einer Lane und Level 2 „Twin Fronts“ mit zwei Lanes; beide nutzen eine `420 × 1180` Scroll-Welt.
 - Eine schmale strategische Kartenleiste zeigt Fronten, Strukturen, Nodes und den aktuellen Kameraausschnitt.
-- Schwache automatische Drones pro Lane und Deployment sowie kartenabhängig drei oder vier gekaufte Verstärkungsslots; Scouts bleiben wertvolle Capture-Spezialisten.
-- Sofortige Energiereservierung, vollständige Rückerstattung vor Lock-in und Upgrade-Aktivierung am nächsten Deployment.
-- Gedeckelte Economy mit 270 Startenergie in Level 1 beziehungsweise 300 in Level 2, 16 Basisenergie/s, 7 Energie/s pro Node und maximal 780 gespeicherter Energie.
-- Vier konkurrierende, konkret beschriftete Investitionen: Reactor-Einkommen, Arsenal-Flottenschaden, Bastion-Turret-Feuerkraft und zusätzliche Hangar-Slots. Pro Welle kann ein Projekt vorbereitet werden; es wird an der nächsten Deployment-Grenze hörbar und sichtbar aktiv.
-- Regelgebundene KI mit denselben Kosten, Slots, Timern, Kapazitäten und Upgrade-Regeln wie der Spieler, drei wählbaren Profilen und genau einer Neubewertung kurz vor dem Lock-in.
-- Scout, Fighter, Bomber und Frigate mit eigenen Rollen, Formationen, Zielprioritäten und Capture-Stärken.
+- Gedeckelte Economy mit 270 Startenergie in Level 1 beziehungsweise 300 in Level 2, 16 Basisenergie/s und maximal 780 gespeicherter Energie; Node-Einkommen wird mit Bulk 4 entfernt.
+- Scout, Fighter, Bomber und Frigate besitzen eigene Rollen, Formationen und Zielprioritäten.
 - Zwei vereinheitlichte hochauflösende Flottenfamilien mit identischer Draufsicht und Beleuchtung: Elfenbein/Messing/Cyan für den Spieler, Anthrazit/Kupfer/Coral für den Rivalen. Drones besitzen nun eigene kleinere Hüllen. Die flammenfreien Schiffe nutzen die originalen animierten Nairan-/Kla'ed-Triebwerksflammen aus Galalaxy, die als enge Asset-Crops an exakt kalibrierten Düsenpunkten sitzen.
 - Acht eigenständige Waffen-Sprites trennen Klasse und Fraktion sofort: Spielerfeuer ist cyan/elfenbein/messingfarben, Rivalenfeuer coral/kupfer/anthrazit. Scout-Pulse, Fighter-Laser, Bomber-Homing-Raketen und Frigate-Geschosse besitzen eigene Silhouetten sowie kurze Echos, lange Laserkerne, segmentierte Abgaswege beziehungsweise schwere gestrichelte Wakes. Mehrfachsalven bleiben schadensneutral; Frigate-Breitseiten starten sichtbar nacheinander von drei Hardpoints.
 - Deutliches Schadensfeedback durch kurzen Hull-Flash, expandierende Schildkontur, projektilabhängigen Impact-Glow, Funken und situative Healthbars. Jeder Schiffstyp spielt beim Tod seine originale 8–18-phasige Galalaxy-Zerstörungssequenz mit deren 14-FPS-Timing; Turrets und HQs nutzen längere, silhouettenfreie Struktur-Explosionen.
-- Modulare Defense Turrets mit eigenem weich nachgeführtem Geschütz, sichtbarem Doppelmündungsfeuer und Schussrückstoß. Cyan- und Coral-Lampen sind direkt in getrennte Team-Basen gemalt; Level 1 nutzt strikt top-down gezeichnete Garten-Turrets und zwei eigenständig ausgerichtete Headquarters statt einer kopfstehenden Spiegelung.
+- Noch vorhandene Defense Turrets und Headquarters bleiben bis zum Map-/Carrier-Bulk funktionaler Migrationsbestand.
 - Keine großflächigen Team-Neonringe oder dekorativen Orbit-Ellipsen; Nodes zeigen Capture-Fortschritt kompakt unterhalb des Sprites.
 - Faire Projektilbudgets pro Team und Lane sowie globale Sicherheitsgrenzen für mobile Geräte; die Kartenleiste pulsiert bei frischen Offscreen-Treffern und Zerstörungen.
 - Responsive Canvas-Höhe mit bildschirmfestem HUD und einer davon entkoppelten `420 x 1180` Spielwelt. Die beiden Level-1-Hintergrundsektoren werden proportional beschnitten und weich überblendet, nicht auf Mobile verzerrt.
 - Über das Pause-Menü kann jederzeit zum Hauptmenü zurückgekehrt werden; der Ergebnisbildschirm bietet getrennt „Play Again“ und „Main Menu“.
 - Größere Mobile-Touchflächen, direkt in den Lane-Tabs sichtbarer Druckvergleich sowie ein kurzer Drei-Schritte-Einstieg auf dem Startbildschirm.
-- Integriertes HQ-Kommandomenü: Der Normalzustand zeigt nur einen kompakten Command-/Queue-/Status-Dock; ein Tap auf das eigene HQ oder „Command“ öffnet Fleet- und Upgrade-Tabs. Die Kamera gibt geschlossen 120 zusätzliche Design-Pixel für die Schlacht frei.
+- Integriertes HQ-Kommandomenü: Der Normalzustand zeigt Lane, Live-Deployment und Auto-Wave-Timer; ein Tap auf das eigene HQ oder „Command“ öffnet Fleet- und Upgrade-Tabs.
 - Schaltbare, synthetisierte Combat-Sounds und an echte Nutzergesten gebundenes Haptik-Feedback ohne zusätzliche Audio-Lizenzabhängigkeit.
 - Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt in zwei Stufen nur 36–38 aktive Bilder pro Level. Große Level-1-Quellen besitzen mobile `840 px`-Ableitungen, und GitHub Pages veröffentlicht ausschließlich das kuratierte Spielartefakt statt der 516 Referenzdateien.
 
 ## Einheiten
 
-| Schiff | Rolle | Waffenbild | Capture |
+| Schiff | Rolle | Waffenbild | Live-Cooldown |
 | --- | --- | --- | ---: |
-| Drone | automatische, fragile Grundwelle | kleiner Pulse/Bullet | 0,2 |
-| Scout | schneller Node- und Map-Control-Spezialist | leichter Pulse/Bullet | 2,0 |
-| Fighter | Anti-Light- und Anti-Bomber-Escort | schnelle Bolt-/Ray-Salve | 1,0 |
-| Bomber | verwundbarer Siege- und Anti-Heavy-Angreifer | sichtbare Homing-Rakete/Torpedo | 0,5 |
-| Frigate | langlebiger Frontline-Anker | langsamer, schwerer Ray/Big Bullet | 0,75 |
+| Drone | automatische, fragile Grundwelle | kleiner Pulse/Bullet | nicht kaufbar |
+| Scout | schneller Screen | leichter Pulse/Bullet | 2,5 s |
+| Fighter | Anti-Light- und Anti-Bomber-Escort | schnelle Bolt-/Ray-Salve | 4 s |
+| Bomber | verwundbarer Siege- und Anti-Heavy-Angreifer | sichtbare Homing-Rakete/Torpedo | 6 s |
+| Frigate | langlebiger Frontline-Anker | langsamer, schwerer Ray/Big Bullet | 8 s |
 
 Die Darstellung bleibt klassenabhängig, nutzt im höheren Schlachtfeld aber größere Silhouetten. Kollisionsradien und Simulationswerte bleiben davon getrennt; spätere Atlas-Zuschnitte können noch mehr sichtbare Details schaffen, ohne das Gameplay heimlich zu verändern.
 
@@ -87,12 +90,12 @@ npm.cmd run balance:experiments -- 30
 npm.cmd run balance:investments -- 8
 ```
 
-Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Forschung, Capture, Targeting, gespiegelte Kartengeometrie, dichte Flotten, Projektile, alle Runtime-Manifeste und die 516 Dateien der importierten Bibliothek ab. Der Browserlauf emuliert fünf echte Mobile-Viewports und prüft Start, Schwierigkeitswahl, Touch, Pause, Sound, Kamera sowie Console-/Netzwerkfehler. Die Balance-Simulation meldet zusätzlich Käufe, getrennte Ausgabenkategorien, Upgrades, Nodekontrolle und Spitzenlast; die Experimentläufe vergleichen Economy-Konfigurationen sowie Rush-, Greed-, Weapons-, Logistics- und Mischstrategien reproduzierbar.
+Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische Waves, Economy, Upgrades, Capture-Migrationsbestand, Targeting, Kartengeometrie, dichte Flotten, Projektile, alle Runtime-Manifeste und die 516 Dateien der importierten Bibliothek ab. Der Browserlauf emuliert fünf echte Mobile-Viewports und prüft Start, Schwierigkeitswahl, Live-Touch-Deployment, Pause, Sound, Kamera sowie Console-/Netzwerkfehler.
 
 ## Dokumentation
 
-- [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md)
-- [Aktuelle Umbau-Roadmap](IMPLEMENTATION_ROADMAP.md)
+- [Verbindliche Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md)
+- [Aktuelle Core-Rework-Roadmap](IMPLEMENTATION_ROADMAP.md)
 - [Aktuelle Product-Polish-Gesamt-To-do-Liste](docs/PRODUCT_POLISH_ROADMAP.md)
 - [Level-2-Art-Direction und gewählte Hybridrichtung](docs/LEVEL_2_VISUAL_DIRECTIONS.md)
 - [Level-1-Konzept: Orbital Garden](docs/LEVEL_1_ORBITAL_GARDEN_CONCEPT.md)
@@ -106,4 +109,4 @@ Die Prüfungen decken Simulation, Deployment, Lock-in, Economy, Forschung, Captu
 
 ## Status
 
-Die verbindlichen Umbau-Meilensteine 1 bis 6 und der Orbital-Garden-Polish sind umgesetzt: Tall-world-Kamera, langsamere entkoppelte Squad-Formationen, automatische Drones, konkurrierende Economy-/Forschungswege, mockup-nahe Level-1-Sektoren, lesbare klassenspezifische Waffen und das integrierte HQ-Kommandomenü. Foundation-, Asset- und Mobile-Browserprüfungen laufen grün. Die frühere 100-Match-Referenz endete 50:50; nach dem Umbau wird die neue große Balance-Referenz erst nach manuellem Spielgefühl-Test festgeschrieben.
+Bulks 1 und 2 des neuen Core-Reworks sind abgeschlossen: Produktvertrag und Map-Flags stehen, bezahlte Deployments starten sofort mit datengetriebenen Cooldowns, automatische Waves sind technisch getrennt und Upgrades wirken live. Bulk 3 erweitert diesen Pfad um echte Mehrschiff-Squads.

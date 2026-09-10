@@ -375,22 +375,14 @@ export class Game {
       this.sound.play("select");
       return;
     }
-    if (action.type === "REMOVE_LAST_UNIT") {
-      const queue = this.match.queuedWaves.get(TEAM.PLAYER).get(this.selectedLaneId);
-      const entry = queue.at(-1);
-      const result = entry ? this.match.executeCommand({ type: "REMOVE_QUEUED_UNIT", team: TEAM.PLAYER, laneId: this.selectedLaneId, queueEntryId: entry.id }) : { ok: false };
-      this.showFeedback(result.ok ? `REFUNDED ${result.refunded} ENERGY` : "NOTHING TO UNDO");
-      this.sound.play(result.ok ? "select" : "error");
-      return;
-    }
     const result = this.match.executeCommand({ ...action, team: TEAM.PLAYER, laneId: this.selectedLaneId });
-    this.showFeedback(result.ok ? (action.type === "BUY_UPGRADE" ? "PROJECT READY NEXT WAVE" : `${action.unitType.toUpperCase()} QUEUED`) : this.commandFailureLabel(result.reason));
+    this.showFeedback(result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE ONLINE" : `${action.unitType.toUpperCase()} LAUNCHED`) : this.commandFailureLabel(result.reason));
     this.sound.play(result.ok ? "purchase" : "error");
     if (result.ok) this.sound.vibrate(9);
   }
 
   commandFailureLabel(reason) {
-    return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", CAPACITY_RESERVED: "LANE CAPACITY RESERVED", REINFORCEMENT_LIMIT: "ALL REINFORCEMENT SLOTS USED", RESEARCH_SLOT_USED: "ONE PROJECT PER WAVE", QUEUE_LOCKED: "DEPLOYMENT LOCKED", WRONG_PHASE: "PLANNING UNAVAILABLE", MAX_LEVEL: "UPGRADE ALREADY MAXED" })[reason] ?? "COMMAND UNAVAILABLE";
+    return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", LANE_CAPACITY: "LANE AT CAPACITY", COOLDOWN_ACTIVE: "UNIT COOLDOWN ACTIVE", UNAVAILABLE_UPGRADE: "UPGRADE UNAVAILABLE", WRONG_PHASE: "COMMAND UNAVAILABLE", MAX_LEVEL: "UPGRADE ALREADY MAXED" })[reason] ?? "COMMAND UNAVAILABLE";
   }
 
   setCommandDockOpen(open) {
@@ -441,11 +433,6 @@ export class Game {
     if (this.match.cycle > previousCycle) {
       this.sound.play("deploy");
       this.sound.vibrate([12, 24, 18]);
-      const activation = this.match.lastUpgradeActivations.find((event) => event.team === TEAM.PLAYER);
-      if (activation) {
-        const label = { economy: "REACTOR", weapons: "ARSENAL", turret: "BASTION", logistics: "HANGAR" }[activation.upgradeId];
-        this.showFeedback(`${label} ${activation.level} ONLINE`, 2.2);
-      }
     }
     this.syncMatchState();
     this.renderer.render({
@@ -469,7 +456,6 @@ export class Game {
       commandDockOpen: this.commandDockOpen,
       fullscreenActive: this.fullscreenActive,
       soundEnabled: this.sound.enabled,
-      queueLocked: this.match.queueLocked,
       camera: this.camera.snapshot(),
       commandFeedback: this.clock.frameTime < this.commandFeedbackUntil ? this.commandFeedback : null,
       assetProgress: this.loader.progress,

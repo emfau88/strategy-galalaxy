@@ -534,42 +534,6 @@ const drawStructureUpgradeDetails = (ctx, structure, model, size, color) => {
         ctx.fillRect(-5 + index * 7, size * 0.29, 4, 2);
       }
     }
-    if (economy.pendingEconomyLevels > 0) {
-      ctx.save();
-      ctx.globalCompositeOperation = "screen";
-      ctx.globalAlpha = 0.2 + 0.08 * Math.sin(model.frameTime * 4);
-      ctx.strokeStyle = "#f3c47e";
-      ctx.lineWidth = 1.4;
-      ctx.setLineDash([3, 3]);
-      for (const side of [-1, 1]) {
-        ctx.beginPath();
-        ctx.moveTo(side * 7, 4);
-        ctx.lineTo(side * 25, 20);
-        ctx.lineTo(side * 35, 31);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-    for (let index = 0; index < economy.logisticsLevel; index += 1) {
-      const offset = 35 + index * 8;
-      ctx.fillStyle = "rgba(19,31,42,0.94)";
-      ctx.fillRect(-offset - 3, -35, 7, 12);
-      ctx.fillRect(offset - 4, -35, 7, 12);
-      ctx.fillStyle = "#ffd69b";
-      ctx.globalAlpha = 0.8;
-      ctx.fillRect(-offset - 1, -32, 3, 7);
-      ctx.fillRect(offset - 2, -32, 3, 7);
-    }
-    if (economy.pendingLogisticsLevels > 0) {
-      const offset = 35 + economy.logisticsLevel * 8;
-      ctx.fillStyle = "rgba(19,31,42,0.78)";
-      ctx.fillRect(-offset - 3, -35, 7, 12);
-      ctx.fillRect(offset - 4, -35, 7, 12);
-      ctx.fillStyle = color;
-      ctx.globalAlpha = 0.2 + 0.08 * Math.sin(model.frameTime * 4);
-      ctx.fillRect(-offset - 1, -31, 3, 5);
-      ctx.fillRect(offset - 2, -31, 3, 5);
-    }
     for (let index = 0; index < economy.weaponLevel; index += 1) {
       const y = -6 + index * 8;
       for (const side of [-1, 1]) {
@@ -579,14 +543,6 @@ const drawStructureUpgradeDetails = (ctx, structure, model, size, color) => {
         ctx.globalAlpha = 0.78;
         ctx.fillRect(side * 27 - 2.5, y - 1, 5, 2.5);
       }
-    }
-    if (economy.pendingWeaponLevels > 0) {
-      ctx.save();
-      ctx.globalAlpha = 0.22 + 0.08 * Math.sin(model.frameTime * 4);
-      ctx.strokeStyle = color;
-      ctx.setLineDash([2, 2]);
-      for (const side of [-1, 1]) ctx.strokeRect(side * 27 - 4, -8 + economy.weaponLevel * 8, 8, 5);
-      ctx.restore();
     }
     ctx.globalAlpha = 1;
     return;
@@ -605,17 +561,6 @@ const drawStructureUpgradeDetails = (ctx, structure, model, size, color) => {
     ctx.strokeStyle = "rgba(239,193,119,0.82)";
     ctx.lineWidth = 1.4;
     ctx.stroke();
-  }
-  if (economy.pendingTurretLevels > 0) {
-    const side = economy.turretLevel % 2 ? 1 : -1;
-    const row = Math.floor(economy.turretLevel / 2);
-    ctx.save();
-    ctx.globalAlpha = 0.24 + 0.08 * Math.sin(model.frameTime * 4);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.2;
-    ctx.setLineDash([2, 2]);
-    ctx.strokeRect(side * (22 + row * 3) - 5, 1 - row * 7, 10, 11);
-    ctx.restore();
   }
   ctx.globalAlpha = 1;
 };
@@ -923,7 +868,7 @@ export const renderEffectsLayer = (ctx, model) => {
     ctx.save();
     ctx.globalAlpha = alpha;
     if (effect.type === "upgrade") {
-      const upgradeColor = effect.upgradeId === "economy" || effect.upgradeId === "logistics" ? "#f2c47d" : color;
+      const upgradeColor = effect.upgradeId === "economy" ? "#f2c47d" : color;
       ctx.globalCompositeOperation = "screen";
       ctx.strokeStyle = upgradeColor;
       ctx.lineWidth = 2.4 - progress;

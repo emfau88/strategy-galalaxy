@@ -71,9 +71,10 @@ const interceptPoint = (origin, target, projectileSpeed, maximumTime) => {
 };
 
 export class BattleSimulation {
-  constructor({ state = createBattleState(), economy = null } = {}) {
+  constructor({ state = createBattleState(), economy = null, config = CONFIG } = {}) {
     this.state = state;
     this.economy = economy;
+    this.config = config;
     this.stepNumber = 0;
     this.squads = new Map();
   }
@@ -82,7 +83,7 @@ export class BattleSimulation {
     const lane = laneFor(this.state, laneId);
     const laneDefinition = this.state.map.lanes.find((item) => item.id === laneId);
     const active = lane.unitIds.get(team);
-    if (active.length >= CONFIG.caps.unitsPerLaneTeam) return null;
+    if (active.length >= this.config.caps.unitsPerLaneTeam) return null;
     const spawn = team === TEAM.PLAYER ? laneDefinition.playerSpawn : laneDefinition.enemySpawn;
     const targetX = x ?? spawn.x + slotOffsetX;
     const targetY = y ?? spawn.y + slotOffsetY;
@@ -402,8 +403,8 @@ export class BattleSimulation {
     const requestedShots = definition.salvoCount ?? 1;
     const availableShots = Math.min(
       requestedShots,
-      CONFIG.caps.projectilesPerLaneTeam - laneTeamProjectiles,
-      CONFIG.caps.projectiles - this.state.projectiles.size,
+      this.config.caps.projectilesPerLaneTeam - laneTeamProjectiles,
+      this.config.caps.projectiles - this.state.projectiles.size,
     );
     if (availableShots <= 0) {
       emitSimulationEvent(this.state, {
@@ -411,7 +412,7 @@ export class BattleSimulation {
         ownerId: owner.id,
         team: owner.team,
         laneId,
-        reason: laneTeamProjectiles >= CONFIG.caps.projectilesPerLaneTeam ? "lane_team_budget" : "global_safety_budget",
+        reason: laneTeamProjectiles >= this.config.caps.projectilesPerLaneTeam ? "lane_team_budget" : "global_safety_budget",
       });
       return;
     }

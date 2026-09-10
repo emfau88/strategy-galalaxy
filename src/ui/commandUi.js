@@ -19,7 +19,7 @@ export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT],
       fullscreen: COMMAND_UI.fullscreen,
       panel: freezeRect({ x: 8, y: height - 68, width: 404, height: 60 }),
       command: freezeRect({ x: 14, y, width: 126, height: 48 }),
-      queue: freezeRect({ x: 146, y, width: 150, height: 48 }),
+      deploy: freezeRect({ x: 146, y, width: 150, height: 48 }),
       status: freezeRect({ x: 302, y, width: 104, height: 48 }),
       feedbackY: height - 80,
       debugY: height - 102,
@@ -46,10 +46,10 @@ export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT],
     upgradeTab: freezeRect({ x: 210, y: y + 10, width: 194, height: 42 }),
     lanes: Object.freeze(lanes),
     undo: freezeRect({ x: 112, y: y + 174, width: 58, height: 36 }),
-    queue: freezeRect({ x: 174, y: y + 174, width: 126, height: 36 }),
+    deploy: freezeRect({ x: 174, y: y + 174, width: 126, height: 36 }),
     status: freezeRect({ x: 304, y: y + 174, width: 100, height: 36 }),
     units: Object.freeze(cards("unitType", ["scout", "fighter", "bomber", "frigate"])),
-    upgrades: Object.freeze(cards("upgradeId", ["economy", "weapons", "turret", "logistics"])),
+    upgrades: Object.freeze(cards("upgradeId", ["economy", "weapons"])),
     feedbackY: y - 20,
     debugY: y - 42,
   });
@@ -72,7 +72,7 @@ const containsWithSlop = (rect, point, slop = 3) => containsPoint({ x: rect.x - 
 
 export const commandActionAt = (point, menu = "units", height = 760, laneIds = [LANE.LEFT, LANE.RIGHT], expanded = false) => {
   const layout = commandUiLayout(height, laneIds, expanded);
-  if (!expanded) return containsPoint(layout.command, point) || containsPoint(layout.queue, point) ? { type: "TOGGLE_COMMAND_DOCK" } : null;
+  if (!expanded) return containsPoint(layout.command, point) || containsPoint(layout.deploy, point) ? { type: "TOGGLE_COMMAND_DOCK" } : null;
   if (containsPoint(layout.close, point)) return { type: "TOGGLE_COMMAND_DOCK" };
   if (containsPoint(layout.fleetTab, point)) return { type: "SET_COMMAND_MENU", menu: "units" };
   if (containsPoint(layout.upgradeTab, point)) return { type: "SET_COMMAND_MENU", menu: "upgrades" };
@@ -80,12 +80,11 @@ export const commandActionAt = (point, menu = "units", height = 760, laneIds = [
   if (lane) return { type: "SELECT_LANE", laneId: lane.laneId };
   if (menu === "units") {
     const unit = layout.units.find((rect) => containsWithSlop(rect, point));
-    if (unit) return { type: "QUEUE_UNIT", unitType: unit.unitType };
+    if (unit) return { type: "DEPLOY_UNIT", unitType: unit.unitType };
   } else {
     const upgrade = layout.upgrades.find((rect) => containsWithSlop(rect, point));
     if (upgrade) return { type: "BUY_UPGRADE", upgradeId: upgrade.upgradeId };
   }
-  if (containsPoint(layout.undo, point)) return { type: "REMOVE_LAST_UNIT" };
   return null;
 };
 

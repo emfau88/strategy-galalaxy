@@ -180,10 +180,10 @@ try {
   await waitForGame();
   await assertRuntimeAssetsLoaded(1);
   const gardenState = await send("Runtime.evaluate", {
-    expression: `(() => { const g = window.__strategyGalalaxy; return { map: g.match.simulation.state.map.id, lanes: [...g.match.simulation.state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, playerUnits: g.match.simulation.state.lanes.get('LANE_CENTER').unitIds.get('TEAM_PLAYER').length, slots: g.match.economy.reinforcementLimit('TEAM_PLAYER'), assetFailures: g.loader.errors.length }; })()`,
+    expression: `(() => { const g = window.__strategyGalalaxy; return { map: g.match.simulation.state.map.id, lanes: [...g.match.simulation.state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, playerUnits: g.match.simulation.state.lanes.get('LANE_CENTER').unitIds.get('TEAM_PLAYER').length, assetFailures: g.loader.errors.length }; })()`,
     returnByValue: true,
   });
-  assert.deepEqual(gardenState.result.value, { map: "orbital_garden", lanes: ["LANE_CENTER"], worldHeight: 1180, playerUnits: 2, slots: 3, assetFailures: 0 });
+  assert.deepEqual(gardenState.result.value, { map: "orbital_garden", lanes: ["LANE_CENTER"], worldHeight: 1180, playerUnits: 2, assetFailures: 0 });
   const gardenPlayerScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(resolve(output, "level-1-player-sector-420x760.png"), Buffer.from(gardenPlayerScreenshot.data, "base64"));
   const playerHqTap = await send("Runtime.evaluate", { expression: "(() => { const g = window.__strategyGalalaxy; const h = g.match.simulation.state.structures.get('player-hq'); return { x: h.x, y: g.camera.worldToScreenY(h.y) }; })()", returnByValue: true });
@@ -193,8 +193,8 @@ try {
   const commandScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(resolve(output, "hq-command-expanded-420x760.png"), Buffer.from(commandScreenshot.data, "base64"));
   await touch(70, 619);
-  const gardenQueue = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.queuedWaves.get('TEAM_PLAYER').get('LANE_CENTER').length", returnByValue: true });
-  assert.equal(gardenQueue.result.value, 1, "Orbital Garden main-lane queue is touch-operable");
+  const gardenUnits = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.simulation.state.lanes.get('LANE_CENTER').unitIds.get('TEAM_PLAYER').length", returnByValue: true });
+  assert.equal(gardenUnits.result.value, 3, "Orbital Garden main-lane live deployment is touch-operable");
   await touch(206, 565);
   await send("Runtime.evaluate", { expression: "(() => { const g = window.__strategyGalalaxy; for (let step = 0; step < 60 * 36 && g.state === 'LIVE_MATCH'; step += 1) g.match.advanceLive(1 / 60); g.camera.jumpToWorld(640); })()" });
   await delay(100);
@@ -332,7 +332,7 @@ try {
     await waitForGame();
 
     const snapshotResult = await send("Runtime.evaluate", {
-      expression: `(() => { const g = window.__strategyGalalaxy; const r = g.canvas.getBoundingClientRect(); return { innerWidth, innerHeight, state: g.state, transform: g.getViewportSnapshot(), camera: g.getCameraSnapshot(), canvas: { x: r.x, y: r.y, width: r.width, height: r.height }, assetFailures: g.loader.errors.length, playerQueue: [...g.match.queuedWaves.get('TEAM_PLAYER').values()].flat().length }; })()`,
+      expression: `(() => { const g = window.__strategyGalalaxy; const r = g.canvas.getBoundingClientRect(); return { innerWidth, innerHeight, state: g.state, transform: g.getViewportSnapshot(), camera: g.getCameraSnapshot(), canvas: { x: r.x, y: r.y, width: r.width, height: r.height }, assetFailures: g.loader.errors.length, playerUnits: [...g.match.simulation.state.lanes.values()].flatMap((lane) => lane.unitIds.get('TEAM_PLAYER')).length }; })()`,
       returnByValue: true,
     });
     const snapshot = snapshotResult.result.value;
@@ -355,8 +355,8 @@ try {
     const openResult = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.commandDockOpen", returnByValue: true });
     assert.equal(openResult.result.value, true, `${width}x${height} compact command dock expands`);
     await touch(touchX, (designHeight - 141) * snapshot.transform.scale);
-    const queueResult = await send("Runtime.evaluate", { expression: "[...window.__strategyGalalaxy.match.queuedWaves.get('TEAM_PLAYER').values()].flat().length", returnByValue: true });
-    assert.equal(queueResult.result.value, 1, `${width}x${height} touch reaches Scout control`);
+    const deploymentResult = await send("Runtime.evaluate", { expression: "[...window.__strategyGalalaxy.match.simulation.state.lanes.values()].flatMap((lane) => lane.unitIds.get('TEAM_PLAYER')).length", returnByValue: true });
+    assert.equal(deploymentResult.result.value, snapshot.playerUnits + 1, `${width}x${height} touch immediately launches a Scout`);
     await touch(206 * snapshot.transform.scale, (designHeight - 195) * snapshot.transform.scale);
 
     const panX = 210 * snapshot.transform.scale;
@@ -391,14 +391,8 @@ try {
       assert.equal(upgradeMenu.result.value, "upgrades", "upgrade projects are touch-operable");
       await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').energy = 300" });
       await touch(82, 619);
-      const pendingUpgrade = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.pendingUpgradeCount('TEAM_PLAYER')", returnByValue: true });
-      assert.equal(pendingUpgrade.result.value, 1, "one visible upgrade project can be prepared per wave");
-      const pendingScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-      await writeFile(resolve(output, "upgrades-pending-420x760.png"), Buffer.from(pendingScreenshot.data, "base64"));
-      await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.deployment.timeUntilDeployment = 1 / 120" });
-      await delay(120);
       const activeUpgrade = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').economyLevel", returnByValue: true });
-      assert.equal(activeUpgrade.result.value, 1, "prepared upgrade activates at the next wave boundary");
+      assert.equal(activeUpgrade.result.value, 1, "upgrade activates immediately during the live match");
       await touch(405, centered.result.value.viewport.y + centered.result.value.viewport.height - 14);
       await delay(60);
       const activeScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });

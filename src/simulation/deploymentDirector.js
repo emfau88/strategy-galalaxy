@@ -5,7 +5,7 @@ const teams = Object.freeze([TEAM.PLAYER, TEAM.ENEMY]);
 const emptyTeamLanes = (laneIds) => new Map(teams.map((team) => [team, new Map(laneIds.map((laneId) => [laneId, []]))]));
 const emptyDeploymentTimes = (laneIds) => new Map(teams.map((team) => [team, new Map(laneIds.map((laneId) => [laneId, null]))]));
 
-/** Owns the continuous deployment cadence and both teams' future waves. */
+/** Owns only the free automatic reinforcement cadence and its capacity backlog. */
 export class DeploymentDirector {
   constructor({ config, laneIds = defaultLaneIds }) {
     this.config = config;
@@ -18,21 +18,7 @@ export class DeploymentDirector {
     this.timeUntilDeployment = this.config.timing.deploymentIntervalSeconds;
     this.lastDeploymentAt = null;
     this.lastDeploymentAtByTeamLane = emptyDeploymentTimes(this.laneIds);
-    this.queuedWaves = emptyTeamLanes(this.laneIds);
     this.baseWaveBacklog = emptyTeamLanes(this.laneIds);
-    this.nextQueueSequence = 1;
-  }
-
-  queuesFor(team) {
-    return this.queuedWaves.get(team);
-  }
-
-  get locked() {
-    return this.timeUntilDeployment <= this.config.timing.deploymentLockSeconds + Number.EPSILON;
-  }
-
-  purchasedCount(team) {
-    return [...this.queuesFor(team).values()].reduce((sum, entries) => sum + entries.length, 0);
   }
 
   baseWaveSize(simulationTime) {
@@ -52,14 +38,11 @@ export class DeploymentDirector {
       for (const laneId of this.laneIds) {
         const pendingBase = this.baseWaveBacklog.get(team).get(laneId);
         const baseEntries = [...pendingBase, ...Array.from({ length: this.baseWaveSize(simulation.state.time) }, () => "drone")];
-        const paidEntries = this.queuesFor(team).get(laneId);
         const active = simulation.state.lanes.get(laneId).unitIds.get(team).length;
         const available = Math.max(0, this.config.caps.unitsPerLaneTeam - active);
         const acceptedBase = baseEntries.slice(0, available);
-        const acceptedPaid = paidEntries.slice(0, Math.max(0, available - acceptedBase.length));
         this.baseWaveBacklog.get(team).set(laneId, baseEntries.slice(acceptedBase.length));
-        this.queuesFor(team).set(laneId, paidEntries.slice(acceptedPaid.length));
-        deployment.push({ team, laneId, unitTypes: [...acceptedBase, ...acceptedPaid.map((entry) => entry.unitType)] });
+        deployment.push({ team, laneId, unitTypes: acceptedBase });
       }
     }
 

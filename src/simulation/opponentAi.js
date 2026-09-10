@@ -3,7 +3,7 @@ import { STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js"
 
 const opponentOf = (team) => (team === TEAM.PLAYER ? TEAM.ENEMY : TEAM.PLAYER);
 export const AI_PROFILES = Object.freeze({ CADET: "cadet", TACTICIAN: "tactician", ADMIRAL: "admiral" });
-export const INVESTMENT_BIASES = Object.freeze({ BALANCED: "balanced", FLEET: "fleet", ECONOMY: "economy", WEAPONS: "weapons", LOGISTICS: "logistics" });
+export const INVESTMENT_BIASES = Object.freeze({ BALANCED: "balanced", FLEET: "fleet", ECONOMY: "economy", WEAPONS: "weapons" });
 
 const unitStrength = (unit) => {
   const definition = UNIT_DEFINITIONS[unit.unitType];
@@ -68,14 +68,14 @@ export class OpponentAi {
   }
 
   plan(director) {
-    if (director.state !== MATCH_STATE.LIVE_MATCH || director.queueLocked || !director.simulation) return { ok: false, reason: "WRONG_PHASE" };
+    if (director.state !== MATCH_STATE.LIVE_MATCH || !director.simulation) return { ok: false, reason: "WRONG_PHASE" };
     const assessments = director.simulation.state.map.lanes.map((lane) => this.laneAssessment(director, lane.id));
     const defense = [...assessments].sort((left, right) => right.threat - left.threat || this.laneTieBreak(left, right))[0];
     const push = [...assessments].sort((left, right) => right.opportunity - left.opportunity || this.laneTieBreak(left, right))[0];
     const purchases = [];
     const upgrades = [];
     const economy = director.economy.get(this.team);
-    const purchaseLimit = this.profile === AI_PROFILES.CADET ? 2 : director.economy.reinforcementLimit(this.team);
+    const purchaseLimit = this.profile === AI_PROFILES.CADET ? 2 : 4;
     const buy = (upgradeId, reserve) => {
       const cost = director.economy.upgradeCost(this.team, upgradeId);
       if (cost !== null && economy.energy >= cost + reserve) {
@@ -83,23 +83,22 @@ export class OpponentAi {
         if (result.ok) upgrades.push({ upgradeId, cost: result.cost });
       }
     };
-    const queue = (laneId, unitType) => {
+    const deploy = (laneId, unitType) => {
       if (purchases.length >= purchaseLimit) return false;
-      const result = director.executeCommand({ type: "QUEUE_UNIT", team: this.team, laneId, unitType });
-      if (result.ok) purchases.push({ laneId, unitType, cost: result.entry.paidCost });
+      const result = director.executeCommand({ type: "DEPLOY_UNIT", team: this.team, laneId, unitType });
+      if (result.ok) purchases.push({ laneId, unitType, cost: result.cost, spawnedIds: result.spawnedIds });
       return result.ok;
     };
 
     // Economy is preferred while the match is still open; immediate defense is
     // preferred when a lane is actually under pressure.
     if (this.profile !== AI_PROFILES.CADET && this.investmentBias !== INVESTMENT_BIASES.FLEET) {
-      if (defense.threat > 70) buy("turret", 110);
+      if (defense.threat > 70 && director.mapDefinition.features?.defensiveTurrets !== false) buy("turret", 110);
       else if (this.investmentBias === INVESTMENT_BIASES.ECONOMY) buy("economy", 120);
       else if (this.investmentBias === INVESTMENT_BIASES.WEAPONS) buy("weapons", 130);
-      else if (this.investmentBias === INVESTMENT_BIASES.LOGISTICS) buy("logistics", 150);
       else if (this.profile === AI_PROFILES.ADMIRAL && economy.weaponLevel < 2) buy("weapons", 120);
       else if (economy.economyLevel < 2) buy("economy", 150);
-      else if (economy.logisticsLevel < 1) buy("logistics", 160);
+      else if (economy.weaponLevel < 2) buy("weapons", 160);
     }
 
     const defenseChoice = defense.enemyComposition.bomber > defense.friendlyComposition.fighter
@@ -110,14 +109,14 @@ export class OpponentAi {
     const pushChoice = push.nodeOwner === opponentOf(this.team) && push.friendlyComposition.scout === 0
       ? "scout"
       : economy.energy >= UNIT_DEFINITIONS.bomber.cost ? "bomber" : "scout";
-    queue(defense.laneId, defenseChoice);
-    queue(push.laneId, pushChoice);
-    if (push.laneId !== defense.laneId && economy.energy >= UNIT_DEFINITIONS.fighter.cost) queue(push.laneId, "fighter");
-    if (economy.energy >= UNIT_DEFINITIONS.scout.cost + 70) queue(this.profile === AI_PROFILES.ADMIRAL ? push.laneId : defense.laneId, this.profile === AI_PROFILES.ADMIRAL ? "bomber" : "scout");
+    deploy(defense.laneId, defenseChoice);
+    deploy(push.laneId, pushChoice);
+    if (push.laneId !== defense.laneId && economy.energy >= UNIT_DEFINITIONS.fighter.cost) deploy(push.laneId, "fighter");
+    if (economy.energy >= UNIT_DEFINITIONS.scout.cost + 70) deploy(this.profile === AI_PROFILES.ADMIRAL ? push.laneId : defense.laneId, this.profile === AI_PROFILES.ADMIRAL ? "bomber" : "scout");
 
     const spent = purchases.reduce((total, purchase) => total + purchase.cost, 0) + upgrades.reduce((total, upgrade) => total + upgrade.cost, 0);
     this.lastDecision = {
-      cycle: director.cycle + 1,
+      cycle: director.cycle,
       team: this.team,
       profile: this.profile,
       investmentBias: this.investmentBias,
