@@ -207,6 +207,16 @@ Der vom Nutzer freigegebene Mockup-Aufbau ist als neuer Standard umgesetzt. Drag
 - [x] Regressionstest gegen erneutes Randrutschen und zu kurze Projektilsichtbarkeit ergänzen.
 - [x] Foundation-, Stress- und Fünf-Viewport-Browserprüfung bestehen.
 
+## Runtime-Delivery-Follow-up – sichtbare Pages-Assets
+
+- [x] Cachelosen öffentlichen Asset-Ausfall bis auf parallele 24,4 MiB Boot-Last und
+  den zu kurzen 9-Sekunden-Gate zurückverfolgen.
+- [x] Levelmanifeste, mobile Runtime-Ableitungen, Retry und Late-Adoption integrieren.
+- [x] Fehlende VFX-Verknüpfung schließen und Gebäude-/HUD-Fallbacks professionalisieren.
+- [x] Deployment-Artefakt auf die aktive 44-Bilder-Union reduzieren.
+- [x] Foundation-, Assetbudget- und Browser-Pixeltests ergänzen.
+- [ ] Öffentliche GitHub-Pages-Version nach dem Deployment cachelos bestätigen.
+
 ## Durchgehende Qualitäts-Gates
 
 - [ ] Keine Simulation hängt von Kamera, Animation oder Framerate ab.

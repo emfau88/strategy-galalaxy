@@ -9,7 +9,8 @@ The complete licensed asset import comes from read-only Galalaxy commit `7f90d17
 | `assets/library/galalaxy/` | 516 | 20,808,162 | Development/source library; never bulk-loaded |
 | Foozle packs inside library | 502 | 14,218,222 | CC0 source art, previews and editable files |
 | Optional Galalaxy UI inside library | 14 | 6,589,940 | Preserved for reference; not in current manifest |
-| Registered Strategy Galalaxy asset manifest | 88 | verified by script | Unified hulls/projectiles plus active Galalaxy engine and destruction groups |
+| Registered Strategy Galalaxy asset manifest | 73 | verified by script | Active runtime plus retained source-strip aliases |
+| Curated GitHub Pages image artifact | 44 | verified by script | Union of both levels; no bulk reference library |
 
 The reference contains one additional file, `assets/music/track1.ogg` (5,937,850 bytes). It is deliberately excluded because its distribution license is undocumented. Therefore 516 files is the expected and enforced library count.
 
@@ -32,6 +33,8 @@ Formats across the imported reference library include runtime PNGs, editable Ase
 Player and rival each use one unified `384×384` transparent hull for Drone, Scout, Fighter, Bomber and Frigate. All ten hulls share the same strict top-down camera, upper-left warm key light, cool lower-right fill, material hierarchy and class scale. The player uses ivory/brass/cyan with planted accents; the rival uses charcoal/copper/burgundy/coral. Static emitted flames were removed and the exposed nozzle mouths were reconstructed before normalization.
 
 Engine thrust now reuses the original CC0 Galalaxy/Foozle Nairan and Kla'ed engine animation frames at 10 FPS. The renderer takes a tight transparent crop from the real source frame and places it at explicit per-faction/per-class nozzle hardpoints; the flame shape itself is never drawn procedurally. Ship kills likewise play the original class-specific 8–18-frame Galalaxy destruction sequences at 14 FPS. The player-requested source animation is allowed to replace the unified hull for the short death sequence; structures keep a separate bounded blast because the fleet strips contain ship silhouettes.
+
+Cold start is intentionally bounded: Level 1 requests 38 images / about 7.4 MiB and Level 2 requests 36 images / about 7.1 MiB. Shared hulls, projectiles and command art load first; the selected background, structures and Galalaxy VFX follow in a second stage. The loader retries once, keeps late image responses alive after its 30-second gate and swaps them in without a refresh. Mobile `840 px` derivatives preserve the authored source files while avoiding their former 112 MiB decoded startup set.
 
 ## Active projectile runtime
 
@@ -68,6 +71,6 @@ Run:
 npm.cmd run verify:assets
 ```
 
-The verifier reads PNG headers without browser dependencies, checks every manifest path, validates sprite-strip dimensions against frame metadata and asserts the exact 516-file library boundary. This catches missing copies, accidental music inclusion and metadata drift before deployment.
+The verifier reads PNG headers without browser dependencies, checks every manifest path, enforces the per-level request and byte budgets, validates sprite-strip dimensions against frame metadata and asserts the exact 516-file library boundary. `npm.cmd run test:pages` additionally builds the deployment artifact and opens it in a clean mobile browser profile, requiring every active HQ, turret, HUD, engine and destruction key to have real decoded pixels.
 
 Exact origins and adaptation notes are recorded in [`SOURCE_PROVENANCE.md`](SOURCE_PROVENANCE.md). The binding palette, lighting and compositing rules live in [`ART_DIRECTION.md`](ART_DIRECTION.md).

@@ -1,18 +1,20 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createReadStream, existsSync } from "node:fs";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { createServer as createNetServer } from "node:net";
 import { extname, normalize, resolve } from "node:path";
+import { runtimeAssetManifestForLevel } from "../src/assets.js";
 
 const root = resolve(new URL("../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
+const siteRoot = process.argv.includes("--dist") ? resolve(root, "dist") : root;
 const output = resolve(root, "tmp", "browser-qa");
 const viewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
 const mime = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".png": "image/png", ".gif": "image/gif", ".txt": "text/plain", ".md": "text/markdown" };
 
 const browserCandidates = process.platform === "win32"
-  ? ["C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe", "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"]
+  ? ["C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe", "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"]
   : ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"];
 const browser = browserCandidates.find(existsSync);
 assert.ok(browser, "A local Chromium or Edge executable is required for browser QA");
@@ -20,8 +22,8 @@ assert.ok(browser, "A local Chromium or Edge executable is required for browser 
 const staticServer = createServer((request, response) => {
   const pathname = decodeURIComponent(new URL(request.url, "http://127.0.0.1").pathname);
   if (pathname === "/favicon.ico") { response.writeHead(204).end(); return; }
-  const requested = resolve(root, `.${pathname === "/" ? "/index.html" : pathname}`);
-  if (!requested.startsWith(root)) { response.writeHead(403).end(); return; }
+  const requested = resolve(siteRoot, `.${pathname === "/" ? "/index.html" : pathname}`);
+  if (!requested.startsWith(siteRoot)) { response.writeHead(403).end(); return; }
   const path = normalize(requested);
   const stream = createReadStream(path);
   stream.on("error", () => response.writeHead(404).end());
@@ -35,7 +37,7 @@ await new Promise((resolveListen) => portProbe.listen(0, "127.0.0.1", resolveLis
 const debugPort = portProbe.address().port;
 await new Promise((resolveClose) => portProbe.close(resolveClose));
 await mkdir(output, { recursive: true });
-const browserProfile = resolve(output, "profile");
+const browserProfile = await mkdtemp(resolve(output, "profile-"));
 
 const browserProcess = spawn(browser, [
   "--headless=new", "--disable-crash-reporter", "--no-first-run", "--hide-scrollbars",
@@ -47,7 +49,10 @@ const browserProcess = spawn(browser, [
 const delay = (ms) => new Promise((resolveDelay) => setTimeout(resolveDelay, ms));
 const waitForJson = async (url) => {
   for (let attempt = 0; attempt < 80; attempt += 1) {
-    try { const response = await fetch(url); if (response.ok) return response.json(); } catch {}
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(500) });
+      if (response.ok) return response.json();
+    } catch {}
     await delay(100);
   }
   throw new Error(`Browser debugging endpoint did not start: ${url}`);
@@ -70,7 +75,14 @@ const waitEvent = (method, timeoutMs = 10000) => new Promise((resolveEvent, reje
 });
 const send = (method, params = {}) => new Promise((resolveSend, rejectSend) => {
   const id = ++messageId;
-  pending.set(id, { resolve: resolveSend, reject: rejectSend });
+  const timer = setTimeout(() => {
+    pending.delete(id);
+    rejectSend(new Error(`Timed out waiting for browser command ${method}`));
+  }, 10000);
+  pending.set(id, {
+    resolve: (value) => { clearTimeout(timer); resolveSend(value); },
+    reject: (error) => { clearTimeout(timer); rejectSend(error); },
+  });
   socket.send(JSON.stringify({ id, method, params }));
 });
 
@@ -80,7 +92,10 @@ try {
   const page = targets.find((target) => target.type === "page");
   assert.ok(page?.webSocketDebuggerUrl, "Browser page target is available");
   socket = new WebSocket(page.webSocketDebuggerUrl);
-  await new Promise((resolveOpen, rejectOpen) => { socket.onopen = resolveOpen; socket.onerror = rejectOpen; });
+  await Promise.race([
+    new Promise((resolveOpen, rejectOpen) => { socket.onopen = resolveOpen; socket.onerror = rejectOpen; }),
+    delay(5000).then(() => { throw new Error("Timed out opening browser debugging socket"); }),
+  ]);
   socket.onmessage = ({ data }) => {
     const message = JSON.parse(data);
     if (message.id) {
@@ -118,11 +133,20 @@ try {
   };
   const waitForGame = async () => {
     for (let attempt = 0; attempt < 100; attempt += 1) {
-      const ready = await send("Runtime.evaluate", { expression: "Boolean(window.__strategyGalalaxy?.running && window.__strategyGalalaxy?.loader?.isSettled)", returnByValue: true });
+      const ready = await send("Runtime.evaluate", { expression: "Boolean(window.__strategyGalalaxy?.running && window.__strategyGalalaxy?.assetsReady && window.__strategyGalalaxy?.loader?.isSettled)", returnByValue: true });
       if (ready.result.value) return;
       await delay(50);
     }
     throw new Error("Game did not finish loading");
+  };
+
+  const assertRuntimeAssetsLoaded = async (level) => {
+    const keys = Object.keys(runtimeAssetManifestForLevel(level));
+    const result = await send("Runtime.evaluate", {
+      expression: `(() => { const loader = window.__strategyGalalaxy.loader; const keys = ${JSON.stringify(keys)}; return { missing: keys.filter((key) => !loader.get(key)?.naturalWidth), errors: [...loader.errors] }; })()`,
+      returnByValue: true,
+    });
+    assert.deepEqual(result.result.value, { missing: [], errors: [] }, `level ${level} loads every active runtime asset`);
   };
 
   await send("Emulation.setDeviceMetricsOverride", { width: 420, height: 760, deviceScaleFactor: 1, mobile: true, screenWidth: 420, screenHeight: 760 });
@@ -130,6 +154,7 @@ try {
   await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?debug=1&seed=1180` });
   await loaded;
   await waitForGame();
+  await assertRuntimeAssetsLoaded(1);
   let titleState = await send("Runtime.evaluate", { expression: "({ state: window.__strategyGalalaxy.state, difficulty: window.__strategyGalalaxy.match.aiProfile, level: window.__strategyGalalaxy.match.mapDefinition.level })", returnByValue: true });
   assert.deepEqual(titleState.result.value, { state: "TITLE", difficulty: "tactician", level: 1 });
   const titleScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
@@ -153,6 +178,7 @@ try {
   await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&level=1&seed=640` });
   await loaded;
   await waitForGame();
+  await assertRuntimeAssetsLoaded(1);
   const gardenState = await send("Runtime.evaluate", {
     expression: `(() => { const g = window.__strategyGalalaxy; return { map: g.match.simulation.state.map.id, lanes: [...g.match.simulation.state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, playerUnits: g.match.simulation.state.lanes.get('LANE_CENTER').unitIds.get('TEAM_PLAYER').length, slots: g.match.economy.reinforcementLimit('TEAM_PLAYER'), assetFailures: g.loader.errors.length }; })()`,
     returnByValue: true,
@@ -179,6 +205,7 @@ try {
   await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&level=2&seed=842` });
   await loaded;
   await waitForGame();
+  await assertRuntimeAssetsLoaded(2);
   const levelTwoState = await send("Runtime.evaluate", {
     expression: `(() => { const g = window.__strategyGalalaxy; return { map: g.match.simulation.state.map.id, theme: g.match.simulation.state.map.visualTheme, lanes: [...g.match.simulation.state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, assetFailures: g.loader.errors.length }; })()`,
     returnByValue: true,

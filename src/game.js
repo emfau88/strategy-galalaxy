@@ -1,4 +1,4 @@
-import { ASSET_GROUPS } from "./assets.js";
+import { ASSET_GROUPS, levelAssetManifest, mergeAssetGroups } from "./assets.js";
 import { CONFIG } from "./config.js";
 import { GameClock } from "./core/clock.js";
 import { BattlefieldCamera } from "./core/battlefieldCamera.js";
@@ -31,7 +31,7 @@ export class Game {
     this.clock = new GameClock(CONFIG.timing);
     this.simulationRng = new SeededRng(options.seed);
     this.visualRng = new SeededRng(options.seed ^ 0x9e3779b9);
-    this.loader = new AssetLoader(ASSET_GROUPS.boot);
+    this.loader = new AssetLoader();
     this.renderer = new Renderer(canvas, context);
     this.effects = new PresentationEffects();
     this.sound = new SoundSystem();
@@ -54,6 +54,9 @@ export class Game {
     this.aiProfiles = [AI_PROFILES.CADET, AI_PROFILES.TACTICIAN, AI_PROFILES.ADMIRAL];
     this.lastFrameAt = null;
     this.running = false;
+    this.assetsReady = false;
+    this.levelLoading = false;
+    this.levelLoadPromise = null;
     this.transform = null;
     this.input = new InputRouter(canvas, () => this.transform, (input) => this.receiveInput(input));
     this.onResize = () => this.resize();
@@ -69,7 +72,17 @@ export class Game {
     window.visualViewport?.addEventListener("resize", this.onResize, { passive: true });
     window.addEventListener("keydown", this.onKeyDown);
     document.addEventListener("fullscreenchange", this.onFullscreenChange);
-    await this.loader.load();
+    this.running = true;
+    requestAnimationFrame(this.onFrame);
+    // Keep the first request wave compact and deterministic. Map art and combat VFX
+    // follow only after the shared shell is drawable, so large backgrounds can no
+    // longer starve every HQ, turret and HUD image on a cold mobile connection.
+    await this.loader.load(ASSET_GROUPS.boot);
+    await this.loader.load(mergeAssetGroups(
+      levelAssetManifest(LEVELS[this.levelIndex].level),
+      ASSET_GROUPS.combatVfx,
+    ));
+    this.assetsReady = true;
     if (this.options.testMode) {
       this.match.start();
       this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
@@ -77,8 +90,6 @@ export class Game {
       this.effects.reset();
     }
     this.syncMatchState();
-    this.running = true;
-    requestAnimationFrame(this.onFrame);
   }
 
   stop() {
@@ -130,6 +141,7 @@ export class Game {
 
   receiveInput(input) {
     this.lastInput = input;
+    if (!this.assetsReady) return;
     if (input.kind === "down" && this.match.state === MATCH_STATE.PAUSED) {
       const action = pauseActionAt(input, this.transform?.designHeight);
       if (action?.type === "RESUME_MATCH") {
@@ -188,20 +200,51 @@ export class Game {
         this.match = new MatchDirector({ config: configForMap(mapDefinition), mapDefinition, aiProfile: profile });
         this.camera.setWorldHeight(mapDefinition.bounds.height);
         this.camera.reset("player");
+        this.prepareLevelAssets(mapDefinition);
         this.sound.play("select");
         return;
       }
       if (action?.type !== "START_MATCH") return;
-      this.match.start();
-      this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
-      this.camera.reset("player");
-      this.effects.reset();
-      this.sound.reset();
-      this.sound.play("deploy");
-      this.sound.vibrate([12, 24, 18]);
+      if (!this.levelAssetsReady(this.match.mapDefinition)) {
+        const pendingMap = this.match.mapDefinition;
+        this.prepareLevelAssets(pendingMap).then(() => {
+          if (this.match.state === MATCH_STATE.TITLE && this.match.mapDefinition === pendingMap) this.startSelectedMatch();
+        });
+        return;
+      }
+      this.startSelectedMatch();
     }
     else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight, this.match.mapDefinition.lanes.map((lane) => lane.id), this.commandDockOpen));
     this.syncMatchState();
+  }
+
+  levelAssetsReady(mapDefinition) {
+    return Object.keys(levelAssetManifest(mapDefinition.level)).every((key) => this.loader.get(key));
+  }
+
+  prepareLevelAssets(mapDefinition) {
+    if (this.levelAssetsReady(mapDefinition)) return Promise.resolve(this.loader);
+    if (this.levelLoadPromise) return this.levelLoadPromise;
+    this.levelLoading = true;
+    const requestedLevel = mapDefinition.level;
+    this.levelLoadPromise = this.loader.load(levelAssetManifest(requestedLevel)).finally(() => {
+      this.levelLoading = false;
+      this.levelLoadPromise = null;
+    });
+    return this.levelLoadPromise;
+  }
+
+  startSelectedMatch() {
+    if (this.match.state !== MATCH_STATE.TITLE) return false;
+    this.match.start();
+    this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
+    this.camera.reset("player");
+    this.effects.reset();
+    this.sound.reset();
+    this.sound.play("deploy");
+    this.sound.vibrate([12, 24, 18]);
+    this.syncMatchState();
+    return true;
   }
 
   restartMatch() {
@@ -377,7 +420,7 @@ export class Game {
   }
 
   syncMatchState() {
-    this.state = this.match.state;
+    this.state = this.assetsReady ? this.match.state : MATCH_STATE.LOADING;
   }
 
   frame(now) {
@@ -429,6 +472,9 @@ export class Game {
       queueLocked: this.match.queueLocked,
       camera: this.camera.snapshot(),
       commandFeedback: this.clock.frameTime < this.commandFeedbackUntil ? this.commandFeedback : null,
+      assetProgress: this.loader.progress,
+      assetErrors: this.loader.errors.length,
+      levelLoading: this.levelLoading,
       assets: this.loader,
       effects: this.effects.effects,
     });

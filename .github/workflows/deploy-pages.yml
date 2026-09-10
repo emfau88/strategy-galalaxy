@@ -24,13 +24,26 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify game and assets
+        run: |
+          npm test
+          npm run check
+
+      - name: Build curated Pages artifact
+        run: npm run build:pages
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist
 
       - name: Deploy Pages
         id: deployment

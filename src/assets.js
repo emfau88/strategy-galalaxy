@@ -1,33 +1,7 @@
-/** Semantic groups keep gameplay independent from individual filenames. */
+/** Semantic groups keep loading proportional to the selected level. */
 export const ASSET_GROUPS = Object.freeze({
   boot: Object.freeze({
-    "background-placeholder": "assets/environment/strategy-galaxy-background-v1.png",
-    "background-orbital-garden": "assets/environment/orbital-garden-background-v1.png",
-    "background-orbital-garden-rival": "assets/environment/orbital-garden-rival-sector-v1.png",
-    "background-orbital-garden-player": "assets/environment/orbital-garden-player-sector-v1.png",
-    "background-twin-foundries-rival": "assets/environment/twin-foundries-rival-sector-v1.png",
-    "background-twin-foundries-player": "assets/environment/twin-foundries-player-sector-v1.png",
-    "background-void": "assets/environment/void.png",
-    "background-stars": "assets/environment/stars.png",
-    "background-planet": "assets/environment/planet.png",
-    "background-asteroid": "assets/environment/asteroid.png",
-    "structure-hq": "assets/structures/command-hq-topdown-v3.png",
-    "structure-hq-garden": "assets/structures/orbital-garden-hq-v2.png",
-    "structure-hq-garden-rival": "assets/structures/orbital-garden-hq-rival-v1.png",
-    "structure-turret": "assets/structures/defense-turret-base-topdown-v2.png",
-    "structure-turret-garden": "assets/structures/orbital-garden-turret-base-v2.png",
-    "structure-turret-head-garden": "assets/structures/orbital-garden-turret-head-v1.png",
-    "structure-turret-head": "assets/structures/defense-turret-head-topdown-v3.png",
-    "structure-node": "assets/structures/energy-relay-topdown-v1.png",
-    "structure-node-sunwell": "assets/structures/orbital-sunwell-v2.png",
-    "nairan-scout": "assets/factions/nairan/scout.png",
-    "nairan-fighter": "assets/factions/nairan/fighter.png",
-    "nairan-bomber": "assets/factions/nairan/bomber.png",
-    "nairan-frigate": "assets/factions/nairan/frigate.png",
-    "klaed-scout": "assets/factions/klaed/scout.png",
-    "klaed-fighter": "assets/factions/klaed/fighter.png",
-    "klaed-bomber": "assets/factions/klaed/bomber.png",
-    "klaed-frigate": "assets/factions/klaed/frigate.png",
+    "background-placeholder": "assets/runtime/environment/strategy-galaxy-background-v1.png",
     "unified-player-scout": "assets/factions/unified/player-scout-v2.png",
     "unified-player-drone": "assets/factions/unified/player-drone-v1.png",
     "unified-player-fighter": "assets/factions/unified/player-fighter-v2.png",
@@ -46,13 +20,39 @@ export const ASSET_GROUPS = Object.freeze({
     "unified-enemy-fighter-laser": "assets/projectiles/unified/enemy-fighter-laser-v2.png",
     "unified-enemy-siege-missile": "assets/projectiles/unified/enemy-siege-missile-v2.png",
     "unified-enemy-heavy-cannon": "assets/projectiles/unified/enemy-heavy-cannon-v2.png",
-    "nairan-bolt": "assets/projectiles/nairan-bolt.png",
-    "klaed-bullet": "assets/projectiles/klaed-bullet.png",
-    "ui-command-medallion": "assets/ui/orbital-command-medallion-v1.png",
-    "structure-node-unified": "assets/structures/energy-relay-unified-v1.png",
-    "structure-turret-garden-player": "assets/structures/orbital-garden-turret-player-v3.png",
-    "structure-turret-garden-rival": "assets/structures/orbital-garden-turret-rival-v3.png",
+    "ui-command-medallion": "assets/runtime/ui/orbital-command-medallion-v1.png",
   }),
+  level1: Object.freeze({
+    "background-orbital-garden-rival": "assets/runtime/environment/orbital-garden-rival-sector-v1.png",
+    "background-orbital-garden-player": "assets/runtime/environment/orbital-garden-player-sector-v1.png",
+    "structure-hq-garden": "assets/runtime/structures/orbital-garden-hq-v2.png",
+    "structure-hq-garden-rival": "assets/runtime/structures/orbital-garden-hq-rival-v1.png",
+    "structure-turret-head-garden": "assets/runtime/structures/orbital-garden-turret-head-v1.png",
+    "structure-node-sunwell": "assets/runtime/structures/orbital-sunwell-v2.png",
+    "structure-turret-garden-player": "assets/runtime/structures/orbital-garden-turret-player-v3.png",
+    "structure-turret-garden-rival": "assets/runtime/structures/orbital-garden-turret-rival-v3.png",
+  }),
+  level2: Object.freeze({
+    "background-twin-foundries-rival": "assets/runtime/environment/twin-foundries-rival-sector-v1.png",
+    "background-twin-foundries-player": "assets/runtime/environment/twin-foundries-player-sector-v1.png",
+    "structure-hq": "assets/structures/command-hq-topdown-v3.png",
+    "structure-turret": "assets/structures/defense-turret-base-topdown-v2.png",
+    "structure-turret-head": "assets/structures/defense-turret-head-topdown-v3.png",
+    "structure-node-unified": "assets/structures/energy-relay-unified-v1.png",
+  }),
+  combatVfx: Object.freeze({
+    "nairan-scout-engine": "assets/factions/nairan/scout-engine.png",
+    "klaed-scout-engine": "assets/factions/klaed/scout-engine.png",
+    "nairan-scout-destruction": "assets/factions/nairan/scout-destruction.png",
+    "nairan-fighter-destruction": "assets/factions/nairan/fighter-destruction.png",
+    "nairan-bomber-destruction": "assets/factions/nairan/bomber-destruction.png",
+    "nairan-frigate-destruction": "assets/factions/nairan/frigate-destruction.png",
+    "klaed-scout-destruction": "assets/factions/klaed/scout-destruction.png",
+    "klaed-fighter-destruction": "assets/factions/klaed/fighter-destruction.png",
+    "klaed-bomber-destruction": "assets/factions/klaed/bomber-destruction.png",
+    "klaed-frigate-destruction": "assets/factions/klaed/frigate-destruction.png",
+  }),
+  // Retained source strips remain validated, but are deliberately excluded from boot.
   ships: Object.freeze({
     "nairan-scout-engine": "assets/factions/nairan/scout-engine.png",
     "nairan-scout-weapon": "assets/factions/nairan/scout-weapon.png",
@@ -86,9 +86,11 @@ export const ASSET_GROUPS = Object.freeze({
     "klaed-frigate-destruction": "assets/factions/klaed/frigate-destruction.png",
   }),
   effects: Object.freeze({
+    "nairan-bolt": "assets/projectiles/nairan-bolt.png",
     "nairan-ray": "assets/projectiles/nairan-ray.png",
     "nairan-rocket": "assets/projectiles/nairan-rocket.png",
     "nairan-torpedo": "assets/projectiles/nairan-torpedo.png",
+    "klaed-bullet": "assets/projectiles/klaed-bullet.png",
     "klaed-big-bullet": "assets/projectiles/klaed-big-bullet.png",
     "klaed-ray": "assets/projectiles/klaed-ray.png",
     "klaed-torpedo": "assets/projectiles/klaed-torpedo.png",
@@ -98,3 +100,11 @@ export const ASSET_GROUPS = Object.freeze({
 });
 
 export const mergeAssetGroups = (...groups) => Object.assign({}, ...groups);
+
+export const runtimeAssetManifestForLevel = (level = 1) => mergeAssetGroups(
+  ASSET_GROUPS.boot,
+  Number(level) === 2 ? ASSET_GROUPS.level2 : ASSET_GROUPS.level1,
+  ASSET_GROUPS.combatVfx,
+);
+
+export const levelAssetManifest = (level = 1) => Number(level) === 2 ? ASSET_GROUPS.level2 : ASSET_GROUPS.level1;

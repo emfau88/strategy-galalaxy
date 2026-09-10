@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
-import { ASSET_GROUPS, mergeAssetGroups } from "../src/assets.js";
+import { ASSET_GROUPS, mergeAssetGroups, runtimeAssetManifestForLevel } from "../src/assets.js";
 import { FLEET_VISUALS, PROJECTILE_VISUALS } from "../src/data/visuals.js";
 
 const projectRoot = new URL("../", import.meta.url);
@@ -49,4 +49,13 @@ const countFiles = async (directory) => {
 const libraryRoot = new URL("assets/library/galalaxy/", projectRoot);
 assert.equal(await countFiles(libraryRoot), 516, "complete asset library is present except the intentionally excluded music file");
 
-console.log(`Verified ${Object.keys(manifest).length} runtime assets and 516 library files.`);
+const deployManifest = mergeAssetGroups(ASSET_GROUPS.boot, ASSET_GROUPS.level1, ASSET_GROUPS.level2, ASSET_GROUPS.combatVfx);
+for (const level of [1, 2]) {
+  const activeManifest = runtimeAssetManifestForLevel(level);
+  assert.ok(Object.keys(activeManifest).length <= 40, `level ${level} cold-start request budget stays bounded`);
+  const paths = [...new Set(Object.values(activeManifest))];
+  const payload = (await Promise.all(paths.map((path) => pngDimensions(path)))).reduce((sum, image) => sum + image.bytes, 0);
+  assert.ok(payload < 8 * 1024 * 1024, `level ${level} cold-start payload stays below 8 MiB`);
+}
+
+console.log(`Verified ${Object.keys(manifest).length} registered assets, ${new Set(Object.values(deployManifest)).size} deployed images and 516 library files.`);

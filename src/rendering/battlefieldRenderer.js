@@ -423,12 +423,46 @@ const drawTurretHead = (ctx, structure, state, assets, projection, color, garden
     }
   } else {
     ctx.rotate(angle);
-    ctx.fillStyle = "#7c8da3";
-    ctx.fillRect(-5, -6, 12, 12);
-    ctx.fillStyle = "#b8c5d1";
+    ctx.fillStyle = "#263747";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#d8d2bd";
     ctx.fillRect(5 - recoil, -5, 19, 3.5);
     ctx.fillRect(5 - recoil, 1.5, 19, 3.5);
+    ctx.fillStyle = color;
+    ctx.fillRect(19 - recoil, -5, 5, 3.5);
+    ctx.fillRect(19 - recoil, 1.5, 5, 3.5);
   }
+  ctx.restore();
+};
+
+const drawStructureFallback = (ctx, isHq, size, color) => {
+  ctx.save();
+  ctx.fillStyle = "rgba(18,29,39,0.96)";
+  ctx.strokeStyle = "rgba(239,211,154,0.9)";
+  ctx.lineWidth = isHq ? 2.5 : 1.8;
+  if (isHq) {
+    const half = size * 0.34;
+    ctx.beginPath();
+    ctx.moveTo(0, -half); ctx.lineTo(half * 0.82, -half * 0.52);
+    ctx.lineTo(half, half * 0.38); ctx.lineTo(half * 0.48, half);
+    ctx.lineTo(-half * 0.48, half); ctx.lineTo(-half, half * 0.38);
+    ctx.lineTo(-half * 0.82, -half * 0.52); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "rgba(226,220,197,0.9)";
+    for (const side of [-1, 1]) ctx.fillRect(side * half * 0.9 - 14, -9, 28, 18);
+  } else {
+    ctx.beginPath(); ctx.arc(0, 0, size * 0.38, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = "rgba(226,220,197,0.72)";
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, size * 0.25, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalCompositeOperation = "screen";
+  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, isHq ? 28 : 16);
+  glow.addColorStop(0, color);
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(isHq ? -30 : -18, isHq ? -30 : -18, isHq ? 60 : 36, isHq ? 60 : 36);
   ctx.restore();
 };
 
@@ -613,7 +647,7 @@ const drawStructure = (ctx, structure, model, projection) => {
     ctx.drawImage(sprite, -spriteWidth / 2, -spriteHeight / 2, spriteWidth, spriteHeight);
     ctx.globalCompositeOperation = "source-over";
     ctx.filter = "none";
-  }
+  } else drawStructureFallback(ctx, isHq, size, color);
   drawStructureUpgradeDetails(ctx, structure, model, size, color);
   if (state.map.visualTheme === "twin_foundries") {
     ctx.fillStyle = "rgba(12,18,25,0.96)";

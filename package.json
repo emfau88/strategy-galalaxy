@@ -6,11 +6,13 @@
   "scripts": {
     "test": "node tests/foundation.test.mjs",
     "check": "node scripts/foundation-check.mjs && node scripts/verify-assets.mjs",
+    "build:pages": "node scripts/build-pages.mjs",
     "verify:assets": "node scripts/verify-assets.mjs",
     "balance:sim": "node scripts/balance-sim.mjs",
     "balance:experiments": "node scripts/balance-experiments.mjs",
     "balance:investments": "node scripts/investment-experiments.mjs",
     "test:browser": "node scripts/browser-check.mjs",
+    "test:pages": "npm run build:pages && node scripts/browser-check.mjs --dist",
     "test:stress": "node scripts/stress-check.mjs"
   }
 }

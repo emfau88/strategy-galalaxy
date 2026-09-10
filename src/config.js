@@ -64,6 +64,8 @@ export const CONFIG = Object.freeze({
     ]),
   }),
   assets: Object.freeze({
-    timeoutMs: 9000,
+    timeoutMs: 30000,
+    retryCount: 1,
+    retryDelayMs: 350,
   }),
 });

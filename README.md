@@ -37,7 +37,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 - Größere Mobile-Touchflächen, direkt in den Lane-Tabs sichtbarer Druckvergleich sowie ein kurzer Drei-Schritte-Einstieg auf dem Startbildschirm.
 - Integriertes HQ-Kommandomenü: Der Normalzustand zeigt nur einen kompakten Command-/Queue-/Status-Dock; ein Tap auf das eigene HQ oder „Command“ öffnet Fleet- und Upgrade-Tabs. Die Kamera gibt geschlossen 120 zusätzliche Design-Pixel für die Schlacht frei.
 - Schaltbare, synthetisierte Combat-Sounds und an echte Nutzergesten gebundenes Haptik-Feedback ohne zusätzliche Audio-Lizenzabhängigkeit.
-- Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt nur den kuratierten aktuellen Ausschnitt.
+- Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt in zwei Stufen nur 36–38 aktive Bilder pro Level. Große Level-1-Quellen besitzen mobile `840 px`-Ableitungen, und GitHub Pages veröffentlicht ausschließlich das kuratierte Spielartefakt statt der 516 Referenzdateien.
 
 ## Einheiten
 
@@ -73,12 +73,15 @@ python -m http.server 8765 --directory .
 
 Anschließend `http://127.0.0.1:8765/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste. Ein Tap auf das eigene HQ oder den unteren Command-Dock öffnet Fleet und Upgrades; dort werden Lane, Einheiten, Forschung und Undo gewählt. Der kleine Pfeil zwischen den Tabs schließt die Konsole wieder. `P` pausiert; das Pause-Menü kann fortsetzen oder zum Hauptmenü zurückkehren. Das Symbol oben rechts fordert Browser-Fullscreen an.
 
+Für das schlanke GitHub-Pages-Artefakt wird `npm.cmd run build:pages` verwendet. Es kopiert Code und nur die tatsächlich aktiven Level-, Flotten-, Projektil- und VFX-Dateien nach `dist/`.
+
 ## Prüfen
 
 ```powershell
 npm.cmd run check
 npm.cmd run test:stress
 npm.cmd run test:browser
+npm.cmd run test:pages
 npm.cmd run balance:sim -- 100
 npm.cmd run balance:experiments -- 30
 npm.cmd run balance:investments -- 8

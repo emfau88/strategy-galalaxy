@@ -22,6 +22,28 @@ Abnahmekriterien für den nächsten Ausbau.
   Galalaxy-Triebwerksflammen, Treffern und echten Galalaxy-Todessequenzen verbunden.
 - [ ] Das reale Smartphone-Spielspaß- und Balance-Gate bleibt offen.
 
+## Runtime-Delivery-Reparatur – GitHub-Pages-Rückschritt
+
+- [x] Den cachelosen Pages-Start reproduzieren und die fehlenden HQ-, Turret-, HUD-,
+  Hintergrund-, Hull- und VFX-Requests vollständig erfassen.
+- [x] Große Level-1-/Level-2-Quellen durch mobile `840 px`-Runtime-Ableitungen ersetzen,
+  ohne die hochauflösenden Masterdateien anzutasten.
+- [x] Shared Shell und levelabhängige Karten-/Combat-Assets in zwei kontrollierten
+  Request-Wellen laden.
+- [x] Loader-Timeout auf 30 Sekunden anheben, einmalig neu versuchen und spät
+  eintreffende Bilder ohne Reload übernehmen.
+- [x] HQs und Turrets mit lesbaren, teamfarbenen Fallback-Silhouetten absichern.
+- [x] Galalaxy-Engine- und Destruction-Strips in das tatsächlich geladene
+  Produktionsmanifest aufnehmen.
+- [x] HUD-Rahmen als skalierbares Gold/Cyan-Canvas-System in Header, Command-Dock,
+  Titelkarte und Loading-Screen vereinheitlichen.
+- [x] GitHub Pages auf ein kuratiertes Artefakt mit 44 Bildern begrenzen und Tests vor
+  dem Upload erzwingen.
+- [x] Asset-Budgets, Retry/Late-Load und reale Browser-Pixel statt bloßer Dateipfade
+  automatisiert prüfen.
+- [ ] Den neuen Commit nach erfolgreichem Pages-Deployment noch einmal cachelos auf
+  der öffentlichen URL abnehmen.
+
 ## Technischer Audit der neu gemeldeten Punkte
 
 ### Triebwerksflammen

@@ -22,6 +22,38 @@ const box = (ctx, rect, fill = C.panel, stroke = C.outline, radius = 8) => {
   ctx.fillStyle = fill; ctx.fill();
   if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
 };
+const commandFrame = (ctx, rect, { fill = C.panel, strong = false, radius = 10 } = {}) => {
+  ctx.save();
+  ctx.shadowColor = "rgba(2,8,18,0.72)";
+  ctx.shadowBlur = strong ? 8 : 5;
+  box(ctx, rect, fill, strong ? "rgba(255,214,121,0.86)" : "rgba(239,199,127,0.58)", radius);
+  ctx.shadowBlur = 0;
+  const inset = strong ? 5 : 4;
+  ctx.strokeStyle = strong ? "rgba(255,244,210,0.28)" : "rgba(190,224,236,0.18)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(rect.x + inset, rect.y + inset, rect.width - inset * 2, rect.height - inset * 2, Math.max(3, radius - 4));
+  else ctx.rect(rect.x + inset, rect.y + inset, rect.width - inset * 2, rect.height - inset * 2);
+  ctx.stroke();
+  const corner = strong ? 13 : 10;
+  const offset = 2;
+  ctx.strokeStyle = strong ? C.gold : "rgba(239,199,127,0.72)";
+  ctx.lineWidth = strong ? 1.5 : 1;
+  for (const [x, y, sx, sy] of [
+    [rect.x + offset, rect.y + offset, 1, 1], [rect.x + rect.width - offset, rect.y + offset, -1, 1],
+    [rect.x + offset, rect.y + rect.height - offset, 1, -1], [rect.x + rect.width - offset, rect.y + rect.height - offset, -1, -1],
+  ]) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + sy * corner); ctx.lineTo(x, y); ctx.lineTo(x + sx * corner, y); ctx.stroke();
+  }
+  if (strong) {
+    for (const y of [rect.y + 1, rect.y + rect.height - 1]) {
+      ctx.save(); ctx.translate(rect.x + rect.width / 2, y); ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = C.gold; ctx.fillRect(-2.5, -2.5, 5, 5); ctx.restore();
+    }
+  }
+  ctx.restore();
+};
 const laneName = (laneId) => (laneId === LANE.CENTER ? "MAIN" : laneId === LANE.LEFT ? "LEFT" : "RIGHT");
 const queue = (model, laneId, team = TEAM.PLAYER) => model.director?.queuedWaves.get(team).get(laneId) ?? [];
 const laneIdsFor = (model) => model.simulation?.state.map.lanes.map((lane) => lane.id) ?? model.mapDefinition?.lanes.map((lane) => lane.id) ?? [LANE.LEFT, LANE.RIGHT];
@@ -53,7 +85,7 @@ const header = (ctx, model, ui) => {
   const nodeIncome = economy && model.simulation
     ? Math.round(economy.controlledNodes(model.simulation.state, TEAM.PLAYER) * economy.balance.nodeIncomePerSecond * economy.escalationMultiplier(model.activeBattleSeconds))
     : 0;
-  box(ctx, { x: 8, y: 8, width: model.width - 16, height: 48 }, C.panel, "rgba(190,224,236,0.3)", 10);
+  commandFrame(ctx, { x: 8, y: 8, width: model.width - 16, height: 48 }, { fill: "rgba(13,29,47,0.96)", strong: true, radius: 10 });
   text(ctx, `YOU  ${Math.round(ratio(playerHq) * 100)}%`, 18, 22, 11, C.player);
   miniBar(ctx, 18, 31, 102, ratio(playerHq), C.player);
   text(ctx, `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s · NODE ${nodeIncome}`, 18, 44, 8, C.text);
@@ -302,7 +334,7 @@ const collapsedCommandDock = (ctx, model, ui) => {
   const entries = queue(model, model.selectedLaneId);
   const total = purchasedCount(model);
   const limit = model.economy.reinforcementLimit(TEAM.PLAYER);
-  box(ctx, ui.panel, "rgba(13,29,47,0.97)", "rgba(255,214,121,0.62)", 10);
+  commandFrame(ctx, ui.panel, { fill: "rgba(13,29,47,0.97)", strong: true, radius: 10 });
   box(ctx, ui.command, "rgba(45,70,82,0.98)", C.gold, 8);
   drawCommandMedallion(ctx, model, ui.command.x + 6, ui.command.y + 4, 40);
   text(ctx, "COMMAND", ui.command.x + 82, ui.command.y + 24, 10, C.text, "center");
@@ -319,8 +351,7 @@ const expandedCommandPanel = (ctx, model, ui) => {
   const total = purchasedCount(model);
   const limit = model.economy.reinforcementLimit(TEAM.PLAYER);
   commandSelectionLink(ctx, model, ui);
-  box(ctx, ui.panel, "rgba(13,29,47,0.985)", "rgba(255,214,121,0.76)", 12);
-  ctx.strokeStyle = "rgba(245,235,207,0.38)"; ctx.lineWidth = 1; ctx.strokeRect(ui.panel.x + 5, ui.panel.y + 5, ui.panel.width - 10, ui.panel.height - 10);
+  commandFrame(ctx, ui.panel, { fill: "rgba(13,29,47,0.985)", strong: true, radius: 12 });
   box(ctx, ui.close, "rgba(255,214,121,0.92)", "#fff2c7", 7);
   text(ctx, "⌄", ui.close.x + 8, ui.close.y + 20, 12, "#23374b", "center");
   box(ctx, ui.fleetTab, model.commandMenu === "units" ? "rgba(68,91,93,0.98)" : "rgba(20,45,67,0.94)", model.commandMenu === "units" ? C.gold : "rgba(125,180,201,0.34)", 8);
@@ -369,7 +400,7 @@ const title = (ctx, model) => {
   text(ctx, "STRATEGY", model.width / 2, 201 + offsetY, 30, C.text, "center");
   text(ctx, "GALALAXY", model.width / 2, 233 + offsetY, 30, C.text, "center");
   text(ctx, "BUILD A FLEET · HOLD THE LINE", model.width / 2, 265 + offsetY, 10, C.muted, "center", 650);
-  box(ctx, { x: 52, y: 288 + offsetY, width: model.width - 104, height: 240 }, "rgba(12, 28, 48, 0.88)", "rgba(239,199,127,0.5)", 14);
+  commandFrame(ctx, { x: 52, y: 288 + offsetY, width: model.width - 104, height: 240 }, { fill: "rgba(12,28,48,0.9)", strong: true, radius: 14 });
   text(ctx, singleLane ? "ONE LANE · ONE SUNWELL · LIVE COMBAT" : "TWO LANES · LIVE COMBAT", model.width / 2, 315 + offsetY, 9, C.text, "center", 600);
   text(ctx, "SWIPE THE MAP · PLAN EACH 22s WAVE", model.width / 2, 337 + offsetY, 8, C.muted, "center", 600);
   text(ctx, "‹  MISSION  ›", model.width / 2, 382 + offsetY, 8, C.gold, "center", 650);
@@ -378,8 +409,19 @@ const title = (ctx, model) => {
   box(ctx, { ...ui.fullscreen, x: 104, y: 438 + offsetY, width: 212, height: 32 }, "rgba(37,72,93,0.82)", "rgba(190,229,239,0.32)", 8);
   const difficulty = { cadet: "CADET · RELAXED", tactician: "TACTICIAN · NORMAL", admiral: "ADMIRAL · HARD" }[model.aiProfile] ?? "TACTICIAN · NORMAL";
   text(ctx, difficulty, model.width / 2, 454 + offsetY, 10, C.text, "center");
-  box(ctx, { x: 104, y: 478 + offsetY, width: 212, height: 38 }, "rgba(54,139,145,0.88)", "#b8edf0", 9);
-  text(ctx, "START MATCH", model.width / 2, 497 + offsetY, 11, C.text, "center");
+  box(ctx, { x: 104, y: 478 + offsetY, width: 212, height: 38 }, model.levelLoading ? "rgba(65,72,78,0.9)" : "rgba(54,139,145,0.88)", model.levelLoading ? C.gold : "#b8edf0", 9);
+  text(ctx, model.levelLoading ? "PREPARING MISSION…" : "START MATCH", model.width / 2, 497 + offsetY, 11, C.text, "center");
+};
+const loading = (ctx, model) => {
+  const progress = Math.max(0, Math.min(1, model.assetProgress ?? 0));
+  const panel = { x: 48, y: model.height / 2 - 78, width: model.width - 96, height: 156 };
+  commandFrame(ctx, panel, { fill: "rgba(10,24,43,0.96)", strong: true, radius: 14 });
+  text(ctx, "ORBITAL COMMAND", model.width / 2, panel.y + 34, 9, C.gold, "center", 650);
+  text(ctx, "PREPARING FLEET", model.width / 2, panel.y + 62, 18, C.text, "center");
+  ctx.fillStyle = "rgba(214,231,240,0.14)"; ctx.fillRect(panel.x + 28, panel.y + 91, panel.width - 56, 6);
+  ctx.fillStyle = C.player; ctx.fillRect(panel.x + 28, panel.y + 91, (panel.width - 56) * progress, 6);
+  text(ctx, `${Math.round(progress * 100)}%`, model.width / 2, panel.y + 117, 9, C.muted, "center", 650);
+  if (model.assetErrors) text(ctx, "RETRYING SLOW ASSETS", model.width / 2, panel.y + 137, 8, C.gold, "center", 650);
 };
 const endState = (ctx, model) => {
   const win = model.state === MATCH_STATE.VICTORY;
@@ -408,6 +450,7 @@ const paused = (ctx, model) => {
 };
 
 export const renderUiLayer = (ctx, model) => {
+  if (model.state === MATCH_STATE.LOADING) return loading(ctx, model);
   if (model.state === MATCH_STATE.TITLE) return title(ctx, model);
   const ui = commandUiLayout(model.height, laneIdsFor(model), model.commandDockOpen);
   header(ctx, model, ui);

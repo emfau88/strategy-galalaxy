@@ -14,7 +14,7 @@ import { MatchDirector } from "../src/simulation/matchDirector.js";
 import { AI_PROFILES } from "../src/simulation/opponentAi.js";
 import { createBattleState, emitSimulationEvent } from "../src/simulation/battleState.js";
 import { acquireStructureTarget, acquireUnitTarget } from "../src/simulation/targeting.js";
-import { ASSET_GROUPS } from "../src/assets.js";
+import { ASSET_GROUPS, runtimeAssetManifestForLevel } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { SoundSystem } from "../src/audio/soundSystem.js";
 import { commandActionAt, commandUiLayout, endActionAt, fullscreenActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "../src/ui/commandUi.js";
@@ -81,6 +81,39 @@ assert.deepEqual([first.next(), first.next(), first.next()], [second.next(), sec
 
 const loader = await new AssetLoader(Object.freeze({})).load();
 assert.equal(loader.progress, 1);
+
+const OriginalImage = globalThis.Image;
+delete globalThis.Image;
+const unavailableLoader = await new AssetLoader({}, { timeoutMs: 5, retryCount: 0 }).load({ missing: "missing.png" });
+assert.equal(unavailableLoader.isSettled, true, "a missing Image API cannot leave the loader pending");
+globalThis.Image = OriginalImage;
+let resilientAttempts = 0;
+globalThis.Image = class {
+  set src(_value) {
+    resilientAttempts += 1;
+    globalThis.setTimeout(() => {
+      if (resilientAttempts === 1) this.onerror?.();
+      else { this.naturalWidth = 64; this.naturalHeight = 64; this.onload?.(); }
+    }, 0);
+  }
+  decode() { return Promise.resolve(); }
+};
+const resilientLoader = await new AssetLoader({}, { timeoutMs: 50, retryCount: 1, retryDelayMs: 0 }).load({ sprite: "sprite.png" });
+assert.ok(resilientLoader.get("sprite"), "failed image requests are retried");
+assert.equal(resilientLoader.errors.length, 0, "a successful retry clears its prior error");
+
+globalThis.Image = class {
+  set src(_value) {
+    globalThis.setTimeout(() => { this.naturalWidth = 32; this.naturalHeight = 32; this.onload?.(); }, 12);
+  }
+  decode() { return Promise.resolve(); }
+};
+const lateLoader = await new AssetLoader({}, { timeoutMs: 1, retryCount: 0, retryDelayMs: 0 }).load({ late: "late.png" });
+assert.equal(lateLoader.get("late"), null, "the loading gate releases after its deadline");
+await new Promise((resolve) => globalThis.setTimeout(resolve, 20));
+assert.ok(lateLoader.get("late"), "a late image replaces its fallback without a reload");
+assert.equal(lateLoader.errors.length, 0, "late adoption clears the timeout report");
+globalThis.Image = OriginalImage;
 assert.equal(loader.isSettled, true);
 
 const laneSimulation = new BattleSimulation();
@@ -517,7 +550,12 @@ assert.equal(aiMatch.cycle, 2);
 assert.equal(aiMatch.lastAiDecision.cycle, 3);
 assert.ok(aiMatch.economy.get(TEAM.ENEMY).energy >= 0);
 
-for (const path of Object.values(ASSET_GROUPS.boot)) await access(new URL(`../${path}`, import.meta.url));
+for (const level of [1, 2]) {
+  const runtimeManifest = runtimeAssetManifestForLevel(level);
+  for (const path of Object.values(runtimeManifest)) await access(new URL(`../${path}`, import.meta.url));
+  for (const key of Object.keys(ASSET_GROUPS.combatVfx)) assert.ok(runtimeManifest[key], `${key} is active for level ${level}`);
+  for (const key of Object.keys(ASSET_GROUPS[level === 1 ? "level1" : "level2"])) assert.ok(runtimeManifest[key], `${key} loads with level ${level}`);
+}
 const effects = new PresentationEffects();
 effects.observe([{ type: "hit", x: 12, y: 24, team: TEAM.PLAYER }, { type: "destroyed", x: 48, y: 96, team: TEAM.ENEMY }, { type: "upgrade_activated", x: 210, y: 1090, team: TEAM.PLAYER, upgradeId: "economy", level: 1 }]);
 assert.ok(effects.effects.some((effect) => effect.type === "upgrade" && effect.upgradeId === "economy"));
