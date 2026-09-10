@@ -24,9 +24,9 @@ Die verbindliche Zielrichtung steht in [STRATEGY_GALALAXY_CORE_VISION.md](STRATE
 
 ### Bulk 3 – Squad-Käufe und Formationen
 
-- [ ] Eine Kaufentscheidung auf ein oder mehrere sichtbare Squad-Mitglieder abbilden.
-- [ ] Gemeinsame Kosten, Lane, Launch und Cooldown mit individuellen HP und Verlusten verbinden.
-- [ ] Formationen und Kapazitätsprüfungen für zehn bis zwanzig sichtbare Schiffe absichern.
+- [x] Eine Kaufentscheidung auf ein oder mehrere sichtbare Squad-Mitglieder abbilden.
+- [x] Gemeinsame Kosten, Lane, Launch und Cooldown mit individuellen HP und Verlusten verbinden.
+- [x] Formationen und Kapazitätsprüfungen für zehn bis zwanzig sichtbare Schiffe absichern.
 
 ### Bulk 4 – Core-Maps und Carrier
 

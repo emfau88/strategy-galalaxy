@@ -55,9 +55,7 @@ export class LiveDeploymentSystem {
       return { ok: false, reason: "COOLDOWN_ACTIVE", cooldownRemaining: cooldown };
     }
 
-    // Bulk 2 launches one member per purchase. Bulk 3 expands this array from
-    // squad definitions without changing the atomic validation path.
-    const memberTypes = [unitType];
+    const memberTypes = Array.from({ length: definition.squadSize ?? 1 }, () => unitType);
     const lane = simulation.state.lanes.get(laneId);
     const active = lane.unitIds.get(team).length;
     if (active + memberTypes.length > this.config.caps.unitsPerLaneTeam) {
@@ -72,8 +70,8 @@ export class LiveDeploymentSystem {
     const formationSequence = -this.nextFormationSequence;
     const spawned = simulation.spawnFormation(team, laneId, memberTypes, formationSequence);
     if (spawned.length !== memberTypes.length) {
-      // Validation and BattleSimulation use the same cap, so this is a defensive
-      // guard against future spawn rules. No cost or cooldown has been mutated.
+      // BattleSimulation performs the same atomic preflight. This guard keeps
+      // economy state unchanged if later spawn rules reject the whole formation.
       return { ok: false, reason: "LANE_CAPACITY" };
     }
 

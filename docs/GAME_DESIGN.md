@@ -67,13 +67,15 @@ Ein Kauf ist eine taktische Entscheidung, nicht zwingend ein einzelnes Sprite.
 | Klasse | Zielmodell |
 | --- | --- |
 | Drone | kleines Wing, vor allem automatische Basis-Wave |
-| Scout | kleiner beweglicher Screen; endgültige Squad-Größe datengetrieben |
-| Fighter | Squadron mit zwei bis drei Mitgliedern |
+| Scout | Wing mit drei kleinen beweglichen Screens |
+| Fighter | Wing mit zwei Anti-Light-Escorts |
 | Bomber | einzelnes mittelgroßes Schiff |
 | Frigate | einzelner großer Front- oder Distanzanker |
 | Capital Ship | späteres einzelnes sehr großes Schiff |
 
 Squad-Mitglieder sind eigenständige Simulationseinheiten. Sie können einzeln getroffen und zerstört werden, teilen aber Kauf, Cooldown, Lane, Launch und einen Formation Anchor.
+
+Die Kaufzusammensetzung liegt datengetrieben als `squadSize` in der Unit-Definition. Kosten und Cooldown gelten genau einmal pro Kaufentscheidung; das Lane-Limit zählt jedes erzeugte Mitglied. Passt eine Formation nicht vollständig in die Lane-Kapazität, wird sie ohne Teilspawn, Kosten oder Cooldown abgelehnt.
 
 Formationen müssen kleine Abstände halten, den Lane-Korridor respektieren und während einer Begegnung organisch aufbrechen dürfen. Kollisions- und Simulationsradien bleiben von der sichtbaren Sprite-Größe getrennt.
 

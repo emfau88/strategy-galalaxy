@@ -16,10 +16,10 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 
 ## Aktueller Spielstand
 
-Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Bulks 1 und 2 sind umgesetzt: Die Runtime nutzt bereits sofortiges Deployment mit Cooldowns und davon unabhängige automatische Drone-Waves. Nodes, Turrets und die bisherige HQ-Darstellung werden im späteren Map-/Carrier-Bulk deaktiviert beziehungsweise ersetzt.
+Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Bulks 1 bis 3 sind umgesetzt: Die Runtime nutzt sofortiges Squad-Deployment mit Cooldowns und davon unabhängige automatische Drone-Waves. Nodes, Turrets und die bisherige HQ-Darstellung werden im späteren Map-/Carrier-Bulk deaktiviert beziehungsweise ersetzt.
 
 - Kontinuierlicher `LIVE_MATCH` ohne Kauf-Queue, Lock-in, Refund oder bezahlte Wave-Slots.
-- Scout, Fighter, Bomber und Frigate starten unmittelbar in der gewählten Lane; eine kurze Hangar-Traversal inszeniert den Launch.
+- Scout Wings mit drei und Fighter Wings mit zwei individuell verwundbaren Schiffen starten unmittelbar in der gewählten Lane. Bomber und Frigate bleiben Einzelschiffe; eine kurze gemeinsame Hangar-Traversal inszeniert den Launch.
 - Eigene datengetriebene Cooldowns pro Einheitentyp laufen ausschließlich in aktiver Simulationszeit.
 - Kosten und Cooldown werden atomar erst nach erfolgreichem Spawn gesetzt.
 - Kostenlose symmetrische Drone-Waves starten unabhängig davon initial alle 22 Sekunden und besitzen einen eigenen Kapazitäts-Backlog.
@@ -47,8 +47,8 @@ Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_
 | Schiff | Rolle | Waffenbild | Live-Cooldown |
 | --- | --- | --- | ---: |
 | Drone | automatische, fragile Grundwelle | kleiner Pulse/Bullet | nicht kaufbar |
-| Scout | schneller Screen | leichter Pulse/Bullet | 2,5 s |
-| Fighter | Anti-Light- und Anti-Bomber-Escort | schnelle Bolt-/Ray-Salve | 4 s |
+| Scout Wing ×3 | schneller Screen | leichter Pulse/Bullet | 2,5 s |
+| Fighter Wing ×2 | Anti-Light- und Anti-Bomber-Escort | schnelle Bolt-/Ray-Salve | 4 s |
 | Bomber | verwundbarer Siege- und Anti-Heavy-Angreifer | sichtbare Homing-Rakete/Torpedo | 6 s |
 | Frigate | langlebiger Frontline-Anker | langsamer, schwerer Ray/Big Bullet | 8 s |
 
@@ -109,4 +109,4 @@ Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische
 
 ## Status
 
-Bulks 1 und 2 des neuen Core-Reworks sind abgeschlossen: Produktvertrag und Map-Flags stehen, bezahlte Deployments starten sofort mit datengetriebenen Cooldowns, automatische Waves sind technisch getrennt und Upgrades wirken live. Bulk 3 erweitert diesen Pfad um echte Mehrschiff-Squads.
+Bulks 1 bis 3 des neuen Core-Reworks sind abgeschlossen: Produktvertrag und Map-Flags stehen, bezahlte Wings starten sofort mit gemeinsamen Kosten und Cooldowns, ihre sichtbaren Mitglieder besitzen jedoch individuelle HP und Verluste. Automatische Waves bleiben technisch getrennt und Upgrades wirken live. Bulk 4 isoliert die deaktivierten Map-Features und ersetzt die HQ-Präsentation durch randgebundene Command Carrier.

@@ -158,6 +158,10 @@ assert.ok(UNIT_DEFINITIONS.fighter.fireInterval < UNIT_DEFINITIONS.frigate.fireI
 assert.equal(CONFIG.timing.deploymentIntervalSeconds, 22);
 assert.ok(UNIT_DEFINITIONS.scout.deploymentCooldownSeconds > 0);
 assert.ok(UNIT_DEFINITIONS.frigate.deploymentCooldownSeconds > UNIT_DEFINITIONS.scout.deploymentCooldownSeconds);
+assert.equal(UNIT_DEFINITIONS.scout.squadSize, 3);
+assert.equal(UNIT_DEFINITIONS.fighter.squadSize, 2);
+assert.equal(UNIT_DEFINITIONS.bomber.squadSize, 1);
+assert.equal(UNIT_DEFINITIONS.frigate.squadSize, 1);
 assert.equal(CONFIG.caps.projectilesPerLaneTeam, 64);
 assert.equal((CLASSIC_LANES.structures.find((structure) => structure.id === "player-hq").y + CLASSIC_LANES.structures.find((structure) => structure.id === "enemy-hq").y) / 2, CLASSIC_LANES.lanes[0].node.y);
 assert.equal(UNIT_DEFINITIONS.battlecruiser.enabled, false);
@@ -311,6 +315,19 @@ assert.ok(formation.every((unit) => !unit.launching));
 assert.ok(new Set(formation.map((unit) => `${unit.x},${unit.y}`)).size >= 5);
 assert.ok(formation.every((unit) => Math.abs(unit.x - CLASSIC_LANES.lanes[0].centerX) <= CLASSIC_LANES.lanes[0].width / 2));
 
+const fleetReadabilitySimulation = new BattleSimulation();
+const readableFleet = fleetReadabilitySimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, Array.from({ length: 18 }, () => "drone"), 91);
+assert.equal(readableFleet.length, 18, "formations support the target density of ten to twenty visible ships");
+for (let index = 0; index < 120; index += 1) fleetReadabilitySimulation.step(1 / 60);
+assert.ok(new Set(readableFleet.map((unit) => `${Math.round(unit.x)},${Math.round(unit.y)}`)).size >= 16, "dense Wings retain readable individual positions");
+assert.ok(readableFleet.every((unit) => unit.x >= 25 && unit.x <= 185), "dense Wings remain inside their lane corridor");
+
+const atomicFormationSimulation = new BattleSimulation({ config: { ...CONFIG, caps: { ...CONFIG.caps, unitsPerLaneTeam: 4 } } });
+assert.equal(atomicFormationSimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["fighter", "fighter", "fighter"]).length, 3);
+const unitsBeforeRejectedFormation = atomicFormationSimulation.state.units.size;
+assert.deepEqual(atomicFormationSimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["fighter", "fighter"]), []);
+assert.equal(atomicFormationSimulation.state.units.size, unitsBeforeRejectedFormation, "capacity rejection never creates a partial formation");
+
 const droneDuel = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
 const duelDrones = [
   ...droneDuel.spawnFormation(TEAM.PLAYER, LANE.CENTER, ["drone", "drone"], 81),
@@ -427,12 +444,18 @@ const unitsBeforeLiveDeployment = economyMatch.simulation.state.units.size;
 const waveTimerBeforeLiveDeployment = economyMatch.phaseRemaining;
 const deployed = economyMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "fighter" });
 assert.equal(deployed.ok, true);
-assert.equal(deployed.spawnedIds.length, 1);
-assert.equal(economyMatch.simulation.state.units.size, unitsBeforeLiveDeployment + 1, "paid units spawn immediately instead of entering a queue");
+assert.equal(deployed.spawnedIds.length, 2);
+assert.equal(new Set(deployed.spawned.map((unit) => unit.formationId)).size, 1, "one purchase creates one shared formation");
+assert.ok(deployed.spawned.every((unit) => unit.laneId === LANE.LEFT && unit.launching), "Wing members share their selected lane and launch");
+assert.equal(economyMatch.simulation.state.units.size, unitsBeforeLiveDeployment + 2, "a paid Fighter Wing spawns both members immediately");
 assert.equal(economyMatch.simulation.state.units.get(deployed.spawnedIds[0]).launching, true, "the immediate spawn may still use a short launch traversal");
 assert.equal(economyMatch.phaseRemaining, waveTimerBeforeLiveDeployment, "paid deployment does not reset or delay the automatic wave timer");
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 210);
 assert.deepEqual(economyMatch.economy.get(TEAM.PLAYER).spending, { fleet: 90, economy: 0, research: 0 });
+const [lostWingMember, survivingWingMember] = deployed.spawned;
+economyMatch.simulation.applyDamage([{ projectileId: "attrition-check", projectileType: "fighter_laser", targetId: lostWingMember.id, damage: lostWingMember.maxHp, ownerTeam: TEAM.ENEMY, laneId: LANE.LEFT }]);
+assert.equal(lostWingMember.alive, false);
+assert.equal(survivingWingMember.alive, true, "Squad members retain individual HP and can be lost independently");
 const energyBeforeCooldownFailure = economyMatch.economy.get(TEAM.PLAYER).energy;
 const unitsBeforeCooldownFailure = economyMatch.simulation.state.units.size;
 const cooldownFailure = economyMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.RIGHT, unitType: "fighter" });
@@ -456,7 +479,7 @@ const unitsBeforeNoSlotLaunches = noSlotMatch.simulation.state.units.size;
 for (const [laneId, unitType] of [[LANE.LEFT, "scout"], [LANE.RIGHT, "fighter"], [LANE.LEFT, "bomber"], [LANE.RIGHT, "frigate"]]) {
   assert.equal(noSlotMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId, unitType }).ok, true);
 }
-assert.equal(noSlotMatch.simulation.state.units.size, unitsBeforeNoSlotLaunches + 4, "four paid launches add units directly with no reinforcement-slot queue");
+assert.equal(noSlotMatch.simulation.state.units.size, unitsBeforeNoSlotLaunches + 7, "four paid decisions launch seven visible ships according to their squad sizes");
 
 const upgradeMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 900 } } });
 upgradeMatch.start();
@@ -540,6 +563,7 @@ assert.equal(capacityMatch.baseWaveBacklog.get(TEAM.PLAYER).get(LANE.LEFT).lengt
 const rejected = capacityMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
 assert.deepEqual(rejected, { ok: false, reason: "LANE_CAPACITY" });
 assert.equal(capacityMatch.economy.get(TEAM.PLAYER).energy, 300);
+assert.equal(capacityMatch.liveDeployment.cooldownRemaining(TEAM.PLAYER, "scout"), 0, "an atomically rejected Wing starts no cooldown");
 capacityMatch.forceWave();
 assert.equal(capacityMatch.baseWaveBacklog.get(TEAM.PLAYER).get(LANE.LEFT).length, 4, "later automatic Drones accumulate without creating a paid queue");
 
@@ -621,7 +645,7 @@ assert.deepEqual([...gardenMatch.simulation.state.lanes.keys()], [LANE.CENTER]);
 assert.equal(gardenMatch.simulation.state.lanes.get(LANE.CENTER).unitIds.get(TEAM.PLAYER).length, 2);
 const gardenLiveDeployment = gardenMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.CENTER, unitType: "fighter" });
 assert.equal(gardenLiveDeployment.ok, true);
-assert.equal(gardenMatch.simulation.state.lanes.get(LANE.CENTER).unitIds.get(TEAM.PLAYER).length, 3);
+assert.equal(gardenMatch.simulation.state.lanes.get(LANE.CENTER).unitIds.get(TEAM.PLAYER).length, 4);
 assert.equal(gardenMatch.pause(), true);
 assert.equal(gardenMatch.returnToTitle(), true);
 assert.equal(gardenMatch.state, MATCH_STATE.TITLE);

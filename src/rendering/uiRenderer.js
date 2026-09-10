@@ -242,8 +242,9 @@ const unitCard = (ctx, model, rect) => {
   box(ctx, rect, affordable ? C.card : "rgba(35, 45, 58, 0.76)", affordable ? C.outline : null, 8);
   const role = { scout: "SCREEN", fighter: "ANTI-LIGHT", bomber: "SIEGE", frigate: "FRONTLINE" }[rect.unitType];
   drawShipIcon(ctx, model, rect.unitType, rect.x + 24, rect.y + 25, 38);
-  text(ctx, def.id.toUpperCase(), rect.x + 49, rect.y + 16, 11, affordable ? C.text : C.muted);
-  const detail = cooldown > Number.EPSILON ? `${cooldown.toFixed(1)}s COOLDOWN` : `${role} · ${def.cost} E`;
+  text(ctx, def.deploymentLabel ?? def.id.toUpperCase(), rect.x + 49, rect.y + 16, 10, affordable ? C.text : C.muted);
+  const count = def.squadSize > 1 ? ` ×${def.squadSize}` : "";
+  const detail = cooldown > Number.EPSILON ? `${cooldown.toFixed(1)}s COOLDOWN` : `${role}${count} · ${def.cost} E`;
   text(ctx, detail, rect.x + 49, rect.y + 35, 8, affordable ? C.gold : C.muted, "left", 650);
 };
 

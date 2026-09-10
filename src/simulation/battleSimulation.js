@@ -36,6 +36,11 @@ const FORMATION = Object.freeze({
   fighter: Object.freeze({ forward: 2, lateral: [-62, 62, -25, 25] }),
   bomber: Object.freeze({ forward: -58, lateral: [44, -44, 0] }),
 });
+const WING_FORMATION = Object.freeze({
+  drone: Object.freeze({ forward: 92, lateral: [0, -18, 18, -36, 36, -54, 54] }),
+  scout: Object.freeze({ forward: 74, lateral: [0, -24, 24, -48, 48] }),
+  fighter: Object.freeze({ forward: 2, lateral: [-24, 24, 0, -48, 48] }),
+});
 
 const squadIdFor = (team, laneId, spawnCycle) => `${team}:${laneId}:${spawnCycle}`;
 const vectorLimit = (x, y, maximum) => {
@@ -113,13 +118,21 @@ export class BattleSimulation {
   }
 
   spawnFormation(team, laneId, unitTypes, spawnCycle = 0) {
+    const lane = this.state.lanes.get(laneId);
+    const active = lane?.unitIds.get(team);
+    const validFormation = Array.isArray(unitTypes)
+      && unitTypes.every((unitType) => UNIT_DEFINITIONS[unitType] && UNIT_DEFINITIONS[unitType].enabled !== false)
+      && active
+      && active.length + unitTypes.length <= this.config.caps.unitsPerLaneTeam;
+    if (!validFormation) return [];
     const direction = forwardDirection(team);
     const typeCounts = new Map();
+    const isSingleTypeWing = unitTypes.length > 1 && unitTypes.every((unitType) => unitType === unitTypes[0]);
     const hq = [...this.state.structures.values()].find((structure) => structure.team === team && structure.structureType === "hq");
     const laneSide = laneId === LANE.LEFT ? -1 : laneId === LANE.RIGHT ? 1 : spawnCycle % 2 ? -1 : 1;
     const launchOrigin = hq ? { x: hq.x + laneSide * 34, y: hq.y + direction * 25 } : null;
     return unitTypes.map((unitType, index) => {
-      const pattern = FORMATION[unitType] ?? FORMATION.fighter;
+      const pattern = (isSingleTypeWing ? WING_FORMATION[unitType] : null) ?? FORMATION[unitType] ?? FORMATION.fighter;
       const typeIndex = typeCounts.get(unitType) ?? 0;
       typeCounts.set(unitType, typeIndex + 1);
       const row = Math.floor(typeIndex / pattern.lateral.length);

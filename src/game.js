@@ -15,7 +15,7 @@ import { InputRouter } from "./ui/inputRouter.js";
 import { commandActionAt, containsPoint, endActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "./ui/commandUi.js";
 import { cameraNavigatorRatioAt } from "./ui/cameraUi.js";
 import { AI_PROFILES } from "./simulation/opponentAi.js";
-import { CLASSIC_LANES, ORBITAL_GARDEN } from "./data/definitions.js";
+import { CLASSIC_LANES, ORBITAL_GARDEN, UNIT_DEFINITIONS } from "./data/definitions.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
 const LEVELS = Object.freeze([ORBITAL_GARDEN, CLASSIC_LANES]);
@@ -376,7 +376,8 @@ export class Game {
       return;
     }
     const result = this.match.executeCommand({ ...action, team: TEAM.PLAYER, laneId: this.selectedLaneId });
-    this.showFeedback(result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE ONLINE" : `${action.unitType.toUpperCase()} LAUNCHED`) : this.commandFailureLabel(result.reason));
+    const deploymentLabel = UNIT_DEFINITIONS[action.unitType]?.deploymentLabel ?? action.unitType?.toUpperCase();
+    this.showFeedback(result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE ONLINE" : `${deploymentLabel} LAUNCHED`) : this.commandFailureLabel(result.reason));
     this.sound.play(result.ok ? "purchase" : "error");
     if (result.ok) this.sound.vibrate(9);
   }

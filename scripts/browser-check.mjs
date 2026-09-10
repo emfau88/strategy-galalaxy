@@ -194,7 +194,7 @@ try {
   await writeFile(resolve(output, "hq-command-expanded-420x760.png"), Buffer.from(commandScreenshot.data, "base64"));
   await touch(70, 619);
   const gardenUnits = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.simulation.state.lanes.get('LANE_CENTER').unitIds.get('TEAM_PLAYER').length", returnByValue: true });
-  assert.equal(gardenUnits.result.value, 3, "Orbital Garden main-lane live deployment is touch-operable");
+  assert.equal(gardenUnits.result.value, 5, "Orbital Garden main-lane Scout Wing deployment is touch-operable");
   await touch(206, 565);
   await send("Runtime.evaluate", { expression: "(() => { const g = window.__strategyGalalaxy; for (let step = 0; step < 60 * 36 && g.state === 'LIVE_MATCH'; step += 1) g.match.advanceLive(1 / 60); g.camera.jumpToWorld(640); })()" });
   await delay(100);
@@ -356,7 +356,7 @@ try {
     assert.equal(openResult.result.value, true, `${width}x${height} compact command dock expands`);
     await touch(touchX, (designHeight - 141) * snapshot.transform.scale);
     const deploymentResult = await send("Runtime.evaluate", { expression: "[...window.__strategyGalalaxy.match.simulation.state.lanes.values()].flatMap((lane) => lane.unitIds.get('TEAM_PLAYER')).length", returnByValue: true });
-    assert.equal(deploymentResult.result.value, snapshot.playerUnits + 1, `${width}x${height} touch immediately launches a Scout`);
+    assert.equal(deploymentResult.result.value, snapshot.playerUnits + 3, `${width}x${height} touch immediately launches a three-ship Scout Wing`);
     await touch(206 * snapshot.transform.scale, (designHeight - 195) * snapshot.transform.scale);
 
     const panX = 210 * snapshot.transform.scale;

@@ -6,7 +6,7 @@ Dieses Dokument beschreibt die Zielarchitektur des Core-Gameplay-Reworks. Die Pr
 
 ## Migrationsstatus
 
-Bulks 1 und 2 sind umgesetzt. Die Runtime besitzt keine Kauf-Queue, kein Lock-in, keinen Refund und keine bezahlten Wave-Slots mehr. Der `DeploymentDirector` verwaltet ausschließlich kostenlose Waves; `LiveDeploymentSystem` verwaltet bezahlte Sofortstarts und Cooldowns. Objectives, Turrets und die HQ-Präsentation bleiben bis Bulk 4 Migrationsbestand.
+Bulks 1 bis 3 sind umgesetzt. Die Runtime besitzt keine Kauf-Queue, kein Lock-in, keinen Refund und keine bezahlten Wave-Slots mehr. Der `DeploymentDirector` verwaltet ausschließlich kostenlose Waves; `LiveDeploymentSystem` löst eine Kaufentscheidung datengetrieben in ein oder mehrere Mitglieder auf und verwaltet bezahlte Sofortstarts sowie Cooldowns. Objectives, Turrets und die HQ-Präsentation bleiben bis Bulk 4 Migrationsbestand.
 
 Jeder folgende Bulk muss die Tests gleichzeitig mit dem betroffenen System migrieren. Ein vorübergehend dokumentierter Zielzustand ist zulässig; ein teilweise migriertes öffentliches Kommando ohne Tests ist es nicht.
 
@@ -114,6 +114,7 @@ Die automatische Wave benutzt denselben Formation-Spawn, aber weder Energie noch
 
 - Units, Structures, Projectiles und optionale Nodes besitzen stabile IDs.
 - Ein Squad besteht aus individuellen Units mit gemeinsamer Lane, gemeinsamem Kaufkontext und Formation Anchor.
+- `squadSize` bestimmt die sichtbare Mitgliederzahl eines Kaufs; `spawnFormation` prüft die gesamte Gruppe vorab und erzeugt niemals eine Teilformation.
 - Launching Units sind bis zum Abschluss ihrer kurzen Traversal von Targeting, Capture und Separation ausgeschlossen.
 - Geschwindigkeit, Heading, Formation und Waffenreichweite sind autoritative Simulationswerte.
 - Units wechseln niemals ihre Lane.
