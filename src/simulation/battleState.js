@@ -1,4 +1,4 @@
-import { CLASSIC_LANES } from "../data/definitions.js";
+import { CLASSIC_LANES, isMapFeatureEnabled } from "../data/definitions.js";
 import { LANE, TEAM } from "../core/constants.js";
 import { createIdFactory } from "../core/ids.js";
 import { createStructure } from "./entities.js";
@@ -25,12 +25,20 @@ export const createBattleState = ({ map = CLASSIC_LANES } = {}) => {
       unitIds: new Map([[TEAM.PLAYER, []], [TEAM.ENEMY, []]]),
       projectileIds: [],
     });
-    state.nodes.set(lane.node.id, {
-      id: lane.node.id, laneId: lane.id, x: lane.node.x, y: lane.node.y, radius: lane.node.radius,
-      progress: 0, ownerTeam: null, contested: false, capturePower: { [TEAM.PLAYER]: 0, [TEAM.ENEMY]: 0 },
-    });
+    if (isMapFeatureEnabled(map, "captureNodes") && lane.node) {
+      state.nodes.set(lane.node.id, {
+        id: lane.node.id, laneId: lane.id, x: lane.node.x, y: lane.node.y, radius: lane.node.radius,
+        progress: 0, ownerTeam: null, contested: false, capturePower: { [TEAM.PLAYER]: 0, [TEAM.ENEMY]: 0 },
+      });
+    }
   }
-  for (const structure of map.structures) state.structures.set(structure.id, createStructure(structure));
+  for (const structure of map.structures ?? []) {
+    if (structure.structureType === "hq" && !isMapFeatureEnabled(map, "commandCarriers")) continue;
+    if (structure.structureType === "turret" && !isMapFeatureEnabled(map, "defensiveTurrets")) continue;
+    if (structure.structureType === "economy" && !isMapFeatureEnabled(map, "economyBuildings")) continue;
+    if (structure.structureType === "neutral" && !isMapFeatureEnabled(map, "neutralStructures")) continue;
+    state.structures.set(structure.id, createStructure(structure));
+  }
   return state;
 };
 

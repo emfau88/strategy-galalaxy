@@ -8,7 +8,7 @@ import { DeploymentDirector } from "./deploymentDirector.js";
 import { EconomySystem } from "./economySystem.js";
 import { LiveDeploymentSystem } from "./liveDeploymentSystem.js";
 import { AI_PROFILES, INVESTMENT_BIASES, OpponentAi } from "./opponentAi.js";
-import { CLASSIC_LANES } from "../data/definitions.js";
+import { CLASSIC_LANES, isMapFeatureEnabled } from "../data/definitions.js";
 
 /** Coordinates a continuous match; specialized systems own combat, economy, capture, and deployment. */
 export class MatchDirector {
@@ -23,7 +23,9 @@ export class MatchDirector {
     this.activeMatchSeconds = 0;
     this.simulation = null;
     this.economy = new EconomySystem({ balance: this.config.balance });
-    this.capture = new CaptureSystem({ captureRatePerSecond: this.config.balance.nodeCaptureRatePerSecond });
+    this.capture = isMapFeatureEnabled(mapDefinition, "captureNodes")
+      ? new CaptureSystem({ captureRatePerSecond: this.config.balance.nodeCaptureRatePerSecond })
+      : null;
     this.commands = new CommandSystem();
     this.deployment = new DeploymentDirector({ config: this.config, laneIds: mapDefinition.lanes.map((lane) => lane.id) });
     this.liveDeployment = new LiveDeploymentSystem({ config: this.config });
@@ -59,7 +61,7 @@ export class MatchDirector {
     this.economy.advance(this.simulation.state, step, this.activeMatchSeconds);
     this.liveDeployment.advance(step);
     this.simulation.step(step);
-    this.capture.advance(this.simulation.state, step);
+    this.capture?.advance(this.simulation.state, step);
     this.activeMatchSeconds += step;
 
     if (this.simulation.state.terminalTeam) {

@@ -25,16 +25,20 @@ export const ASSET_GROUPS = Object.freeze({
   level1: Object.freeze({
     "background-orbital-garden-rival": "assets/runtime/environment/orbital-garden-rival-sector-v1.png",
     "background-orbital-garden-player": "assets/runtime/environment/orbital-garden-player-sector-v1.png",
+  }),
+  level2: Object.freeze({
+    "background-twin-foundries-rival": "assets/runtime/environment/twin-foundries-rival-sector-v1.png",
+    "background-twin-foundries-player": "assets/runtime/environment/twin-foundries-player-sector-v1.png",
+  }),
+  // Retained for later feature-enabled maps, but excluded from the core-map load
+  // and Pages deployment while nodes and defensive structures are switched off.
+  optionalStructures: Object.freeze({
     "structure-hq-garden": "assets/runtime/structures/orbital-garden-hq-v2.png",
     "structure-hq-garden-rival": "assets/runtime/structures/orbital-garden-hq-rival-v1.png",
     "structure-turret-head-garden": "assets/runtime/structures/orbital-garden-turret-head-v1.png",
     "structure-node-sunwell": "assets/runtime/structures/orbital-sunwell-v2.png",
     "structure-turret-garden-player": "assets/runtime/structures/orbital-garden-turret-player-v3.png",
     "structure-turret-garden-rival": "assets/runtime/structures/orbital-garden-turret-rival-v3.png",
-  }),
-  level2: Object.freeze({
-    "background-twin-foundries-rival": "assets/runtime/environment/twin-foundries-rival-sector-v1.png",
-    "background-twin-foundries-player": "assets/runtime/environment/twin-foundries-player-sector-v1.png",
     "structure-hq": "assets/structures/command-hq-topdown-v3.png",
     "structure-turret": "assets/structures/defense-turret-base-topdown-v2.png",
     "structure-turret-head": "assets/structures/defense-turret-head-topdown-v3.png",

@@ -30,9 +30,9 @@ Die verbindliche Zielrichtung steht in [STRATEGY_GALALAXY_CORE_VISION.md](STRATE
 
 ### Bulk 4 – Core-Maps und Carrier
 
-- [ ] Deaktivierte Map-Features vollständig aus Erzeugung, Simulation, KI, HUD und Rendering isolieren.
-- [ ] Headquarters als teilweise außerhalb der Karte liegende Command Carrier präsentieren.
-- [ ] Ruhige Spielfeldmitte und randgebundene Dekoration herstellen.
+- [x] Deaktivierte Map-Features vollständig aus Erzeugung, Simulation, KI, HUD und Rendering isolieren.
+- [x] Headquarters als teilweise außerhalb der Karte liegende Command Carrier präsentieren.
+- [x] Ruhige Spielfeldmitte und randgebundene Dekoration herstellen.
 
 ### Bulk 5 – HUD und Live-KI
 

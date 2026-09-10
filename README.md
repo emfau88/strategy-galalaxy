@@ -16,7 +16,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 
 ## Aktueller Spielstand
 
-Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Bulks 1 bis 3 sind umgesetzt: Die Runtime nutzt sofortiges Squad-Deployment mit Cooldowns und davon unabhängige automatische Drone-Waves. Nodes, Turrets und die bisherige HQ-Darstellung werden im späteren Map-/Carrier-Bulk deaktiviert beziehungsweise ersetzt.
+Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Bulks 1 bis 4 sind umgesetzt: Die Runtime nutzt sofortiges Squad-Deployment mit Cooldowns und davon unabhängige automatische Drone-Waves. Core-Maps enthalten keine Nodes oder Turrets mehr und werden von randständigen Command Carriern gerahmt.
 
 - Kontinuierlicher `LIVE_MATCH` ohne Kauf-Queue, Lock-in, Refund oder bezahlte Wave-Slots.
 - Scout Wings mit drei und Fighter Wings mit zwei individuell verwundbaren Schiffen starten unmittelbar in der gewählten Lane. Bomber und Frigate bleiben Einzelschiffe; eine kurze gemeinsame Hangar-Traversal inszeniert den Launch.
@@ -26,21 +26,21 @@ Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_
 - Reactor- und Weapons-Upgrades können jederzeit gekauft werden und wirken unmittelbar. Frühere Logistics-Slots sind entfernt; Turret-Upgrades sind auf Core-Maps nicht verfügbar.
 - Die KI verwendet für ihre vorläufigen Wave-Entscheidungen denselben Live-Deployment-Befehl, dieselben Kosten und Cooldowns.
 - Zwei wählbare Karten: Level 1 „Orbital Garden“ mit einer Lane und Level 2 „Twin Fronts“ mit zwei Lanes; beide nutzen eine `420 × 1180` Scroll-Welt.
-- Eine schmale strategische Kartenleiste zeigt Fronten, Strukturen, Nodes und den aktuellen Kameraausschnitt.
-- Gedeckelte Economy mit 270 Startenergie in Level 1 beziehungsweise 300 in Level 2, 16 Basisenergie/s und maximal 780 gespeicherter Energie; Node-Einkommen wird mit Bulk 4 entfernt.
+- Eine schmale strategische Kartenleiste zeigt Flottenfronten, Command Carrier und den aktuellen Kameraausschnitt; optionale Strukturen erscheinen nur auf dafür aktivierten Maps.
+- Gedeckelte Economy mit 270 Startenergie in Level 1 beziehungsweise 300 in Level 2, 16 Basisenergie/s und maximal 780 gespeicherter Energie; Node-Einkommen ist auf den Core-Maps deaktiviert.
 - Scout, Fighter, Bomber und Frigate besitzen eigene Rollen, Formationen und Zielprioritäten.
 - Zwei vereinheitlichte hochauflösende Flottenfamilien mit identischer Draufsicht und Beleuchtung: Elfenbein/Messing/Cyan für den Spieler, Anthrazit/Kupfer/Coral für den Rivalen. Drones besitzen nun eigene kleinere Hüllen. Die flammenfreien Schiffe nutzen die originalen animierten Nairan-/Kla'ed-Triebwerksflammen aus Galalaxy, die als enge Asset-Crops an exakt kalibrierten Düsenpunkten sitzen.
 - Acht eigenständige Waffen-Sprites trennen Klasse und Fraktion sofort: Spielerfeuer ist cyan/elfenbein/messingfarben, Rivalenfeuer coral/kupfer/anthrazit. Scout-Pulse, Fighter-Laser, Bomber-Homing-Raketen und Frigate-Geschosse besitzen eigene Silhouetten sowie kurze Echos, lange Laserkerne, segmentierte Abgaswege beziehungsweise schwere gestrichelte Wakes. Mehrfachsalven bleiben schadensneutral; Frigate-Breitseiten starten sichtbar nacheinander von drei Hardpoints.
 - Deutliches Schadensfeedback durch kurzen Hull-Flash, expandierende Schildkontur, projektilabhängigen Impact-Glow, Funken und situative Healthbars. Jeder Schiffstyp spielt beim Tod seine originale 8–18-phasige Galalaxy-Zerstörungssequenz mit deren 14-FPS-Timing; Turrets und HQs nutzen längere, silhouettenfreie Struktur-Explosionen.
-- Noch vorhandene Defense Turrets und Headquarters bleiben bis zum Map-/Carrier-Bulk funktionaler Migrationsbestand.
-- Keine großflächigen Team-Neonringe oder dekorativen Orbit-Ellipsen; Nodes zeigen Capture-Fortschritt kompakt unterhalb des Sprites.
+- Die alten HQ-Sprites, Defense Turrets und Capture Nodes sind aus beiden Core-Maps sowie deren Ladepfad entfernt. Die zugrunde liegenden optionalen Systeme und Assets bleiben für spätere Feature-Maps erhalten.
+- Keine großflächigen Team-Neonringe oder dekorativen Orbit-Ellipsen; optionale Feature-Maps dürfen Node-Fortschritt weiterhin kompakt darstellen.
 - Faire Projektilbudgets pro Team und Lane sowie globale Sicherheitsgrenzen für mobile Geräte; die Kartenleiste pulsiert bei frischen Offscreen-Treffern und Zerstörungen.
 - Responsive Canvas-Höhe mit bildschirmfestem HUD und einer davon entkoppelten `420 x 1180` Spielwelt. Die beiden Level-1-Hintergrundsektoren werden proportional beschnitten und weich überblendet, nicht auf Mobile verzerrt.
 - Über das Pause-Menü kann jederzeit zum Hauptmenü zurückgekehrt werden; der Ergebnisbildschirm bietet getrennt „Play Again“ und „Main Menu“.
 - Größere Mobile-Touchflächen, direkt in den Lane-Tabs sichtbarer Druckvergleich sowie ein kurzer Drei-Schritte-Einstieg auf dem Startbildschirm.
-- Integriertes HQ-Kommandomenü: Der Normalzustand zeigt Lane, Live-Deployment und Auto-Wave-Timer; ein Tap auf das eigene HQ oder „Command“ öffnet Fleet- und Upgrade-Tabs.
+- Integriertes Carrier-Kommandomenü: Der Normalzustand zeigt Lane, Live-Deployment und Auto-Wave-Timer; ein Tap auf den eigenen Command Carrier oder „Command“ öffnet Fleet- und Upgrade-Tabs.
 - Schaltbare, synthetisierte Combat-Sounds und an echte Nutzergesten gebundenes Haptik-Feedback ohne zusätzliche Audio-Lizenzabhängigkeit.
-- Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt in zwei Stufen nur 36–38 aktive Bilder pro Level. Große Level-1-Quellen besitzen mobile `840 px`-Ableitungen, und GitHub Pages veröffentlicht ausschließlich das kuratierte Spielartefakt statt der 516 Referenzdateien.
+- Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt in zwei Stufen nur 32 aktive Bilder pro Core-Level. Große Level-1-Quellen besitzen mobile `840 px`-Ableitungen, und GitHub Pages veröffentlicht ausschließlich das kuratierte Spielartefakt statt der 516 Referenzdateien.
 
 ## Einheiten
 
@@ -74,7 +74,7 @@ Das Projekt nutzt native Browsermodule und benötigt keinen Build-Schritt.
 python -m http.server 8765 --directory .
 ```
 
-Anschließend `http://127.0.0.1:8765/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste. Ein Tap auf das eigene HQ oder den unteren Command-Dock öffnet Fleet und Upgrades; dort werden Lane, Einheiten, Forschung und Undo gewählt. Der kleine Pfeil zwischen den Tabs schließt die Konsole wieder. `P` pausiert; das Pause-Menü kann fortsetzen oder zum Hauptmenü zurückkehren. Das Symbol oben rechts fordert Browser-Fullscreen an.
+Anschließend `http://127.0.0.1:8765/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste. Ein Tap auf den eigenen Command Carrier oder den unteren Command-Dock öffnet Fleet und Upgrades; dort werden Lane, Wings und Forschung gewählt. Der kleine Pfeil zwischen den Tabs schließt die Konsole wieder. `P` pausiert; das Pause-Menü kann fortsetzen oder zum Hauptmenü zurückkehren. Das Symbol oben rechts fordert Browser-Fullscreen an.
 
 Für das schlanke GitHub-Pages-Artefakt wird `npm.cmd run build:pages` verwendet. Es kopiert Code und nur die tatsächlich aktiven Level-, Flotten-, Projektil- und VFX-Dateien nach `dist/`.
 
@@ -109,4 +109,4 @@ Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische
 
 ## Status
 
-Bulks 1 bis 3 des neuen Core-Reworks sind abgeschlossen: Produktvertrag und Map-Flags stehen, bezahlte Wings starten sofort mit gemeinsamen Kosten und Cooldowns, ihre sichtbaren Mitglieder besitzen jedoch individuelle HP und Verluste. Automatische Waves bleiben technisch getrennt und Upgrades wirken live. Bulk 4 isoliert die deaktivierten Map-Features und ersetzt die HQ-Präsentation durch randgebundene Command Carrier.
+Bulks 1 bis 4 des neuen Core-Reworks sind abgeschlossen: Bezahlte Wings starten sofort, automatische Waves bleiben getrennt und optionale Map-Features sind vollständig isoliert. Große Stations-HQs wurden durch teilweise außerhalb der Welt liegende, codebasierte Command-Carrier-Placeholder ersetzt; eine dunkle Mittelzone hält die Flotten und Waffen im visuellen Vordergrund. Bulk 5 schärft HUD-Sperrgründe und stellt die KI auf laufende Echtzeitreaktionen um.

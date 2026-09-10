@@ -15,6 +15,9 @@ export const CORE_SLICE_FEATURES = freeze({
   edgeDecorations: true,
 });
 
+// Missing flags stay enabled for legacy/test maps; core maps opt out explicitly.
+export const isMapFeatureEnabled = (map, feature) => map?.features?.[feature] !== false;
+
 export const UNIT_DEFINITIONS = freeze({
   drone: freeze({ id: "drone", role: "skirmisher", cost: 0, purchasable: false, maxHp: 28, speed: 64, acceleration: 160, turnRate: 6.2, collisionRadius: 5, spacingRadius: 11, attackRange: 68, aggroRange: 110, targetLeash: 142, damage: 2, fireInterval: 1.45, projectileId: "scout_pulse", muzzleOffset: 6, captureStrength: 0.2, color: "#b8f4ff" }),
   scout: freeze({ id: "scout", deploymentLabel: "SCOUT WING", squadSize: 3, role: "screen", cost: 50, deploymentCooldownSeconds: 2.5, maxHp: 62, speed: 70, acceleration: 150, turnRate: 5.4, collisionRadius: 7, spacingRadius: 14, attackRange: 76, aggroRange: 130, targetLeash: 166, damage: 4, fireInterval: 1.2, projectileId: "scout_pulse", muzzleOffset: 8, salvoCount: 2, salvoSpread: 0.035, hardpointSpacing: 4, captureStrength: 2, color: "#9cecff" }),
@@ -63,8 +66,8 @@ export const ORBITAL_GARDEN = freeze({
     }),
   ]),
   structures: freeze([
-    freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 1090 }),
-    freeze({ id: "enemy-hq", team: TEAM.ENEMY, laneId: null, structureType: "hq", x: 210, y: 90 }),
+    freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 1168 }),
+    freeze({ id: "enemy-hq", team: TEAM.ENEMY, laneId: null, structureType: "hq", x: 210, y: 12 }),
     freeze({ id: "player-center-turret", team: TEAM.PLAYER, laneId: LANE.CENTER, structureType: "turret", x: 112, y: 930 }),
     freeze({ id: "enemy-center-turret", team: TEAM.ENEMY, laneId: LANE.CENTER, structureType: "turret", x: 308, y: 250 }),
   ]),
@@ -82,8 +85,8 @@ export const CLASSIC_LANES = freeze({
     freeze({ id: LANE.RIGHT, centerX: 315, width: 170, node: freeze({ id: "right-node", x: 315, y: 590, radius: 42 }), playerSpawn: freeze({ x: 315, y: 1000 }), enemySpawn: freeze({ x: 315, y: 180 }) }),
   ]),
   structures: freeze([
-    freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 1090 }),
-    freeze({ id: "enemy-hq", team: TEAM.ENEMY, laneId: null, structureType: "hq", x: 210, y: 90 }),
+    freeze({ id: "player-hq", team: TEAM.PLAYER, laneId: null, structureType: "hq", x: 210, y: 1168 }),
+    freeze({ id: "enemy-hq", team: TEAM.ENEMY, laneId: null, structureType: "hq", x: 210, y: 12 }),
     freeze({ id: "player-left-turret", team: TEAM.PLAYER, laneId: LANE.LEFT, structureType: "turret", x: 105, y: 930 }),
     freeze({ id: "player-right-turret", team: TEAM.PLAYER, laneId: LANE.RIGHT, structureType: "turret", x: 315, y: 930 }),
     freeze({ id: "enemy-left-turret", team: TEAM.ENEMY, laneId: LANE.LEFT, structureType: "turret", x: 105, y: 250 }),

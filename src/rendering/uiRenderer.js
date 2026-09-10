@@ -84,7 +84,10 @@ const header = (ctx, model, ui) => {
   commandFrame(ctx, { x: 8, y: 8, width: model.width - 16, height: 48 }, { fill: "rgba(13,29,47,0.96)", strong: true, radius: 10 });
   text(ctx, `YOU  ${Math.round(ratio(playerHq) * 100)}%`, 18, 22, 11, C.player);
   miniBar(ctx, 18, 31, 102, ratio(playerHq), C.player);
-  text(ctx, `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s · NODE ${nodeIncome}`, 18, 44, 8, C.text);
+  const incomeLabel = model.simulation?.state.map.features?.captureNodes === false
+    ? `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s`
+    : `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s · NODE ${nodeIncome}`;
+  text(ctx, incomeLabel, 18, 44, 8, C.text);
   text(ctx, "NEXT WAVE", 158, 22, 9, C.text, "center");
   text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, 158, 42, 14, C.text, "center");
   text(ctx, `${Math.round(ratio(enemyHq) * 100)}%  RIVAL`, 300, 22, 10, C.enemy, "right");

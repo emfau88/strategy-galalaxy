@@ -180,10 +180,10 @@ try {
   await waitForGame();
   await assertRuntimeAssetsLoaded(1);
   const gardenState = await send("Runtime.evaluate", {
-    expression: `(() => { const g = window.__strategyGalalaxy; return { map: g.match.simulation.state.map.id, lanes: [...g.match.simulation.state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, playerUnits: g.match.simulation.state.lanes.get('LANE_CENTER').unitIds.get('TEAM_PLAYER').length, assetFailures: g.loader.errors.length }; })()`,
+    expression: `(() => { const g = window.__strategyGalalaxy; const state = g.match.simulation.state; return { map: state.map.id, lanes: [...state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, playerUnits: state.lanes.get('LANE_CENTER').unitIds.get('TEAM_PLAYER').length, nodes: state.nodes.size, turrets: [...state.structures.values()].filter((value) => value.structureType === 'turret').length, carriers: [...state.structures.values()].filter((value) => value.structureType === 'hq').map((value) => value.y), assetFailures: g.loader.errors.length }; })()`,
     returnByValue: true,
   });
-  assert.deepEqual(gardenState.result.value, { map: "orbital_garden", lanes: ["LANE_CENTER"], worldHeight: 1180, playerUnits: 2, assetFailures: 0 });
+  assert.deepEqual(gardenState.result.value, { map: "orbital_garden", lanes: ["LANE_CENTER"], worldHeight: 1180, playerUnits: 2, nodes: 0, turrets: 0, carriers: [1168, 12], assetFailures: 0 });
   const gardenPlayerScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(resolve(output, "level-1-player-sector-420x760.png"), Buffer.from(gardenPlayerScreenshot.data, "base64"));
   const playerHqTap = await send("Runtime.evaluate", { expression: "(() => { const g = window.__strategyGalalaxy; const h = g.match.simulation.state.structures.get('player-hq'); return { x: h.x, y: g.camera.worldToScreenY(h.y) }; })()", returnByValue: true });
@@ -207,10 +207,10 @@ try {
   await waitForGame();
   await assertRuntimeAssetsLoaded(2);
   const levelTwoState = await send("Runtime.evaluate", {
-    expression: `(() => { const g = window.__strategyGalalaxy; return { map: g.match.simulation.state.map.id, theme: g.match.simulation.state.map.visualTheme, lanes: [...g.match.simulation.state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, assetFailures: g.loader.errors.length }; })()`,
+    expression: `(() => { const g = window.__strategyGalalaxy; const state = g.match.simulation.state; return { map: state.map.id, theme: state.map.visualTheme, lanes: [...state.lanes.keys()], worldHeight: g.getCameraSnapshot().worldHeight, nodes: state.nodes.size, turrets: [...state.structures.values()].filter((value) => value.structureType === 'turret').length, assetFailures: g.loader.errors.length }; })()`,
     returnByValue: true,
   });
-  assert.deepEqual(levelTwoState.result.value, { map: "classic_lanes", theme: "twin_foundries", lanes: ["LANE_LEFT", "LANE_RIGHT"], worldHeight: 1180, assetFailures: 0 });
+  assert.deepEqual(levelTwoState.result.value, { map: "classic_lanes", theme: "twin_foundries", lanes: ["LANE_LEFT", "LANE_RIGHT"], worldHeight: 1180, nodes: 0, turrets: 0, assetFailures: 0 });
   for (const [region, worldY] of [["player", 1090], ["center", 590], ["rival", 90]]) {
     await send("Runtime.evaluate", { expression: `window.__strategyGalalaxy.camera.jumpToWorld(${worldY})` });
     await delay(60);
@@ -407,7 +407,7 @@ try {
       const cameraState = centered.result.value;
       await touch(405 * snapshot.transform.scale, (cameraState.viewport.y + cameraState.viewport.height - 14) * snapshot.transform.scale);
       const damageResult = await send("Runtime.evaluate", {
-        expression: `(() => { const structures = window.__strategyGalalaxy.match.simulation.state.structures; for (const id of ['player-hq', 'player-left-turret']) { const structure = structures.get(id); structure.hp = structure.maxHp * 0.25; } return window.__strategyGalalaxy.match.lastDeploymentAt; })()`,
+        expression: `(() => { const structure = window.__strategyGalalaxy.match.simulation.state.structures.get('player-hq'); structure.hp = structure.maxHp * 0.25; return window.__strategyGalalaxy.match.lastDeploymentAt; })()`,
         returnByValue: true,
       });
       assert.ok(Number.isFinite(damageResult.result.value), "latest deployment timestamp remains available for HQ door animation");

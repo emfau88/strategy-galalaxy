@@ -23,6 +23,12 @@ import { fleetVisualFor, unifiedHullVisualFor } from "../src/data/visuals.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
+const FEATURE_TEST_MAP = Object.freeze({
+  ...CLASSIC_LANES,
+  id: "feature_test_map",
+  features: Object.freeze({ ...CLASSIC_LANES.features, captureNodes: true, defensiveTurrets: true }),
+});
+const featureBattle = () => new BattleSimulation({ state: createBattleState({ map: FEATURE_TEST_MAP }) });
 
 assert.equal(ORBITAL_GARDEN.lanes.length, 1, "level 1 keeps its single-lane identity");
 assert.equal(CLASSIC_LANES.lanes.length, 2, "level 2 keeps its two-lane identity");
@@ -39,7 +45,15 @@ for (const map of [ORBITAL_GARDEN, CLASSIC_LANES]) {
     centerDecorations: false,
     edgeDecorations: true,
   });
+  const coreState = createBattleState({ map });
+  assert.equal(coreState.nodes.size, 0, `${map.id} creates no disabled Capture Nodes`);
+  assert.deepEqual([...coreState.structures.values()].map((structure) => structure.structureType), ["hq", "hq"], `${map.id} creates only its Command Carriers`);
+  assert.ok(coreState.structures.get("enemy-hq").y < STRUCTURE_DEFINITIONS.hq.collisionRadius, "the rival Carrier intersects the upper map edge");
+  assert.ok(coreState.structures.get("player-hq").y > map.bounds.height - STRUCTURE_DEFINITIONS.hq.collisionRadius, "the player Carrier intersects the lower map edge");
 }
+const featureState = createBattleState({ map: FEATURE_TEST_MAP });
+assert.equal(featureState.nodes.size, 2, "feature-enabled maps retain Capture Nodes");
+assert.equal([...featureState.structures.values()].filter((structure) => structure.structureType === "turret").length, 4, "feature-enabled maps retain defensive Turrets");
 
 for (const [viewportWidth, viewportHeight] of targetViewports) {
   const transform = computeViewportTransform({ viewportWidth, viewportHeight, designWidth: 420, designHeight: 760, devicePixelRatio: 2, maxDevicePixelRatio: 1.5 });
@@ -144,7 +158,7 @@ assert.ok(laneSimulation.state.events.some((event) => event.type === "hit"));
 assert.ok([...laneSimulation.state.units.values()].every((unit) => unit.laneId === LANE.LEFT || unit.laneId === LANE.RIGHT));
 assert.ok([...laneSimulation.state.projectiles.values()].every((projectile) => projectile.laneId === LANE.LEFT || projectile.laneId === LANE.RIGHT));
 
-const isolatedLanes = new BattleSimulation();
+const isolatedLanes = featureBattle();
 const leftUnit = isolatedLanes.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 132, y: 330 });
 const rightEnemy = isolatedLanes.spawnUnit(TEAM.ENEMY, LANE.RIGHT, "scout", { x: 288, y: 330 });
 isolatedLanes.step(1 / 60);
@@ -168,15 +182,15 @@ assert.equal(UNIT_DEFINITIONS.battlecruiser.enabled, false);
 assert.equal(UNIT_DEFINITIONS.dreadnought.enabled, false);
 
 const structureTieSimulation = new BattleSimulation();
-structureTieSimulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 105, y: 150 });
-structureTieSimulation.spawnUnit(TEAM.PLAYER, LANE.RIGHT, "scout", { x: 315, y: 150 });
-structureTieSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 105, y: 1030 });
-structureTieSimulation.spawnUnit(TEAM.ENEMY, LANE.RIGHT, "scout", { x: 315, y: 1030 });
+structureTieSimulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 105, y: 80 });
+structureTieSimulation.spawnUnit(TEAM.PLAYER, LANE.RIGHT, "scout", { x: 315, y: 80 });
+structureTieSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 105, y: 1100 });
+structureTieSimulation.spawnUnit(TEAM.ENEMY, LANE.RIGHT, "scout", { x: 315, y: 1100 });
 const enemyHqTieTarget = acquireStructureTarget(structureTieSimulation.state, structureTieSimulation.state.structures.get("enemy-hq"));
 const playerHqTieTarget = acquireStructureTarget(structureTieSimulation.state, structureTieSimulation.state.structures.get("player-hq"));
 assert.equal(enemyHqTieTarget.laneId, playerHqTieTarget.laneId, "mirrored HQs resolve equal-distance targets identically");
 
-const hqSimulation = new BattleSimulation();
+const hqSimulation = featureBattle();
 const enemyTurret = hqSimulation.state.structures.get("enemy-left-turret");
 enemyTurret.alive = false;
 const enemyHq = hqSimulation.state.structures.get("enemy-hq");
@@ -186,7 +200,7 @@ for (let index = 0; index < 600 && !hqSimulation.state.terminalTeam; index += 1)
 assert.equal(hqSimulation.state.terminalTeam, TEAM.PLAYER);
 assert.ok(hqSimulation.state.events.some((event) => event.type === "shot" && event.ownerId === "enemy-hq"));
 
-const turretSimulation = new BattleSimulation();
+const turretSimulation = featureBattle();
 const playerLeftTurret = turretSimulation.state.structures.get("player-left-turret");
 const intruder = turretSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: playerLeftTurret.x + 20, y: playerLeftTurret.y - 70 });
 for (let index = 0; index < 180; index += 1) turretSimulation.step(1 / 60);
@@ -309,7 +323,8 @@ assert.ok(liveWindowMatch.simulation.state.units.has(liveBeforeWave.spawnedIds[0
 const formationSimulation = new BattleSimulation();
 const formation = formationSimulation.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["scout", "scout", "scout", "scout", "scout", "scout"]);
 assert.ok(formation.every((unit) => unit.launching));
-assert.ok(formation.every((unit) => unit.x === 176 && unit.y === 1065), "left-lane ships begin inside the player HQ hangar");
+const formationCarrier = formationSimulation.state.structures.get("player-hq");
+assert.ok(formation.every((unit) => unit.x === formationCarrier.x - 34 && unit.y === formationCarrier.y - 25), "left-lane ships begin inside the player Carrier launch bay");
 for (let index = 0; index < 60; index += 1) formationSimulation.step(1 / 60);
 assert.ok(formation.every((unit) => !unit.launching));
 assert.ok(new Set(formation.map((unit) => `${unit.x},${unit.y}`)).size >= 5);
@@ -416,13 +431,13 @@ const broadsideError = Math.abs(Math.atan2(Math.sin(broadsideFrigate.heading - d
 assert.ok(broadsideError < 0.4, "frigates turn their hull perpendicular to the firing line");
 assert.ok(broadsideSimulation.state.events.some((event) => event.type === "shot" && event.ownerId === broadsideFrigate.id), "frigates fire after reaching broadside alignment");
 
-const roleTargeting = new BattleSimulation();
+const roleTargeting = featureBattle();
 const fighterHunter = roleTargeting.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 112, y: 330 });
 roleTargeting.spawnUnit(TEAM.ENEMY, LANE.LEFT, "frigate", { x: 112, y: 280 });
 const priorityBomber = roleTargeting.spawnUnit(TEAM.ENEMY, LANE.LEFT, "bomber", { x: 145, y: 270 });
 roleTargeting.step(1 / 60);
 assert.equal(fighterHunter.targetId, priorityBomber.id, "fighters prioritize vulnerable bombers over the nearest heavy");
-const siegeTargeting = new BattleSimulation();
+const siegeTargeting = featureBattle();
 const siegeBomber = siegeTargeting.spawnUnit(TEAM.PLAYER, LANE.LEFT, "bomber", { x: 112, y: 330 });
 siegeTargeting.spawnUnit(TEAM.ENEMY, LANE.LEFT, "fighter", { x: 112, y: 290 });
 siegeTargeting.step(1 / 60);
@@ -435,11 +450,19 @@ const laneBounds = new BattleSimulation();
 laneBounds.spawnFormation(TEAM.PLAYER, LANE.LEFT, ["scout", "fighter", "bomber", "frigate", "fighter", "scout"]);
 laneBounds.spawnFormation(TEAM.ENEMY, LANE.RIGHT, ["scout", "fighter", "bomber", "frigate", "fighter", "scout"]);
 for (let index = 0; index < 300; index += 1) laneBounds.step(1 / 60);
-assert.ok([...laneBounds.state.units.values()].every((unit) => unit.laneId === LANE.LEFT ? unit.x >= 42 && unit.x <= 182 : unit.x >= 238 && unit.x <= 378));
+assert.ok([...laneBounds.state.units.values()].every((unit) => {
+  const lane = CLASSIC_LANES.lanes.find((candidate) => candidate.id === unit.laneId);
+  const inset = UNIT_DEFINITIONS[unit.unitType].collisionRadius + 5;
+  return unit.x >= lane.centerX - lane.width / 2 + inset - 1e-6
+    && unit.x <= lane.centerX + lane.width / 2 - inset + 1e-6;
+}), "ships remain within their data-defined lane corridor without relying on Turrets");
 
 const economyMatch = new MatchDirector();
 economyMatch.start();
 assert.equal(economyMatch.economy.get(TEAM.PLAYER).energy, 300);
+assert.equal(economyMatch.capture, null, "Core maps do not instantiate the disabled Capture System");
+assert.equal(economyMatch.economy.controlledNodes(economyMatch.simulation.state, TEAM.PLAYER), 0);
+assert.ok(economyMatch.lastAiDecision.assessments.every((lane) => lane.nodeOwner === null && lane.friendlyTurret === 0 && lane.enemyTurret === 0), "Core AI ignores disabled Nodes and Turrets");
 const unitsBeforeLiveDeployment = economyMatch.simulation.state.units.size;
 const waveTimerBeforeLiveDeployment = economyMatch.phaseRemaining;
 const deployed = economyMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "fighter" });
@@ -500,7 +523,7 @@ assert.equal(escalatingWaveMatch.deployment.baseWaveSize(120), 3);
 assert.equal(escalatingWaveMatch.deployment.baseWaveSize(150), 4);
 assert.equal(escalatingWaveMatch.deployment.baseWaveSize(999), 5, "free drone escalation is capped");
 
-const captureMatch = new MatchDirector();
+const captureMatch = new MatchDirector({ mapDefinition: FEATURE_TEST_MAP });
 captureMatch.start();
 const leftNode = captureMatch.simulation.state.nodes.get("left-node");
 const captureUnit = captureMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: leftNode.x, y: leftNode.y + 9 });
@@ -537,12 +560,12 @@ assert.equal(researchMatch.economy.get(TEAM.PLAYER).weaponLevel, 1);
 assert.equal(researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter), baseWeaponDamage * 1.12, "weapons research affects combat immediately");
 assert.equal(researchMatch.economy.get(TEAM.PLAYER).spending.research, 220);
 
-const scoutCapture = new MatchDirector();
+const scoutCapture = new MatchDirector({ mapDefinition: FEATURE_TEST_MAP });
 scoutCapture.start();
 const captureNode = scoutCapture.simulation.state.nodes.get("left-node");
 scoutCapture.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: captureNode.x, y: captureNode.y + 9 });
 scoutCapture.capture.advance(scoutCapture.simulation.state, 0.5);
-const fighterCapture = new MatchDirector();
+const fighterCapture = new MatchDirector({ mapDefinition: FEATURE_TEST_MAP });
 fighterCapture.start();
 fighterCapture.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: captureNode.x, y: captureNode.y + 9 });
 fighterCapture.capture.advance(fighterCapture.simulation.state, 0.5);
@@ -592,6 +615,7 @@ for (const level of [1, 2]) {
   for (const path of Object.values(runtimeManifest)) await access(new URL(`../${path}`, import.meta.url));
   for (const key of Object.keys(ASSET_GROUPS.combatVfx)) assert.ok(runtimeManifest[key], `${key} is active for level ${level}`);
   for (const key of Object.keys(ASSET_GROUPS[level === 1 ? "level1" : "level2"])) assert.ok(runtimeManifest[key], `${key} loads with level ${level}`);
+  for (const key of Object.keys(ASSET_GROUPS.optionalStructures)) assert.equal(runtimeManifest[key], undefined, `${key} stays out of core-map loading`);
 }
 const effects = new PresentationEffects();
 effects.observe([{ type: "hit", x: 12, y: 24, team: TEAM.PLAYER }, { type: "destroyed", x: 48, y: 96, team: TEAM.ENEMY }, { type: "upgrade_activated", x: 210, y: 1090, team: TEAM.PLAYER, upgradeId: "economy", level: 1 }]);

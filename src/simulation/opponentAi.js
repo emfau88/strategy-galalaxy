@@ -1,5 +1,5 @@
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
-import { STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
+import { STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS, isMapFeatureEnabled } from "../data/definitions.js";
 
 const opponentOf = (team) => (team === TEAM.PLAYER ? TEAM.ENEMY : TEAM.PLAYER);
 export const AI_PROFILES = Object.freeze({ CADET: "cadet", TACTICIAN: "tactician", ADMIRAL: "admiral" });
@@ -39,13 +39,15 @@ export class OpponentAi {
 
   laneAssessment(director, laneId) {
     const { state } = director.simulation;
+    const usesTurrets = isMapFeatureEnabled(state.map, "defensiveTurrets");
+    const usesCaptureNodes = isMapFeatureEnabled(state.map, "captureNodes");
     const enemyTeam = opponentOf(this.team);
     const lane = state.lanes.get(laneId);
     const friendlyUnits = lane.unitIds.get(this.team).map((id) => state.units.get(id)).reduce((total, unit) => total + unitStrength(unit), 0);
     const enemyUnits = lane.unitIds.get(enemyTeam).map((id) => state.units.get(id)).reduce((total, unit) => total + unitStrength(unit), 0);
-    const friendlyTurret = turretStrength(state, this.team, laneId);
-    const enemyTurret = turretStrength(state, enemyTeam, laneId);
-    const node = [...state.nodes.values()].find((value) => value.laneId === laneId);
+    const friendlyTurret = usesTurrets ? turretStrength(state, this.team, laneId) : 0;
+    const enemyTurret = usesTurrets ? turretStrength(state, enemyTeam, laneId) : 0;
+    const node = usesCaptureNodes ? [...state.nodes.values()].find((value) => value.laneId === laneId) : null;
     const composition = (ids) => ids.map((id) => state.units.get(id)).filter((unit) => unit?.alive).reduce((counts, unit) => {
       counts[unit.unitType] = (counts[unit.unitType] ?? 0) + 1;
       return counts;
@@ -93,7 +95,7 @@ export class OpponentAi {
     // Economy is preferred while the match is still open; immediate defense is
     // preferred when a lane is actually under pressure.
     if (this.profile !== AI_PROFILES.CADET && this.investmentBias !== INVESTMENT_BIASES.FLEET) {
-      if (defense.threat > 70 && director.mapDefinition.features?.defensiveTurrets !== false) buy("turret", 110);
+      if (defense.threat > 70 && isMapFeatureEnabled(director.mapDefinition, "defensiveTurrets")) buy("turret", 110);
       else if (this.investmentBias === INVESTMENT_BIASES.ECONOMY) buy("economy", 120);
       else if (this.investmentBias === INVESTMENT_BIASES.WEAPONS) buy("weapons", 130);
       else if (this.profile === AI_PROFILES.ADMIRAL && economy.weaponLevel < 2) buy("weapons", 120);

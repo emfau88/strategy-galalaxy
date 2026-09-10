@@ -245,7 +245,20 @@ export const renderBattlefieldLayer = (ctx, model) => {
       ctx.restore();
     }
   }
-  if (map.visualTheme === "twin_foundries") {
+  if (map.features?.centerDecorations === false) {
+    // Keep the authored edge identity while reserving the central combat band
+    // for silhouettes, projectiles, health bars, and formation movement.
+    const centerX = map.bounds.width / 2;
+    const centerY = projection.y(map.bounds.height / 2);
+    const quietField = ctx.createRadialGradient(centerX, centerY, 24, centerX, centerY, 445);
+    quietField.addColorStop(0, "rgba(3,8,18,0.8)");
+    quietField.addColorStop(0.38, "rgba(3,8,18,0.72)");
+    quietField.addColorStop(0.7, "rgba(3,8,18,0.4)");
+    quietField.addColorStop(1, "rgba(3,8,18,0)");
+    ctx.fillStyle = quietField;
+    ctx.fillRect(0, projection.y(0), map.bounds.width, map.bounds.height);
+  }
+  if (map.visualTheme === "twin_foundries" && map.features?.edgeDecorations !== false) {
     ctx.save();
     for (const lane of map.lanes) {
       const corridor = ctx.createLinearGradient(lane.centerX - 68, 0, lane.centerX + 68, 0);
@@ -302,7 +315,7 @@ export const renderBattlefieldLayer = (ctx, model) => {
     ctx.stroke();
   }
   ctx.setLineDash([]);
-  for (const lane of map.lanes) {
+  if (map.features?.centerDecorations !== false) for (const lane of map.lanes) {
     for (let worldY = 72; worldY < map.bounds.height; worldY += 92) {
       const y = projection.y(worldY);
       if (y < top - 10 || y > bottom + 10) continue;
@@ -466,6 +479,62 @@ const drawStructureFallback = (ctx, isHq, size, color) => {
   ctx.restore();
 };
 
+const drawCommandCarrier = (ctx, structure, color) => {
+  const teamAccent = structure.team === TEAM.PLAYER ? "#78f0ee" : "#ff907b";
+  ctx.save();
+  const shadow = ctx.createRadialGradient(0, -34, 12, 0, -34, 150);
+  shadow.addColorStop(0, structure.team === TEAM.PLAYER ? "rgba(72,205,215,0.22)" : "rgba(224,102,82,0.2)");
+  shadow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = shadow;
+  ctx.fillRect(-160, -182, 320, 260);
+
+  ctx.fillStyle = "rgba(14,22,32,0.98)";
+  ctx.strokeStyle = "rgba(239,216,164,0.88)";
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.moveTo(0, -158);
+  ctx.lineTo(54, -118);
+  ctx.lineTo(92, -62);
+  ctx.lineTo(126, 38);
+  ctx.lineTo(88, 116);
+  ctx.lineTo(-88, 116);
+  ctx.lineTo(-126, 38);
+  ctx.lineTo(-92, -62);
+  ctx.lineTo(-54, -118);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(54,67,78,0.94)";
+  ctx.beginPath();
+  ctx.moveTo(0, -133); ctx.lineTo(36, -98); ctx.lineTo(25, 82);
+  ctx.lineTo(-25, 82); ctx.lineTo(-36, -98); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = "rgba(218,228,224,0.34)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  for (const side of [-1, 1]) {
+    ctx.fillStyle = "rgba(5,12,22,0.98)";
+    ctx.strokeStyle = "rgba(232,190,116,0.72)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(side * 30, -91); ctx.lineTo(side * 77, -76);
+    ctx.lineTo(side * 87, -20); ctx.lineTo(side * 30, -30); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = teamAccent;
+    ctx.globalAlpha = 0.72;
+    ctx.fillRect(side * 61 - 2, -66, 4, 28);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "rgba(235,220,182,0.78)";
+  for (const y of [-108, -82, -4, 25, 54]) ctx.fillRect(-8, y, 16, 2);
+  ctx.fillStyle = color;
+  ctx.globalCompositeOperation = "screen";
+  ctx.beginPath(); ctx.arc(0, -112, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+  ctx.restore();
+};
+
 const drawHqBay = (ctx, side, openness) => {
   ctx.save();
   ctx.translate(side * 34, -25);
@@ -568,28 +637,25 @@ const drawStructureUpgradeDetails = (ctx, structure, model, size, color) => {
 const drawStructure = (ctx, structure, model, projection) => {
   const state = model.simulation.state;
   const isHq = structure.structureType === "hq";
-  const gardenHq = isHq && state.map.visualTheme === "orbital_garden";
   const gardenTurret = !isHq && state.map.visualTheme === "orbital_garden";
-  const size = gardenHq ? 230 : gardenTurret ? 94 : isHq ? 176 : 84;
-  const spriteWidth = gardenHq ? 330 : isHq ? 176 : size;
-  const spriteHeight = gardenHq ? 227 : isHq ? 176 : size;
+  const size = isHq ? 270 : gardenTurret ? 94 : 84;
   const color = teamColor(structure.team);
-  const hqAssetKey = gardenHq ? (structure.team === TEAM.ENEMY ? "structure-hq-garden-rival" : "structure-hq-garden") : "structure-hq";
   const turretAssetKey = gardenTurret ? (structure.team === TEAM.ENEMY ? "structure-turret-garden-rival" : "structure-turret-garden-player") : "structure-turret";
-  const sprite = asset(model.assets, isHq ? hqAssetKey : turretAssetKey);
+  const sprite = isHq ? null : asset(model.assets, turretAssetKey);
   const damaged = state.time - structure.lastDamagedAt < 0.13;
   const hpRatio = structure.hp / structure.maxHp;
   const y = projection.y(structure.y);
   ctx.save();
   ctx.translate(structure.x, y);
-  if (!gardenHq && isHq && structure.team === TEAM.ENEMY) ctx.rotate(Math.PI);
-  if (sprite) {
+  if (isHq && structure.team === TEAM.ENEMY) ctx.rotate(Math.PI);
+  if (isHq) drawCommandCarrier(ctx, structure, color);
+  else if (sprite) {
     if (damaged) ctx.filter = "brightness(1.9) saturate(0.4)";
     else if (hpRatio <= 0.34) ctx.filter = "brightness(0.72) saturate(0.52)";
     else if (hpRatio <= 0.67) ctx.filter = "brightness(0.88) saturate(0.76)";
     else ctx.filter = state.map.visualTheme === "twin_foundries" ? "sepia(0.16) saturate(1.12) contrast(1.08)" : "saturate(1.08) contrast(1.05)";
-    ctx.globalCompositeOperation = gardenHq || gardenTurret ? "screen" : "source-over";
-    ctx.drawImage(sprite, -spriteWidth / 2, -spriteHeight / 2, spriteWidth, spriteHeight);
+    ctx.globalCompositeOperation = gardenTurret ? "screen" : "source-over";
+    ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
     ctx.globalCompositeOperation = "source-over";
     ctx.filter = "none";
   } else drawStructureFallback(ctx, isHq, size, color);
@@ -604,7 +670,8 @@ const drawStructure = (ctx, structure, model, projection) => {
   else drawTurretHead(ctx, structure, state, model.assets, projection, color, gardenTurret);
   drawDamageDetails(ctx, structure, size, hpRatio, model.frameTime);
   ctx.restore();
-  drawBar(ctx, structure.x, y + size * 0.45, isHq ? 84 : 50, hpRatio, color, isHq ? 5 : 4);
+  const barY = isHq ? y + (structure.team === TEAM.PLAYER ? -1 : 1) * size * 0.48 : y + size * 0.45;
+  drawBar(ctx, structure.x, barY, isHq ? 96 : 50, hpRatio, color, isHq ? 5 : 4);
 };
 
 const drawNode = (ctx, node, frameTime, assets, projection, visualTheme) => {
@@ -754,8 +821,11 @@ export const renderEntityLayer = (ctx, model) => {
     const screenY = projection.y(worldY);
     return screenY >= view.y - padding && screenY <= view.y + view.height + padding;
   };
-  for (const node of nodes.values()) if (visible(node.y, 120)) drawNode(ctx, node, model.frameTime, model.assets, projection, simulation.state.map.visualTheme);
+  if (simulation.state.map.features?.captureNodes !== false) {
+    for (const node of nodes.values()) if (visible(node.y, 120)) drawNode(ctx, node, model.frameTime, model.assets, projection, simulation.state.map.visualTheme);
+  }
   for (const structure of structures.values()) {
+    if (structure.structureType === "turret" && simulation.state.map.features?.defensiveTurrets === false) continue;
     if (!visible(structure.y, structure.structureType === "hq" ? 80 : 50)) continue;
     ctx.globalAlpha = structure.alive ? 1 : 0.16;
     drawStructure(ctx, structure, model, projection);

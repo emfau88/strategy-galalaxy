@@ -6,7 +6,7 @@ Dieses Dokument beschreibt die Zielarchitektur des Core-Gameplay-Reworks. Die Pr
 
 ## Migrationsstatus
 
-Bulks 1 bis 3 sind umgesetzt. Die Runtime besitzt keine Kauf-Queue, kein Lock-in, keinen Refund und keine bezahlten Wave-Slots mehr. Der `DeploymentDirector` verwaltet ausschließlich kostenlose Waves; `LiveDeploymentSystem` löst eine Kaufentscheidung datengetrieben in ein oder mehrere Mitglieder auf und verwaltet bezahlte Sofortstarts sowie Cooldowns. Objectives, Turrets und die HQ-Präsentation bleiben bis Bulk 4 Migrationsbestand.
+Bulks 1 bis 4 sind umgesetzt. Die Runtime besitzt keine Kauf-Queue, kein Lock-in, keinen Refund und keine bezahlten Wave-Slots mehr. Der `DeploymentDirector` verwaltet ausschließlich kostenlose Waves; `LiveDeploymentSystem` löst eine Kaufentscheidung datengetrieben in ein oder mehrere Mitglieder auf und verwaltet bezahlte Sofortstarts sowie Cooldowns. Core-Maps erzeugen nur Units, Projektile und die zwei randständigen Command Carrier; optionale Objectives und Turrets bleiben hinter Map-Flags erhalten.
 
 Jeder folgende Bulk muss die Tests gleichzeitig mit dem betroffenen System migrieren. Ein vorübergehend dokumentierter Zielzustand ist zulässig; ein teilweise migriertes öffentliches Kommando ohne Tests ist es nicht.
 
@@ -135,7 +135,7 @@ Optionale Systeme werden deaktiviert statt gelöscht:
 - Gebäude- und Neutral-Flags verhindern zugehörige Entities und Economy-Effekte.
 - Dekorationsflags steuern ausschließlich Rendering und Assets, nie Kampfregeln.
 
-Diese vollständige Isolation wird in Bulk 4 umgesetzt. Bulk 1 stellt dafür den verbindlichen Mapvertrag bereit.
+Diese Isolation ist seit Bulk 4 vollständig: Entity-Erzeugung, System-Orchestrierung, KI, HUD, Navigator, World-Rendering und Core-Asset-Manifeste konsumieren dieselben Map-Flags. Feature-Tests verwenden eine explizit aktivierte Testmap.
 
 ## Mobile Rendering und Input
 
