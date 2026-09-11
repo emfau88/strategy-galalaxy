@@ -49,7 +49,7 @@ export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT],
     deploy: freezeRect({ x: 174, y: y + 174, width: 126, height: 36 }),
     status: freezeRect({ x: 304, y: y + 174, width: 100, height: 36 }),
     units: Object.freeze(cards("unitType", ["scout", "fighter", "bomber", "frigate"])),
-    upgrades: Object.freeze(cards("upgradeId", ["economy", "weapons"])),
+    upgrades: Object.freeze(cards("upgradeId", ["economy", "weapons", "fireRate", "salvo"])),
     feedbackY: y - 20,
     debugY: y - 42,
   });

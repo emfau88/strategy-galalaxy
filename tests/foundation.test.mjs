@@ -11,7 +11,7 @@ import { LANE, TEAM } from "../src/core/constants.js";
 import { CLASSIC_LANES, CORE_SLICE_FEATURES, ORBITAL_GARDEN, PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../src/data/definitions.js";
 import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
-import { AI_PROFILES } from "../src/simulation/opponentAi.js";
+import { AI_PROFILES, OpponentAi } from "../src/simulation/opponentAi.js";
 import { createBattleState, emitSimulationEvent } from "../src/simulation/battleState.js";
 import { acquireStructureTarget, acquireUnitTarget } from "../src/simulation/targeting.js";
 import { ASSET_GROUPS, runtimeAssetManifestForLevel } from "../src/assets.js";
@@ -19,7 +19,7 @@ import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { SoundSystem } from "../src/audio/soundSystem.js";
 import { commandActionAt, commandUiLayout, endActionAt, fullscreenActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "../src/ui/commandUi.js";
 import { cameraNavigatorRatioAt } from "../src/ui/cameraUi.js";
-import { fleetVisualFor, unifiedHullVisualFor } from "../src/data/visuals.js";
+import { engineVisualFor, fleetVisualFor, unifiedHullVisualFor } from "../src/data/visuals.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
@@ -393,6 +393,11 @@ for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
     assert.ok(hull?.engineHardpoints.length > 0, `${team} ${unitType} retains explicit nozzle alignment for the imported flame`);
   }
 }
+assert.equal(unifiedHullVisualFor(TEAM.PLAYER, "fighter").engineHardpoints.length, 1, "fighter side lamps are not mistaken for exhaust nozzles");
+assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "bomber").engineHardpoints.map(({ x, y }) => [x, y]), [[120, 325], [264, 325], [156, 332], [228, 332]], "bomber exhaust stays registered to its four visible pipes");
+assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "frigate").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 356], [140, 343], [244, 343]], "frigate exhaust stays registered to its three visible pipes");
+assert.equal(engineVisualFor(TEAM.PLAYER).engine.assetKey, "klaed-scout-engine", "player exhaust uses the cyan Galalaxy strip");
+assert.equal(engineVisualFor(TEAM.ENEMY).engine.assetKey, "nairan-scout-engine", "rival exhaust uses the warm Galalaxy strip");
 
 const noReverseSimulation = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
 for (const structure of noReverseSimulation.state.structures.values()) structure.alive = false;
@@ -584,13 +589,30 @@ assert.deepEqual(cappedUpgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: 
 const researchMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 900 } } });
 researchMatch.start();
 const researchFighter = researchMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 105, y: 820, spawnCycle: 80 });
+const researchTarget = researchMatch.simulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "fighter", { x: 105, y: 720, spawnCycle: 80 });
 const baseWeaponDamage = researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter);
 assert.equal(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "weapons" }).ok, true);
+assert.equal(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "fireRate" }).ok, true);
+assert.equal(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "salvo" }).ok, true);
 assert.deepEqual(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "logistics" }), { ok: false, reason: "UNAVAILABLE_UPGRADE" });
 assert.deepEqual(researchMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "turret" }), { ok: false, reason: "UNAVAILABLE_UPGRADE" });
 assert.equal(researchMatch.economy.get(TEAM.PLAYER).weaponLevel, 1);
+assert.equal(researchMatch.economy.get(TEAM.PLAYER).fireRateLevel, 1);
+assert.equal(researchMatch.economy.get(TEAM.PLAYER).salvoLevel, 1);
 assert.equal(researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter), baseWeaponDamage * 1.12, "weapons research affects combat immediately");
-assert.equal(researchMatch.economy.get(TEAM.PLAYER).spending.research, 220);
+researchMatch.simulation.fire(researchFighter, researchTarget, UNIT_DEFINITIONS.fighter);
+assert.equal(researchFighter.fireCooldown, UNIT_DEFINITIONS.fighter.fireInterval * 0.92, "Autoloader shortens the live reload interval");
+assert.equal(researchMatch.simulation.state.projectiles.size, UNIT_DEFINITIONS.fighter.salvoCount + 1, "Multi Cannon adds one visible projectile to a paid ship salvo");
+const upgradedSalvoDamage = [...researchMatch.simulation.state.projectiles.values()].reduce((sum, projectile) => sum + projectile.damage, 0);
+const expectedSalvoDamage = researchMatch.simulation.damageFor(researchFighter, UNIT_DEFINITIONS.fighter)
+  * researchMatch.simulation.damageMultiplier(researchFighter, researchTarget)
+  * 1.06;
+assert.equal(upgradedSalvoDamage, expectedSalvoDamage, "Multi Cannon splits a small explicit salvo bonus across every visible shot");
+researchMatch.simulation.state.projectiles.clear();
+const researchDrone = researchMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "drone", { x: 105, y: 850, spawnCycle: 81 });
+researchMatch.simulation.fire(researchDrone, researchTarget, UNIT_DEFINITIONS.drone);
+assert.equal(researchMatch.simulation.state.projectiles.size, 1, "free Drones do not receive Multi Cannon research");
+assert.equal(researchMatch.economy.get(TEAM.PLAYER).spending.research, 610);
 
 const scoutCapture = new MatchDirector({ mapDefinition: FEATURE_TEST_MAP });
 scoutCapture.start();
@@ -638,6 +660,13 @@ assert.equal(cadetMatch.lastAiDecision.upgrades.length, 0);
 for (const purchase of aiMatch.lastAiDecision.purchases) {
   assert.ok(purchase.spawnedIds.every((id) => aiMatch.simulation.state.units.has(id)), "AI purchases use the same immediate spawn path");
 }
+const investingMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 3000 } } });
+investingMatch.start();
+const investingAi = new OpponentAi({ team: TEAM.PLAYER, profile: AI_PROFILES.TACTICIAN });
+for (let decision = 0; decision < 9; decision += 1) investingAi.plan(investingMatch);
+assert.equal(investingMatch.economy.get(TEAM.PLAYER).economyLevel, 1, "balanced AI commits to a visible Reactor investment plan");
+assert.equal(investingAi.lastDecision.mode, "investing");
+assert.deepEqual(investingAi.lastDecision.upgrades.map((upgrade) => upgrade.upgradeId), ["economy"]);
 const initialAiDecisionNumber = aiMatch.lastAiDecision.decisionNumber;
 for (let index = 0; index < Math.ceil(CONFIG.timing.aiDecisionIntervalSeconds * 60) + 1; index += 1) aiMatch.advanceLive(1 / 60);
 assert.ok(aiMatch.lastAiDecision.decisionNumber > initialAiDecisionNumber, "AI makes live decisions before the next automatic Wave");
@@ -685,8 +714,8 @@ assert.deepEqual(commandActionAt({ x: 24, y: 620 }, "units", 760, [LANE.LEFT, LA
 assert.deepEqual(commandActionAt({ x: 220, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "DEPLOY_UNIT", unitType: "fighter" });
 assert.deepEqual(commandActionAt({ x: 300, y: 565 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "SET_COMMAND_MENU", menu: "upgrades" });
 assert.deepEqual(commandActionAt({ x: 220, y: 620 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "weapons" });
-assert.equal(commandActionAt({ x: 24, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), null);
-assert.equal(commandActionAt({ x: 220, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), null);
+assert.deepEqual(commandActionAt({ x: 24, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "fireRate" });
+assert.deepEqual(commandActionAt({ x: 220, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "salvo" });
 assert.deepEqual(commandActionAt({ x: 80, y: 726 }, "units", 760, [LANE.CENTER], true), { type: "SELECT_LANE", laneId: LANE.CENTER });
 const tallCommandUi = commandUiLayout(909, [LANE.LEFT, LANE.RIGHT], true);
 assert.equal(tallCommandUi.panel.y, 683);

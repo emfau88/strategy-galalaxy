@@ -1,6 +1,6 @@
 # Product-Polish-Roadmap – aktuelle Gesamt-To-do-Liste
 
-Stand: 10. September 2026
+Stand: 11. September 2026
 
 Diese Datei ist ab jetzt die kanonische Liste aller noch offenen Produktarbeiten. Die
 ältere `IMPLEMENTATION_ROADMAP.md` dokumentiert die bereits abgeschlossenen großen
@@ -20,6 +20,8 @@ Abnahmekriterien für den nächsten Ausbau.
   Randrutschen wurden bereits deutlich beruhigt.
 - [x] Die neuen Hüllen sind mit eigenen Drones, eng normalisierten Geschossen,
   Galalaxy-Triebwerksflammen, Treffern und echten Galalaxy-Todessequenzen verbunden.
+- [x] Beide Maps besitzen je Fraktion ein eigenes strikt orthografisches HQ; Engine-
+  Hardpoints sitzen auf den tatsächlich sichtbaren Düsen statt auf alten Silhouetten.
 - [ ] Das reale Smartphone-Spielspaß- und Balance-Gate bleibt offen.
 
 ## Runtime-Delivery-Reparatur – GitHub-Pages-Rückschritt
@@ -247,14 +249,28 @@ Entscheidungen.
 
 - [ ] Echte Smartphone-Sessions für Rush, Economy, Arsenal/Bastion und Logistics
   beobachten; nicht nur AI-Mittelwerte verwenden.
-- [ ] Amortisationszeit, Wave-Slots, Energie-Cap und Upgrade-Aktivierungszeit so
+- [x] Amortisationszeit, entfernte Paid-Wave-Slots, Energie-Cap und sofortige Upgrade-Aktivierung so
   abstimmen, dass kein Pfad offensichtlich immer korrekt ist.
-- [ ] Jede aktive Stufe mit Bulk 5 und den Projektilen aus Bulk 2 sichtbar verknüpfen.
-- [ ] Upgrade-Vergleiche in gleichen Seeds und gespiegelten Teamseiten auswerten.
-- [ ] Stagnation, Snowballing, ungenutzte Energie und Kompositionsvielfalt dokumentieren.
+- [x] Jede aktive Stufe mit Bulk 5 und den Projektilen aus Bulk 2 sichtbar verknüpfen.
+- [x] Upgrade-Vergleiche in gleichen Seeds und gespiegelten Teamseiten auswerten.
+- [x] Stagnation, Snowballing, ungenutzte Energie und Kompositionsvielfalt dokumentieren.
+
+Der technische Befund und die noch offene reale Geräteabnahme stehen in
+`BULK_8_BALANCE_REPORT.md`.
 
 **Abnahme:** Mindestens zwei plausible Ausgabenpläne pro typischer Spielsituation und
 keine unsichtbare „+Prozent“-Forschung ohne wahrnehmbaren Effekt.
+
+### Bulk 8.5 – visueller Korrekturpass
+
+- [x] Vier eigenständige Garden-/Foundry-Command-Carrier für Spieler und Rivalen als
+  echte 90°-Draufsicht erzeugen und levelabhängig laden.
+- [x] Animierte Launch-Bay-Lichter auf die jeweils sichtbaren zwei Buchten registrieren.
+- [x] Drone-, Scout-, Fighter-, Bomber- und Frigate-Düsen auf beiden Hullfamilien neu
+  vermessen; Fighter-Scheinwerfer nicht länger als Triebwerk behandeln.
+- [x] Cyanen Kla'ed-Schub dem Spieler und warmen Nairan-Schub dem Rivalen zuordnen.
+- [x] Beide Maps, zehn Engine-Szenen und alle fünf Mobile-Viewports im echten Browser
+  prüfen; Asset- und Performancebudgets unverändert einhalten.
 
 ## Bulk 9 – P2: Flotten-Spezialisierungen und Carrier-Konzept
 

@@ -21,14 +21,22 @@ export const ASSET_GROUPS = Object.freeze({
     "unified-enemy-siege-missile": "assets/projectiles/unified/enemy-siege-missile-v2.png",
     "unified-enemy-heavy-cannon": "assets/projectiles/unified/enemy-heavy-cannon-v2.png",
     "ui-command-medallion": "assets/runtime/ui/orbital-command-medallion-v1.png",
+    "upgrade-reactor-icon": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Engines/PNGs/Pickup Icon - Engines - Big Pulse Engine.png",
+    "upgrade-arsenal-icon": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Weapons/PNGs/Pickup Icon - Weapons - Big Space Gun 2000.png",
+    "upgrade-autoloader-icon": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Engines/PNGs/Pickup Icon - Engines - Supercharged Engine.png",
+    "upgrade-multicannon-icon": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Weapons/PNGs/Pickup Icon - Weapons - Auto Cannons.png",
   }),
   level1: Object.freeze({
     "background-orbital-garden-rival": "assets/runtime/environment/orbital-garden-rival-sector-v1.png",
     "background-orbital-garden-player": "assets/runtime/environment/orbital-garden-player-sector-v1.png",
+    "command-hq-garden-player": "assets/runtime/structures/command-hq-garden-player-v1.png",
+    "command-hq-garden-rival": "assets/runtime/structures/command-hq-garden-rival-v1.png",
   }),
   level2: Object.freeze({
     "background-twin-foundries-rival": "assets/runtime/environment/twin-foundries-rival-sector-v1.png",
     "background-twin-foundries-player": "assets/runtime/environment/twin-foundries-player-sector-v1.png",
+    "command-hq-foundry-player": "assets/runtime/structures/command-hq-foundry-player-v1.png",
+    "command-hq-foundry-rival": "assets/runtime/structures/command-hq-foundry-rival-v1.png",
   }),
   // Retained for later feature-enabled maps, but excluded from the core-map load
   // and Pages deployment while nodes and defensive structures are switched off.

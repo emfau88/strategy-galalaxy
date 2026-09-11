@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createReadStream, existsSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -14,7 +14,7 @@ const viewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
 const mime = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".png": "image/png", ".gif": "image/gif", ".txt": "text/plain", ".md": "text/markdown" };
 
 const browserCandidates = process.platform === "win32"
-  ? ["C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe", "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"]
+  ? ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe", "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"]
   : ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"];
 const browser = browserCandidates.find(existsSync);
 assert.ok(browser, "A local Chromium or Edge executable is required for browser QA");
@@ -38,6 +38,7 @@ const debugPort = portProbe.address().port;
 await new Promise((resolveClose) => portProbe.close(resolveClose));
 await mkdir(output, { recursive: true });
 const browserProfile = await mkdtemp(resolve(output, "profile-"));
+const delay = (ms) => new Promise((resolveDelay) => setTimeout(resolveDelay, ms));
 
 const browserProcess = spawn(browser, [
   "--headless=new", "--disable-crash-reporter", "--no-first-run", "--hide-scrollbars",
@@ -46,7 +47,6 @@ const browserProcess = spawn(browser, [
   "about:blank",
 ], { stdio: "ignore" });
 
-const delay = (ms) => new Promise((resolveDelay) => setTimeout(resolveDelay, ms));
 const waitForJson = async (url) => {
   for (let attempt = 0; attempt < 80; attempt += 1) {
     try {
@@ -114,7 +114,19 @@ try {
   onEvent("Log.entryAdded", ({ entry }) => { if (entry.level === "error") failures.push(`console: ${entry.text}`); });
   onEvent("Network.loadingFailed", ({ errorText, canceled }) => { if (!canceled) failures.push(`network: ${errorText}`); });
   onEvent("Network.responseReceived", ({ response }) => { if (response.status >= 400 && !response.url.endsWith("favicon.ico")) failures.push(`HTTP ${response.status}: ${response.url}`); });
-  await Promise.all([send("Page.enable"), send("Runtime.enable"), send("Log.enable"), send("Network.enable")]);
+  await Promise.all([send("Runtime.enable"), send("Log.enable"), send("Network.enable")]);
+
+  const navigateAndWait = async (url) => {
+    await send("Page.navigate", { url });
+    for (let attempt = 0; attempt < 200; attempt += 1) {
+      try {
+        const ready = await send("Runtime.evaluate", { expression: "document.readyState === 'complete'", returnByValue: true });
+        if (ready.result.value) return;
+      } catch {}
+      await delay(50);
+    }
+    throw new Error(`Page did not finish navigation: ${url}`);
+  };
 
   const touch = async (x, y) => {
     await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
@@ -132,7 +144,7 @@ try {
     await delay(80);
   };
   const waitForGame = async () => {
-    for (let attempt = 0; attempt < 100; attempt += 1) {
+    for (let attempt = 0; attempt < 400; attempt += 1) {
       const ready = await send("Runtime.evaluate", { expression: "Boolean(window.__strategyGalalaxy?.running && window.__strategyGalalaxy?.assetsReady && window.__strategyGalalaxy?.loader?.isSettled)", returnByValue: true });
       if (ready.result.value) return;
       await delay(50);
@@ -150,9 +162,7 @@ try {
   };
 
   await send("Emulation.setDeviceMetricsOverride", { width: 420, height: 760, deviceScaleFactor: 1, mobile: true, screenWidth: 420, screenHeight: 760 });
-  let loaded = waitEvent("Page.loadEventFired");
-  await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?debug=1&seed=1180` });
-  await loaded;
+  await navigateAndWait(`http://127.0.0.1:${serverPort}/?debug=1&seed=1180`);
   await waitForGame();
   await assertRuntimeAssetsLoaded(1);
   let titleState = await send("Runtime.evaluate", { expression: "({ state: window.__strategyGalalaxy.state, difficulty: window.__strategyGalalaxy.match.aiProfile, level: window.__strategyGalalaxy.match.mapDefinition.level })", returnByValue: true });
@@ -174,9 +184,7 @@ try {
   titleState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.state", returnByValue: true });
   assert.equal(titleState.result.value, "TITLE", "the pause menu returns to the main menu");
 
-  loaded = waitEvent("Page.loadEventFired");
-  await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&level=1&seed=640` });
-  await loaded;
+  await navigateAndWait(`http://127.0.0.1:${serverPort}/?test=match&debug=1&level=1&seed=640`);
   await waitForGame();
   await assertRuntimeAssetsLoaded(1);
   const gardenState = await send("Runtime.evaluate", {
@@ -203,9 +211,7 @@ try {
   const gardenScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(resolve(output, "level-1-orbital-garden-420x760.png"), Buffer.from(gardenScreenshot.data, "base64"));
 
-  loaded = waitEvent("Page.loadEventFired");
-  await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&level=2&seed=842` });
-  await loaded;
+  await navigateAndWait(`http://127.0.0.1:${serverPort}/?test=match&debug=1&level=2&seed=842`);
   await waitForGame();
   await assertRuntimeAssetsLoaded(2);
   const levelTwoState = await send("Runtime.evaluate", {
@@ -330,9 +336,7 @@ try {
   for (const level of [1, 2]) {
   for (const [width, height] of viewports) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: true, screenWidth: width, screenHeight: height });
-    loaded = waitEvent("Page.loadEventFired");
-    await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&level=${level}&seed=${width + height + level}` });
-    await loaded;
+    await navigateAndWait(`http://127.0.0.1:${serverPort}/?test=match&debug=1&level=${level}&seed=${width + height + level}`);
     await waitForGame();
 
     const snapshotResult = await send("Runtime.evaluate", {
@@ -395,10 +399,23 @@ try {
       await touch(300, 565);
       const upgradeMenu = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.commandMenu", returnByValue: true });
       assert.equal(upgradeMenu.result.value, "upgrades", "upgrade projects are touch-operable");
-      await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').energy = 300" });
+      const refillEnergy = () => send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').energy = window.__strategyGalalaxy.match.config.balance.energyCap" });
+      await refillEnergy();
       await touch(82, 619);
-      const activeUpgrade = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').economyLevel", returnByValue: true });
-      assert.equal(activeUpgrade.result.value, 1, "upgrade activates immediately during the live match");
+      await delay(120);
+      await refillEnergy();
+      await touch(300, 619);
+      await delay(120);
+      await refillEnergy();
+      await touch(82, 675);
+      await delay(120);
+      await refillEnergy();
+      await touch(300, 675);
+      const activeUpgrade = await send("Runtime.evaluate", {
+        expression: `(() => { const value = window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER'); return { economy: value.economyLevel, weapons: value.weaponLevel, fireRate: value.fireRateLevel, salvo: value.salvoLevel }; })()`,
+        returnByValue: true,
+      });
+      assert.deepEqual(activeUpgrade.result.value, { economy: 1, weapons: 1, fireRate: 1, salvo: 1 }, "all four upgrades activate immediately through touch controls");
       await touch(405, centered.result.value.viewport.y + centered.result.value.viewport.height - 14);
       await delay(60);
       const activeScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
@@ -496,7 +513,9 @@ try {
 } finally {
   try { if (socket?.readyState === WebSocket.OPEN) await send("Browser.close"); } catch {}
   socket?.close();
-  browserProcess.kill();
+  if (process.platform === "win32" && browserProcess.pid) {
+    spawnSync("taskkill.exe", ["/PID", String(browserProcess.pid), "/T", "/F"], { stdio: "ignore" });
+  } else browserProcess.kill();
   staticServer.close();
   await rm(browserProfile, { recursive: true, force: true, maxRetries: 4, retryDelay: 125 }).catch(() => {});
 }

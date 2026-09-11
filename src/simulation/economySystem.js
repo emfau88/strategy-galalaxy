@@ -10,6 +10,8 @@ export class EconomySystem {
       economyLevel: 0,
       turretLevel: 0,
       weaponLevel: 0,
+      fireRateLevel: 0,
+      salvoLevel: 0,
       spending: { fleet: 0, economy: 0, research: 0 },
     }]));
   }
@@ -46,6 +48,20 @@ export class EconomySystem {
     return 1 + this.get(team).weaponLevel * this.balance.weaponUpgradeDamageBonus;
   }
 
+  fireIntervalMultiplier(team) {
+    return 1 - this.get(team).fireRateLevel * this.balance.fireRateUpgradeIntervalReduction;
+  }
+
+  salvoBonus(team, unitType) {
+    if (!unitType || unitType === "drone") return 0;
+    return this.get(team).salvoLevel * this.balance.salvoUpgradeBonusProjectiles;
+  }
+
+  salvoDamageMultiplier(team, unitType) {
+    if (!unitType || unitType === "drone") return 1;
+    return 1 + this.get(team).salvoLevel * this.balance.salvoUpgradeDamageBonus;
+  }
+
   recordFleetPurchase(team, amount) {
     this.get(team).spending.fleet += amount;
   }
@@ -54,6 +70,8 @@ export class EconomySystem {
     return {
       economy: ["economyLevel", "economyUpgradeBaseCost", "economyUpgradeCostGrowth", "economyUpgradeMaxLevel"],
       weapons: ["weaponLevel", "weaponUpgradeBaseCost", "weaponUpgradeCostGrowth", "weaponUpgradeMaxLevel"],
+      fireRate: ["fireRateLevel", "fireRateUpgradeBaseCost", "fireRateUpgradeCostGrowth", "fireRateUpgradeMaxLevel"],
+      salvo: ["salvoLevel", "salvoUpgradeBaseCost", "salvoUpgradeCostGrowth", "salvoUpgradeMaxLevel"],
       turret: ["turretLevel", "turretUpgradeBaseCost", "turretUpgradeCostGrowth", "turretUpgradeMaxLevel"],
     }[upgradeId] ?? null;
   }

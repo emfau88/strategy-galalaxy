@@ -8,8 +8,22 @@ const C = Object.freeze({
   player: "#74f2f0", enemy: "#ff927d", gold: "#ffd679", select: "rgba(47, 119, 132, 0.88)", card: "rgba(34, 65, 86, 0.96)",
 });
 const UPGRADE_UI = Object.freeze({
-  economy: Object.freeze({ label: "REACTOR", active: "economyLevel", effect: (balance) => `+${Math.round(balance.baseIncomePerSecond * balance.economyUpgradeIncomeBonus * 10) / 10} BASE E/s` }),
-  weapons: Object.freeze({ label: "ARSENAL", active: "weaponLevel", effect: (balance) => `+${Math.round(balance.weaponUpgradeDamageBonus * 100)}% FLEET DMG` }),
+  economy: Object.freeze({
+    label: "REACTOR", active: "economyLevel", maximum: "economyUpgradeMaxLevel", icon: "upgrade-reactor-icon", accent: "#f2c47d",
+    effect: (balance, level) => `${(balance.baseIncomePerSecond * (1 + level * balance.economyUpgradeIncomeBonus)).toFixed(1)} → ${(balance.baseIncomePerSecond * (1 + (level + 1) * balance.economyUpgradeIncomeBonus)).toFixed(1)} E/s`,
+  }),
+  weapons: Object.freeze({
+    label: "ARSENAL", active: "weaponLevel", maximum: "weaponUpgradeMaxLevel", icon: "upgrade-arsenal-icon", accent: "#d6b6ff",
+    effect: (balance, level) => `DMG +${Math.round(level * balance.weaponUpgradeDamageBonus * 100)}% → +${Math.round((level + 1) * balance.weaponUpgradeDamageBonus * 100)}%`,
+  }),
+  fireRate: Object.freeze({
+    label: "AUTOLOADER", active: "fireRateLevel", maximum: "fireRateUpgradeMaxLevel", icon: "upgrade-autoloader-icon", accent: "#7cebf0",
+    effect: (balance, level) => `RELOAD -${Math.round(level * balance.fireRateUpgradeIntervalReduction * 100)}% → -${Math.round((level + 1) * balance.fireRateUpgradeIntervalReduction * 100)}%`,
+  }),
+  salvo: Object.freeze({
+    label: "MULTI CANNON", active: "salvoLevel", maximum: "salvoUpgradeMaxLevel", icon: "upgrade-multicannon-icon", accent: "#ffad72",
+    effect: (balance) => `+1 SHOT · +${Math.round(balance.salvoUpgradeDamageBonus * 100)}% SALVO`,
+  }),
 });
 const text = (ctx, value, x, y, size, color, align = "left", weight = 700) => {
   ctx.fillStyle = color; ctx.font = `${weight} ${size}px Inter, system-ui, sans-serif`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillText(value, x, y);
@@ -276,13 +290,29 @@ const upgradeCard = (ctx, model, rect) => {
   const activeKey = upgrade.active;
   const affordable = cost !== null && economy.energy >= cost;
   const level = economy[activeKey];
-  box(ctx, rect, affordable ? "rgba(55, 94, 88, 0.88)" : "rgba(45, 48, 62, 0.82)", affordable ? C.outline : null, 8);
-  text(ctx, upgrade.label, rect.x + 10, rect.y + 11, 9, affordable ? C.text : C.muted);
-  text(ctx, upgrade.effect(model.economy.balance), rect.x + 10, rect.y + 27, 8, affordable ? C.gold : C.muted, "left", 650);
+  const maximum = model.economy.balance[upgrade.maximum];
+  box(ctx, rect, affordable ? "rgba(42, 77, 79, 0.94)" : "rgba(37, 43, 56, 0.9)", affordable ? upgrade.accent : "rgba(132,151,166,0.2)", 8);
+  const icon = model.assets?.get(upgrade.icon);
+  if (icon) {
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = affordable ? 1 : 0.48;
+    const frameSize = icon.naturalHeight || 32;
+    const frameCount = Math.max(1, Math.floor((icon.naturalWidth || frameSize) / frameSize));
+    const frame = Math.floor(model.frameTime * 8) % frameCount;
+    ctx.drawImage(icon, frame * frameSize, 0, frameSize, frameSize, rect.x + 6, rect.y + 9, 32, 32);
+    ctx.restore();
+  }
+  text(ctx, upgrade.label, rect.x + 43, rect.y + 10, 10, affordable ? C.text : C.muted);
+  for (let index = 0; index < maximum; index += 1) {
+    ctx.fillStyle = index < level ? upgrade.accent : "rgba(210,225,234,0.2)";
+    ctx.beginPath(); ctx.arc(rect.x + rect.width - 9 - index * 8, rect.y + 10, 2.5, 0, Math.PI * 2); ctx.fill();
+  }
+  text(ctx, cost === null ? "UPGRADE COMPLETE" : upgrade.effect(model.economy.balance, level), rect.x + 43, rect.y + 26, 8, cost === null ? upgrade.accent : affordable ? C.gold : C.muted, "left", 650);
   const detail = cost === null
     ? `MAX · LV ${level}`
     : affordable ? `LV ${level} · ${cost} E · INSTANT` : `LV ${level} · NEED ${Math.ceil(cost - economy.energy)} E`;
-  text(ctx, detail, rect.x + 10, rect.y + 42, 8, affordable ? C.text : C.muted, "left", 650);
+  text(ctx, detail, rect.x + 43, rect.y + 41, 8, affordable ? C.text : C.muted, "left", 650);
 };
 
 const drawCommandMedallion = (ctx, model, x, y, size) => {

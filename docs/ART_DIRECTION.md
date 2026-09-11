@@ -4,7 +4,7 @@ This is the shared visual contract for ships, structures, effects and interface 
 
 ## Camera and source quality
 
-- Gameplay objects use a strict 90-degree top-down silhouette, even when larger scenic HQ art has slight illustrative depth.
+- Every gameplay object, including the largest HQ, uses a strict 90-degree orthographic top-down silhouette. Perspective walls, visible facades and isometric tilt are reserved for non-interactive background scenery.
 - New standalone sprites are authored at high resolution and normalized to transparent `384×384` runtime files.
 - The upper-left is always the warm key-light direction; the lower-right receives a cool navy fill.
 - Texture is allowed inside the silhouette, but outlines and team lights must survive a 30–80 pixel display size.

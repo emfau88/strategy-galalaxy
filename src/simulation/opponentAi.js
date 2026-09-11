@@ -31,6 +31,7 @@ export class OpponentAi {
     this.lastDecision = null;
     this.decisionNumber = 0;
     this.pushPlan = null;
+    this.upgradePlan = null;
   }
 
   decisionIntervalSeconds(baseInterval) {
@@ -117,11 +118,28 @@ export class OpponentAi {
       return { ok: true, decision: this.lastDecision };
     };
 
+    const nextUpgrade = () => {
+      const available = (upgradeId) => director.economy.upgradeCost(this.team, upgradeId) !== null;
+      if (this.investmentBias === INVESTMENT_BIASES.ECONOMY) return available("economy") ? "economy" : null;
+      if (this.investmentBias === INVESTMENT_BIASES.WEAPONS) {
+        if (economy.weaponLevel < 1 && available("weapons")) return "weapons";
+        if (economy.fireRateLevel < 1 && available("fireRate")) return "fireRate";
+        if (economy.salvoLevel < 1 && available("salvo")) return "salvo";
+        return null;
+      }
+      if (economy.economyLevel < 1 && available("economy")) return "economy";
+      if (economy.weaponLevel < 1 && available("weapons")) return "weapons";
+      if (economy.fireRateLevel < 1 && available("fireRate")) return "fireRate";
+      if (economy.economyLevel < 2 && available("economy")) return "economy";
+      if (economy.salvoLevel < 1 && available("salvo")) return "salvo";
+      return ["weapons", "fireRate", "economy"].find(available) ?? null;
+    };
+
     // Every few live decisions the AI banks Energy for a two-part push. This is
     // deterministic, visible through a quiet saving window, and uses normal
     // player-facing deployment commands when the reserve is ready.
     const pushCadence = { [AI_PROFILES.CADET]: 15, [AI_PROFILES.TACTICIAN]: 10, [AI_PROFILES.ADMIRAL]: 8 }[this.profile];
-    if (!this.pushPlan && this.decisionNumber > 1 && this.decisionNumber % pushCadence === 0) {
+    if (!this.pushPlan && !this.upgradePlan && this.decisionNumber > 1 && this.decisionNumber % pushCadence === 0) {
       const unitTypes = this.profile === AI_PROFILES.CADET ? ["bomber", "fighter"] : ["frigate", "fighter"];
       this.pushPlan = {
         laneId: push.laneId,
@@ -139,13 +157,27 @@ export class OpponentAi {
       return finish("push");
     }
 
-    // Research decisions happen on their own sparse cadence, leaving most live
-    // ticks available for composition counters and deliberate saving.
-    const upgradeCadence = this.profile === AI_PROFILES.ADMIRAL ? 9 : 12;
-    if (this.profile !== AI_PROFILES.CADET && this.investmentBias !== INVESTMENT_BIASES.FLEET && this.decisionNumber % upgradeCadence === 0) {
-      if (defense.threat > 70 && isMapFeatureEnabled(director.mapDefinition, "defensiveTurrets")) buy("turret", 150);
-      else if (this.investmentBias === INVESTMENT_BIASES.WEAPONS || this.profile === AI_PROFILES.ADMIRAL) buy("weapons", 170);
-      else buy("economy", 170);
+    // Research is a real plan, not a one-tick impulse: once selected the AI
+    // visibly banks Energy and buys through the exact same command as the player.
+    const upgradeCadence = this.profile === AI_PROFILES.ADMIRAL ? 7 : 9;
+    if (!this.upgradePlan && this.profile !== AI_PROFILES.CADET && this.investmentBias !== INVESTMENT_BIASES.FLEET && this.decisionNumber % upgradeCadence === 0) {
+      const upgradeId = defense.threat > 70 && isMapFeatureEnabled(director.mapDefinition, "defensiveTurrets")
+        ? "turret"
+        : nextUpgrade();
+      const cost = upgradeId ? director.economy.upgradeCost(this.team, upgradeId) : null;
+      if (upgradeId && cost !== null) this.upgradePlan = { upgradeId, targetEnergy: cost + 90 };
+    }
+    if (this.upgradePlan) {
+      const cost = director.economy.upgradeCost(this.team, this.upgradePlan.upgradeId);
+      if (cost === null) this.upgradePlan = null;
+      else if (economy.energy + Number.EPSILON < cost + 90) {
+        return finish("saving", { type: "upgrade", upgradeId: this.upgradePlan.upgradeId, targetEnergy: cost + 90 });
+      } else {
+        const plan = this.upgradePlan;
+        this.upgradePlan = null;
+        buy(plan.upgradeId, 90);
+        return finish("investing");
+      }
     }
 
     const defenseChoice = defense.enemyComposition.bomber > defense.friendlyComposition.fighter

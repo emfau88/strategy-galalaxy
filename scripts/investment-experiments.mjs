@@ -5,8 +5,11 @@ const root = resolve(new URL("../", import.meta.url).pathname.replace(/^\/(.:)/,
 const matches = Number.parseInt(process.argv[2] ?? "8", 10);
 const variants = [
   { id: "rush", player: "fleet", enemy: "balanced" },
+  { id: "rush-mirror", player: "balanced", enemy: "fleet" },
   { id: "greed", player: "economy", enemy: "fleet" },
+  { id: "greed-mirror", player: "fleet", enemy: "economy" },
   { id: "weapons-tech", player: "weapons", enemy: "economy" },
+  { id: "weapons-tech-mirror", player: "economy", enemy: "weapons" },
   { id: "mixed", player: "balanced", enemy: "balanced" },
 ];
 

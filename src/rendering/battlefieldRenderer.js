@@ -1,5 +1,5 @@
 import { PROJECTILE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
-import { fleetVisualFor, unifiedHullVisualFor } from "../data/visuals.js";
+import { engineVisualFor, fleetVisualFor, unifiedHullVisualFor } from "../data/visuals.js";
 import { LANE, TEAM } from "../core/constants.js";
 
 const stars = Object.freeze([
@@ -14,6 +14,17 @@ const foundryDrift = Object.freeze([
 
 const asset = (assets, key) => assets?.get(key) ?? null;
 const teamColor = (team) => (team === "TEAM_PLAYER" ? "#86dff2" : "#f29a83");
+const hqPresentation = Object.freeze({
+  orbital_garden: Object.freeze({
+    player: Object.freeze({ assetKey: "command-hq-garden-player", bays: Object.freeze([{ x: -35, y: -66, rotation: -0.04 }, { x: 35, y: -66, rotation: 0.04 }]) }),
+    rival: Object.freeze({ assetKey: "command-hq-garden-rival", bays: Object.freeze([{ x: -33, y: -72, rotation: -0.05 }, { x: 33, y: -72, rotation: 0.05 }]) }),
+  }),
+  twin_foundries: Object.freeze({
+    player: Object.freeze({ assetKey: "command-hq-foundry-player", bays: Object.freeze([{ x: -48, y: -69, rotation: -0.04 }, { x: 48, y: -69, rotation: 0.04 }]) }),
+    rival: Object.freeze({ assetKey: "command-hq-foundry-rival", bays: Object.freeze([{ x: -47, y: -67, rotation: -0.04 }, { x: 47, y: -67, rotation: 0.04 }]) }),
+  }),
+});
+const hqVisualFor = (visualTheme, team) => hqPresentation[visualTheme]?.[team === TEAM.PLAYER ? "player" : "rival"] ?? null;
 const factionKey = (unit) => `unified-${unit.team === "TEAM_PLAYER" ? "player" : "enemy"}-${unit.unitType}`;
 const legacyFactionKey = (unit) => `${unit.team === "TEAM_PLAYER" ? "nairan" : "klaed"}-${unit.unitType === "drone" ? "scout" : unit.unitType}`;
 const projectileFamily = (projectileType) => ({
@@ -67,8 +78,8 @@ const stableFrameOffset = (id, frameCount) => [...String(id)].reduce((value, cha
 // Reusing the animated source flame at authored nozzle coordinates keeps the existing
 // high-resolution hulls while preserving Galalaxy's crisp hand-authored motion.
 const galalaxyEngineCrop = Object.freeze({
-  player: Object.freeze({ x: 23, y: 39, width: 18, height: 22, widthScale: 0.22 }),
-  enemy: Object.freeze({ x: 25, y: 34, width: 14, height: 20, widthScale: 0.18 }),
+  "nairan-scout-engine": Object.freeze({ x: 23, y: 39, width: 18, height: 22, widthScale: 0.22, nozzleAnchorY: 0.23 }),
+  "klaed-scout-engine": Object.freeze({ x: 25, y: 34, width: 14, height: 20, widthScale: 0.18, nozzleAnchorY: 0.2 }),
 });
 
 const drawGalalaxyEngine = (ctx, image, visual, unit, elapsed, displaySize) => {
@@ -80,8 +91,8 @@ const drawGalalaxyEngine = (ctx, image, visual, unit, elapsed, displaySize) => {
   const thrust = Math.max(0, Math.min(1, forwardVelocity / Math.max(1, definition?.speed ?? 1)));
   const idle = unit.state === "HOLDING" ? 0.18 : unit.state === "ENGAGING" || unit.state === "ATTACKING_STRUCTURE" ? 0.32 : 0.46;
   const plumeStrength = Math.max(idle, thrust);
-  const faction = unit.team === TEAM.PLAYER ? "player" : "enemy";
-  const crop = galalaxyEngineCrop[faction];
+  const crop = galalaxyEngineCrop[visual.engine.assetKey];
+  if (!crop) return false;
   const phase = stableFrameOffset(unit.id, visual.engine.frameCount) / visual.engine.fps;
   const frame = Math.floor((elapsed + phase) * visual.engine.fps) % visual.engine.frameCount;
   ctx.save();
@@ -92,7 +103,9 @@ const drawGalalaxyEngine = (ctx, image, visual, unit, elapsed, displaySize) => {
     const width = displaySize * crop.widthScale * hardpoint.scale * (0.9 + plumeStrength * 0.1);
     const height = displaySize * (0.3 + plumeStrength * 0.18) * hardpoint.scale;
     const x = (hardpoint.x / 384 - 0.5) * displaySize - width / 2;
-    const y = (hardpoint.y / 384 - 0.5) * displaySize - height * 0.03;
+    // Hardpoints name the nozzle mouth. Compensate for the transparent rows at
+    // the top of the source crop so the first luminous pixel touches the pipe.
+    const y = (hardpoint.y / 384 - 0.5) * displaySize - height * crop.nozzleAnchorY;
     ctx.drawImage(image, frame * visual.frameSize + crop.x, crop.y, crop.width, crop.height, x, y, width, height);
   }
   ctx.restore();
@@ -535,10 +548,10 @@ const drawCommandCarrier = (ctx, structure, color) => {
   ctx.restore();
 };
 
-const drawHqBay = (ctx, side, openness) => {
+const drawHqBay = (ctx, bay, openness) => {
   ctx.save();
-  ctx.translate(side * 34, -25);
-  ctx.rotate(side * 0.12);
+  ctx.translate(bay.x, bay.y);
+  ctx.rotate(bay.rotation ?? 0);
   ctx.beginPath();
   ctx.moveTo(-14, -14);
   ctx.lineTo(14, -14);
@@ -570,13 +583,16 @@ const drawHqBay = (ctx, side, openness) => {
 const drawHqHangars = (ctx, structure, model) => {
   const state = model.simulation.state;
   const laneIds = state.map.lanes.map((lane) => lane.id);
-  for (const side of [-1, 1]) {
+  const bays = hqVisualFor(state.map.visualTheme, structure.team)?.bays
+    ?? [{ x: -34, y: -25, rotation: -0.12 }, { x: 34, y: -25, rotation: 0.12 }];
+  for (const [index, bay] of bays.entries()) {
+    const side = index === 0 ? -1 : 1;
     const screenSide = structure.team === TEAM.PLAYER ? side : -side;
     const laneId = laneIds.length === 1 ? laneIds[0] : screenSide < 0 ? LANE.LEFT : LANE.RIGHT;
     const deployedAt = model.director?.lastDeploymentAtFor(structure.team, laneId);
     const delay = screenSide > 0 ? 0.07 : 0;
     const animationAt = Number.isFinite(deployedAt) ? deployedAt + delay : null;
-    drawHqBay(ctx, side, hqDoorOpenness(state.time, animationAt));
+    drawHqBay(ctx, bay, hqDoorOpenness(state.time, animationAt));
   }
 };
 
@@ -613,6 +629,28 @@ const drawStructureUpgradeDetails = (ctx, structure, model, size, color) => {
         ctx.fillRect(side * 27 - 2.5, y - 1, 5, 2.5);
       }
     }
+    for (let index = 0; index < economy.fireRateLevel; index += 1) {
+      const y = 14 + index * 7;
+      for (const side of [-1, 1]) {
+        ctx.fillStyle = "rgba(10,27,39,0.94)";
+        ctx.fillRect(side * 17 - 4, y - 2, 8, 4);
+        ctx.globalCompositeOperation = "screen";
+        ctx.fillStyle = "#68eaf2";
+        ctx.globalAlpha = 0.72;
+        ctx.fillRect(side * 17 - 2.5, y - 1, 5, 2);
+        ctx.globalCompositeOperation = "source-over";
+      }
+    }
+    if (economy.salvoLevel > 0) {
+      for (const side of [-1, 1]) {
+        ctx.fillStyle = "rgba(29,23,22,0.96)";
+        ctx.fillRect(side * 37 - 5, -13, 10, 16);
+        ctx.fillStyle = "#eaa45f";
+        ctx.globalAlpha = 0.84;
+        ctx.fillRect(side * 37 - 2.7, -16, 2.4, 13);
+        ctx.fillRect(side * 37 + 0.3, -16, 2.4, 13);
+      }
+    }
     ctx.globalAlpha = 1;
     return;
   }
@@ -641,26 +679,28 @@ const drawStructure = (ctx, structure, model, projection) => {
   const size = isHq ? 270 : gardenTurret ? 94 : 84;
   const color = teamColor(structure.team);
   const turretAssetKey = gardenTurret ? (structure.team === TEAM.ENEMY ? "structure-turret-garden-rival" : "structure-turret-garden-player") : "structure-turret";
-  const sprite = isHq ? null : asset(model.assets, turretAssetKey);
+  const sprite = isHq
+    ? asset(model.assets, hqVisualFor(state.map.visualTheme, structure.team)?.assetKey)
+    : asset(model.assets, turretAssetKey);
   const damaged = state.time - structure.lastDamagedAt < 0.13;
   const hpRatio = structure.hp / structure.maxHp;
   const y = projection.y(structure.y);
   ctx.save();
   ctx.translate(structure.x, y);
   if (isHq && structure.team === TEAM.ENEMY) ctx.rotate(Math.PI);
-  if (isHq) drawCommandCarrier(ctx, structure, color);
-  else if (sprite) {
+  if (sprite) {
     if (damaged) ctx.filter = "brightness(1.9) saturate(0.4)";
     else if (hpRatio <= 0.34) ctx.filter = "brightness(0.72) saturate(0.52)";
     else if (hpRatio <= 0.67) ctx.filter = "brightness(0.88) saturate(0.76)";
-    else ctx.filter = state.map.visualTheme === "twin_foundries" ? "sepia(0.16) saturate(1.12) contrast(1.08)" : "saturate(1.08) contrast(1.05)";
-    ctx.globalCompositeOperation = gardenTurret ? "screen" : "source-over";
+    else if (!isHq) ctx.filter = state.map.visualTheme === "twin_foundries" ? "sepia(0.16) saturate(1.12) contrast(1.08)" : "saturate(1.08) contrast(1.05)";
+    ctx.globalCompositeOperation = gardenTurret && !isHq ? "screen" : "source-over";
     ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
     ctx.globalCompositeOperation = "source-over";
     ctx.filter = "none";
-  } else drawStructureFallback(ctx, isHq, size, color);
+  } else if (isHq) drawCommandCarrier(ctx, structure, color);
+  else drawStructureFallback(ctx, false, size, color);
   drawStructureUpgradeDetails(ctx, structure, model, size, color);
-  if (state.map.visualTheme === "twin_foundries") {
+  if (!isHq && state.map.visualTheme === "twin_foundries") {
     ctx.fillStyle = "rgba(12,18,25,0.96)";
     for (const side of [-1, 1]) ctx.fillRect(side * size * 0.31 - 2.5, -4, 5, 13);
     ctx.fillStyle = color;
@@ -733,7 +773,10 @@ const drawProjectile = (ctx, projectile, projection, model, denseBattle = false)
   const economy = model.economy?.get(projectile.ownerTeam);
   const techLevel = projectile.ownerId?.includes("turret") ? economy?.turretLevel ?? 0
     : projectile.ownerId?.includes("hq") ? 0 : economy?.weaponLevel ?? 0;
-  const bodyScale = 1 + techLevel * 0.045;
+  const unitProjectile = !projectile.ownerId?.includes("turret") && !projectile.ownerId?.includes("hq");
+  const fireRateLevel = unitProjectile ? economy?.fireRateLevel ?? 0 : 0;
+  const salvoLevel = unitProjectile ? economy?.salvoLevel ?? 0 : 0;
+  const bodyScale = 1 + techLevel * 0.045 + salvoLevel * 0.05;
   const factionColor = projectile.ownerTeam === TEAM.PLAYER ? "#68eaf2" : "#ff795f";
   const warmCore = projectile.ownerTeam === TEAM.PLAYER ? "#fff5d5" : "#ffe8cf";
   ctx.save();
@@ -809,6 +852,14 @@ const drawProjectile = (ctx, projectile, projection, model, denseBattle = false)
     ctx.lineTo(x + Math.cos(angle) * 2, y + Math.sin(angle) * 2);
     ctx.stroke();
   }
+  if (fireRateLevel > 0 && !denseBattle) {
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = 0.34 + fireRateLevel * 0.1;
+    ctx.fillStyle = factionColor;
+    ctx.beginPath();
+    ctx.arc(x, y, 1.25 + fireRateLevel * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.restore();
 };
 
@@ -842,7 +893,7 @@ export const renderEntityLayer = (ctx, model) => {
     const unifiedSprite = asset(model.assets, factionKey(unit));
     const sprite = unifiedSprite ?? asset(model.assets, legacyFactionKey(unit));
     const visual = fleetVisualFor(unit.team, unit.unitType);
-    const engineVisual = fleetVisualFor(unit.team, "scout");
+    const engineVisual = engineVisualFor(unit.team);
     const frameSize = visual?.frameSize ?? 64;
     const displaySize = unifiedSprite ? size * 1.28 : shipCellSize(unit.unitType, frameSize) * fleetScale;
     const heading = Number.isFinite(unit.heading) ? unit.heading : (unit.team === TEAM.PLAYER ? -Math.PI / 2 : Math.PI / 2);
@@ -866,7 +917,10 @@ export const renderEntityLayer = (ctx, model) => {
       else ctx.drawImage(sprite, 0, 0, frameSize, frameSize, -displaySize / 2, -displaySize / 2, displaySize, displaySize);
     }
     else { ctx.fillStyle = teamColor(unit.team); ctx.beginPath(); ctx.arc(0, 0, size * 0.3, 0, Math.PI * 2); ctx.fill(); }
-    const weaponLevel = model.economy?.get(unit.team).weaponLevel ?? 0;
+    const teamEconomy = model.economy?.get(unit.team);
+    const weaponLevel = teamEconomy?.weaponLevel ?? 0;
+    const fireRateLevel = teamEconomy?.fireRateLevel ?? 0;
+    const salvoLevel = unit.unitType === "drone" ? 0 : teamEconomy?.salvoLevel ?? 0;
     if (weaponLevel > 0) {
       const mounts = ({
         drone: [[0, -0.28]], scout: [[-0.16, -0.28], [0.16, -0.28]], fighter: [[-0.27, -0.2], [0.27, -0.2]],
@@ -882,6 +936,28 @@ export const renderEntityLayer = (ctx, model) => {
         ctx.globalCompositeOperation = "source-over";
       }
       ctx.globalAlpha = 1;
+    }
+    if (fireRateLevel > 0) {
+      for (let index = 0; index < fireRateLevel; index += 1) {
+        const x = (index - (fireRateLevel - 1) / 2) * 5;
+        ctx.fillStyle = "rgba(7,24,35,0.94)";
+        ctx.fillRect(x - 1.8, size * 0.08, 3.6, 5.5);
+        ctx.globalCompositeOperation = "screen";
+        ctx.globalAlpha = 0.72;
+        ctx.fillStyle = "#6cecf1";
+        ctx.fillRect(x - 0.8, size * 0.08 + 1, 1.6, 3.5);
+        ctx.globalCompositeOperation = "source-over";
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (salvoLevel > 0) {
+      for (const side of [-1, 1]) {
+        ctx.fillStyle = "rgba(34,24,22,0.96)";
+        ctx.fillRect(side * size * 0.32 - 2.6, -size * 0.18, 5.2, 8);
+        ctx.fillStyle = "#e9a45e";
+        ctx.fillRect(side * size * 0.32 - 1.35, -size * 0.23, 1.2, 7);
+        ctx.fillRect(side * size * 0.32 + 0.15, -size * 0.23, 1.2, 7);
+      }
     }
     if (!unifiedSprite && visual?.weapon) drawTimedStrip(ctx, asset(model.assets, visual.weapon.assetKey), visual.weapon, frameSize, simulation.state.time - unit.lastShotAt, displaySize, 0.42);
     const shotAge = simulation.state.time - unit.lastShotAt;
@@ -941,7 +1017,7 @@ export const renderEffectsLayer = (ctx, model) => {
     ctx.save();
     ctx.globalAlpha = alpha;
     if (effect.type === "upgrade") {
-      const upgradeColor = effect.upgradeId === "economy" ? "#f2c47d" : color;
+      const upgradeColor = ({ economy: "#f2c47d", weapons: "#be8dff", fireRate: "#66e7ef", salvo: "#eea25e" })[effect.upgradeId] ?? color;
       ctx.globalCompositeOperation = "screen";
       ctx.strokeStyle = upgradeColor;
       ctx.lineWidth = 2.4 - progress;

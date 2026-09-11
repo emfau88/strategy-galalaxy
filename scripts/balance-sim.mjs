@@ -36,7 +36,7 @@ const metrics = {
   durations: [],
   cycles: [],
   purchases: Object.fromEntries(teams.map((team) => [team, Object.fromEntries(unitTypes.map((type) => [type, 0]))])),
-  upgrades: Object.fromEntries(teams.map((team) => [team, { economy: 0, weapons: 0 }])),
+  upgrades: Object.fromEntries(teams.map((team) => [team, { economy: 0, weapons: 0, fireRate: 0, salvo: 0, turret: 0 }])),
   spending: Object.fromEntries(teams.map((team) => [team, { fleet: 0, economy: 0, research: 0 }])),
   finalEnergy: Object.fromEntries(teams.map((team) => [team, []])),
   firstContactSeconds: [],
@@ -50,7 +50,9 @@ const metrics = {
 const recordDecision = (decision) => {
   if (!decision) return;
   for (const purchase of decision.purchases) metrics.purchases[decision.team][purchase.unitType] += 1;
-  for (const upgrade of decision.upgrades) metrics.upgrades[decision.team][upgrade.upgradeId] += 1;
+  for (const upgrade of decision.upgrades) {
+    metrics.upgrades[decision.team][upgrade.upgradeId] = (metrics.upgrades[decision.team][upgrade.upgradeId] ?? 0) + 1;
+  }
   metrics.decisionModes[decision.team][decision.mode] = (metrics.decisionModes[decision.team][decision.mode] ?? 0) + 1;
 };
 

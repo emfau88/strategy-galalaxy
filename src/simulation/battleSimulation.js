@@ -413,7 +413,7 @@ export class BattleSimulation {
     const laneTeamProjectiles = [...this.state.projectiles.values()].reduce((count, projectile) => (
       projectile.alive && projectile.ownerTeam === owner.team && projectile.laneId === laneId ? count + 1 : count
     ), 0);
-    const requestedShots = definition.salvoCount ?? 1;
+    const requestedShots = (definition.salvoCount ?? 1) + (this.economy?.salvoBonus(owner.team, owner.unitType) ?? 0);
     const availableShots = Math.min(
       requestedShots,
       this.config.caps.projectilesPerLaneTeam - laneTeamProjectiles,
@@ -441,7 +441,8 @@ export class BattleSimulation {
     const firingAngle = Math.atan2(dy, dx);
     const hardpointAxis = definition.broadside && Number.isFinite(owner.heading) ? owner.heading : firingAngle + Math.PI / 2;
     const muzzleOffset = definition.muzzleOffset ?? (owner.structureType === "turret" ? 25 : 0);
-    const totalDamage = this.damageFor(owner, definition) * this.damageMultiplier(owner, target);
+    const totalDamage = this.damageFor(owner, definition) * this.damageMultiplier(owner, target)
+      * (this.economy?.salvoDamageMultiplier(owner.team, owner.unitType) ?? 1);
     for (let index = 0; index < availableShots; index += 1) {
       const mirroredIndex = owner.team === TEAM.ENEMY ? requestedShots - 1 - index : index;
       const salvoOffset = mirroredIndex - (requestedShots - 1) / 2;
@@ -466,7 +467,7 @@ export class BattleSimulation {
         reason: "partial_salvo_budget", rejectedCount: requestedShots - availableShots,
       });
     }
-    owner.fireCooldown = definition.fireInterval;
+    owner.fireCooldown = definition.fireInterval * (owner.unitType && this.economy ? this.economy.fireIntervalMultiplier(owner.team) : 1);
     owner.lastShotAt = this.state.time;
   }
 

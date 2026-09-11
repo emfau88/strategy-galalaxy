@@ -206,3 +206,39 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
   remain separate from the art.
 - **Status:** Active Level-2 runtime background family. Final real-device seam/contrast
   tuning remains in the Product Polish Roadmap.
+
+## Orthographic Command Carrier family
+
+- **Destinations:** `assets/runtime/structures/command-hq-garden-player-v1.png`,
+  `command-hq-garden-rival-v1.png`, `command-hq-foundry-player-v1.png` and
+  `command-hq-foundry-rival-v1.png`.
+- **Method / mode:** Four separate Built-in ImageGen `stylized-concept` generations,
+  each using the matching unified Frigate as faction/material reference. Garden passes
+  additionally referenced their earlier Garden HQ; Foundry passes referenced
+  `command-hq-topdown-v3.png` only for production quality. The results were normalized
+  to transparent `384×384` canvases with `scripts/normalize-generated-cutout.py`.
+- **Shared final prompt:** “Create one production-ready 2D strategy-game HQ sprite: an
+  enormous orbital Command Carrier with a readable central command core, exactly two
+  symmetrical forward launch bays and restrained modular upgrade sockets. Exact 90°
+  orthographic overhead camera, nose and bays pointing to the top edge, centered full
+  silhouette, transparent background. Match the supplied faction hull's materials,
+  lighting and practical-light palette. No text, logo, UI, ships, projectiles, exhaust,
+  cast shadow, perspective, 3/4 view, horizon, visible vertical walls/facades,
+  underside, isometric tilt or oversized dome.”
+- **Player Garden variant:** “Use ivory ceramic armor, brushed brass, living garden
+  beds and restrained cyan lamps. Make the two launch bays broad, clearly separate and
+  integrated into a cultivated carrier deck.”
+- **Rival Garden variant:** “Use charcoal/navy armor, copper, muted burgundy, dark
+  vegetation and restrained coral lamps. Keep the same two-bay functional read with a
+  more armored circular command silhouette.”
+- **Player Foundry variant:** “Use ivory/brass/navy industrial armor, cyan practical
+  lamps, rails, vents and forge machinery. Keep vegetation minimal and the twin bays
+  dominant.”
+- **Rival Foundry variant:** “Use charcoal/navy industrial armor, copper, burgundy and
+  restrained coral practical lamps, with heavy vents and forge machinery around two
+  unmistakable forward bays.”
+- **Runtime:** Level 1 and Level 2 load only their own two faction HQs. Enemy instances
+  rotate 180° in Canvas; bay-opening light, damage states and purchased upgrade modules
+  remain live code-driven layers registered to each authored silhouette.
+- **Status:** Active runtime HQ family. The procedural triangle remains only as a
+  missing-asset fallback; all four delivered gameplay sprites are strictly top-down.
