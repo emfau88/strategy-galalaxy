@@ -1,7 +1,7 @@
 import { fleetVisualFor } from "../data/visuals.js";
 
-const MAX_EFFECTS = 120;
-const MAX_LANE_TEAM_EFFECTS = 24;
+const MAX_EFFECTS = 72;
+const MAX_LANE_TEAM_EFFECTS = 16;
 const DESTRUCTION_DURATION = Object.freeze({ drone: 0.46, scout: 0.56, fighter: 0.68, bomber: 0.86, frigate: 1.08, turret: 1.2, hq: 1.55 });
 
 export class PresentationEffects {

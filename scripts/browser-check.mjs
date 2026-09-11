@@ -326,15 +326,17 @@ try {
   await writeFile(resolve(output, "level-2-qa-destruction-420x760.png"), Buffer.from(destructionQaScreenshot.data, "base64"));
 
   const reports = [];
+  const densePerformance = [];
+  for (const level of [1, 2]) {
   for (const [width, height] of viewports) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: true, screenWidth: width, screenHeight: height });
     loaded = waitEvent("Page.loadEventFired");
-    await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&seed=${width + height}` });
+    await send("Page.navigate", { url: `http://127.0.0.1:${serverPort}/?test=match&debug=1&level=${level}&seed=${width + height + level}` });
     await loaded;
     await waitForGame();
 
     const snapshotResult = await send("Runtime.evaluate", {
-      expression: `(() => { const g = window.__strategyGalalaxy; const r = g.canvas.getBoundingClientRect(); return { innerWidth, innerHeight, state: g.state, transform: g.getViewportSnapshot(), camera: g.getCameraSnapshot(), canvas: { x: r.x, y: r.y, width: r.width, height: r.height }, assetFailures: g.loader.errors.length, playerUnits: [...g.match.simulation.state.lanes.values()].flatMap((lane) => lane.unitIds.get('TEAM_PLAYER')).length }; })()`,
+      expression: `(() => { const g = window.__strategyGalalaxy; const r = g.canvas.getBoundingClientRect(); return { innerWidth, innerHeight, state: g.state, level: g.match.mapDefinition.level, laneCount: g.match.mapDefinition.lanes.length, transform: g.getViewportSnapshot(), camera: g.getCameraSnapshot(), canvas: { x: r.x, y: r.y, width: r.width, height: r.height }, assetFailures: g.loader.errors.length, playerUnits: [...g.match.simulation.state.lanes.values()].flatMap((lane) => lane.unitIds.get('TEAM_PLAYER')).length }; })()`,
       returnByValue: true,
     });
     const snapshot = snapshotResult.result.value;
@@ -348,6 +350,8 @@ try {
     assert.ok(Math.abs(snapshot.transform.offsetY) < 0.01);
     assert.equal(snapshot.assetFailures, 0);
     assert.equal(snapshot.state, "LIVE_MATCH");
+    assert.equal(snapshot.level, level);
+    assert.equal(snapshot.laneCount, level);
     assert.equal(snapshot.camera.worldHeight, 1180);
     assert.ok(Math.abs(snapshot.camera.y - snapshot.camera.maximumY) < 0.01, "match begins focused on the player sector");
 
@@ -398,12 +402,12 @@ try {
       await touch(405, centered.result.value.viewport.y + centered.result.value.viewport.height - 14);
       await delay(60);
       const activeScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-      await writeFile(resolve(output, "upgrades-active-420x760.png"), Buffer.from(activeScreenshot.data, "base64"));
+      await writeFile(resolve(output, `level-${level}-upgrades-active-420x760.png`), Buffer.from(activeScreenshot.data, "base64"));
       await touch(206, 565);
     }
 
     const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-    await writeFile(resolve(output, `match-${width}x${height}.png`), Buffer.from(screenshot.data, "base64"));
+    await writeFile(resolve(output, `level-${level}-match-${width}x${height}.png`), Buffer.from(screenshot.data, "base64"));
     if (width === 420 && height === 760) {
       await delay(1400);
       const cameraState = centered.result.value;
@@ -415,7 +419,7 @@ try {
       assert.ok(Number.isFinite(damageResult.result.value), "latest deployment timestamp remains available for HQ door animation");
       await delay(80);
       const damageScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-      await writeFile(resolve(output, "structures-closed-damaged-420x760.png"), Buffer.from(damageScreenshot.data, "base64"));
+      await writeFile(resolve(output, `level-${level}-structures-closed-damaged-420x760.png`), Buffer.from(damageScreenshot.data, "base64"));
       const combatState = await send("Runtime.evaluate", {
         expression: `(() => { const g = window.__strategyGalalaxy; for (const structure of g.match.simulation.state.structures.values()) structure.hp = structure.maxHp; for (let step = 0; step < 60 * 60 && g.state === 'LIVE_MATCH'; step += 1) g.match.advanceLive(1 / 60); g.camera.jumpToWorld(590); const units = [...g.match.simulation.state.units.values()]; return { state: g.state, units: units.length, moving: units.filter((unit) => Math.hypot(unit.vx, unit.vy) > 1).length, headings: units.every((unit) => Number.isFinite(unit.heading)) }; })()`,
         returnByValue: true,
@@ -425,12 +429,70 @@ try {
       assert.ok(combatState.result.value.moving > 0 && combatState.result.value.headings, "ships expose authoritative eased movement and headings");
       await delay(80);
       const combatScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
-      await writeFile(resolve(output, "combat-formations-420x760.png"), Buffer.from(combatScreenshot.data, "base64"));
+      await writeFile(resolve(output, `level-${level}-combat-formations-420x760.png`), Buffer.from(combatScreenshot.data, "base64"));
+      if (level === 2) {
+        const performanceResult = await send("Runtime.evaluate", {
+          expression: `(async () => {
+            const g = window.__strategyGalalaxy;
+            const simulation = g.match.simulation;
+            const state = simulation.state;
+            state.units.clear(); state.projectiles.clear(); state.events.length = 0; simulation.squads.clear(); g.effects.reset();
+            for (const lane of state.lanes.values()) {
+              lane.unitIds.set('TEAM_PLAYER', []); lane.unitIds.set('TEAM_ENEMY', []); lane.projectileIds = [];
+              for (const team of ['TEAM_PLAYER', 'TEAM_ENEMY']) {
+                const types = Array.from({ length: g.match.config.caps.unitsPerLaneTeam }, (_, index) => ['scout', 'fighter', 'bomber', 'frigate'][index % 4]);
+                const centerX = state.map.lanes.find((definition) => definition.id === lane.id).centerX;
+                const spawned = simulation.spawnFormation(team, lane.id, types, 1200 + state.units.size);
+                spawned.forEach((unit, index) => {
+                  unit.launching = false;
+                  unit.x = centerX + ((index % 7) - 3) * 18;
+                  unit.y = team === 'TEAM_PLAYER' ? 650 + Math.floor(index / 7) * 28 : 530 - Math.floor(index / 7) * 28;
+                  unit.heading = team === 'TEAM_PLAYER' ? -Math.PI / 2 : Math.PI / 2;
+                });
+              }
+            }
+            g.camera.jumpToWorld(590);
+            const frameTimes = await new Promise((resolve) => {
+              const samples = [];
+              let previous = performance.now();
+              const frame = (now) => {
+                if (samples.length >= 10) samples.push(now - previous); else samples.push(0);
+                previous = now;
+                if (samples.length >= 100) resolve(samples.slice(10)); else requestAnimationFrame(frame);
+              };
+              requestAnimationFrame(frame);
+            });
+            frameTimes.sort((left, right) => left - right);
+            return {
+              units: state.units.size,
+              projectileCap: g.match.config.caps.projectiles,
+              averageFrameMs: frameTimes.reduce((sum, value) => sum + value, 0) / frameTimes.length,
+              p95FrameMs: frameTimes[Math.floor(frameTimes.length * 0.95)],
+            };
+          })()`,
+          awaitPromise: true,
+          returnByValue: true,
+        });
+        const performance = performanceResult.result.value;
+        assert.ok(performance.units <= 112, "dense render fixture respects the mobile fleet budget");
+        assert.ok(performance.averageFrameMs < 50 && performance.p95FrameMs < 100, `dense mobile render remains responsive (${performance.averageFrameMs.toFixed(1)}ms avg / ${performance.p95FrameMs.toFixed(1)}ms p95)`);
+        const denseScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+        await writeFile(resolve(output, "level-2-dense-performance-420x760.png"), Buffer.from(denseScreenshot.data, "base64"));
+        densePerformance.push({
+          level,
+          viewport: `${width}x${height}`,
+          units: performance.units,
+          projectileCap: performance.projectileCap,
+          averageFrameMs: Math.round(performance.averageFrameMs * 10) / 10,
+          p95FrameMs: Math.round(performance.p95FrameMs * 10) / 10,
+        });
+      }
     }
-    reports.push({ width, height, designHeight: Math.round(designHeight * 10) / 10, scale: Math.round(snapshot.transform.scale * 1000) / 1000, camera: "passed", touch: "passed" });
+    reports.push({ level, width, height, designHeight: Math.round(designHeight * 10) / 10, scale: Math.round(snapshot.transform.scale * 1000) / 1000, camera: "passed", touch: "passed" });
+  }
   }
   assert.deepEqual(failures, []);
-  console.log(JSON.stringify({ browser, reports, failures }, null, 2));
+  console.log(JSON.stringify({ browser, reports, densePerformance, failures }, null, 2));
 } finally {
   try { if (socket?.readyState === WebSocket.OPEN) await send("Browser.close"); } catch {}
   socket?.close();

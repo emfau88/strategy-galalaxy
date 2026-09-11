@@ -16,7 +16,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 
 ## Aktueller Spielstand
 
-Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Bulks 1 bis 5 sind umgesetzt: Die Runtime nutzt sofortiges Squad-Deployment, davon unabhängige automatische Drone-Waves und eine kontinuierlich reagierende Live-KI. Core-Maps enthalten keine Nodes oder Turrets mehr und werden von randständigen Command Carriern gerahmt.
+Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Bulks 1 bis 6 sind umgesetzt: Die Runtime nutzt sofortiges Squad-Deployment, davon unabhängige automatische Drone-Waves und eine kontinuierlich reagierende Live-KI. Core-Maps enthalten keine Nodes oder Turrets mehr und werden von randständigen Command Carriern gerahmt.
 
 - Kontinuierlicher `LIVE_MATCH` ohne Kauf-Queue, Lock-in, Refund oder bezahlte Wave-Slots.
 - Scout Wings mit drei und Fighter Wings mit zwei individuell verwundbaren Schiffen starten unmittelbar in der gewählten Lane. Bomber und Frigate bleiben Einzelschiffe; eine kurze gemeinsame Hangar-Traversal inszeniert den Launch.
@@ -34,7 +34,7 @@ Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_
 - Deutliches Schadensfeedback durch kurzen Hull-Flash, expandierende Schildkontur, projektilabhängigen Impact-Glow, Funken und situative Healthbars. Jeder Schiffstyp spielt beim Tod seine originale 8–18-phasige Galalaxy-Zerstörungssequenz mit deren 14-FPS-Timing; Turrets und HQs nutzen längere, silhouettenfreie Struktur-Explosionen.
 - Die alten HQ-Sprites, Defense Turrets und Capture Nodes sind aus beiden Core-Maps sowie deren Ladepfad entfernt. Die zugrunde liegenden optionalen Systeme und Assets bleiben für spätere Feature-Maps erhalten.
 - Keine großflächigen Team-Neonringe oder dekorativen Orbit-Ellipsen; optionale Feature-Maps dürfen Node-Fortschritt weiterhin kompakt darstellen.
-- Faire Projektilbudgets pro Team und Lane sowie globale Sicherheitsgrenzen für mobile Geräte; die Kartenleiste pulsiert bei frischen Offscreen-Treffern und Zerstörungen.
+- Mobile Sicherheitsbudgets begrenzen jede Team/Lane-Kombination auf 28 Schiffe, jede Projektil-Lane auf 40 Geschosse und das Match global auf 128 Geschosse. Bei hoher Dichte reduziert der Renderer teure Drop-Shadows und Projektil-Echos; die Kartenleiste pulsiert weiterhin bei frischen Offscreen-Treffern und Zerstörungen.
 - Responsive Canvas-Höhe mit bildschirmfestem HUD und einer davon entkoppelten `420 x 1180` Spielwelt. Die beiden Level-1-Hintergrundsektoren werden proportional beschnitten und weich überblendet, nicht auf Mobile verzerrt.
 - Über das Pause-Menü kann jederzeit zum Hauptmenü zurückgekehrt werden; der Ergebnisbildschirm bietet getrennt „Play Again“ und „Main Menu“.
 - Größere Mobile-Touchflächen, direkt in den Lane-Tabs sichtbarer Druckvergleich sowie ein kurzer Drei-Schritte-Einstieg auf dem Startbildschirm.
@@ -90,7 +90,7 @@ npm.cmd run balance:experiments -- 30
 npm.cmd run balance:investments -- 8
 ```
 
-Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische Waves, Economy, Upgrades, Capture-Migrationsbestand, Targeting, Kartengeometrie, dichte Flotten, Projektile, alle Runtime-Manifeste und die 516 Dateien der importierten Bibliothek ab. Der Browserlauf emuliert fünf echte Mobile-Viewports und prüft Start, Schwierigkeitswahl, Live-Touch-Deployment, Pause, Sound, Kamera sowie Console-/Netzwerkfehler.
+Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische Waves, Economy, Upgrades, Capture-Migrationsbestand, Targeting, Kartengeometrie, dichte Flotten, Projektile, alle Runtime-Manifeste und die 516 Dateien der importierten Bibliothek ab. Der Browserlauf emuliert beide Levels auf fünf echten Mobile-Viewports und prüft Start, Schwierigkeitswahl, Live-Touch-Deployment, Pause, Sound, Kamera, Console-/Netzwerkfehler sowie einen maximal gefüllten Render-Stressfall.
 
 ## Dokumentation
 
@@ -109,4 +109,4 @@ Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische
 
 ## Status
 
-Bulks 1 bis 5 des neuen Core-Reworks sind abgeschlossen: Bezahlte Wings starten sofort, automatische Waves bleiben getrennt und optionale Map-Features sind vollständig isoliert. Das HUD nennt Energiefehlbetrag, Rest-Cooldown oder fehlende Lane-Slots direkt an der Unit Card. Die KI reagiert live, kann sparen und vorbereitete Pushes starten. Bulk 6 stimmt Kampflesbarkeit, Time-to-kill und Matchdauer ab und bildet die finale Core-Slice-Abnahme.
+Bulks 1 bis 6 des neuen Core-Reworks sind abgeschlossen: Bezahlte Wings starten sofort, automatische Waves bleiben getrennt und optionale Map-Features sind vollständig isoliert. Das HUD nennt Energiefehlbetrag, Rest-Cooldown oder fehlende Lane-Slots direkt an der Unit Card. Die KI reagiert live, kann sparen und vorbereitete Pushes starten. Kampflesbarkeit, Time-to-kill, Mobile-Budgets und die Abnahme beider Levels sind als Regression-Gates verankert.

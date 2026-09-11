@@ -28,7 +28,7 @@ const unifiedProjectileKey = (team, projectileType) => {
   const family = projectileFamily(projectileType);
   return family ? `unified-${team === TEAM.PLAYER ? "player" : "enemy"}-${family}` : null;
 };
-const unitSize = (unitType) => ({ drone: 23.5, scout: 32.5, fighter: 39, bomber: 48, frigate: 58, battlecruiser: 74, dreadnought: 92 }[unitType] ?? 39);
+const unitSize = (unitType) => UNIT_DEFINITIONS[unitType]?.displaySize ?? ({ battlecruiser: 74, dreadnought: 92 }[unitType] ?? 39);
 const projectilePresentation = Object.freeze({
   "scout-pulse": Object.freeze({ width: 9, height: 9, ghostCount: 2, ghostStep: 2, ghostScale: 0.58, composite: "screen" }),
   "fighter-laser": Object.freeze({ width: 7, height: 28, ghostCount: 2, ghostStep: 2, ghostScale: 0.72, composite: "screen" }),
@@ -722,7 +722,7 @@ const drawNode = (ctx, node, frameTime, assets, projection, visualTheme) => {
   ctx.restore();
 };
 
-const drawProjectile = (ctx, projectile, projection, model) => {
+const drawProjectile = (ctx, projectile, projection, model, denseBattle = false) => {
   const definition = PROJECTILE_DEFINITIONS[projectile.projectileType] ?? PROJECTILE_DEFINITIONS.light_bolt;
   const x = projectile.x;
   const y = projection.y(projectile.y);
@@ -739,9 +739,11 @@ const drawProjectile = (ctx, projectile, projection, model) => {
   ctx.save();
   ctx.lineCap = "round";
   if (projectile.trail?.length) {
-    const trailBudget = projectileKind === "siege-missile" ? 8 : projectileKind === "fighter-laser" ? 5 : 4;
+    const trailBudget = denseBattle
+      ? projectileKind === "siege-missile" ? 4 : projectileKind === "fighter-laser" ? 3 : 2
+      : projectileKind === "siege-missile" ? 8 : projectileKind === "fighter-laser" ? 5 : 4;
     const trail = projectile.trail.slice(-trailBudget);
-    if (projectileSprite && presentation) {
+    if (projectileSprite && presentation && !denseBattle) {
       for (let ghost = presentation.ghostCount; ghost >= 1; ghost -= 1) {
         const trailIndex = trail.length - 1 - ghost * presentation.ghostStep;
         const point = trail[Math.max(0, trailIndex)];
@@ -814,6 +816,7 @@ export const renderEntityLayer = (ctx, model) => {
   const simulation = model.simulation;
   if (!simulation) return;
   const { nodes, structures, units, projectiles } = simulation.state;
+  const denseBattle = units.size + projectiles.size > 84;
   const projection = battlefieldProjection(model);
   const view = model.camera?.viewport;
   const visible = (worldY, padding = 100) => {
@@ -855,9 +858,9 @@ export const renderEntityLayer = (ctx, model) => {
     ctx.globalCompositeOperation = "source-over";
     const recentlyDamaged = simulation.state.time - unit.lastDamagedAt < 0.11;
     if (recentlyDamaged) ctx.filter = "brightness(1.82) saturate(0.58) contrast(1.08)";
-    else if (unifiedSprite && simulation.state.map.visualTheme === "orbital_garden" && unit.team === TEAM.PLAYER) {
+    else if (!denseBattle && unifiedSprite && simulation.state.map.visualTheme === "orbital_garden" && unit.team === TEAM.PLAYER) {
       ctx.filter = "drop-shadow(0 1px 1.4px rgba(2,9,18,0.96)) saturate(1.04) contrast(1.12) brightness(1.06)";
-    } else if (unifiedSprite) ctx.filter = "drop-shadow(0 1px 0.8px rgba(2,9,18,0.72)) saturate(1.06) contrast(1.07)";
+    } else if (!denseBattle && unifiedSprite) ctx.filter = "drop-shadow(0 1px 0.8px rgba(2,9,18,0.72)) saturate(1.06) contrast(1.07)";
     if (sprite) {
       if (unifiedSprite) ctx.drawImage(sprite, -displaySize / 2, -displaySize / 2, displaySize, displaySize);
       else ctx.drawImage(sprite, 0, 0, frameSize, frameSize, -displaySize / 2, -displaySize / 2, displaySize, displaySize);
@@ -920,7 +923,7 @@ export const renderEntityLayer = (ctx, model) => {
     const hpRatio = unit.hp / unit.maxHp;
     if (hpRatio < 0.75 || simulation.state.time - unit.lastDamagedAt < 1.8) drawBar(ctx, unit.x, y + size * 0.52, size * 0.82, hpRatio, teamColor(unit.team));
   }
-  for (const projectile of projectiles.values()) if (projectile.age >= 0 && visible(projectile.y, 50)) drawProjectile(ctx, projectile, projection, model);
+  for (const projectile of projectiles.values()) if (projectile.age >= 0 && visible(projectile.y, 50)) drawProjectile(ctx, projectile, projection, model, denseBattle);
 };
 
 const seededAngle = (seed, index) => ((seed * 2.17 + index * 2.399) % (Math.PI * 2));

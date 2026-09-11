@@ -12,12 +12,12 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const angleDelta = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 const LAUNCH_DURATION_SECONDS = 0.62;
 const PROJECTILE_TRAIL_LIMIT = Object.freeze({
-  scout_pulse: 10,
-  light_bolt: 9,
-  fighter_laser: 16,
-  siege_missile: 18,
-  heavy_cannon: 16,
-  heavy_bolt: 16,
+  scout_pulse: 8,
+  light_bolt: 8,
+  fighter_laser: 12,
+  siege_missile: 14,
+  heavy_cannon: 12,
+  heavy_bolt: 12,
 });
 const COMBAT_SPEED_SCALE = Object.freeze({
   drone: 0.48,

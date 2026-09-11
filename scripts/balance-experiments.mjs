@@ -4,9 +4,9 @@ import { resolve } from "node:path";
 const root = resolve(new URL("../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
 const matches = Number.parseInt(process.argv[2] ?? "30", 10);
 const variants = [
-  { id: "lean", base: 14, node: 6 },
-  { id: "recommended", base: 16, node: 7 },
-  { id: "generous", base: 18, node: 8 },
+  { id: "lean", base: 14 },
+  { id: "recommended", base: 16 },
+  { id: "generous", base: 18 },
 ];
 
 const reports = variants.map((variant) => {
@@ -16,7 +16,6 @@ const reports = variants.map((variant) => {
     env: {
       ...process.env,
       SG_BASE_INCOME: String(variant.base),
-      SG_NODE_INCOME: String(variant.node),
       SG_PLAYER_AI_PROFILE: "tactician",
       SG_ENEMY_AI_PROFILE: "admiral",
     },
@@ -26,14 +25,15 @@ const reports = variants.map((variant) => {
   return {
     id: variant.id,
     baseIncomePerSecond: variant.base,
-    nodeIncomePerSecond: variant.node,
     wins: report.wins,
     winsByProfile: report.winsByProfile,
     averageDurationSeconds: report.averageDurationSeconds,
     averageDeploymentCycles: report.averageDeploymentCycles,
+    averageFirstContactSeconds: report.averageFirstContactSeconds,
+    averageVisibleExchangeSeconds: report.averageVisibleExchangeSeconds,
     averageFinalEnergy: report.averageFinalEnergy,
     upgrades: report.upgrades,
-    nodeControlSeconds: report.nodeControlSeconds,
+    combatZoneHits: report.combatZoneHits,
   };
 });
 

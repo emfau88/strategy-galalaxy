@@ -169,6 +169,12 @@ assert.notEqual(UNIT_DEFINITIONS.scout.speed, UNIT_DEFINITIONS.frigate.speed);
 assert.ok(UNIT_DEFINITIONS.frigate.maxHp > UNIT_DEFINITIONS.fighter.maxHp);
 assert.ok(UNIT_DEFINITIONS.bomber.damage > UNIT_DEFINITIONS.fighter.damage);
 assert.ok(UNIT_DEFINITIONS.fighter.fireInterval < UNIT_DEFINITIONS.frigate.fireInterval);
+assert.deepEqual(
+  ["drone", "scout", "fighter", "bomber", "frigate"].map((unitType) => UNIT_DEFINITIONS[unitType].displaySize),
+  [23.5, 32.5, 39, 48, 58],
+  "ship silhouettes keep an explicit small-to-heavy display hierarchy",
+);
+assert.equal(new Set(["scout", "fighter", "bomber", "frigate"].map((unitType) => UNIT_DEFINITIONS[unitType].role)).size, 4, "purchasable ships retain distinct combat roles");
 assert.equal(CONFIG.timing.deploymentIntervalSeconds, 22);
 assert.ok(UNIT_DEFINITIONS.scout.deploymentCooldownSeconds > 0);
 assert.ok(UNIT_DEFINITIONS.frigate.deploymentCooldownSeconds > UNIT_DEFINITIONS.scout.deploymentCooldownSeconds);
@@ -176,10 +182,28 @@ assert.equal(UNIT_DEFINITIONS.scout.squadSize, 3);
 assert.equal(UNIT_DEFINITIONS.fighter.squadSize, 2);
 assert.equal(UNIT_DEFINITIONS.bomber.squadSize, 1);
 assert.equal(UNIT_DEFINITIONS.frigate.squadSize, 1);
-assert.equal(CONFIG.caps.projectilesPerLaneTeam, 64);
+assert.equal(CONFIG.caps.unitsPerLaneTeam, 28);
+assert.equal(CONFIG.caps.projectilesPerLaneTeam, 40);
+assert.equal(CONFIG.caps.projectiles, 128);
 assert.equal((CLASSIC_LANES.structures.find((structure) => structure.id === "player-hq").y + CLASSIC_LANES.structures.find((structure) => structure.id === "enemy-hq").y) / 2, CLASSIC_LANES.lanes[0].node.y);
 assert.equal(UNIT_DEFINITIONS.battlecruiser.enabled, false);
 assert.equal(UNIT_DEFINITIONS.dreadnought.enabled, false);
+
+const fighterExchange = new BattleSimulation();
+const exchangePlayer = fighterExchange.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 105, y: 650, spawnCycle: 501 });
+const exchangeEnemy = fighterExchange.spawnUnit(TEAM.ENEMY, LANE.LEFT, "fighter", { x: 105, y: 530, spawnCycle: 502 });
+exchangePlayer.launching = false;
+exchangeEnemy.launching = false;
+let firstExchangeHitAt = null;
+let firstExchangeLossAt = null;
+for (let index = 0; index < 60 * 20 && firstExchangeLossAt === null; index += 1) {
+  fighterExchange.step(CONFIG.timing.fixedStepSeconds);
+  if (firstExchangeHitAt === null && fighterExchange.state.events.some((event) => event.type === "hit")) firstExchangeHitAt = fighterExchange.state.time;
+  if (fighterExchange.state.events.some((event) => event.type === "destroyed")) firstExchangeLossAt = fighterExchange.state.time;
+}
+const visibleExchangeSeconds = firstExchangeLossAt - firstExchangeHitAt;
+assert.ok(firstExchangeHitAt !== null && firstExchangeLossAt !== null, "a mirrored fighter encounter reaches contact and a decisive loss");
+assert.ok(visibleExchangeSeconds >= 6 && visibleExchangeSeconds <= 12, `fighter exchange stays readable for several seconds (${visibleExchangeSeconds.toFixed(2)}s)`);
 
 const structureTieSimulation = new BattleSimulation();
 structureTieSimulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "scout", { x: 105, y: 80 });
@@ -279,8 +303,8 @@ assert.equal(match.lastDeploymentAt, 0);
 assert.equal(match.lastDeploymentAtFor(TEAM.PLAYER, LANE.LEFT), 0);
 assert.equal(match.lastDeploymentAtFor(TEAM.ENEMY, LANE.RIGHT), 0);
 assert.equal("queuedWaves" in match.deployment, false, "automatic wave scheduling owns no paid-unit queue");
-assert.equal(match.simulation.state.units.size, 12);
-assert.equal(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.PLAYER).length, 3);
+assert.equal(match.simulation.state.units.size, 8);
+assert.equal(match.simulation.state.lanes.get(LANE.LEFT).unitIds.get(TEAM.PLAYER).length, 2);
 assert.ok([...match.simulation.state.units.values()].every((unit) => unit.unitType === "drone"), "the automatic opening wave contains only skirmisher drones");
 const positionsBeforePause = match.simulation.snapshot();
 match.pause();
@@ -301,7 +325,7 @@ terminalMatch.advanceLive(1 / 60);
 assert.equal(terminalMatch.state, MATCH_STATE.VICTORY);
 terminalMatch.restart();
 assert.equal(terminalMatch.state, MATCH_STATE.LIVE_MATCH);
-assert.equal([...terminalMatch.simulation.state.units.values()].filter((unit) => unit.unitType === "drone").length, 12, "restart creates a fresh automatic opening wave");
+assert.equal([...terminalMatch.simulation.state.units.values()].filter((unit) => unit.unitType === "drone").length, 8, "restart creates a fresh automatic opening wave");
 
 const simultaneousHqLoss = new BattleSimulation();
 simultaneousHqLoss.applyDamage([
@@ -526,10 +550,10 @@ upgradeMatch.advanceLive(1);
 assert.equal(upgradeMatch.economy.get(TEAM.PLAYER).energy, CONFIG.balance.energyCap, "passive income respects the energy cap");
 
 const escalatingWaveMatch = new MatchDirector();
-assert.equal(escalatingWaveMatch.deployment.baseWaveSize(0), 3);
-assert.equal(escalatingWaveMatch.deployment.baseWaveSize(120), 3);
-assert.equal(escalatingWaveMatch.deployment.baseWaveSize(150), 4);
-assert.equal(escalatingWaveMatch.deployment.baseWaveSize(999), 5, "free drone escalation is capped");
+assert.equal(escalatingWaveMatch.deployment.baseWaveSize(0), 2);
+assert.equal(escalatingWaveMatch.deployment.baseWaveSize(120), 2);
+assert.equal(escalatingWaveMatch.deployment.baseWaveSize(150), 3);
+assert.equal(escalatingWaveMatch.deployment.baseWaveSize(999), 3, "free drone escalation is capped");
 
 const captureMatch = new MatchDirector({ mapDefinition: FEATURE_TEST_MAP });
 captureMatch.start();
@@ -590,7 +614,7 @@ assert.deepEqual(new MatchDirector().executeCommand({ type: "BUY_UPGRADE", team:
 
 const capacityMatch = new MatchDirector({ config: { ...CONFIG, caps: { ...CONFIG.caps, unitsPerLaneTeam: 2 } } });
 capacityMatch.start();
-assert.equal(capacityMatch.baseWaveBacklog.get(TEAM.PLAYER).get(LANE.LEFT).length, 1, "only the unspawned automatic Drone enters the wave backlog");
+assert.equal(capacityMatch.baseWaveBacklog.get(TEAM.PLAYER).get(LANE.LEFT).length, 0, "a full two-Drone opening wave fits the constrained lane exactly");
 const rejected = capacityMatch.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
 assert.deepEqual(rejected, { ok: false, reason: "LANE_CAPACITY" });
 const capacityAvailability = capacityMatch.liveDeployment.availability({ simulation: capacityMatch.simulation, economy: capacityMatch.economy, team: TEAM.PLAYER, laneId: LANE.LEFT, unitType: "scout" });
@@ -598,7 +622,7 @@ assert.deepEqual({ reason: capacityAvailability.reason, active: capacityAvailabi
 assert.equal(capacityMatch.economy.get(TEAM.PLAYER).energy, 300);
 assert.equal(capacityMatch.liveDeployment.cooldownRemaining(TEAM.PLAYER, "scout"), 0, "an atomically rejected Wing starts no cooldown");
 capacityMatch.forceWave();
-assert.equal(capacityMatch.baseWaveBacklog.get(TEAM.PLAYER).get(LANE.LEFT).length, 4, "later automatic Drones accumulate without creating a paid queue");
+assert.equal(capacityMatch.baseWaveBacklog.get(TEAM.PLAYER).get(LANE.LEFT).length, 2, "later automatic Drones accumulate without creating a paid queue");
 
 const aiMatch = new MatchDirector();
 aiMatch.start();
@@ -645,13 +669,13 @@ const laneEffects = new PresentationEffects();
 laneEffects.observe(Array.from({ length: 30 }, (_, index) => ({
   type: "hit", x: 80 + index, y: 220, team: TEAM.PLAYER, laneId: LANE.LEFT, projectileType: "scout_pulse",
 })));
-assert.equal(laneEffects.effects.length, 24, "presentation feedback is capped independently per lane and team");
+assert.equal(laneEffects.effects.length, 16, "presentation feedback is capped independently per lane and team");
 const budgetedEffects = new PresentationEffects();
 budgetedEffects.observe(Array.from({ length: 30 }, (_, index) => ({
   type: "hit", x: index, y: 100, team: TEAM.PLAYER, laneId: LANE.LEFT,
   projectileType: "scout_pulse", sequence: index + 1,
 })));
-assert.equal(budgetedEffects.effects.length, 24, "presentation feedback keeps an independent lane/team budget");
+assert.equal(budgetedEffects.effects.length, 16, "presentation feedback keeps an independent lane/team budget");
 
 assert.deepEqual(commandActionAt({ x: 50, y: 718 }), { type: "TOGGLE_COMMAND_DOCK" });
 assert.equal(commandActionAt({ x: 24, y: 620 }), null, "ship cards stay hidden in the compact dock");

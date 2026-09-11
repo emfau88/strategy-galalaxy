@@ -1,6 +1,6 @@
 # Strategy Galalaxy – Core Gameplay Rework Roadmap
 
-Stand: 2026-09-10
+Stand: 2026-09-11
 
 ## Aktiver Rework
 
@@ -42,9 +42,9 @@ Die verbindliche Zielrichtung steht in [STRATEGY_GALALAXY_CORE_VISION.md](STRATE
 
 ### Bulk 6 – Combat-Tuning und Core-Slice-Abnahme
 
-- [ ] Battle Zones, Rollen, Time-to-kill, Abstände, Größenhierarchie und Waffenlesbarkeit abstimmen.
-- [ ] Foundation-, Stress- und Browserprüfungen auf das neue System migrieren.
-- [ ] Level 1 und 2 auf realen Mobile-Viewports entlang des neuen Kernloops abnehmen.
+- [x] Battle Zones, Rollen, Time-to-kill, Abstände, Größenhierarchie und Waffenlesbarkeit abstimmen.
+- [x] Foundation-, Stress- und Browserprüfungen auf das neue System migrieren.
+- [x] Level 1 und 2 auf realen Mobile-Viewports entlang des neuen Kernloops abnehmen.
 
 ## Historischer Ausgangsstand
 
@@ -265,12 +265,12 @@ Der vom Nutzer freigegebene Mockup-Aufbau ist als neuer Standard umgesetzt. Drag
 
 ## Durchgehende Qualitäts-Gates
 
-- [ ] Keine Simulation hängt von Kamera, Animation oder Framerate ab.
-- [ ] Beide Teams bleiben geometrisch und regeltechnisch gespiegelt.
-- [ ] Keine negativen Ressourcen, Slotüberschreitungen oder verlorenen Refunds.
-- [ ] Alle Matches enden reproduzierbar oder melden diagnostizierbare Timeouts.
-- [ ] Fünf Ziel-Viewports bleiben ohne Konsolen-, Netzwerk- oder Touchfehler.
-- [ ] Jede neue Balance-Referenz dokumentiert Seed, Matchzahl, Dauer und Timeoutquote.
+- [x] Keine Simulation hängt von Kamera, Animation oder Framerate ab.
+- [x] Beide Teams bleiben geometrisch und regeltechnisch gespiegelt.
+- [x] Keine negativen Ressourcen, Slotüberschreitungen oder verlorenen Refunds.
+- [x] Alle Matches enden reproduzierbar oder melden diagnostizierbare Timeouts.
+- [x] Fünf Ziel-Viewports bleiben ohne Konsolen-, Netzwerk- oder Touchfehler.
+- [x] Jede neue Balance-Referenz dokumentiert Seed, Matchzahl, Dauer und Timeoutquote.
 
 ## Aktueller nächster Schritt
 
@@ -342,3 +342,12 @@ Combat-Motion-Follow-up:
 - typische sichtbare Flugzeit: Drone 0,33 s, Scout/Fighter 0,37–0,38 s, Frigate 0,68 s, Bomber 1,32 s
 - dichter 90-Sekunden-Stresstest: maximal 134 Projektile, keine Budgetverletzung
 - Foundation- und Browserprüfung auf allen fünf Mobile-Viewports bestanden
+
+Core-Rework Bulk 6, deterministische Standardmatrix ohne Zufallsseed:
+
+- Level 1: acht gespiegelte Admiral-/Tactician-Matches, 4:4 Seitensymmetrie, keine Draws oder Timeouts, im Mittel 294,8 Sekunden
+- Level 2: acht gespiegelte Admiral-/Tactician-Matches, 4:4 Seitensymmetrie, keine Draws oder Timeouts, im Mittel 151,7 Sekunden
+- erster Kontakt nach 6,8 beziehungsweise 5,8 Sekunden; sichtbarer Feuerwechsel bis zum ersten Verlust im Mittel 14,6 beziehungsweise 10,4 Sekunden
+- normale Spitzenlast 37/56 Schiffe und 56/60 Projektile; harter Stressdeckel 56/112 Schiffe und 76/128 Projektile für Level 1/2
+- dichte Level-2-Browserfixture mit 112 Schiffen: 3,0 ms mittlere Framezeit und 5,5 ms p95 im lokalen Headless-Edge-Lauf
+- Level 1 und 2 bestanden jeweils 360×800, 390×844, 393×852, 412×915 und 420×760 ohne Asset-, Konsolen-, Kamera- oder Touchfehler
