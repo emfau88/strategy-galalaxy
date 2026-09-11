@@ -8,18 +8,18 @@ const engine = (x, y, scale = 1) => freeze({ x, y, scale });
 // emitted flame itself comes from Galalaxy's original animated Nairan/Kla'ed layers.
 export const UNIFIED_HULL_VISUALS = freeze({
   player: freeze({
-    drone: freeze({ engineHardpoints: freeze([engine(192, 310, 0.58)]) }),
-    scout: freeze({ engineHardpoints: freeze([engine(192, 310, 0.62)]) }),
-    fighter: freeze({ engineHardpoints: freeze([engine(192, 317, 0.58)]) }),
-    bomber: freeze({ engineHardpoints: freeze([engine(120, 325, 0.72), engine(264, 325, 0.72), engine(156, 332, 0.43), engine(228, 332, 0.43)]) }),
-    frigate: freeze({ engineHardpoints: freeze([engine(192, 356, 0.7), engine(140, 343, 0.52), engine(244, 343, 0.52)]) }),
+    drone: freeze({ engineHardpoints: freeze([engine(192, 306, 0.58)]) }),
+    scout: freeze({ engineHardpoints: freeze([engine(192, 280, 0.62)]) }),
+    fighter: freeze({ engineHardpoints: freeze([engine(192, 283, 0.58)]) }),
+    bomber: freeze({ engineHardpoints: freeze([engine(120, 266, 0.72), engine(264, 266, 0.72), engine(156, 278, 0.43), engine(228, 278, 0.43)]) }),
+    frigate: freeze({ engineHardpoints: freeze([engine(192, 309, 0.7), engine(140, 297, 0.52), engine(244, 297, 0.52)]) }),
   }),
   enemy: freeze({
-    drone: freeze({ engineHardpoints: freeze([engine(192, 310, 0.58)]) }),
-    scout: freeze({ engineHardpoints: freeze([engine(192, 310, 0.62)]) }),
-    fighter: freeze({ engineHardpoints: freeze([engine(192, 317, 0.58)]) }),
-    bomber: freeze({ engineHardpoints: freeze([engine(120, 325, 0.72), engine(264, 325, 0.72), engine(156, 332, 0.43), engine(228, 332, 0.43)]) }),
-    frigate: freeze({ engineHardpoints: freeze([engine(192, 356, 0.7), engine(140, 343, 0.52), engine(244, 343, 0.52)]) }),
+    drone: freeze({ engineHardpoints: freeze([engine(192, 306, 0.58)]) }),
+    scout: freeze({ engineHardpoints: freeze([engine(192, 280, 0.62)]) }),
+    fighter: freeze({ engineHardpoints: freeze([engine(192, 286, 0.58)]) }),
+    bomber: freeze({ engineHardpoints: freeze([engine(120, 266, 0.72), engine(264, 266, 0.72), engine(156, 275, 0.43), engine(228, 275, 0.43)]) }),
+    frigate: freeze({ engineHardpoints: freeze([engine(192, 309, 0.7), engine(140, 297, 0.52), engine(244, 297, 0.52)]) }),
   }),
 });
 export const FLEET_VISUALS = freeze({

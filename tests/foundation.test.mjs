@@ -396,8 +396,16 @@ for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
   }
 }
 assert.equal(unifiedHullVisualFor(TEAM.PLAYER, "fighter").engineHardpoints.length, 1, "fighter side lamps are not mistaken for exhaust nozzles");
-assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "bomber").engineHardpoints.map(({ x, y }) => [x, y]), [[120, 325], [264, 325], [156, 332], [228, 332]], "bomber exhaust stays registered to its four visible pipes");
-assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "frigate").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 356], [140, 343], [244, 343]], "frigate exhaust stays registered to its three visible pipes");
+assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "drone").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 306]], "player Drone exhaust touches the real lower nozzle edge");
+assert.deepEqual(unifiedHullVisualFor(TEAM.ENEMY, "drone").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 306]], "rival Drone exhaust touches the real lower nozzle edge");
+assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "scout").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 280]], "player Scout exhaust touches the real lower nozzle edge");
+assert.deepEqual(unifiedHullVisualFor(TEAM.ENEMY, "scout").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 280]], "rival Scout exhaust touches the real lower nozzle edge");
+assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "fighter").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 283]], "player Fighter exhaust touches its single real nozzle edge");
+assert.deepEqual(unifiedHullVisualFor(TEAM.ENEMY, "fighter").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 286]], "rival Fighter exhaust touches its single real nozzle edge");
+assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "bomber").engineHardpoints.map(({ x, y }) => [x, y]), [[120, 266], [264, 266], [156, 278], [228, 278]], "player Bomber exhaust stays registered to its four visible pipe edges");
+assert.deepEqual(unifiedHullVisualFor(TEAM.ENEMY, "bomber").engineHardpoints.map(({ x, y }) => [x, y]), [[120, 266], [264, 266], [156, 275], [228, 275]], "rival Bomber exhaust stays registered to its four visible pipe edges");
+assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "frigate").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 309], [140, 297], [244, 297]], "player Frigate exhaust stays registered to its three visible pipe edges");
+assert.deepEqual(unifiedHullVisualFor(TEAM.ENEMY, "frigate").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 309], [140, 297], [244, 297]], "rival Frigate exhaust stays registered to its three visible pipe edges");
 assert.equal(engineVisualFor(TEAM.PLAYER).engine.assetKey, "klaed-scout-engine", "player exhaust uses the cyan Galalaxy strip");
 assert.equal(engineVisualFor(TEAM.ENEMY).engine.assetKey, "nairan-scout-engine", "rival exhaust uses the warm Galalaxy strip");
 assert.equal(shieldVisualFor(TEAM.PLAYER, "frigate").shield.assetKey, "klaed-frigate-shield", "player shields use the cyan class-specific Galalaxy layer");
