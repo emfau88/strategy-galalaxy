@@ -17,7 +17,7 @@ import { acquireStructureTarget, acquireUnitTarget, planUnitTargets } from "../s
 import { ASSET_GROUPS, runtimeAssetManifestForLevel } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { SoundSystem } from "../src/audio/soundSystem.js";
-import { commandActionAt, commandUiLayout, endActionAt, fullscreenActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "../src/ui/commandUi.js";
+import { commandActionAt, commandUiBottomInset, commandUiLayout, endActionAt, fullscreenActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "../src/ui/commandUi.js";
 import { cameraNavigatorRatioAt } from "../src/ui/cameraUi.js";
 import { engineVisualFor, fleetVisualFor, shieldVisualFor, unifiedHullVisualFor } from "../src/data/visuals.js";
 
@@ -90,8 +90,10 @@ assert.ok(Math.abs(camera.screenToWorldY(camera.worldToScreenY(590)) - 590) < 0.
 assert.ok(Math.abs(cameraNavigatorRatioAt({ x: 405, y: camera.viewport.y + camera.viewport.height / 2 }, camera.viewport) - 0.5) < 0.02);
 camera.setBottomInset(CONFIG.camera.battlefieldCommandBottomInset);
 assert.equal(camera.viewport.height, 462);
+camera.setBottomInset(commandUiBottomInset("upgrades"));
+assert.equal(camera.viewport.height, 406, "the taller upgrade panel stays entirely outside battlefield camera input");
 camera.resize(CONFIG.app.designWidth, 909);
-assert.equal(camera.viewport.height, 611);
+assert.equal(camera.viewport.height, 555);
 camera.setBottomInset(CONFIG.camera.battlefieldBottomInset);
 assert.equal(camera.viewport.height, 771);
 assert.ok(camera.y >= 0 && camera.y <= camera.maximumY);
@@ -782,6 +784,9 @@ assert.deepEqual(commandActionAt({ x: 82, y: 726 }, "units", 760, [LANE.LEFT, LA
 assert.deepEqual(commandActionAt({ x: 24, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "DEPLOY_UNIT", unitType: "scout" });
 assert.deepEqual(commandActionAt({ x: 220, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "DEPLOY_UNIT", unitType: "fighter" });
 assert.deepEqual(commandActionAt({ x: 300, y: 565 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "SET_COMMAND_MENU", menu: "upgrades" });
+assert.deepEqual(commandActionAt({ x: 120, y: 508 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "SET_COMMAND_MENU", menu: "units" });
+const upgradePanelLayout = commandUiLayout(760, [LANE.LEFT, LANE.RIGHT], true, "upgrades");
+assert.ok(upgradePanelLayout.fleetTab.y > 760 - commandUiBottomInset("upgrades"), "the Fleet tab remains below the camera viewport while upgrades are open");
 assert.deepEqual(commandActionAt({ x: 220, y: 550 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "weapons" });
 assert.deepEqual(commandActionAt({ x: 24, y: 610 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "fireRate" });
 assert.deepEqual(commandActionAt({ x: 220, y: 610 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "salvo" });

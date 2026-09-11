@@ -450,6 +450,10 @@ try {
       await touch(300, 565);
       const upgradeMenu = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.commandMenu", returnByValue: true });
       assert.equal(upgradeMenu.result.value, "upgrades", "upgrade projects are touch-operable");
+      await touch(120, 508);
+      const fleetMenu = await send("Runtime.evaluate", { expression: "(() => { const g = window.__strategyGalalaxy; return { menu: g.commandMenu, open: g.commandDockOpen }; })()", returnByValue: true });
+      assert.deepEqual(fleetMenu.result.value, { menu: "units", open: true }, "Fleet reopens cleanly from the taller upgrade panel");
+      await touch(300, 565);
       const refillEnergy = () => send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').energy = window.__strategyGalalaxy.match.config.balance.energyCap" });
       await refillEnergy();
       await touch(82, 550);

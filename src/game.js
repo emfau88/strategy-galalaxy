@@ -12,7 +12,7 @@ import { PresentationEffects } from "./rendering/presentationEffects.js";
 import { SoundSystem } from "./audio/soundSystem.js";
 import { MatchDirector } from "./simulation/matchDirector.js";
 import { InputRouter } from "./ui/inputRouter.js";
-import { commandActionAt, containsPoint, endActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "./ui/commandUi.js";
+import { commandActionAt, commandUiBottomInset, containsPoint, endActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "./ui/commandUi.js";
 import { cameraNavigatorRatioAt } from "./ui/cameraUi.js";
 import { AI_PROFILES } from "./simulation/opponentAi.js";
 import { CLASSIC_LANES, ORBITAL_GARDEN, UNIT_DEFINITIONS } from "./data/definitions.js";
@@ -365,6 +365,7 @@ export class Game {
     }
     if (action.type === "SET_COMMAND_MENU") {
       this.commandMenu = action.menu;
+      this.syncCommandViewport();
       this.sound.play("select");
       return;
     }
@@ -393,7 +394,7 @@ export class Game {
 
   syncCommandViewport() {
     if (!this.camera) return;
-    this.camera.setBottomInset(this.commandDockOpen ? CONFIG.camera.battlefieldCommandBottomInset : CONFIG.camera.battlefieldBottomInset);
+    this.camera.setBottomInset(this.commandDockOpen ? commandUiBottomInset(this.commandMenu) : CONFIG.camera.battlefieldBottomInset);
   }
 
   playerHqContains(point) {

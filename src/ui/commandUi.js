@@ -10,6 +10,11 @@ export const COMMAND_UI = Object.freeze({
 });
 
 const freezeRect = (rect) => Object.freeze(rect);
+const expandedPanelHeight = (menu) => menu === "upgrades" ? 274 : 218;
+
+// Leave the same eight-pixel separation above the panel regardless of which
+// tab is active. This also keeps the taller upgrade tabs outside camera input.
+export const commandUiBottomInset = (menu = "units") => expandedPanelHeight(menu) + 16;
 
 export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT], expanded = false, menu = "units") => {
   if (!expanded) {
@@ -28,7 +33,7 @@ export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT],
   }
 
   const upgradeMenu = menu === "upgrades";
-  const panelHeight = upgradeMenu ? 274 : 218;
+  const panelHeight = expandedPanelHeight(menu);
   const y = height - panelHeight - 8;
   const footerOffset = upgradeMenu ? 230 : 174;
   const laneWidth = laneIds.length === 1 ? 90 : 43;
