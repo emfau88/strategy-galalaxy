@@ -23,7 +23,7 @@ Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_
 - Eigene datengetriebene Cooldowns pro Einheitentyp laufen ausschließlich in aktiver Simulationszeit.
 - Kosten und Cooldown werden atomar erst nach erfolgreichem Spawn gesetzt.
 - Kostenlose symmetrische Drone-Waves starten unabhängig davon initial alle 22 Sekunden und besitzen einen eigenen Kapazitäts-Backlog.
-- Vier sofort aktive Upgrade-Wege konkurrieren mit neuen Schiffen: Reactor erhöht Einkommen, Arsenal den Schaden, Autoloader verkürzt die Feuerpause und Multi Cannon ergänzt bei bezahlten Schiffen ein sichtbares Geschoss mit kleinem Salvenbonus. Galalaxy-Pickup-Icons, Vorher→Nachher-Werte und Levelpunkte machen die Wahl lesbar. Frühere Logistics-Slots sind entfernt; Turret-Upgrades sind auf Core-Maps nicht verfügbar.
+- Fünf sofort aktive Upgrade-Wege konkurrieren mit neuen Schiffen: Reactor erhöht Einkommen, Arsenal den Schaden, Autoloader verkürzt die Feuerpause, Multi Cannon ergänzt bei bezahlten Schiffen ein sichtbares Geschoss und Shield Array gibt allen Schiffen einen regenerierenden Schutzpuffer. Galalaxy-Pickup-Icons, Vorher→Nachher-Werte und Levelpunkte machen die Wahl lesbar. Frühere Logistics-Slots sind entfernt; Turret-Upgrades sind auf Core-Maps nicht verfügbar.
 - Die KI entscheidet je nach Schwierigkeit ungefähr alle 1,2 bis 2,2 Sekunden, reagiert auf grobe gegnerische Zusammensetzungen und spart regelmäßig auf einen Zwei-Kauf-Push oder einen sichtbaren Forschungsplan. Alle Aktionen verwenden dieselben Kaufbefehle, Kosten, Cooldowns und Lane-Grenzen wie der Spieler.
 - Zwei wählbare Karten: Level 1 „Orbital Garden“ mit einer Lane und Level 2 „Twin Fronts“ mit zwei Lanes; beide nutzen eine `420 × 1180` Scroll-Welt.
 - Eine schmale strategische Kartenleiste zeigt Flottenfronten, Command Carrier und den aktuellen Kameraausschnitt; optionale Strukturen erscheinen nur auf dafür aktivierten Maps.
@@ -40,7 +40,7 @@ Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_
 - Größere Mobile-Touchflächen, direkt in den Lane-Tabs sichtbarer Druckvergleich sowie ein kurzer Drei-Schritte-Einstieg auf dem Startbildschirm.
 - Integriertes Carrier-Kommandomenü: Der Normalzustand zeigt Lane, Live-Deployment und Auto-Wave-Timer; ein Tap auf den eigenen Command Carrier oder „Command“ öffnet Fleet- und Upgrade-Tabs.
 - Schaltbare, synthetisierte Combat-Sounds und an echte Nutzergesten gebundenes Haptik-Feedback ohne zusätzliche Audio-Lizenzabhängigkeit.
-- Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt in zwei Stufen nur 38 aktive Bilder pro Core-Level. Große Level-1-Quellen besitzen mobile `840 px`-Ableitungen, und GitHub Pages veröffentlicht ausschließlich das kuratierte Spielartefakt statt der 516 Referenzdateien.
+- Vollständige lizenzierte Galalaxy/Foozle-Assetbibliothek im Repository; die Runtime lädt in zwei Stufen nur 47 aktive Bilder pro Core-Level. Große Level-1-Quellen besitzen mobile `840 px`-Ableitungen, und GitHub Pages veröffentlicht ausschließlich die 51 kuratierten Spielbilder statt der 516 Referenzdateien.
 
 ## Einheiten
 

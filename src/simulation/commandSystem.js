@@ -24,6 +24,7 @@ export class CommandSystem {
     }
     const result = director.economy.buyUpgrade(team, upgradeId);
     if (!result.ok) return result;
+    if (upgradeId === "shield") director.simulation.activateShieldUpgrade(team);
     const headquarters = director.simulation.state.structures.get(team === TEAM.PLAYER ? "player-hq" : "enemy-hq");
     const event = { type: "upgrade_activated", team, upgradeId, level: result.level, x: headquarters?.x, y: headquarters?.y };
     emitSimulationEvent(director.simulation.state, event);

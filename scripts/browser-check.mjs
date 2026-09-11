@@ -108,7 +108,6 @@ try {
     const once = onceEvents.get(message.method);
     if (once) { onceEvents.delete(message.method); once(message.params); }
   };
-
   const failures = [];
   onEvent("Runtime.exceptionThrown", ({ exceptionDetails }) => failures.push(`exception: ${exceptionDetails.text}`));
   onEvent("Log.entryAdded", ({ entry }) => { if (entry.level === "error") failures.push(`console: ${entry.text}`); });
@@ -305,6 +304,57 @@ try {
     await writeFile(resolve(output, `level-2-qa-${team === 'TEAM_PLAYER' ? 'player' : 'enemy'}-engines-420x760.png`), Buffer.from(engineScreenshot.data, "base64"));
   }
 
+  const shieldQa = await send("Runtime.evaluate", {
+    expression: `(() => {
+      const g = window.__strategyGalalaxy;
+      const simulation = g.match.simulation;
+      const state = simulation.state;
+      state.units.clear(); state.projectiles.clear(); state.events.length = 0; simulation.squads.clear(); g.effects.reset();
+      for (const lane of state.lanes.values()) {
+        lane.unitIds.set('TEAM_PLAYER', []); lane.unitIds.set('TEAM_ENEMY', []); lane.projectileIds = [];
+      }
+      for (const team of ['TEAM_PLAYER', 'TEAM_ENEMY']) {
+        for (let level = 0; level < 3; level += 1) {
+          g.match.economy.get(team).energy = g.match.config.balance.energyCap;
+          g.match.executeCommand({ type: 'BUY_UPGRADE', team, upgradeId: 'shield' });
+        }
+      }
+      const types = ['scout', 'fighter', 'bomber', 'frigate'];
+      const xs = [52, 142, 278, 368];
+      for (const [team, y, heading] of [['TEAM_PLAYER', 640, -Math.PI / 2], ['TEAM_ENEMY', 540, Math.PI / 2]]) {
+        types.forEach((type, index) => {
+          const lane = index < 2 ? 'LANE_LEFT' : 'LANE_RIGHT';
+          const unit = simulation.spawnUnit(team, lane, type, { x: xs[index], y, spawnCycle: 980 + index });
+          unit.launching = false;
+          unit.heading = type === 'frigate' ? (team === 'TEAM_PLAYER' ? 0 : Math.PI) : heading;
+          unit.vx = 0; unit.vy = 0; unit.fireCooldown = 99;
+          const impactAngle = index % 2 ? 0 : Math.PI;
+          simulation.applyDamage([{
+            projectileId: 'shield-qa-' + team + '-' + index,
+            projectileType: index === 2 ? 'siege_missile' : 'fighter_laser',
+            targetId: unit.id,
+            damage: Math.max(1, unit.maxShield * 0.22),
+            ownerTeam: team === 'TEAM_PLAYER' ? 'TEAM_ENEMY' : 'TEAM_PLAYER',
+            laneId: lane,
+            impactX: unit.x + Math.cos(impactAngle) * 12,
+            impactY: unit.y + Math.sin(impactAngle) * 12,
+          }]);
+        });
+      }
+      g.camera.jumpToWorld(590);
+      return {
+        units: state.units.size,
+        shielded: [...state.units.values()].filter((unit) => unit.shield > 0 && unit.shield < unit.maxShield).length,
+        levels: ['TEAM_PLAYER', 'TEAM_ENEMY'].map((team) => g.match.economy.get(team).shieldLevel),
+      };
+    })()`,
+    returnByValue: true,
+  });
+  assert.deepEqual(shieldQa.result.value, { units: 8, shielded: 8, levels: [3, 3] }, "shield QA displays every core hull with an active directional impact flash");
+  await delay(80);
+  const shieldQaScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "level-2-qa-shield-array-420x760.png"), Buffer.from(shieldQaScreenshot.data, "base64"));
+
   const destructionQa = await send("Runtime.evaluate", {
     expression: `(() => {
       const g = window.__strategyGalalaxy;
@@ -317,7 +367,8 @@ try {
       const attacker = simulation.spawnUnit('TEAM_PLAYER', 'LANE_LEFT', 'frigate', { x: 82, y: 635, slotOffsetX: -23, spawnCycle: 921 });
       const fighter = simulation.spawnUnit('TEAM_ENEMY', 'LANE_LEFT', 'fighter', { x: 94, y: 532, slotOffsetX: -11, spawnCycle: 922 });
       const bomber = simulation.spawnUnit('TEAM_ENEMY', 'LANE_LEFT', 'bomber', { x: 133, y: 548, slotOffsetX: 28, spawnCycle: 922 });
-      fighter.hp = 1; bomber.hp = 1; attacker.fireCooldown = 0;
+      fighter.hp = 1; fighter.shield = 0; fighter.maxShield = 0;
+      bomber.hp = 1; bomber.shield = 0; bomber.maxShield = 0; attacker.fireCooldown = 0;
       for (let step = 0; step < 150 && !state.events.some((event) => event.type === 'destroyed' && event.time > state.time - 2); step += 1) simulation.step(1 / 60);
       g.effects.observe(state.events);
       g.camera.jumpToWorld(590);
@@ -401,26 +452,29 @@ try {
       assert.equal(upgradeMenu.result.value, "upgrades", "upgrade projects are touch-operable");
       const refillEnergy = () => send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').energy = window.__strategyGalalaxy.match.config.balance.energyCap" });
       await refillEnergy();
-      await touch(82, 619);
+      await touch(82, 550);
       await delay(120);
       await refillEnergy();
-      await touch(300, 619);
+      await touch(300, 550);
       await delay(120);
       await refillEnergy();
-      await touch(82, 675);
+      await touch(82, 610);
       await delay(120);
       await refillEnergy();
-      await touch(300, 675);
+      await touch(300, 610);
+      await delay(120);
+      await refillEnergy();
+      await touch(82, 666);
       const activeUpgrade = await send("Runtime.evaluate", {
-        expression: `(() => { const value = window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER'); return { economy: value.economyLevel, weapons: value.weaponLevel, fireRate: value.fireRateLevel, salvo: value.salvoLevel }; })()`,
+        expression: `(() => { const value = window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER'); return { economy: value.economyLevel, weapons: value.weaponLevel, fireRate: value.fireRateLevel, salvo: value.salvoLevel, shield: value.shieldLevel }; })()`,
         returnByValue: true,
       });
-      assert.deepEqual(activeUpgrade.result.value, { economy: 1, weapons: 1, fireRate: 1, salvo: 1 }, "all four upgrades activate immediately through touch controls");
+      assert.deepEqual(activeUpgrade.result.value, { economy: 1, weapons: 1, fireRate: 1, salvo: 1, shield: 1 }, "all five upgrades activate immediately through touch controls");
       await touch(405, centered.result.value.viewport.y + centered.result.value.viewport.height - 14);
       await delay(60);
       const activeScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
       await writeFile(resolve(output, `level-${level}-upgrades-active-420x760.png`), Buffer.from(activeScreenshot.data, "base64"));
-      await touch(206, 565);
+      await touch(206, 508);
     }
 
     const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });

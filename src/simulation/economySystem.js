@@ -12,6 +12,7 @@ export class EconomySystem {
       weaponLevel: 0,
       fireRateLevel: 0,
       salvoLevel: 0,
+      shieldLevel: 0,
       spending: { fleet: 0, economy: 0, research: 0 },
     }]));
   }
@@ -62,6 +63,27 @@ export class EconomySystem {
     return 1 + this.get(team).salvoLevel * this.balance.salvoUpgradeDamageBonus;
   }
 
+  shieldCapacityRatio(team) {
+    const level = this.get(team).shieldLevel;
+    return this.balance.shieldUpgradeCapacityRatios[Math.min(level, this.balance.shieldUpgradeCapacityRatios.length - 1)] ?? 0;
+  }
+
+  shieldCapacity(team, maximumHull) {
+    return Math.round(maximumHull * this.shieldCapacityRatio(team));
+  }
+
+  shieldRechargeDelay(team) {
+    const level = this.get(team).shieldLevel;
+    return this.balance.shieldUpgradeRechargeDelays[Math.min(level, this.balance.shieldUpgradeRechargeDelays.length - 1)] ?? Infinity;
+  }
+
+  shieldRechargeRate(team, maximumHull) {
+    const level = this.get(team).shieldLevel;
+    const seconds = this.balance.shieldUpgradeRechargeSeconds[Math.min(level, this.balance.shieldUpgradeRechargeSeconds.length - 1)] ?? 0;
+    const capacity = this.shieldCapacity(team, maximumHull);
+    return seconds > 0 ? capacity / seconds : 0;
+  }
+
   recordFleetPurchase(team, amount) {
     this.get(team).spending.fleet += amount;
   }
@@ -72,6 +94,7 @@ export class EconomySystem {
       weapons: ["weaponLevel", "weaponUpgradeBaseCost", "weaponUpgradeCostGrowth", "weaponUpgradeMaxLevel"],
       fireRate: ["fireRateLevel", "fireRateUpgradeBaseCost", "fireRateUpgradeCostGrowth", "fireRateUpgradeMaxLevel"],
       salvo: ["salvoLevel", "salvoUpgradeBaseCost", "salvoUpgradeCostGrowth", "salvoUpgradeMaxLevel"],
+      shield: ["shieldLevel", "shieldUpgradeBaseCost", "shieldUpgradeCostGrowth", "shieldUpgradeMaxLevel"],
       turret: ["turretLevel", "turretUpgradeBaseCost", "turretUpgradeCostGrowth", "turretUpgradeMaxLevel"],
     }[upgradeId] ?? null;
   }

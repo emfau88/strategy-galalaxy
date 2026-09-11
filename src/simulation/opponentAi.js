@@ -125,14 +125,17 @@ export class OpponentAi {
         if (economy.weaponLevel < 1 && available("weapons")) return "weapons";
         if (economy.fireRateLevel < 1 && available("fireRate")) return "fireRate";
         if (economy.salvoLevel < 1 && available("salvo")) return "salvo";
+        if (economy.shieldLevel < 1 && available("shield")) return "shield";
         return null;
       }
       if (economy.economyLevel < 1 && available("economy")) return "economy";
+      if (defense.threat > 20 && economy.shieldLevel < 1 && available("shield")) return "shield";
       if (economy.weaponLevel < 1 && available("weapons")) return "weapons";
       if (economy.fireRateLevel < 1 && available("fireRate")) return "fireRate";
       if (economy.economyLevel < 2 && available("economy")) return "economy";
+      if (economy.shieldLevel < 2 && available("shield")) return "shield";
       if (economy.salvoLevel < 1 && available("salvo")) return "salvo";
-      return ["weapons", "fireRate", "economy"].find(available) ?? null;
+      return ["weapons", "shield", "fireRate", "economy"].find(available) ?? null;
     };
 
     // Every few live decisions the AI banks Energy for a two-part push. This is

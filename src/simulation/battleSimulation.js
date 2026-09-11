@@ -107,6 +107,7 @@ export class BattleSimulation {
       heading: team === TEAM.PLAYER ? -Math.PI / 2 : Math.PI / 2,
       launch,
     }));
+    this.syncUnitShield(unit, { refill: true });
     const squad = this.squads.get(formationId);
     const unitSpeed = UNIT_DEFINITIONS[unitType].speed * (this.state.map.movementScale ?? 1);
     if (squad) {
@@ -155,11 +156,40 @@ export class BattleSimulation {
     }).filter(Boolean);
   }
 
+  syncUnitShield(unit, { refill = false, announce = false } = {}) {
+    if (!unit || !this.economy) return unit;
+    const previousMaximum = unit.maxShield ?? 0;
+    const maximum = this.economy.shieldCapacity(unit.team, unit.maxHp);
+    unit.maxShield = maximum;
+    if (refill) unit.shield = maximum;
+    else unit.shield = clamp((unit.shield ?? 0) + Math.max(0, maximum - previousMaximum), 0, maximum);
+    if (announce && maximum > 0) unit.lastShieldActivatedAt = this.state.time;
+    return unit;
+  }
+
+  activateShieldUpgrade(team) {
+    for (const unit of this.state.units.values()) {
+      if (unit.alive && unit.team === team) this.syncUnitShield(unit, { refill: true, announce: true });
+    }
+  }
+
+  advanceUnitShield(unit, dt) {
+    if (!unit.alive || !this.economy || unit.maxShield <= 0 || unit.shield >= unit.maxShield) return;
+    const lastDefenseHitAt = Math.max(unit.lastShieldHitAt, unit.lastDamagedAt);
+    if (this.state.time - lastDefenseHitAt < this.economy.shieldRechargeDelay(unit.team)) return;
+    const previous = unit.shield;
+    unit.shield = Math.min(unit.maxShield, unit.shield + this.economy.shieldRechargeRate(unit.team, unit.maxHp) * dt);
+    if (previous < unit.maxShield && unit.shield === unit.maxShield) unit.lastShieldActivatedAt = this.state.time;
+  }
+
   step(dt) {
     if (this.state.terminalTeam) return;
     this.stepNumber += 1;
     this.state.time += dt;
-    for (const unit of this.state.units.values()) this.advanceLaunch(unit, dt);
+    for (const unit of this.state.units.values()) {
+      this.advanceLaunch(unit, dt);
+      this.advanceUnitShield(unit, dt);
+    }
     this.advanceSquadAnchors(dt);
     const separationVelocities = this.resolveLaneSpacing(dt);
     const positions = new Map([
@@ -624,7 +654,11 @@ export class BattleSimulation {
       projectile.remainingLife -= dt;
       if (target?.alive && target.team !== projectile.ownerTeam && (target.laneId === null || target.laneId === projectile.laneId) && distance(projectile, target) <= definition.hitRadius + targetDefinition(target).collisionRadius + 1e-6) {
         projectile.alive = false;
-        damageEvents.push({ projectileId: projectile.id, projectileType: projectile.projectileType, targetId: target.id, damage: projectile.damage, ownerTeam: projectile.ownerTeam, laneId: projectile.laneId });
+        damageEvents.push({
+          projectileId: projectile.id, projectileType: projectile.projectileType, targetId: target.id,
+          damage: projectile.damage, ownerTeam: projectile.ownerTeam, laneId: projectile.laneId,
+          impactX: projectile.x, impactY: projectile.y, incomingVx: projectile.vx, incomingVy: projectile.vy,
+        });
       } else if (projectile.remainingLife <= 0) {
         projectile.alive = false;
       }
@@ -637,11 +671,26 @@ export class BattleSimulation {
     for (const event of events) {
       const target = getEntity(this.state, event.targetId);
       if (!target?.alive || target.team === event.ownerTeam) continue;
-      target.hp = Math.max(0, target.hp - event.damage);
-      target.lastDamagedAt = this.state.time;
+      const availableShield = target.structureType ? 0 : target.shield ?? 0;
+      const absorbedDamage = Math.min(availableShield, event.damage);
+      const hullDamage = event.damage - absorbedDamage;
+      if (absorbedDamage > 0) {
+        target.shield = Math.max(0, target.shield - absorbedDamage);
+        target.lastShieldHitAt = this.state.time;
+        const fallbackImpactAngle = Math.atan2(-(event.incomingVy ?? 0), -(event.incomingVx ?? 1));
+        target.lastShieldImpactAngle = Number.isFinite(event.impactX) && Number.isFinite(event.impactY)
+          ? Math.atan2(event.impactY - target.y, event.impactX - target.x)
+          : fallbackImpactAngle;
+      }
+      if (hullDamage > 0) {
+        target.hp = Math.max(0, target.hp - hullDamage);
+        target.lastDamagedAt = this.state.time;
+      }
       emitSimulationEvent(this.state, {
         type: "hit", ...event, x: target.x, y: target.y, team: target.team,
         entityType: target.structureType ?? target.unitType, hpRatio: target.hp / target.maxHp,
+        shieldRatio: target.maxShield > 0 ? target.shield / target.maxShield : 0,
+        absorbedDamage, hullDamage, shielded: absorbedDamage > 0,
       });
       if (target.hp !== 0) continue;
       target.alive = false;
@@ -661,6 +710,7 @@ export class BattleSimulation {
   snapshot() {
     const entities = (items) => [...items.values()].sort((a, b) => a.id.localeCompare(b.id)).map((item) => ({
       id: item.id, team: item.team, laneId: item.laneId, hp: item.hp, alive: item.alive,
+      shield: Math.round((item.shield ?? 0) * 1000) / 1000,
       x: Math.round(item.x * 1000) / 1000, y: Math.round(item.y * 1000) / 1000,
     }));
     return { time: Math.round(this.state.time * 1000) / 1000, terminalTeam: this.state.terminalTeam, units: entities(this.state.units), structures: entities(this.state.structures), projectiles: entities(this.state.projectiles) };

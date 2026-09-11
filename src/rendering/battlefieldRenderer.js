@@ -1,5 +1,5 @@
 import { PROJECTILE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
-import { engineVisualFor, fleetVisualFor, unifiedHullVisualFor } from "../data/visuals.js";
+import { engineVisualFor, fleetVisualFor, shieldVisualFor, unifiedHullVisualFor } from "../data/visuals.js";
 import { LANE, TEAM } from "../core/constants.js";
 
 const stars = Object.freeze([
@@ -82,6 +82,43 @@ const galalaxyEngineCrop = Object.freeze({
   "klaed-scout-engine": Object.freeze({ x: 29, y: 38, width: 6, height: 12, widthScale: 0.077, heightScale: 0.6, nozzleAnchorY: 0.17 }),
 });
 
+const unifiedShieldFit = Object.freeze({
+  drone: Object.freeze({ textureScale: 1.34, outline: Object.freeze([[0, -0.38], [0.2, -0.29], [0.3, -0.05], [0.25, 0.27], [0, 0.38], [-0.25, 0.27], [-0.3, -0.05], [-0.2, -0.29]]) }),
+  scout: Object.freeze({ textureScale: 1.36, outline: Object.freeze([[0, -0.44], [0.2, -0.32], [0.34, -0.08], [0.29, 0.29], [0, 0.43], [-0.29, 0.29], [-0.34, -0.08], [-0.2, -0.32]]) }),
+  fighter: Object.freeze({ textureScale: 1.34, outline: Object.freeze([[0, -0.4], [0.25, -0.31], [0.43, -0.08], [0.4, 0.2], [0.18, 0.36], [0, 0.39], [-0.18, 0.36], [-0.4, 0.2], [-0.43, -0.08], [-0.25, -0.31]]) }),
+  bomber: Object.freeze({ textureScale: 1.32, outline: Object.freeze([[0, -0.43], [0.24, -0.36], [0.43, -0.17], [0.44, 0.18], [0.24, 0.38], [0, 0.42], [-0.24, 0.38], [-0.44, 0.18], [-0.43, -0.17], [-0.24, -0.36]]) }),
+  frigate: Object.freeze({ textureScale: 1.28, outline: Object.freeze([[0, -0.49], [0.18, -0.41], [0.27, -0.27], [0.41, -0.15], [0.41, 0.2], [0.29, 0.39], [0.13, 0.49], [-0.13, 0.49], [-0.29, 0.39], [-0.41, 0.2], [-0.41, -0.15], [-0.27, -0.27], [-0.18, -0.41]]) }),
+});
+
+const traceShieldEnvelope = (ctx, outline, displaySize, scale = 1) => {
+  const first = outline[0];
+  ctx.moveTo(first[0] * displaySize * scale, first[1] * displaySize * scale);
+  for (let index = 1; index < outline.length; index += 1) {
+    const point = outline[index];
+    ctx.lineTo(point[0] * displaySize * scale, point[1] * displaySize * scale);
+  }
+  ctx.closePath();
+};
+
+const shieldEnvelopePoint = (outline, angle, displaySize) => {
+  const direction = { x: Math.cos(angle), y: Math.sin(angle) };
+  let distance = 0;
+  for (let index = 0; index < outline.length; index += 1) {
+    const start = outline[index];
+    const end = outline[(index + 1) % outline.length];
+    const ax = start[0] * displaySize;
+    const ay = start[1] * displaySize;
+    const edgeX = (end[0] - start[0]) * displaySize;
+    const edgeY = (end[1] - start[1]) * displaySize;
+    const divisor = direction.x * edgeY - direction.y * edgeX;
+    if (Math.abs(divisor) < 0.0001) continue;
+    const rayDistance = (ax * edgeY - ay * edgeX) / divisor;
+    const edgePosition = (ax * direction.y - ay * direction.x) / divisor;
+    if (rayDistance >= 0 && edgePosition >= 0 && edgePosition <= 1) distance = Math.max(distance, rayDistance);
+  }
+  return { x: direction.x * distance, y: direction.y * distance };
+};
+
 const drawGalalaxyEngine = (ctx, image, visual, unit, elapsed, displaySize) => {
   if (!image?.naturalWidth || !visual?.engine) return false;
   const hardpoints = unifiedHullVisualFor(unit.team, unit.unitType)?.engineHardpoints ?? [];
@@ -109,6 +146,83 @@ const drawGalalaxyEngine = (ctx, image, visual, unit, elapsed, displaySize) => {
     ctx.drawImage(image, frame * visual.frameSize + crop.x, crop.y, crop.width, crop.height, x, y, width, height);
   }
   ctx.restore();
+  return true;
+};
+
+const drawUnitShield = (ctx, image, visual, unit, elapsed, displaySize, denseBattle, renderRotation) => {
+  if (!image?.naturalWidth || !visual?.shield || unit.maxShield <= 0) return false;
+  const fit = unifiedShieldFit[unit.unitType] ?? unifiedShieldFit.fighter;
+  const shieldRatio = Math.max(0, Math.min(1, unit.shield / unit.maxShield));
+  const hitAge = elapsed - unit.lastShieldHitAt;
+  const activationAge = elapsed - unit.lastShieldActivatedAt;
+  const hitDuration = unit.unitType === "frigate" ? 0.86 : 0.64;
+  const activationDuration = 1.05;
+  const hitActive = hitAge >= 0 && hitAge < hitDuration;
+  const activationActive = activationAge >= 0 && activationAge < activationDuration;
+  if (unit.shield <= 0 && !hitActive) return false;
+  if (denseBattle && !hitActive && !activationActive) return false;
+
+  const activeAge = hitActive ? hitAge : activationAge;
+  const activeDuration = hitActive ? hitDuration : activationDuration;
+  const activeStrength = hitActive || activationActive ? 1 - activeAge / activeDuration : 0;
+  const idlePulse = 0.5 + Math.sin(elapsed * 2.1 + stableFrameOffset(unit.id, 17)) * 0.5;
+  const color = unit.team === TEAM.PLAYER ? "#8cfff5" : "#ff8e78";
+
+  // The Galalaxy sheet supplies the animated energy texture, but its original
+  // ship silhouette must never be visible on our differently shaped hulls.
+  // Clipping it to a class-sized hull envelope keeps the result top-down,
+  // hull-aware and correct when broadside ships rotate.
+  if (hitActive || activationActive) {
+    const shellWidth = Math.max(2.2, displaySize * 0.055);
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha *= 0.2 + activeStrength * 0.34;
+    ctx.imageSmoothingEnabled = false;
+    ctx.beginPath();
+    traceShieldEnvelope(ctx, fit.outline, displaySize);
+    traceShieldEnvelope(ctx, fit.outline, displaySize, Math.max(0.72, 1 - shellWidth / Math.max(1, displaySize * 0.36)));
+    ctx.clip("evenodd");
+    ctx.scale(fit.textureScale, fit.textureScale);
+    drawTimedStrip(ctx, image, visual.shield, visual.frameSize, activeAge, displaySize, activeDuration);
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.strokeStyle = color;
+  ctx.lineWidth = (hitActive || activationActive ? 1.15 + activeStrength * 1.1 : 0.75) * Math.max(0.8, Math.min(1.2, displaySize / 48));
+  ctx.globalAlpha *= hitActive || activationActive
+    ? 0.22 + activeStrength * 0.38
+    : (0.055 + idlePulse * 0.035) * (0.72 + shieldRatio * 0.28);
+  ctx.beginPath();
+  traceShieldEnvelope(ctx, fit.outline, displaySize);
+  ctx.stroke();
+  ctx.restore();
+
+  if (hitActive) {
+    const localImpactAngle = unit.lastShieldImpactAngle - renderRotation;
+    const impactAlpha = Math.max(0, 1 - hitAge / hitDuration);
+    ctx.save();
+    ctx.rotate(localImpactAngle);
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha *= 0.42 + impactAlpha * 0.5;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.1 + impactAlpha * 1.3;
+    ctx.beginPath();
+    for (let index = 0; index <= 8; index += 1) {
+      const point = shieldEnvelopePoint(fit.outline, -0.52 + index * 0.13, displaySize);
+      if (index === 0) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    }
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.globalAlpha *= 0.65;
+    const impactPoint = shieldEnvelopePoint(fit.outline, 0, displaySize);
+    ctx.beginPath();
+    ctx.arc(impactPoint.x, impactPoint.y, 1.4 + impactAlpha * 2.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
   return true;
 };
 
@@ -893,6 +1007,7 @@ export const renderEntityLayer = (ctx, model) => {
     const unifiedSprite = asset(model.assets, factionKey(unit));
     const sprite = unifiedSprite ?? asset(model.assets, legacyFactionKey(unit));
     const visual = fleetVisualFor(unit.team, unit.unitType);
+    const shieldVisual = shieldVisualFor(unit.team, unit.unitType);
     const engineVisual = engineVisualFor(unit.team);
     const frameSize = visual?.frameSize ?? 64;
     const displaySize = unifiedSprite ? size * 1.28 : shipCellSize(unit.unitType, frameSize) * fleetScale;
@@ -917,6 +1032,16 @@ export const renderEntityLayer = (ctx, model) => {
       else ctx.drawImage(sprite, 0, 0, frameSize, frameSize, -displaySize / 2, -displaySize / 2, displaySize, displaySize);
     }
     else { ctx.fillStyle = teamColor(unit.team); ctx.beginPath(); ctx.arc(0, 0, size * 0.3, 0, Math.PI * 2); ctx.fill(); }
+    drawUnitShield(
+      ctx,
+      asset(model.assets, shieldVisual?.shield?.assetKey),
+      shieldVisual,
+      unit,
+      simulation.state.time,
+      displaySize,
+      denseBattle,
+      renderRotation,
+    );
     if (!unifiedSprite && visual?.weapon) drawTimedStrip(ctx, asset(model.assets, visual.weapon.assetKey), visual.weapon, frameSize, simulation.state.time - unit.lastShotAt, displaySize, 0.42);
     const shotAge = simulation.state.time - unit.lastShotAt;
     if (unit.unitType === "bomber" && shotAge >= 0 && shotAge < 0.32) {
@@ -935,7 +1060,6 @@ export const renderEntityLayer = (ctx, model) => {
       ctx.stroke();
       ctx.restore();
     }
-    if (!unifiedSprite && visual?.shield) drawTimedStrip(ctx, asset(model.assets, visual.shield.assetKey), visual.shield, frameSize, simulation.state.time - unit.lastDamagedAt, displaySize, unit.unitType === "frigate" ? 0.82 : 0.62);
     const damageAge = simulation.state.time - unit.lastDamagedAt;
     if (damageAge >= 0 && damageAge < 0.22) {
       ctx.globalCompositeOperation = "screen";
@@ -955,7 +1079,10 @@ export const renderEntityLayer = (ctx, model) => {
     ctx.globalCompositeOperation = "source-over";
     ctx.restore();
     const hpRatio = unit.hp / unit.maxHp;
-    if (hpRatio < 0.75 || simulation.state.time - unit.lastDamagedAt < 1.8) drawBar(ctx, unit.x, y + size * 0.52, size * 0.82, hpRatio, teamColor(unit.team));
+    const shieldRatio = unit.maxShield > 0 ? unit.shield / unit.maxShield : 0;
+    const shieldStatusVisible = unit.maxShield > 0 && (shieldRatio < 1 || simulation.state.time - unit.lastShieldHitAt < 1.8 || simulation.state.time - unit.lastShieldActivatedAt < 1.8);
+    if (shieldStatusVisible) drawBar(ctx, unit.x, y + size * 0.52, size * 0.82, shieldRatio, unit.team === TEAM.PLAYER ? "#86f5ef" : "#ff987f");
+    if (hpRatio < 0.75 || simulation.state.time - unit.lastDamagedAt < 1.8) drawBar(ctx, unit.x, y + size * 0.52 + (shieldStatusVisible ? 4 : 0), size * 0.82, hpRatio, teamColor(unit.team));
   }
   for (const projectile of projectiles.values()) if (projectile.age >= 0 && visible(projectile.y, 50)) drawProjectile(ctx, projectile, projection, model, denseBattle);
 };
@@ -975,7 +1102,7 @@ export const renderEffectsLayer = (ctx, model) => {
     ctx.save();
     ctx.globalAlpha = alpha;
     if (effect.type === "upgrade") {
-      const upgradeColor = ({ economy: "#f2c47d", weapons: "#be8dff", fireRate: "#66e7ef", salvo: "#eea25e" })[effect.upgradeId] ?? color;
+      const upgradeColor = ({ economy: "#f2c47d", weapons: "#be8dff", fireRate: "#66e7ef", salvo: "#eea25e", shield: "#75f3e8" })[effect.upgradeId] ?? color;
       ctx.globalCompositeOperation = "screen";
       ctx.strokeStyle = upgradeColor;
       ctx.lineWidth = 2.4 - progress;

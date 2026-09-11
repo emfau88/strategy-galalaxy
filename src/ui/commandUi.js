@@ -11,7 +11,7 @@ export const COMMAND_UI = Object.freeze({
 
 const freezeRect = (rect) => Object.freeze(rect);
 
-export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT], expanded = false) => {
+export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT], expanded = false, menu = "units") => {
   if (!expanded) {
     const y = height - 66;
     return Object.freeze({
@@ -27,9 +27,12 @@ export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT],
     });
   }
 
-  const y = height - 226;
+  const upgradeMenu = menu === "upgrades";
+  const panelHeight = upgradeMenu ? 274 : 218;
+  const y = height - panelHeight - 8;
+  const footerOffset = upgradeMenu ? 230 : 174;
   const laneWidth = laneIds.length === 1 ? 90 : 43;
-  const lanes = laneIds.map((laneId, index) => freezeRect({ laneId, x: 16 + index * (laneWidth + 4), y: y + 174, width: laneWidth, height: 36 }));
+  const lanes = laneIds.map((laneId, index) => freezeRect({ laneId, x: 16 + index * (laneWidth + 4), y: y + footerOffset, width: laneWidth, height: 36 }));
   const cards = (key, ids) => ids.map((id, index) => freezeRect({
     [key]: id,
     x: index % 2 ? 210 : 16,
@@ -40,16 +43,16 @@ export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT],
   return Object.freeze({
     expanded: true,
     fullscreen: COMMAND_UI.fullscreen,
-    panel: freezeRect({ x: 8, y, width: 404, height: 218 }),
+    panel: freezeRect({ x: 8, y, width: 404, height: panelHeight }),
     close: freezeRect({ x: 198, y: y + 11, width: 16, height: 40 }),
     fleetTab: freezeRect({ x: 16, y: y + 10, width: 186, height: 42 }),
     upgradeTab: freezeRect({ x: 210, y: y + 10, width: 194, height: 42 }),
     lanes: Object.freeze(lanes),
-    undo: freezeRect({ x: 112, y: y + 174, width: 58, height: 36 }),
-    deploy: freezeRect({ x: 174, y: y + 174, width: 126, height: 36 }),
-    status: freezeRect({ x: 304, y: y + 174, width: 100, height: 36 }),
+    undo: freezeRect({ x: 112, y: y + footerOffset, width: 58, height: 36 }),
+    deploy: freezeRect({ x: 174, y: y + footerOffset, width: 126, height: 36 }),
+    status: freezeRect({ x: 304, y: y + footerOffset, width: 100, height: 36 }),
     units: Object.freeze(cards("unitType", ["scout", "fighter", "bomber", "frigate"])),
-    upgrades: Object.freeze(cards("upgradeId", ["economy", "weapons", "fireRate", "salvo"])),
+    upgrades: Object.freeze(cards("upgradeId", ["economy", "weapons", "fireRate", "salvo", "shield"])),
     feedbackY: y - 20,
     debugY: y - 42,
   });
@@ -71,7 +74,7 @@ export const containsPoint = (rect, point) => point.x >= rect.x && point.x <= re
 const containsWithSlop = (rect, point, slop = 3) => containsPoint({ x: rect.x - slop, y: rect.y - slop, width: rect.width + slop * 2, height: rect.height + slop * 2 }, point);
 
 export const commandActionAt = (point, menu = "units", height = 760, laneIds = [LANE.LEFT, LANE.RIGHT], expanded = false) => {
-  const layout = commandUiLayout(height, laneIds, expanded);
+  const layout = commandUiLayout(height, laneIds, expanded, menu);
   if (!expanded) return containsPoint(layout.command, point) || containsPoint(layout.deploy, point) ? { type: "TOGGLE_COMMAND_DOCK" } : null;
   if (containsPoint(layout.close, point)) return { type: "TOGGLE_COMMAND_DOCK" };
   if (containsPoint(layout.fleetTab, point)) return { type: "SET_COMMAND_MENU", menu: "units" };

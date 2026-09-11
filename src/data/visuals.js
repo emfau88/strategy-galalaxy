@@ -64,6 +64,12 @@ export const fleetVisualFor = (team, unitType) => {
   const visualType = unitType === "drone" ? "scout" : unitType;
   return FLEET_VISUALS[team === TEAM.PLAYER ? "nairan" : "klaed"]?.[visualType] ?? null;
 };
+// Shield color follows the unified hull lamps: cyan Kla'ed energy for the player,
+// coral Nairan energy for the rival. Geometry is calibrated per class at render time.
+export const shieldVisualFor = (team, unitType) => {
+  const visualType = unitType === "drone" ? "scout" : unitType;
+  return FLEET_VISUALS[team === TEAM.PLAYER ? "klaed" : "nairan"]?.[visualType] ?? null;
+};
 // The unified player hulls use cyan lamps while the rival hulls use coral. The
 // source packs name their exhaust palettes the other way around, so thrust is
 // selected by emitted color rather than by the hull pack used for destruction.

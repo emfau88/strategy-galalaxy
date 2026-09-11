@@ -24,6 +24,10 @@ const UPGRADE_UI = Object.freeze({
     label: "MULTI CANNON", active: "salvoLevel", maximum: "salvoUpgradeMaxLevel", icon: "upgrade-multicannon-icon", accent: "#ffad72",
     effect: (balance) => `+1 SHOT · +${Math.round(balance.salvoUpgradeDamageBonus * 100)}% SALVO`,
   }),
+  shield: Object.freeze({
+    label: "SHIELD ARRAY", active: "shieldLevel", maximum: "shieldUpgradeMaxLevel", icon: "upgrade-shield-icon", accent: "#75f3e8",
+    effect: (balance, level) => `SHIELD +${Math.round((balance.shieldUpgradeCapacityRatios[level] ?? 0) * 100)}% → +${Math.round((balance.shieldUpgradeCapacityRatios[level + 1] ?? 0) * 100)}%`,
+  }),
 });
 const text = (ctx, value, x, y, size, color, align = "left", weight = 700) => {
   ctx.fillStyle = color; ctx.font = `${weight} ${size}px Inter, system-ui, sans-serif`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillText(value, x, y);
@@ -470,7 +474,7 @@ const paused = (ctx, model) => {
 export const renderUiLayer = (ctx, model) => {
   if (model.state === MATCH_STATE.LOADING) return loading(ctx, model);
   if (model.state === MATCH_STATE.TITLE) return title(ctx, model);
-  const ui = commandUiLayout(model.height, laneIdsFor(model), model.commandDockOpen);
+  const ui = commandUiLayout(model.height, laneIdsFor(model), model.commandDockOpen, model.commandMenu);
   header(ctx, model, ui);
   if ((model.state === MATCH_STATE.LIVE_MATCH || model.state === MATCH_STATE.PAUSED) && model.simulation) {
     strategicNavigator(ctx, model);

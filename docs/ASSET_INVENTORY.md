@@ -9,8 +9,8 @@ The complete licensed asset import comes from read-only Galalaxy commit `7f90d17
 | `assets/library/galalaxy/` | 516 | 20,808,162 | Development/source library; never bulk-loaded |
 | Foozle packs inside library | 502 | 14,218,222 | CC0 source art, previews and editable files |
 | Optional Galalaxy UI inside library | 14 | 6,589,940 | Preserved for reference; not in current manifest |
-| Registered Strategy Galalaxy asset manifest | 81 | verified by script | Active runtime plus retained source-strip aliases |
-| Curated GitHub Pages image artifact | 42 | verified by script | Union of both levels; no bulk reference library |
+| Registered Strategy Galalaxy asset manifest | 82 | verified by script | Active runtime plus retained source-strip aliases |
+| Curated GitHub Pages image artifact | 51 | verified by script | Union of both levels; no bulk reference library |
 
 The reference contains one additional file, `assets/music/track1.ogg` (5,937,850 bytes). It is deliberately excluded because its distribution license is undocumented. Therefore 516 files is the expected and enforced library count.
 
@@ -23,7 +23,7 @@ The reference contains one additional file, `assets/music/track1.ogg` (5,937,850
 | Nairan Fleet | 126 | eight classes, engines, weapons, shields, destruction, projectiles, previews, sources | Player core four active |
 | Nautolan Fleet | 132 | eight classes and full effects/projectile vocabulary | Deferred third faction |
 | Environment | 24 | stars, planet, asteroid, flames/explosion and sources | Curated environment aliases active |
-| Pickups | 25 | engine, shield and weapon pickups plus sources | Four compact upgrade icons active |
+| Pickups | 25 | engine, shield and weapon pickups plus sources | Five compact upgrade icons active |
 | Galalaxy UI | 14 | title, start, upgrade, boss and victory art | Preserved, not loaded |
 
 Formats across the imported reference library include runtime PNGs, editable Aseprite sources, animated GIF previews and the six pack TXT readmes.
@@ -34,7 +34,7 @@ Player and rival each use one unified `384×384` transparent hull for Drone, Sco
 
 Engine thrust now reuses the original CC0 Galalaxy/Foozle Nairan and Kla'ed engine animation frames at 10 FPS. The renderer takes a tight transparent crop from the real source frame and places it at explicit per-faction/per-class nozzle hardpoints; the flame shape itself is never drawn procedurally. Cyan Kla'ed thrust is paired with the cyan player hulls and warm Nairan thrust with the coral rival hulls. Fighter side lamps are deliberately excluded; Bomber and Frigate plumes sit only on their four and three visible pipe mouths. Ship kills likewise play the original class-specific 8–18-frame Galalaxy destruction sequences at 14 FPS. The player-requested source animation is allowed to replace the unified hull for the short death sequence; structures keep a separate bounded blast because the fleet strips contain ship silhouettes.
 
-Cold start is intentionally bounded: Level 1 and Level 2 each request 38 images and remain below the enforced 8 MiB limit. Shared hulls, projectiles, command art and four tiny Galalaxy pickup icons load first; the selected background, its two faction-specific HQs and Galalaxy VFX follow in a second stage. The loader retries once, keeps late image responses alive after its 30-second gate and swaps them in without a refresh. Mobile `840 px` derivatives preserve the authored source files while avoiding their former 112 MiB decoded startup set.
+Cold start is intentionally bounded: Level 1 and Level 2 each request 47 images and remain below the enforced 8 MiB limit. Shared hulls, projectiles, command art and five tiny Galalaxy pickup icons load first; the selected background, its two faction-specific HQs and Galalaxy VFX including eight small shield strips follow in a second stage. The loader retries once, keeps late image responses alive after its 30-second gate and swaps them in without a refresh. Mobile `840 px` derivatives preserve the authored source files while avoiding their former 112 MiB decoded startup set.
 
 ## Active projectile runtime
 
@@ -56,11 +56,13 @@ Mechanics remain faction-symmetric even when art differs. Each team/lane has an 
 - `assets/factions/unified/`: ten normalized high-resolution hulls used by both maps and the command UI, including dedicated Drones.
 - `assets/factions/{nairan,klaed}/*-engine.png`: active original Galalaxy/Foozle engine frames; Scout flames are color-matched, tightly cropped and positioned on every visible unified nozzle.
 - `assets/factions/{nairan,klaed}/*-destruction.png`: active original class-specific Galalaxy/Foozle death sequences.
+- `assets/factions/{nairan,klaed}/*-shield.png`: active original shield energy frames,
+  clipped at runtime into class-specific unified-hull contours with localized impacts.
 - `assets/projectiles/unified/`: eight class- and faction-specific raster projectile bodies; procedural trails only supplement their readability.
 - `assets/structures/energy-relay-unified-v1.png`: shared capturable relay in the same ivory/brass/garden material family.
 - `assets/structures/orbital-garden-turret-{player,rival}-v3.png`: team-authored bases whose cyan/coral practical lamps replace all persistent code-drawn ownership markers.
 - `assets/ui/orbital-command-medallion-v1.png`: command identity shared by the HQ and contextual dock.
-- Vier Pickup-Icons aus dem Galalaxy/Foozle-Paket kennzeichnen Reactor, Arsenal, Autoloader und Multi Cannon; ihre Werte und Aktivierungsstufen werden weiterhin von der Simulation bestimmt.
+- Fünf Pickup-Icons aus dem Galalaxy/Foozle-Paket kennzeichnen Reactor, Arsenal, Autoloader, Multi Cannon und Shield Array; ihre Werte und Aktivierungsstufen werden weiterhin von der Simulation bestimmt.
 - `assets/structures/command-hq-topdown-v1.png`, `command-hq-topdown-v3.png`, `defense-turret-topdown-v1.png` and `energy-relay-topdown-v1.png`: retained project-native first-pass/fallback sources; only the relay remains active on feature-enabled maps.
 - normalized environment aliases and earlier curated fleet bases remain available to the runtime.
 

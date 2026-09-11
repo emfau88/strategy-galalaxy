@@ -10,13 +10,17 @@ Stand: 11. September 2026
 | Arsenal | 220 / 374 / 636 E | +12 % Schaden je Stufe | Waffenmodule am HQ und größere Geschosskörper |
 | Autoloader | 190 / 314 E | −8 % Feuerpause je Stufe | HQ-Kondensatoren, hellerer Projektilkern und schnellere Kadenz |
 | Multi Cannon | 200 E | +1 Geschoss und +6 % Gesamtschaden pro Salve | HQ-Kanonenmarker und tatsächlich zusätzliches Geschoss |
+| Shield Array | 210 / 357 / 607 E | 15 / 25 / 35 % regenerierender Schutzpuffer | klassenförmige Cyan-/Coral-Kontur und lokaler Trefferimpuls |
 
 Multi Cannon gilt nur für bezahlte Schiffe. Kostenlose Drones, HQs und optionale
 Turrets erhalten weder den zusätzlichen Schuss noch den Bonus. Sämtliche Upgrades
 werden sofort aktiv und verwenden für Spieler und KI denselben Kaufbefehl.
-Provisorische Canvas-Rechtecke auf den Schiffshüllen wurden entfernt. Hull-Upgrades
-werden erst wieder direkt am Schiff gezeigt, wenn dafür sauber integrierte, zur Klasse
-passende Assetvarianten existieren.
+Provisorische Canvas-Rechtecke auf den Schiffshüllen wurden entfernt. Shield Array ist
+die bewusst begrenzte Ausnahme: originale Galalaxy-Schildframes liefern die animierte
+Energietextur, werden aber in eigene top-down Konturen für Drone, Scout, Fighter,
+Bomber und Frigate geschnitten. Die Kontur rotiert mit dem Rumpf; ein Trefferimpuls
+erscheint auf der tatsächlichen Einschlagseite. Andere Hull-Upgrades werden erst wieder
+direkt am Schiff gezeigt, wenn passende Assetvarianten existieren.
 
 ## Economy-Grenzen
 
@@ -28,19 +32,21 @@ passende Assetvarianten existieren.
 
 ## Automatisierte Befunde
 
-Der symmetrische Balance-Lauf über acht Partien endete ohne Timeout bei durchschnittlich
-172,5 Sekunden. Beide Seiten kauften Reactor, Arsenal, Autoloader und Multi Cannon;
-Spitzenwerte blieben bei 52 Schiffen und 92 Projektilen und damit klar innerhalb der
-mobilen Sicherheitsbudgets.
+Der aktualisierte symmetrische Balance-Lauf über acht Partien endete nach Einführung
+des Shield Array ohne Timeout bei durchschnittlich 303,5 Sekunden und exakt 4:4
+Siegen. Beide Seiten kauften alle fünf aktiven Forschungswege; Spitzenwerte blieben
+bei 69 Schiffen und 111 Projektilen und damit innerhalb der mobilen Sicherheitsbudgets.
+Schildregeneration wird durch jeden weiteren Schild- oder Hüllentreffer verzögert und
+kann deshalb kein unter Dauerfeuer stehendes Schiff künstlich festhalten.
 
 Die Investment-Experimente vergleichen Fleet-Rush, Economy, Weapons-Tech und Balanced.
 Jede asymmetrische Paarung wird zusätzlich mit vertauschten Teamseiten ausgeführt.
-Der gespiegelte Zwei-Partien-Smoke pro Orientierung zeigte: Rush gewann in einer
-Orientierung 2:0 gegen Balanced, im Spiegel war das Ergebnis 1:1. Economy gegen Fleet
-endete 1:1 und gewann im Spiegel 2:0. Ein Forschungspaket aus je einer Stufe Arsenal,
-Autoloader und Multi Cannon verlor in beiden Orientierungen gegen zwei Reactor-Stufen.
-Damit besitzen Rush, Economy und Balanced reale Zeitfenster; reine Forschung ohne
-Economy bleibt bewusst riskant und ist kein risikofreier Universalsieg.
+Der erneute gespiegelte Zwei-Partien-Smoke pro Orientierung endete in allen sieben
+Varianten ohne Timeout. Balanced mit Schildforschung schlug den reinen Fleet-Rush in
+beiden Orientierungen; zwei Reactor-Stufen schlugen sowohl Fleet als auch das
+Forschungspaket aus Arsenal, Autoloader, Multi Cannon und Shield Array. Das ist noch
+kein finales Meta-Urteil, zeigt aber: Schildforschung ist kein isolierter
+Universalsieg und reine Forschung ohne Economy bleibt bewusst riskant.
 
 Beobachtete Restpunkte:
 

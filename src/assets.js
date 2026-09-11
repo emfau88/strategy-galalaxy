@@ -25,6 +25,7 @@ export const ASSET_GROUPS = Object.freeze({
     "upgrade-arsenal-icon": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Weapons/PNGs/Pickup Icon - Weapons - Big Space Gun 2000.png",
     "upgrade-autoloader-icon": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Engines/PNGs/Pickup Icon - Engines - Supercharged Engine.png",
     "upgrade-multicannon-icon": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Weapons/PNGs/Pickup Icon - Weapons - Auto Cannons.png",
+    "upgrade-shield-icon": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Shield Generators/PNGs/Pickup Icon - Shield Generator - All around shield.png",
   }),
   level1: Object.freeze({
     "background-orbital-garden-rival": "assets/runtime/environment/orbital-garden-rival-sector-v1.png",
@@ -63,6 +64,14 @@ export const ASSET_GROUPS = Object.freeze({
     "klaed-fighter-destruction": "assets/factions/klaed/fighter-destruction.png",
     "klaed-bomber-destruction": "assets/factions/klaed/bomber-destruction.png",
     "klaed-frigate-destruction": "assets/factions/klaed/frigate-destruction.png",
+    "nairan-scout-shield": "assets/factions/nairan/scout-shield.png",
+    "nairan-fighter-shield": "assets/factions/nairan/fighter-shield.png",
+    "nairan-bomber-shield": "assets/factions/nairan/bomber-shield.png",
+    "nairan-frigate-shield": "assets/factions/nairan/frigate-shield.png",
+    "klaed-scout-shield": "assets/factions/klaed/scout-shield.png",
+    "klaed-fighter-shield": "assets/factions/klaed/fighter-shield.png",
+    "klaed-bomber-shield": "assets/factions/klaed/bomber-shield.png",
+    "klaed-frigate-shield": "assets/factions/klaed/frigate-shield.png",
   }),
   // Retained source strips remain validated, but are deliberately excluded from boot.
   ships: Object.freeze({

@@ -55,6 +55,9 @@ Live-Deployment und automatische Basis-Waves sind getrennte Systeme.
 - Einheit, Squad und Upgrade konkurrieren um dasselbe Energiebudget.
 - Upgrades können jederzeit im laufenden Match gekauft werden.
 - Ein Upgrade wird unmittelbar nach erfolgreichem Kauf aktiv; ein kurzer Präsentationseffekt darf die Aktivierung sichtbar machen.
+- Shield Array schützt alle vorhandenen und zukünftigen Schiffe mit 15/25/35 % ihrer
+  Hüllenstärke. Es regeneriert erst nach 8/7/6 Sekunden ohne weiteren Treffer und lädt
+  anschließend in 12/10/8 Sekunden vollständig; Dauerfeuer unterdrückt die Ladung.
 - Logistics als zusätzlicher Wave-Slot ist im Live-System kein gültiger Upgrade-Pfad.
 - Turret-Upgrades sind ausgeblendet, solange das Level keine Turrets aktiviert.
 

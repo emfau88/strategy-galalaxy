@@ -19,7 +19,7 @@ import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { SoundSystem } from "../src/audio/soundSystem.js";
 import { commandActionAt, commandUiLayout, endActionAt, fullscreenActionAt, pauseActionAt, titleActionAt, utilityActionAt } from "../src/ui/commandUi.js";
 import { cameraNavigatorRatioAt } from "../src/ui/cameraUi.js";
-import { engineVisualFor, fleetVisualFor, unifiedHullVisualFor } from "../src/data/visuals.js";
+import { engineVisualFor, fleetVisualFor, shieldVisualFor, unifiedHullVisualFor } from "../src/data/visuals.js";
 
 const timing = { fixedStepSeconds: 1 / 60, maxFrameDeltaSeconds: 0.1, maxCatchUpSteps: 6 };
 const targetViewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
@@ -398,6 +398,8 @@ assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "bomber").engineHardpoints.ma
 assert.deepEqual(unifiedHullVisualFor(TEAM.PLAYER, "frigate").engineHardpoints.map(({ x, y }) => [x, y]), [[192, 356], [140, 343], [244, 343]], "frigate exhaust stays registered to its three visible pipes");
 assert.equal(engineVisualFor(TEAM.PLAYER).engine.assetKey, "klaed-scout-engine", "player exhaust uses the cyan Galalaxy strip");
 assert.equal(engineVisualFor(TEAM.ENEMY).engine.assetKey, "nairan-scout-engine", "rival exhaust uses the warm Galalaxy strip");
+assert.equal(shieldVisualFor(TEAM.PLAYER, "frigate").shield.assetKey, "klaed-frigate-shield", "player shields use the cyan class-specific Galalaxy layer");
+assert.equal(shieldVisualFor(TEAM.ENEMY, "frigate").shield.assetKey, "nairan-frigate-shield", "rival shields use the coral class-specific Galalaxy layer");
 
 const noReverseSimulation = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
 for (const structure of noReverseSimulation.state.structures.values()) structure.alive = false;
@@ -616,6 +618,43 @@ for (let level = 0; level < CONFIG.balance.economyUpgradeMaxLevel; level += 1) {
 }
 assert.deepEqual(cappedUpgradeMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "economy" }), { ok: false, reason: "MAX_LEVEL" });
 
+const shieldMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 2000 } } });
+shieldMatch.start();
+const shieldFighter = shieldMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 105, y: 820, spawnCycle: 79 });
+const shieldUpgrade = shieldMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "shield" });
+assert.deepEqual({ ok: shieldUpgrade.ok, cost: shieldUpgrade.cost, level: shieldUpgrade.level }, { ok: true, cost: 210, level: 1 });
+assert.equal(shieldFighter.maxShield, Math.round(shieldFighter.maxHp * 0.15));
+assert.equal(shieldFighter.shield, shieldFighter.maxShield, "Shield Array activates fully charged on ships already in combat");
+const hullBeforeShieldHit = shieldFighter.hp;
+shieldMatch.simulation.applyDamage([{
+  projectileId: "shield-check", projectileType: "fighter_laser", targetId: shieldFighter.id,
+  damage: 10, ownerTeam: TEAM.ENEMY, laneId: LANE.LEFT, impactX: shieldFighter.x + 8, impactY: shieldFighter.y,
+}]);
+assert.equal(shieldFighter.hp, hullBeforeShieldHit, "an intact Shield Array absorbs incoming damage before the hull");
+assert.equal(shieldFighter.shield, shieldFighter.maxShield - 10);
+const shieldHitEvent = shieldMatch.simulation.state.events.findLast((event) => event.projectileId === "shield-check");
+assert.deepEqual({ shielded: shieldHitEvent.shielded, absorbedDamage: shieldHitEvent.absorbedDamage, hullDamage: shieldHitEvent.hullDamage }, { shielded: true, absorbedDamage: 10, hullDamage: 0 });
+shieldMatch.simulation.state.time = CONFIG.balance.shieldUpgradeRechargeDelays[1] - 0.1;
+shieldMatch.simulation.advanceUnitShield(shieldFighter, 1);
+assert.equal(shieldFighter.shield, shieldFighter.maxShield - 10, "shield recharge waits for the researched recovery delay");
+shieldMatch.simulation.state.time = CONFIG.balance.shieldUpgradeRechargeDelays[1];
+shieldMatch.simulation.advanceUnitShield(shieldFighter, 1);
+assert.ok(shieldFighter.shield > shieldFighter.maxShield - 10, "shield capacity regenerates after its recovery delay");
+shieldFighter.shield = 4;
+shieldMatch.simulation.applyDamage([{ projectileId: "shield-break", projectileType: "heavy_cannon", targetId: shieldFighter.id, damage: 13, ownerTeam: TEAM.ENEMY, laneId: LANE.LEFT }]);
+assert.equal(shieldFighter.shield, 0);
+assert.equal(shieldFighter.hp, hullBeforeShieldHit - 9, "damage beyond the remaining shield reaches the hull in the same hit");
+shieldMatch.simulation.state.time += CONFIG.balance.shieldUpgradeRechargeDelays[1];
+shieldMatch.simulation.applyDamage([{ projectileId: "shield-suppression", projectileType: "fighter_laser", targetId: shieldFighter.id, damage: 1, ownerTeam: TEAM.ENEMY, laneId: LANE.LEFT }]);
+shieldMatch.simulation.advanceUnitShield(shieldFighter, 1);
+assert.equal(shieldFighter.shield, 0, "continued hull fire suppresses shield recharge after the shield has broken");
+const shieldBomber = shieldMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.RIGHT, "bomber", { x: 315, y: 820, spawnCycle: 79 });
+assert.equal(shieldBomber.shield, Math.round(shieldBomber.maxHp * 0.15), "new ships inherit the active fleet Shield Array fully charged");
+for (let level = 1; level < CONFIG.balance.shieldUpgradeMaxLevel; level += 1) {
+  assert.equal(shieldMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "shield" }).ok, true);
+}
+assert.deepEqual(shieldMatch.executeCommand({ type: "BUY_UPGRADE", team: TEAM.PLAYER, upgradeId: "shield" }), { ok: false, reason: "MAX_LEVEL" });
+
 const researchMatch = new MatchDirector({ config: { ...CONFIG, balance: { ...CONFIG.balance, startingEnergy: 900 } } });
 researchMatch.start();
 const researchFighter = researchMatch.simulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 105, y: 820, spawnCycle: 80 });
@@ -743,9 +782,10 @@ assert.deepEqual(commandActionAt({ x: 82, y: 726 }, "units", 760, [LANE.LEFT, LA
 assert.deepEqual(commandActionAt({ x: 24, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "DEPLOY_UNIT", unitType: "scout" });
 assert.deepEqual(commandActionAt({ x: 220, y: 620 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "DEPLOY_UNIT", unitType: "fighter" });
 assert.deepEqual(commandActionAt({ x: 300, y: 565 }, "units", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "SET_COMMAND_MENU", menu: "upgrades" });
-assert.deepEqual(commandActionAt({ x: 220, y: 620 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "weapons" });
-assert.deepEqual(commandActionAt({ x: 24, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "fireRate" });
-assert.deepEqual(commandActionAt({ x: 220, y: 676 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "salvo" });
+assert.deepEqual(commandActionAt({ x: 220, y: 550 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "weapons" });
+assert.deepEqual(commandActionAt({ x: 24, y: 610 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "fireRate" });
+assert.deepEqual(commandActionAt({ x: 220, y: 610 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "salvo" });
+assert.deepEqual(commandActionAt({ x: 24, y: 666 }, "upgrades", 760, [LANE.LEFT, LANE.RIGHT], true), { type: "BUY_UPGRADE", upgradeId: "shield" });
 assert.deepEqual(commandActionAt({ x: 80, y: 726 }, "units", 760, [LANE.CENTER], true), { type: "SELECT_LANE", laneId: LANE.CENTER });
 const tallCommandUi = commandUiLayout(909, [LANE.LEFT, LANE.RIGHT], true);
 assert.equal(tallCommandUi.panel.y, 683);

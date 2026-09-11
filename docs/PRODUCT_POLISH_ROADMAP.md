@@ -39,7 +39,7 @@ Abnahmekriterien für den nächsten Ausbau.
   Produktionsmanifest aufnehmen.
 - [x] HUD-Rahmen als skalierbares Gold/Cyan-Canvas-System in Header, Command-Dock,
   Titelkarte und Loading-Screen vereinheitlichen.
-- [x] GitHub Pages auf ein kuratiertes Artefakt mit 44 Bildern begrenzen und Tests vor
+- [x] GitHub Pages auf ein kuratiertes Artefakt mit 51 Bildern begrenzen und Tests vor
   dem Upload erzwingen.
 - [x] Asset-Budgets, Retry/Late-Load und reale Browser-Pixel statt bloßer Dateipfade
   automatisiert prüfen.
@@ -261,6 +261,8 @@ Entscheidungen.
 - [x] Amortisationszeit, entfernte Paid-Wave-Slots, Energie-Cap und sofortige Upgrade-Aktivierung so
   abstimmen, dass kein Pfad offensichtlich immer korrekt ist.
 - [x] Jede aktive Stufe mit Bulk 5 und den Projektilen aus Bulk 2 sichtbar verknüpfen.
+- [x] Shield Array als dreistufige Flottenforschung ergänzen: regenerierender Puffer,
+  Feuerunterdrückung der Regeneration, klassenförmige Konturen und lokale Trefferseite.
 - [x] Upgrade-Vergleiche in gleichen Seeds und gespiegelten Teamseiten auswerten.
 - [x] Stagnation, Snowballing, ungenutzte Energie und Kompositionsvielfalt dokumentieren.
 

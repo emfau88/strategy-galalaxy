@@ -52,7 +52,9 @@ assert.equal(await countFiles(libraryRoot), 516, "complete asset library is pres
 const deployManifest = mergeAssetGroups(ASSET_GROUPS.boot, ASSET_GROUPS.level1, ASSET_GROUPS.level2, ASSET_GROUPS.combatVfx);
 for (const level of [1, 2]) {
   const activeManifest = runtimeAssetManifestForLevel(level);
-  assert.ok(Object.keys(activeManifest).length <= 40, `level ${level} cold-start request budget stays bounded`);
+  // Eight tiny faction/class shield strips add only about 21 KiB, but remain
+  // separate authored animations and therefore raise the request count.
+  assert.ok(Object.keys(activeManifest).length <= 48, `level ${level} cold-start request budget stays bounded`);
   const paths = [...new Set(Object.values(activeManifest))];
   const payload = (await Promise.all(paths.map((path) => pngDimensions(path)))).reduce((sum, image) => sum + image.bytes, 0);
   assert.ok(payload < 8 * 1024 * 1024, `level ${level} cold-start payload stays below 8 MiB`);
