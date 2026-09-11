@@ -38,6 +38,12 @@ const rolePriority = (unit, candidate) => {
   return 2;
 };
 
+const targetCapacity = (candidate) => {
+  if (candidate?.structureType === "hq") return 10;
+  if (candidate?.structureType === "turret") return 4;
+  return ({ drone: 2, scout: 2, fighter: 2, bomber: 3, frigate: 4 })[candidate?.unitType] ?? 2;
+};
+
 export const isValidUnitTarget = (state, unit, candidate, positions = null) => (
   candidate?.alive
   && !candidate.launching
@@ -55,10 +61,7 @@ const nextStructureTarget = (state, unit) => {
   return [...state.structures.values()].find((structure) => structure.alive && structure.team === enemyTeam && structure.structureType === "hq") ?? null;
 };
 
-export const acquireUnitTarget = (state, unit, positions = null) => {
-  const current = getEntity(state, unit.targetId);
-  if (isValidUnitTarget(state, unit, current, positions) && rolePriority(unit, current) <= 2) return current;
-
+const unitTargetCandidates = (state, unit, positions = null) => {
   const definition = UNIT_DEFINITIONS[unit.unitType];
   const friendlyHq = [...state.structures.values()].find((structure) => structure.team === unit.team && structure.structureType === "hq");
   const homeDefenseRange = STRUCTURE_DEFINITIONS.hq.attackRange + 85;
@@ -70,19 +73,59 @@ export const acquireUnitTarget = (state, unit, positions = null) => {
       && (isHostileUnitAhead(unit, candidate, positions)
         || (friendlyHq && inRange(positioned(friendlyHq, positions), positioned(candidate, positions), homeDefenseRange)))
       && inRange(positioned(unit, positions), positioned(candidate, positions), definition.aggroRange));
+  const current = getEntity(state, unit.targetId);
+  if (isValidUnitTarget(state, unit, current, positions)
+    && rolePriority(unit, current) <= 2
+    && !candidates.some((candidate) => candidate.id === current.id)) candidates.push(current);
   const structureTarget = nextStructureTarget(state, unit);
-  if (unit.unitType === "bomber" && structureTarget) candidates.push(structureTarget);
+  if (unit.unitType === "bomber" && structureTarget && !candidates.some((candidate) => candidate.id === structureTarget.id)) candidates.push(structureTarget);
+  if (candidates.length) return candidates;
+  if (unit.unitType === "scout") {
+    const node = [...state.nodes.values()].find((item) => item.laneId === unit.laneId);
+    const nodeIsAhead = node && (node.y - unit.y) * forwardDirection(unit.team) >= -node.radius;
+    if (nodeIsAhead && node.ownerTeam !== unit.team) return [];
+  }
+  return structureTarget ? [structureTarget] : [];
+};
+
+// Assign all targets from the same immutable position snapshot. Soft capacity keeps
+// attackers distributed without leaving surplus ships idle when only one target is
+// available. Current-target bias stabilizes the result across fixed simulation steps.
+export const planUnitTargets = (state, positions = null) => {
+  const assignments = new Map();
+  const targetLoads = new Map();
+  const attackers = [...state.units.values()]
+    .filter((unit) => unit.alive && !unit.launching)
+    .sort((left, right) => left.team.localeCompare(right.team)
+      || left.laneId.localeCompare(right.laneId)
+      || left.id.localeCompare(right.id));
+  for (const unit of attackers) {
+    const candidates = unitTargetCandidates(state, unit, positions);
+    candidates.sort((left, right) => {
+      const priority = rolePriority(unit, left) - rolePriority(unit, right);
+      if (priority) return priority;
+      const leftLoad = (targetLoads.get(left.id) ?? 0) / targetCapacity(left) - (left.id === unit.targetId ? 0.2 : 0);
+      const rightLoad = (targetLoads.get(right.id) ?? 0) / targetCapacity(right) - (right.id === unit.targetId ? 0.2 : 0);
+      return leftLoad - rightLoad
+        || squaredDistance(positioned(unit, positions), positioned(left, positions)) - squaredDistance(positioned(unit, positions), positioned(right, positions))
+        || left.id.localeCompare(right.id);
+    });
+    const selected = candidates[0] ?? null;
+    assignments.set(unit.id, selected?.id ?? null);
+    if (selected) targetLoads.set(selected.id, (targetLoads.get(selected.id) ?? 0) + 1);
+  }
+  return assignments;
+};
+
+export const acquireUnitTarget = (state, unit, positions = null) => {
+  const current = getEntity(state, unit.targetId);
+  if (isValidUnitTarget(state, unit, current, positions) && rolePriority(unit, current) <= 2) return current;
+  const candidates = unitTargetCandidates(state, unit, positions);
   candidates.sort((a, b) => rolePriority(unit, a) - rolePriority(unit, b)
     || squaredDistance(positioned(unit, positions), positioned(a, positions)) - squaredDistance(positioned(unit, positions), positioned(b, positions))
     || a.id.localeCompare(b.id));
   if (candidates[0]) return candidates[0];
-
-  if (unit.unitType === "scout") {
-    const node = [...state.nodes.values()].find((item) => item.laneId === unit.laneId);
-    const nodeIsAhead = node && (node.y - unit.y) * forwardDirection(unit.team) >= -node.radius;
-    if (nodeIsAhead && node.ownerTeam !== unit.team) return null;
-  }
-  return structureTarget;
+  return null;
 };
 
 export const classifyUnitState = (unit, target) => {

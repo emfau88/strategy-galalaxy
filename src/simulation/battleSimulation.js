@@ -3,7 +3,7 @@ import { PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from 
 import { LANE, TEAM } from "../core/constants.js";
 import { addProjectileToState, addUnitToState, createBattleState, emitSimulationEvent, enemyOf, laneFor, removeDeadEntities } from "./battleState.js";
 import { createProjectile, createUnit, UNIT_STATE } from "./entities.js";
-import { acquireStructureTarget, acquireUnitTarget, getEntity, inRange } from "./targeting.js";
+import { acquireStructureTarget, acquireUnitTarget, getEntity, inRange, planUnitTargets } from "./targeting.js";
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const forwardDirection = (team) => (team === TEAM.PLAYER ? -1 : 1);
@@ -41,6 +41,10 @@ const WING_FORMATION = Object.freeze({
   scout: Object.freeze({ forward: 74, lateral: [0, -24, 24, -48, 48] }),
   fighter: Object.freeze({ forward: 2, lateral: [-24, 24, 0, -48, 48] }),
 });
+const COMBAT_COLUMNS = Object.freeze([0, -1, 1]);
+const TARGET_PLAN_INTERVAL_STEPS = 12;
+const SEPARATION_RESPONSE = 9;
+const SEPARATION_SPEED_RATIO = 0.42;
 
 const squadIdFor = (team, laneId, spawnCycle) => `${team}:${laneId}:${spawnCycle}`;
 const vectorLimit = (x, y, maximum) => {
@@ -82,6 +86,10 @@ export class BattleSimulation {
     this.config = config;
     this.stepNumber = 0;
     this.squads = new Map();
+    this.targetAssignments = new Map();
+    this.combatSlots = new Map();
+    this.combatSlotClaims = new Map();
+    this.nextTargetPlanStep = 0;
   }
 
   spawnUnit(team, laneId, unitType, { x, y, slotOffsetX = 0, slotOffsetY = 0, spawnCycle = 0, launch = null } = {}) {
@@ -153,14 +161,25 @@ export class BattleSimulation {
     this.state.time += dt;
     for (const unit of this.state.units.values()) this.advanceLaunch(unit, dt);
     this.advanceSquadAnchors(dt);
-    this.resolveLaneSpacing();
+    const separationVelocities = this.resolveLaneSpacing(dt);
     const positions = new Map([
       ...[...this.state.units.values()].map((entity) => [entity.id, { x: entity.x, y: entity.y, vx: entity.vx, vy: entity.vy }]),
       ...[...this.state.structures.values()].map((entity) => [entity.id, { x: entity.x, y: entity.y }]),
     ]);
+    const activeUnits = [...this.state.units.values()].filter((unit) => unit.alive && !unit.launching);
+    const targetPlanInvalid = activeUnits.some((unit) => {
+      if (!this.targetAssignments.has(unit.id)) return true;
+      const targetId = this.targetAssignments.get(unit.id);
+      return targetId !== null && !getEntity(this.state, targetId)?.alive;
+    });
+    if (this.stepNumber >= this.nextTargetPlanStep || targetPlanInvalid) {
+      this.targetAssignments = planUnitTargets(this.state, positions);
+      this.combatSlots = this.combatSlotsFor(this.targetAssignments);
+      this.nextTargetPlanStep = this.stepNumber + TARGET_PLAN_INTERVAL_STEPS;
+    }
     const direction = this.stepNumber % 2 === 0 ? -1 : 1;
     const stableOrder = (items) => [...items.values()].sort((a, b) => a.id.localeCompare(b.id) * direction);
-    for (const unit of stableOrder(this.state.units)) this.updateUnit(unit, dt, positions);
+    for (const unit of stableOrder(this.state.units)) this.updateUnit(unit, dt, positions, this.targetAssignments, this.combatSlots, separationVelocities);
     for (const structure of stableOrder(this.state.structures)) this.updateStructure(structure, dt, positions);
     const damageEvents = this.updateProjectiles(dt);
     this.applyDamage(damageEvents);
@@ -200,11 +219,12 @@ export class BattleSimulation {
     unit.vy = 0;
   }
 
-  resolveLaneSpacing() {
+  resolveLaneSpacing(dt = this.config.timing.fixedStepSeconds) {
+    const requested = new Map();
     for (const lane of this.state.lanes.values()) {
       const laneDefinition = this.state.map.lanes.find((item) => item.id === lane.id);
       for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
-        const units = lane.unitIds.get(team).map((id) => this.state.units.get(id)).filter((unit) => unit?.alive && !unit.launching).sort((left, right) => left.id.localeCompare(right.id));
+        const units = lane.unitIds.get(team).map((id) => this.state.units.get(id)).filter((unit) => unit?.alive && !unit.launching).sort((left, right) => left.y - right.y || left.id.localeCompare(right.id));
         for (let first = 0; first < units.length; first += 1) {
           for (let second = first + 1; second < units.length; second += 1) {
             const left = units[first];
@@ -212,23 +232,93 @@ export class BattleSimulation {
             const leftSpacing = UNIT_DEFINITIONS[left.unitType].spacingRadius ?? UNIT_DEFINITIONS[left.unitType].collisionRadius;
             const rightSpacing = UNIT_DEFINITIONS[right.unitType].spacingRadius ?? UNIT_DEFINITIONS[right.unitType].collisionRadius;
             const minimum = (leftSpacing + rightSpacing) * (this.state.map.spacingScale ?? 1) + 6;
-            const dx = right.x - left.x || (second % 2 ? 0.5 : -0.5);
-            const dy = right.y - left.y || (second % 2 ? 0.25 : -0.25);
+            const dx = right.x - left.x;
+            const dy = right.y - left.y;
             const current = Math.hypot(dx, dy);
             if (current >= minimum) continue;
-            const push = (minimum - current) * 0.5;
-            const horizontal = dx / current * push;
-            const minX = laneDefinition.centerX - laneDefinition.width / 2 + 9;
-            const maxX = laneDefinition.centerX + laneDefinition.width / 2 - 9;
-            left.x = Math.max(minX, Math.min(maxX, left.x - horizontal));
-            right.x = Math.max(minX, Math.min(maxX, right.x + horizontal));
+            const leftSlot = this.combatSlots.get(left.id)?.lateral ?? left.slotOffsetX;
+            const rightSlot = this.combatSlots.get(right.id)?.lateral ?? right.slotOffsetX;
+            const direction = Math.abs(rightSlot - leftSlot) > 0.5
+              ? Math.sign(rightSlot - leftSlot)
+              : Math.abs(dx) > 0.5
+                ? Math.sign(dx)
+                : left.id.localeCompare(right.id) < 0 ? 1 : -1;
+            const overlap = 1 - current / Math.max(1, minimum);
+            const leftMass = leftSpacing ** 2;
+            const rightMass = rightSpacing ** 2;
+            const totalMass = leftMass + rightMass;
+            const speed = minimum * overlap * 2.4;
+            requested.set(left.id, (requested.get(left.id) ?? 0) - direction * speed * rightMass / totalMass);
+            requested.set(right.id, (requested.get(right.id) ?? 0) + direction * speed * leftMass / totalMass);
           }
+        }
+        const minX = laneDefinition.centerX - laneDefinition.width / 2;
+        const maxX = laneDefinition.centerX + laneDefinition.width / 2;
+        for (const unit of units) {
+          const definition = UNIT_DEFINITIONS[unit.unitType];
+          const inset = definition.collisionRadius + 5;
+          let target = clamp(requested.get(unit.id) ?? 0, -definition.speed * SEPARATION_SPEED_RATIO, definition.speed * SEPARATION_SPEED_RATIO);
+          const boundaryFade = definition.spacingRadius + 8;
+          if (target < 0) target *= clamp((unit.x - (minX + inset)) / boundaryFade, 0, 1);
+          else if (target > 0) target *= clamp(((maxX - inset) - unit.x) / boundaryFade, 0, 1);
+          const response = 1 - Math.exp(-SEPARATION_RESPONSE * dt);
+          unit.separationVx += (target - (unit.separationVx ?? 0)) * response;
+          if (Math.abs(unit.separationVx) < 0.01 && target === 0) unit.separationVx = 0;
         }
       }
     }
+    return new Map([...this.state.units.values()].map((unit) => [unit.id, unit.separationVx ?? 0]));
   }
 
-  updateUnit(unit, dt, positions = null) {
+  combatSlotsFor(targetAssignments) {
+    const groups = new Map();
+    for (const unit of this.state.units.values()) {
+      const targetId = targetAssignments.get(unit.id);
+      if (!unit.alive || unit.launching || !targetId) continue;
+      const key = `${unit.team}:${targetId}:${unit.unitType}`;
+      const members = groups.get(key) ?? [];
+      members.push(unit);
+      groups.set(key, members);
+    }
+    const slots = new Map();
+    const activeClaims = new Map();
+    for (const [groupKey, members] of groups) {
+      members.sort((left, right) => left.id.localeCompare(right.id));
+      const occupied = new Set();
+      const slotIndexFor = new Map();
+      for (const unit of members) {
+        const previous = this.combatSlotClaims.get(unit.id);
+        if (previous?.groupKey !== groupKey || occupied.has(previous.index)) continue;
+        occupied.add(previous.index);
+        slotIndexFor.set(unit.id, previous.index);
+      }
+      for (const unit of members) {
+        if (slotIndexFor.has(unit.id)) continue;
+        let index = 0;
+        while (occupied.has(index)) index += 1;
+        occupied.add(index);
+        slotIndexFor.set(unit.id, index);
+      }
+      for (const unit of members) {
+        const index = slotIndexFor.get(unit.id);
+        activeClaims.set(unit.id, { groupKey, index });
+        const spacing = UNIT_DEFINITIONS[unit.unitType].spacingRadius ?? UNIT_DEFINITIONS[unit.unitType].collisionRadius;
+        const gap = spacing * 2 + 8;
+        const row = Math.floor(index / 3);
+        const column = COMBAT_COLUMNS[index % 3];
+        slots.set(unit.id, {
+          lateral: column * gap,
+          depth: row * gap,
+          broadsideSide: index % 2 === 0 ? -1 : 1,
+          broadsideDepth: Math.floor(index / 2) * gap,
+        });
+      }
+    }
+    this.combatSlotClaims = activeClaims;
+    return slots;
+  }
+
+  updateUnit(unit, dt, positions = null, targetAssignments = null, combatSlots = null, separationVelocities = null) {
     if (!unit.alive) return;
     if (unit.launching) return;
     const startX = unit.x;
@@ -240,8 +330,12 @@ export class BattleSimulation {
       speed: definition.speed * movementScale,
       acceleration: definition.acceleration * movementScale,
     };
+    const separationVx = separationVelocities?.get(unit.id) ?? unit.separationVx ?? 0;
     const previousTargetId = unit.targetId;
-    const target = acquireUnitTarget(this.state, unit, positions);
+    const plannedTargetId = targetAssignments?.get(unit.id);
+    const target = targetAssignments?.has(unit.id)
+      ? getEntity(this.state, plannedTargetId)
+      : acquireUnitTarget(this.state, unit, positions);
     const targetPosition = positions?.get(target?.id) ?? target;
     unit.targetId = target?.id ?? null;
     const unitPosition = positions?.get(unit.id) ?? unit;
@@ -261,10 +355,11 @@ export class BattleSimulation {
           this.steerUnit(unit, {
             x: node.x - dx / magnitude * node.radius * 0.38,
             y: node.y - dy / magnitude * node.radius * 0.38,
+            separationVx,
           }, motionDefinition, dt);
         } else {
           unit.state = UNIT_STATE.HOLDING;
-          this.steerUnit(unit, { x: unit.x, y: unit.y }, motionDefinition, dt);
+          this.steerUnit(unit, { x: unit.x, y: unit.y, separationVx }, motionDefinition, dt);
         }
       } else {
         const squad = this.squads.get(unit.formationId);
@@ -276,14 +371,16 @@ export class BattleSimulation {
           baseVx: 0,
           baseVy: forwardDirection(unit.team) * cruiseSpeed,
           speedLimit: Math.max(motionDefinition.speed, cruiseSpeed),
+          separationVx,
         }, motionDefinition, dt);
       }
       this.constrainToLane(unit);
       this.observeUnitMobility(unit, startX, startY, dt);
       return;
     }
-    const tactical = this.tacticalPosition(unit, targetPosition, definition);
+    const tactical = this.tacticalPosition(unit, targetPosition, definition, combatSlots?.get(unit.id));
     tactical.speedLimit = motionDefinition.speed * (COMBAT_SPEED_SCALE[unit.unitType] ?? 0.55);
+    tactical.separationVx = separationVx;
     this.steerUnit(unit, tactical, motionDefinition, dt, tactical.heading);
     this.constrainToLane(unit);
     this.observeUnitMobility(unit, startX, startY, dt);
@@ -317,35 +414,38 @@ export class BattleSimulation {
     });
   }
 
-  tacticalPosition(unit, target, definition) {
+  tacticalPosition(unit, target, definition, combatSlot = null) {
     const direction = forwardDirection(unit.team);
     const standoff = definition.attackRange * (definition.broadside ? 0.9 : definition.role === "siege" ? 0.94 : 0.91);
     const formationLateral = clamp(unit.slotOffsetX * 0.55, -44, 44);
+    const combatLateral = combatSlot?.lateral ?? formationLateral;
+    const combatDepth = combatSlot?.depth ?? 0;
     const lane = this.state.map.lanes.find((item) => item.id === unit.laneId);
     const laneCenter = lane?.centerX ?? unit.x - unit.slotOffsetX;
     const targetBearing = Math.atan2(target.y - unit.y, target.x - unit.x);
     if (definition.broadside) {
       const broadsideOffset = Math.min(standoff * 0.88, (lane?.width ?? standoff * 2) * 0.32);
       const forwardOffset = Math.sqrt(Math.max(0, standoff ** 2 - broadsideOffset ** 2));
+      const broadsideSide = combatSlot?.broadsideSide ?? unit.broadsideSide;
       return {
-        x: laneCenter + unit.broadsideSide * broadsideOffset,
-        y: target.y - direction * (forwardOffset + formationLateral * 0.3),
-        heading: targetBearing + unit.broadsideSide * direction * Math.PI / 2,
+        x: laneCenter + broadsideSide * broadsideOffset,
+        y: target.y - direction * (forwardOffset + (combatSlot?.broadsideDepth ?? combatDepth)),
+        heading: targetBearing + broadsideSide * direction * Math.PI / 2,
       };
     }
     const distance = Math.hypot(target.x - unit.x, target.y - unit.y);
     if (distance < standoff * 0.72) {
       const breakDistance = Math.min(36, Math.max(14, (standoff - distance) * 0.58));
       return {
-        x: clamp(laneCenter + formationLateral + unit.broadsideSide * breakDistance, laneCenter - (lane?.width ?? 160) * 0.38, laneCenter + (lane?.width ?? 160) * 0.38),
+        x: clamp(laneCenter + combatLateral + (combatSlot?.broadsideSide ?? unit.broadsideSide) * breakDistance, laneCenter - (lane?.width ?? 160) * 0.38, laneCenter + (lane?.width ?? 160) * 0.38),
         y: unit.y,
         heading: targetBearing,
         preventReverseHeading: targetBearing,
       };
     }
     return {
-      x: laneCenter + formationLateral,
-      y: target.y - direction * standoff,
+      x: laneCenter + combatLateral,
+      y: target.y - direction * (standoff + combatDepth),
       heading: targetBearing,
       preventReverseHeading: targetBearing,
     };
@@ -363,6 +463,7 @@ export class BattleSimulation {
       desiredVx += dx / magnitude * correctionSpeed;
       desiredVy += dy / magnitude * correctionSpeed;
     }
+    desiredVx += destination.separationVx ?? 0;
     if (Number.isFinite(destination.preventReverseHeading)) {
       const forwardX = Math.cos(destination.preventReverseHeading);
       const forwardY = Math.sin(destination.preventReverseHeading);

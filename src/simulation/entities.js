@@ -13,7 +13,7 @@ export const createUnit = ({ id, team, laneId, unitType, x, y, slotOffsetX = 0, 
   if (!definition) throw new Error(`Unknown unit type: ${unitType}`);
   return {
     id, team, laneId, unitType, x: launch?.x ?? x, y: launch?.y ?? y, slotOffsetX, slotOffsetY, spawnCycle, formationId,
-    vx: 0, vy: 0, heading, broadsideSide: slotOffsetX < 0 ? -1 : 1,
+    vx: 0, vy: 0, separationVx: 0, heading, broadsideSide: slotOffsetX < 0 ? -1 : 1,
     hp: definition.maxHp, maxHp: definition.maxHp, fireCooldown: 0, lastShotAt: -Infinity,
     targetId: null, state: UNIT_STATE.ADVANCING, alive: true, lastDamagedAt: -Infinity,
     launching: Boolean(launch), launchElapsed: -(launch?.delay ?? 0), launchDuration: launch?.duration ?? 0,

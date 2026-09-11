@@ -13,7 +13,7 @@ import { CONFIG } from "../src/config.js";
 import { MatchDirector } from "../src/simulation/matchDirector.js";
 import { AI_PROFILES, OpponentAi } from "../src/simulation/opponentAi.js";
 import { createBattleState, emitSimulationEvent } from "../src/simulation/battleState.js";
-import { acquireStructureTarget, acquireUnitTarget } from "../src/simulation/targeting.js";
+import { acquireStructureTarget, acquireUnitTarget, planUnitTargets } from "../src/simulation/targeting.js";
 import { ASSET_GROUPS, runtimeAssetManifestForLevel } from "../src/assets.js";
 import { PresentationEffects } from "../src/rendering/presentationEffects.js";
 import { SoundSystem } from "../src/audio/soundSystem.js";
@@ -425,9 +425,16 @@ const spacingSimulation = new BattleSimulation({ state: createBattleState({ map:
 for (const structure of spacingSimulation.state.structures.values()) structure.alive = false;
 const spacingLeft = spacingSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "fighter", { x: 210, y: 700, spawnCycle: 702 });
 const spacingRight = spacingSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "fighter", { x: 210, y: 700, spawnCycle: 702 });
-spacingSimulation.resolveLaneSpacing();
-assert.equal(spacingLeft.y, 700);
-assert.equal(spacingRight.y, 700, "same-team separation never pushes one ship backwards along the lane");
+const spacingPositions = [spacingLeft, spacingRight].map(({ x, y }) => ({ x, y }));
+const spacingVelocities = spacingSimulation.resolveLaneSpacing(1 / 60);
+assert.deepEqual([spacingLeft, spacingRight].map(({ x, y }) => ({ x, y })), spacingPositions, "separation produces steering input instead of teleporting ships");
+assert.ok(spacingVelocities.get(spacingLeft.id) * spacingVelocities.get(spacingRight.id) < 0, "overlapping allies receive opposing lateral steering without lane-axis push");
+
+const weightedSpacingSimulation = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
+const spacingScout = weightedSpacingSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "scout", { x: 210, y: 700, spawnCycle: 703 });
+const spacingFrigate = weightedSpacingSimulation.spawnUnit(TEAM.PLAYER, LANE.CENTER, "frigate", { x: 210, y: 700, spawnCycle: 703 });
+const weightedVelocities = weightedSpacingSimulation.resolveLaneSpacing(1 / 60);
+assert.ok(Math.abs(weightedVelocities.get(spacingFrigate.id)) < Math.abs(weightedVelocities.get(spacingScout.id)), "large ships yield less than light ships during separation");
 
 const accelerationSimulation = new BattleSimulation();
 for (const structure of accelerationSimulation.state.structures.values()) {
@@ -473,6 +480,29 @@ siegeTargeting.step(1 / 60);
 assert.equal(siegeBomber.targetId, "enemy-left-turret", "bombers prioritize lane structures over light screens");
 assert.ok(roleTargeting.damageMultiplier(fighterHunter, priorityBomber) > 1);
 assert.ok(roleTargeting.damageMultiplier(fighterHunter, roleTargeting.state.structures.get("enemy-left-turret")) < 1);
+
+const distributedTargeting = new BattleSimulation();
+const distributedFighters = Array.from({ length: 6 }, (_, index) => distributedTargeting.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 82 + index * 9, y: 630, spawnCycle: 810 + index }));
+const distributedScouts = Array.from({ length: 3 }, (_, index) => distributedTargeting.spawnUnit(TEAM.ENEMY, LANE.LEFT, "scout", { x: 88 + index * 17, y: 540, spawnCycle: 910 + index }));
+const distributedPlan = planUnitTargets(distributedTargeting.state);
+const distributedLoads = distributedScouts.map((target) => distributedFighters.filter((unit) => distributedPlan.get(unit.id) === target.id).length);
+assert.deepEqual(distributedLoads.slice().sort((left, right) => left - right), [2, 2, 2], "equal-priority targets receive a deterministic bounded attacker load");
+for (const unit of distributedFighters) unit.targetId = distributedPlan.get(unit.id);
+assert.deepEqual(planUnitTargets(distributedTargeting.state), distributedPlan, "balanced target assignments remain stable on the next planning pass");
+
+const combatSlotSimulation = new BattleSimulation();
+const slottedFighters = Array.from({ length: 7 }, (_, index) => combatSlotSimulation.spawnUnit(TEAM.PLAYER, LANE.LEFT, "fighter", { x: 99 + index * 2, y: 630, spawnCycle: 1010 + index }));
+const slotTarget = combatSlotSimulation.spawnUnit(TEAM.ENEMY, LANE.LEFT, "frigate", { x: 105, y: 530, spawnCycle: 1110 });
+const slotPlan = planUnitTargets(combatSlotSimulation.state);
+assert.ok(slottedFighters.every((unit) => slotPlan.get(unit.id) === slotTarget.id), "surplus attackers keep a valid target when no alternative exists");
+const combatSlots = combatSlotSimulation.combatSlotsFor(slotPlan);
+const fighterSlots = slottedFighters.map((unit) => combatSlots.get(unit.id));
+assert.equal(new Set(fighterSlots.map((slot) => `${slot.lateral}:${slot.depth}`)).size, slottedFighters.length, "combat slots give every same-class attacker a unique stable position");
+assert.equal(new Set(fighterSlots.map((slot) => slot.depth)).size, 3, "overflow attackers occupy additional depth rows instead of one shared point");
+slottedFighters[0].alive = false;
+const survivorPlan = new Map([...slotPlan].filter(([unitId]) => unitId !== slottedFighters[0].id));
+const survivorSlots = combatSlotSimulation.combatSlotsFor(survivorPlan);
+for (const unit of slottedFighters.slice(1)) assert.deepEqual(survivorSlots.get(unit.id), combatSlots.get(unit.id), "surviving attackers keep their claimed combat slot after a neighbor is lost");
 assert.ok(siegeTargeting.damageMultiplier(siegeBomber, siegeTargeting.state.structures.get("enemy-left-turret")) > 1);
 
 const laneBounds = new BattleSimulation();

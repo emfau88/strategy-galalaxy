@@ -110,8 +110,13 @@ Düsen.
   negative Vorwärtsgeschwindigkeit verhindern.
 - [x] Bei zu geringem Abstand: erst bremsen, dann seitlich entflechten, danach wieder
   auf die Feuerlinie einschwenken; kein rückwärts gleitender Standoff-Ausgleich.
-- [x] Separation so projizieren, dass Nachbarn ein Schiff nicht entlang der Lane
-  rückwärts durch den Verband drücken.
+- [x] Separation als gedämpfte Lenkung statt direkter Positionskorrektur ausführen;
+  leichte Schiffe weichen stärker aus als schwere und die feste Kampfslot-Reihenfolge
+  verhindert Richtungswechsel beim Kreuzen.
+- [x] Pro Angriffsziel persistente Kampfslots in mehreren Tiefenreihen vergeben;
+  überlebende Schiffe behalten ihren Slot auch dann, wenn ein Nachbar zerstört wird.
+- [x] Gleichwertige Ziele mit weichen Angreiferkapazitäten belegen, damit große
+  Verbände ihr Feuer deterministisch verteilen statt ein einzelnes Schiff zu umringen.
 - [x] Broadside-Schiffe lateral ausrichten und halten; Siege-Schiffe bremsen früh;
   leichte Schiffe dürfen kurze, begrenzte Ausweichbögen fliegen, aber nicht endlos
   orbiten.
@@ -119,6 +124,8 @@ Düsen.
   Feststecken unterscheiden und nur blockierte Einheiten neu positionieren.
 - [x] Regressionen mit Drone-Duell, gemischter Flotte, Basisverteidigung und engem
   Turret-Kampf prüfen; gemessen wird Rückwärtszeit statt nur ein Screenshot.
+- [x] Maximalcluster mit 56 unzerstörbaren Schiffen über 20 Sekunden prüfen:
+  keine Einheit wechselt häufiger als zehnmal sichtbar die Querrichtung.
 
 **Abnahme:** In einem 90-Sekunden-Gefecht gibt es keinen sichtbaren Rückwärtsflug im
 normalen Kampfzustand, keine Endlosorbits und keine Flamme neben einer Düse.
