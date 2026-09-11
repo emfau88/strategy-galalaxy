@@ -74,12 +74,12 @@ const drawTimedStrip = (ctx, image, layer, frameSize, elapsed, displaySize, dura
 
 const stableFrameOffset = (id, frameCount) => [...String(id)].reduce((value, character) => value + character.charCodeAt(0), 0) % frameCount;
 
-// These are tight crops inside Galalaxy's original Nairan/Kla'ed Scout engine frames.
-// Reusing the animated source flame at authored nozzle coordinates keeps the existing
-// high-resolution hulls while preserving Galalaxy's crisp hand-authored motion.
+// Tight alpha bounds inside Galalaxy's original Nairan/Kla'ed Scout engine frames.
+// A small per-strip anchor absorbs the two-pixel frame-to-frame movement at the source
+// edge, keeping every luminous frame tucked underneath the authored nozzle mouth.
 const galalaxyEngineCrop = Object.freeze({
-  "nairan-scout-engine": Object.freeze({ x: 23, y: 39, width: 18, height: 22, widthScale: 0.22, nozzleAnchorY: 0.23 }),
-  "klaed-scout-engine": Object.freeze({ x: 25, y: 34, width: 14, height: 20, widthScale: 0.18, nozzleAnchorY: 0.2 }),
+  "nairan-scout-engine": Object.freeze({ x: 25, y: 43, width: 13, height: 14, widthScale: 0.159, heightScale: 0.636, nozzleAnchorY: 0.08 }),
+  "klaed-scout-engine": Object.freeze({ x: 29, y: 38, width: 6, height: 12, widthScale: 0.077, heightScale: 0.6, nozzleAnchorY: 0.17 }),
 });
 
 const drawGalalaxyEngine = (ctx, image, visual, unit, elapsed, displaySize) => {
@@ -101,7 +101,7 @@ const drawGalalaxyEngine = (ctx, image, visual, unit, elapsed, displaySize) => {
   ctx.imageSmoothingEnabled = false;
   for (const hardpoint of hardpoints) {
     const width = displaySize * crop.widthScale * hardpoint.scale * (0.9 + plumeStrength * 0.1);
-    const height = displaySize * (0.3 + plumeStrength * 0.18) * hardpoint.scale;
+    const height = displaySize * (0.3 + plumeStrength * 0.18) * hardpoint.scale * crop.heightScale;
     const x = (hardpoint.x / 384 - 0.5) * displaySize - width / 2;
     // Hardpoints name the nozzle mouth. Compensate for the transparent rows at
     // the top of the source crop so the first luminous pixel touches the pipe.
@@ -917,48 +917,6 @@ export const renderEntityLayer = (ctx, model) => {
       else ctx.drawImage(sprite, 0, 0, frameSize, frameSize, -displaySize / 2, -displaySize / 2, displaySize, displaySize);
     }
     else { ctx.fillStyle = teamColor(unit.team); ctx.beginPath(); ctx.arc(0, 0, size * 0.3, 0, Math.PI * 2); ctx.fill(); }
-    const teamEconomy = model.economy?.get(unit.team);
-    const weaponLevel = teamEconomy?.weaponLevel ?? 0;
-    const fireRateLevel = teamEconomy?.fireRateLevel ?? 0;
-    const salvoLevel = unit.unitType === "drone" ? 0 : teamEconomy?.salvoLevel ?? 0;
-    if (weaponLevel > 0) {
-      const mounts = ({
-        drone: [[0, -0.28]], scout: [[-0.16, -0.28], [0.16, -0.28]], fighter: [[-0.27, -0.2], [0.27, -0.2]],
-        bomber: [[-0.15, -0.12], [0.15, -0.12]], frigate: [[-0.36, -0.03], [0.36, -0.03]],
-      })[unit.unitType] ?? [[0, -0.25]];
-      for (const [mountX, mountY] of mounts) {
-        ctx.fillStyle = "rgba(12,20,30,0.92)";
-        ctx.fillRect(mountX * size - 2.2, mountY * size - 2.8, 4.4, 5.6);
-        ctx.globalCompositeOperation = "screen";
-        ctx.fillStyle = unit.team === TEAM.PLAYER ? "#fff0b9" : "#ffb07e";
-        ctx.globalAlpha = 0.56 + weaponLevel * 0.12;
-        ctx.fillRect(mountX * size - 0.9, mountY * size - 2, 1.8, 4);
-        ctx.globalCompositeOperation = "source-over";
-      }
-      ctx.globalAlpha = 1;
-    }
-    if (fireRateLevel > 0) {
-      for (let index = 0; index < fireRateLevel; index += 1) {
-        const x = (index - (fireRateLevel - 1) / 2) * 5;
-        ctx.fillStyle = "rgba(7,24,35,0.94)";
-        ctx.fillRect(x - 1.8, size * 0.08, 3.6, 5.5);
-        ctx.globalCompositeOperation = "screen";
-        ctx.globalAlpha = 0.72;
-        ctx.fillStyle = "#6cecf1";
-        ctx.fillRect(x - 0.8, size * 0.08 + 1, 1.6, 3.5);
-        ctx.globalCompositeOperation = "source-over";
-      }
-      ctx.globalAlpha = 1;
-    }
-    if (salvoLevel > 0) {
-      for (const side of [-1, 1]) {
-        ctx.fillStyle = "rgba(34,24,22,0.96)";
-        ctx.fillRect(side * size * 0.32 - 2.6, -size * 0.18, 5.2, 8);
-        ctx.fillStyle = "#e9a45e";
-        ctx.fillRect(side * size * 0.32 - 1.35, -size * 0.23, 1.2, 7);
-        ctx.fillRect(side * size * 0.32 + 0.15, -size * 0.23, 1.2, 7);
-      }
-    }
     if (!unifiedSprite && visual?.weapon) drawTimedStrip(ctx, asset(model.assets, visual.weapon.assetKey), visual.weapon, frameSize, simulation.state.time - unit.lastShotAt, displaySize, 0.42);
     const shotAge = simulation.state.time - unit.lastShotAt;
     if (unit.unitType === "bomber" && shotAge >= 0 && shotAge < 0.32) {

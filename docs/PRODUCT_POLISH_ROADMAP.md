@@ -200,6 +200,8 @@ Schlachtfeld sichtbar.
 - [x] Bastion-Stufen durch zusätzliche Panzerung, Kondensatoren und Rohrgehäuse zeigen.
 - [x] Reactor-, Arsenal- und Hangar-Stufen am HQ als echte Bauteil-/Lichtzustände
   deutlich machen.
+- [x] Provisorische Upgrade-Rechtecke auf Schiffen entfernen; direkte Hull-Module erst
+  mit klassenbezogenen, authored Assetvarianten wieder einführen.
 - [x] Pending-Ausbau unvollständig anzeigen und an der Wave-Grenze sichtbar aktivieren.
 
 **Abnahme:** Eigentümer, Schussrichtung und mindestens ein aktiver Upgrade-Pfad sind

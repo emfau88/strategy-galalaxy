@@ -7,13 +7,16 @@ Stand: 11. September 2026
 | Weg | Kosten | Direkte Wirkung | Sichtbare Wirkung |
 | --- | ---: | --- | --- |
 | Reactor | 220 / 385 E | +22 % Basiseinkommen je Stufe | goldene HQ-Reaktorstreben und Stufenlichter |
-| Arsenal | 220 / 374 / 636 E | +12 % Schaden je Stufe | Waffenmodule an HQ/Schiffen und größere Geschosskörper |
-| Autoloader | 190 / 314 E | −8 % Feuerpause je Stufe | cyanfarbene Kondensatoren, hellerer Projektilkern und schnellere Kadenz |
-| Multi Cannon | 200 E | +1 Geschoss und +6 % Gesamtschaden pro Salve | doppelte orange Hardpoints und tatsächlich zusätzliches Geschoss |
+| Arsenal | 220 / 374 / 636 E | +12 % Schaden je Stufe | Waffenmodule am HQ und größere Geschosskörper |
+| Autoloader | 190 / 314 E | −8 % Feuerpause je Stufe | HQ-Kondensatoren, hellerer Projektilkern und schnellere Kadenz |
+| Multi Cannon | 200 E | +1 Geschoss und +6 % Gesamtschaden pro Salve | HQ-Kanonenmarker und tatsächlich zusätzliches Geschoss |
 
 Multi Cannon gilt nur für bezahlte Schiffe. Kostenlose Drones, HQs und optionale
 Turrets erhalten weder den zusätzlichen Schuss noch den Bonus. Sämtliche Upgrades
 werden sofort aktiv und verwenden für Spieler und KI denselben Kaufbefehl.
+Provisorische Canvas-Rechtecke auf den Schiffshüllen wurden entfernt. Hull-Upgrades
+werden erst wieder direkt am Schiff gezeigt, wenn dafür sauber integrierte, zur Klasse
+passende Assetvarianten existieren.
 
 ## Economy-Grenzen
 
