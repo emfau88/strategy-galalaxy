@@ -172,7 +172,7 @@ const drawUnitShield = (ctx, image, visual, unit, elapsed, displaySize, denseBat
   // ship silhouette must never be visible on our differently shaped hulls.
   // Clipping it to a class-sized hull envelope keeps the result top-down,
   // hull-aware and correct when broadside ships rotate.
-  if (hitActive || activationActive) {
+  if (!denseBattle && (hitActive || activationActive)) {
     const shellWidth = Math.max(2.2, displaySize * 0.055);
     ctx.save();
     ctx.globalCompositeOperation = "screen";
@@ -195,8 +195,10 @@ const drawUnitShield = (ctx, image, visual, unit, elapsed, displaySize, denseBat
     ? 0.22 + activeStrength * 0.38
     : (0.055 + idlePulse * 0.035) * (0.72 + shieldRatio * 0.28);
   ctx.beginPath();
-  traceShieldEnvelope(ctx, fit.outline, displaySize);
-  ctx.stroke();
+  if (!denseBattle) {
+    traceShieldEnvelope(ctx, fit.outline, displaySize);
+    ctx.stroke();
+  }
   ctx.restore();
 
   if (hitActive) {
@@ -1023,7 +1025,7 @@ export const renderEntityLayer = (ctx, model) => {
     if (engineVisual?.engine) drawGalalaxyEngine(ctx, asset(model.assets, engineVisual.engine.assetKey), engineVisual, unit, simulation.state.time, displaySize);
     ctx.globalCompositeOperation = "source-over";
     const recentlyDamaged = simulation.state.time - unit.lastDamagedAt < 0.11;
-    if (recentlyDamaged) ctx.filter = "brightness(1.82) saturate(0.58) contrast(1.08)";
+    if (recentlyDamaged && !denseBattle) ctx.filter = "brightness(1.82) saturate(0.58) contrast(1.08)";
     else if (!denseBattle && unifiedSprite && simulation.state.map.visualTheme === "orbital_garden" && unit.team === TEAM.PLAYER) {
       ctx.filter = "drop-shadow(0 1px 1.4px rgba(2,9,18,0.96)) saturate(1.04) contrast(1.12) brightness(1.06)";
     } else if (!denseBattle && unifiedSprite) ctx.filter = "drop-shadow(0 1px 0.8px rgba(2,9,18,0.72)) saturate(1.06) contrast(1.07)";
@@ -1064,12 +1066,12 @@ export const renderEntityLayer = (ctx, model) => {
     if (damageAge >= 0 && damageAge < 0.22) {
       ctx.globalCompositeOperation = "screen";
       const damageProgress = damageAge / 0.22;
-      ctx.globalAlpha = (1 - damageProgress) * 0.5;
+      ctx.globalAlpha = (1 - damageProgress) * (denseBattle ? 0.18 : 0.5);
       ctx.fillStyle = "rgba(255,245,214,0.34)";
       ctx.beginPath();
       ctx.ellipse(0, 0, size * 0.27, size * 0.2, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.globalAlpha = (1 - damageProgress) * 0.7;
+      ctx.globalAlpha = (1 - damageProgress) * (denseBattle ? 0.28 : 0.7);
       ctx.strokeStyle = unit.team === TEAM.PLAYER ? "#a9f5f2" : "#ffad8e";
       ctx.lineWidth = unit.unitType === "frigate" ? 1.8 : 1.2;
       ctx.beginPath();
@@ -1092,7 +1094,9 @@ const seededAngle = (seed, index) => ((seed * 2.17 + index * 2.399) % (Math.PI *
 export const renderEffectsLayer = (ctx, model) => {
   const projection = battlefieldProjection(model);
   const view = model.camera?.viewport;
+  const denseBattle = (model.simulation?.state.units.size ?? 0) + (model.simulation?.state.projectiles.size ?? 0) > 84;
   for (const effect of model.effects ?? []) {
+    if (denseBattle && effect.type === "muzzle") continue;
     const effectY = projection.y(effect.y);
     if (view && (effectY < view.y - 80 || effectY > view.y + view.height + 80)) continue;
     const progress = 1 - effect.life / effect.maxLife;
@@ -1138,7 +1142,7 @@ export const renderEffectsLayer = (ctx, model) => {
       }
     } else if (effect.type === "hit") {
       const heavy = effect.projectileType === "siege_missile" || effect.projectileType === "heavy_cannon" || effect.projectileType === "heavy_bolt";
-      const flashRadius = heavy ? 15 : effect.projectileType === "fighter_laser" ? 10 : 7;
+      const flashRadius = (heavy ? 15 : effect.projectileType === "fighter_laser" ? 10 : 7) * (denseBattle ? 0.65 : 1);
       ctx.globalCompositeOperation = "screen";
       const impactGlow = ctx.createRadialGradient(effect.x, y, 0, effect.x, y, flashRadius * (0.65 + progress));
       impactGlow.addColorStop(0, `rgba(255,248,218,${0.9 * alpha})`);
@@ -1148,7 +1152,7 @@ export const renderEffectsLayer = (ctx, model) => {
       ctx.fillRect(effect.x - flashRadius * 2, y - flashRadius * 2, flashRadius * 4, flashRadius * 4);
       ctx.strokeStyle = effect.projectileType === "siege_missile" ? "#ffd096" : "#f7f4d7";
       ctx.lineWidth = heavy ? 1.65 : 1.1;
-      const count = effect.projectileType === "siege_missile" ? 8 : heavy ? 6 : 4;
+      const count = denseBattle ? 3 : effect.projectileType === "siege_missile" ? 8 : heavy ? 6 : 4;
       for (let index = 0; index < count; index += 1) {
         const angle = seededAngle(effect.seed, index);
         const inner = 2 + progress * 3;

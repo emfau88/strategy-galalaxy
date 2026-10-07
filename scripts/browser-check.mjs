@@ -287,6 +287,12 @@ try {
   await delay(60);
   const mixedQaScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
   await writeFile(resolve(output, "level-2-qa-mixed-combat-420x760.png"), Buffer.from(mixedQaScreenshot.data, "base64"));
+  await send("Emulation.setDeviceMetricsOverride", { width: 360, height: 800, deviceScaleFactor: 1, mobile: true, screenWidth: 360, screenHeight: 800 });
+  await delay(100);
+  const mixedMobileScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "level-2-qa-mixed-combat-360x800.png"), Buffer.from(mixedMobileScreenshot.data, "base64"));
+  await send("Emulation.setDeviceMetricsOverride", { width: 420, height: 760, deviceScaleFactor: 1, mobile: true, screenWidth: 420, screenHeight: 760 });
+  await delay(100);
 
   for (const [team, y, direction] of [['TEAM_PLAYER', 610, -1], ['TEAM_ENEMY', 535, 1]]) {
     await send("Runtime.evaluate", {
@@ -422,9 +428,14 @@ try {
     await touch(touchX, (designHeight - 42) * snapshot.transform.scale);
     const openResult = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.commandDockOpen", returnByValue: true });
     assert.equal(openResult.result.value, true, `${width}x${height} compact command dock expands`);
+    const beforePurchase = await send("Runtime.evaluate", { expression: "({ y: window.__strategyGalalaxy.camera.y, lane: window.__strategyGalalaxy.selectedLaneId })", returnByValue: true });
     await touch(touchX, (designHeight - 141) * snapshot.transform.scale);
     const deploymentResult = await send("Runtime.evaluate", { expression: "[...window.__strategyGalalaxy.match.simulation.state.lanes.values()].flatMap((lane) => lane.unitIds.get('TEAM_PLAYER')).length", returnByValue: true });
     assert.equal(deploymentResult.result.value, snapshot.playerUnits + 3, `${width}x${height} touch immediately launches a three-ship Scout Wing`);
+    const purchase = await send("Runtime.evaluate", { expression: `(() => { const g = window.__strategyGalalaxy; const launch = g.match.liveDeployment.lastDeployment; return { y: g.camera.y, lane: launch.laneId, maximumLaunchSeconds: Math.max(...launch.spawnedIds.map((id) => { const u = g.match.simulation.state.units.get(id); return u.launchDuration + Math.max(0, -u.launchElapsed); })) }; })()`, returnByValue: true });
+    assert.equal(purchase.result.value.y, beforePurchase.result.value.y, "buying reinforcement never moves the camera");
+    assert.equal(purchase.result.value.lane, beforePurchase.result.value.lane, "paid wings use the selected lane");
+    assert.ok(purchase.result.value.maximumLaunchSeconds <= 1.5, "every paid wing member launches within the product deadline");
     await touch(206 * snapshot.transform.scale, (designHeight - 195) * snapshot.transform.scale);
 
     const panX = 210 * snapshot.transform.scale;

@@ -803,7 +803,7 @@ assert.deepEqual(commandActionAt({ x: 80, y: 726 }, "units", 760, [LANE.CENTER],
 const tallCommandUi = commandUiLayout(909, [LANE.LEFT, LANE.RIGHT], true);
 assert.equal(tallCommandUi.panel.y, 683);
 assert.equal(tallCommandUi.status.y + tallCommandUi.status.height, 893);
-assert.equal(tallCommandUi.lanes[0].y, 857);
+assert.equal(tallCommandUi.lanes[0].y, 854);
 assert.deepEqual(commandActionAt({ x: 24, y: 769 }, "units", 909, [LANE.LEFT, LANE.RIGHT], true), { type: "DEPLOY_UNIT", unitType: "scout" });
 assert.deepEqual(fullscreenActionAt({ x: 380, y: 26 }), { type: "TOGGLE_FULLSCREEN" });
 assert.equal(fullscreenActionAt({ x: 210, y: 26 }), null);

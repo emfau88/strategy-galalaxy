@@ -1,12 +1,12 @@
 import { LANE } from "../core/constants.js";
 
 export const COMMAND_UI = Object.freeze({
-  fullscreen: Object.freeze({ x: 378, y: 12, width: 34, height: 34 }),
-  pause: Object.freeze({ x: 308, y: 12, width: 30, height: 34 }),
-  sound: Object.freeze({ x: 343, y: 12, width: 30, height: 34 }),
-  titleLevel: Object.freeze({ x: 104, y: 398, width: 212, height: 32 }),
-  titleDifficulty: Object.freeze({ x: 104, y: 438, width: 212, height: 32 }),
-  titleStart: Object.freeze({ x: 104, y: 478, width: 212, height: 38 }),
+  fullscreen: Object.freeze({ x: 372, y: 9, width: 42, height: 42 }),
+  pause: Object.freeze({ x: 284, y: 9, width: 42, height: 42 }),
+  sound: Object.freeze({ x: 328, y: 9, width: 42, height: 42 }),
+  titleLevel: Object.freeze({ x: 104, y: 390, width: 212, height: 42 }),
+  titleDifficulty: Object.freeze({ x: 104, y: 438, width: 212, height: 42 }),
+  titleStart: Object.freeze({ x: 104, y: 486, width: 212, height: 46 }),
 });
 
 const freezeRect = (rect) => Object.freeze(rect);
@@ -37,7 +37,7 @@ export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT],
   const y = height - panelHeight - 8;
   const footerOffset = upgradeMenu ? 230 : 174;
   const laneWidth = laneIds.length === 1 ? 90 : 43;
-  const lanes = laneIds.map((laneId, index) => freezeRect({ laneId, x: 16 + index * (laneWidth + 4), y: y + footerOffset, width: laneWidth, height: 36 }));
+  const lanes = laneIds.map((laneId, index) => freezeRect({ laneId, x: 16 + index * (laneWidth + 4), y: y + footerOffset - 3, width: laneWidth, height: 42 }));
   const cards = (key, ids) => ids.map((id, index) => freezeRect({
     [key]: id,
     x: index % 2 ? 210 : 16,
@@ -49,9 +49,9 @@ export const commandUiLayout = (height = 760, laneIds = [LANE.LEFT, LANE.RIGHT],
     expanded: true,
     fullscreen: COMMAND_UI.fullscreen,
     panel: freezeRect({ x: 8, y, width: 404, height: panelHeight }),
-    close: freezeRect({ x: 198, y: y + 11, width: 16, height: 40 }),
-    fleetTab: freezeRect({ x: 16, y: y + 10, width: 186, height: 42 }),
-    upgradeTab: freezeRect({ x: 210, y: y + 10, width: 194, height: 42 }),
+    close: freezeRect({ x: 185, y: y + 10, width: 42, height: 42 }),
+    fleetTab: freezeRect({ x: 16, y: y + 10, width: 164, height: 42 }),
+    upgradeTab: freezeRect({ x: 232, y: y + 10, width: 172, height: 42 }),
     lanes: Object.freeze(lanes),
     undo: freezeRect({ x: 112, y: y + footerOffset, width: 58, height: 36 }),
     deploy: freezeRect({ x: 174, y: y + footerOffset, width: 126, height: 36 }),

@@ -8,7 +8,7 @@ gameplay information from increasingly detailed environment art.
 1. Damage, danger and immediate input feedback.
 2. Ship silhouette, facing and faction.
 3. Projectile body, direction and weapon family.
-4. Active structures, health and capture state.
+4. Command Carrier health and immediate launch state.
 5. Strategic landmarks and lane identity.
 6. Decorative world detail.
 
@@ -21,8 +21,8 @@ covered with extra UI.
 
 - Primary corridor: `x=100…320` around the single center lane.
 - Background behind the normal engagement band must remain predominantly deep navy.
-- Bright Sunwell and HQ material is allowed only because those structures create fixed,
-  predictable local encounters; projectile cores must remain visible across them.
+- The active core has no central Sunwell encounter, Nodes or Turrets. Bright Carrier
+  material stays at the world edges; projectile cores must remain visible across it.
 
 ### Level 2 – Twin Foundries
 
@@ -80,4 +80,3 @@ and scrolling rather than permitting smaller gameplay marks.
 - Are offscreen events understandable from the navigation rail?
 - Does opening the command dock hide only space the player intentionally traded for
   controls?
-

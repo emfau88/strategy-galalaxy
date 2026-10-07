@@ -1,6 +1,6 @@
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
 import { UNIT_DEFINITIONS } from "../data/definitions.js";
-import { commandUiLayout, overlayUiLayout } from "../ui/commandUi.js";
+import { COMMAND_UI, commandUiLayout, overlayUiLayout } from "../ui/commandUi.js";
 import { cameraNavigatorLayout } from "../ui/cameraUi.js";
 
 const C = Object.freeze({
@@ -30,7 +30,7 @@ const UPGRADE_UI = Object.freeze({
   }),
 });
 const text = (ctx, value, x, y, size, color, align = "left", weight = 700) => {
-  ctx.fillStyle = color; ctx.font = `${weight} ${size}px Inter, system-ui, sans-serif`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillText(value, x, y);
+  ctx.fillStyle = color; ctx.font = `${weight} ${Math.max(9, size)}px Inter, system-ui, sans-serif`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillText(value, x, y);
 };
 const box = (ctx, rect, fill = C.panel, stroke = C.outline, radius = 8) => {
   ctx.beginPath();
@@ -108,13 +108,13 @@ const header = (ctx, model, ui) => {
   text(ctx, incomeLabel, 18, 44, 8, C.text);
   text(ctx, "NEXT WAVE", 158, 22, 9, C.text, "center");
   text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, 158, 42, 14, C.text, "center");
-  text(ctx, `${Math.round(ratio(enemyHq) * 100)}%  RIVAL`, 300, 22, 10, C.enemy, "right");
-  miniBar(ctx, 300, 31, 92, ratio(enemyHq), C.enemy, "right");
-  text(ctx, "LIVE DEPLOY", 300, 44, 8, C.muted, "right", 600);
-  box(ctx, { x: 308, y: 12, width: 30, height: 34 }, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
-  text(ctx, model.state === MATCH_STATE.PAUSED ? "▶" : "Ⅱ", 323, 29, 12, C.text, "center");
-  box(ctx, { x: 343, y: 12, width: 30, height: 34 }, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
-  text(ctx, model.soundEnabled ? "♪" : "×", 358, 29, 13, model.soundEnabled ? C.text : C.muted, "center");
+  text(ctx, `${Math.round(ratio(enemyHq) * 100)}%  RIVAL`, 280, 22, 10, C.enemy, "right");
+  miniBar(ctx, 280, 31, 72, ratio(enemyHq), C.enemy, "right");
+  text(ctx, "LIVE DEPLOY", 280, 44, 9, C.muted, "right", 600);
+  box(ctx, COMMAND_UI.pause, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
+  text(ctx, model.state === MATCH_STATE.PAUSED ? "▶" : "Ⅱ", 305, 30, 12, C.text, "center");
+  box(ctx, COMMAND_UI.sound, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
+  text(ctx, model.soundEnabled ? "♪" : "×", 349, 30, 13, model.soundEnabled ? C.text : C.muted, "center");
   box(ctx, ui.fullscreen, "rgba(36, 68, 91, 0.82)", "rgba(190,229,239,0.4)", 7);
   text(ctx, model.fullscreenActive ? "×" : "□", 395, 29, 16, C.text, "center");
 };
@@ -247,6 +247,24 @@ const strategicNavigator = (ctx, model) => {
   }
   ctx.globalAlpha = 1;
 
+  for (const event of state.events.filter((event) => event.type === "launch" && state.time - event.time < 1.2).slice(-6)) {
+    const progress = Math.max(0, (state.time - event.time) / 1.2);
+    const origin = [...state.structures.values()].find((structure) => structure.team === event.team && structure.structureType === "hq");
+    if (!origin) continue;
+    const x = laneX(event.laneId);
+    const fromY = trackY(origin.y);
+    const toY = trackY(event.y);
+    const headY = fromY + (toY - fromY) * Math.min(1, progress * 2);
+    ctx.save();
+    ctx.globalAlpha = (1 - progress) * 0.8;
+    ctx.strokeStyle = event.team === TEAM.PLAYER ? C.player : C.enemy;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, fromY); ctx.lineTo(x, headY); ctx.stroke();
+    ctx.fillStyle = C.text;
+    ctx.beginPath(); ctx.arc(x, headY, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
   const windowTop = trackY(camera.y);
   const windowBottom = trackY(camera.y + camera.viewport.height);
   ctx.fillStyle = "rgba(255,214,121,0.055)";
@@ -266,7 +284,7 @@ const unitCard = (ctx, model, rect) => {
     unitType: rect.unitType,
   }) ?? { ok: false, reason: "UNAVAILABLE_UNIT" };
   box(ctx, rect, availability.ok ? C.card : "rgba(35, 45, 58, 0.82)", availability.ok ? C.outline : "rgba(132,151,166,0.2)", 8);
-  const role = { scout: "SCREEN", fighter: "ANTI-LIGHT", bomber: "SIEGE", frigate: "FRONTLINE" }[rect.unitType];
+  const role = { scout: "SCREEN", fighter: "ANTI-LIGHT", bomber: "HEAVY / SIEGE", frigate: "FRONTLINE" }[rect.unitType];
   drawShipIcon(ctx, model, rect.unitType, rect.x + 24, rect.y + 25, 38);
   text(ctx, def.deploymentLabel ?? def.id.toUpperCase(), rect.x + 49, rect.y + 16, 10, availability.ok ? C.text : C.muted);
   const count = def.squadSize > 1 ? ` ×${def.squadSize}` : "";
@@ -277,7 +295,7 @@ const unitCard = (ctx, model, rect) => {
       : availability.reason === "LANE_CAPACITY"
         ? `LANE FULL · NEED ${def.squadSize ?? 1} SLOTS`
         : `${role}${count} · ${def.cost} E`;
-  text(ctx, detail, rect.x + 49, rect.y + 35, 8, availability.ok ? C.gold : availability.reason === "COOLDOWN_ACTIVE" ? C.enemy : C.muted, "left", 650);
+  text(ctx, detail, rect.x + 49, rect.y + 35, 9, availability.ok ? C.gold : availability.reason === "COOLDOWN_ACTIVE" ? C.enemy : C.muted, "left", 650);
   if (availability.reason === "COOLDOWN_ACTIVE") {
     const ratio = Math.max(0, Math.min(1, availability.cooldownRemaining / def.deploymentCooldownSeconds));
     ctx.fillStyle = "rgba(255,255,255,0.08)";
@@ -375,7 +393,7 @@ const expandedCommandPanel = (ctx, model, ui) => {
   commandSelectionLink(ctx, model, ui);
   commandFrame(ctx, ui.panel, { fill: "rgba(13,29,47,0.985)", strong: true, radius: 12 });
   box(ctx, ui.close, "rgba(255,214,121,0.92)", "#fff2c7", 7);
-  text(ctx, "⌄", ui.close.x + 8, ui.close.y + 20, 12, "#23374b", "center");
+  text(ctx, "⌄", ui.close.x + ui.close.width / 2, ui.close.y + ui.close.height / 2, 16, "#23374b", "center");
   box(ctx, ui.fleetTab, model.commandMenu === "units" ? "rgba(68,91,93,0.98)" : "rgba(20,45,67,0.94)", model.commandMenu === "units" ? C.gold : "rgba(125,180,201,0.34)", 8);
   drawCommandMedallion(ctx, model, ui.fleetTab.x + 10, ui.fleetTab.y + 6, 30);
   text(ctx, "FLEET", ui.fleetTab.x + 112, ui.fleetTab.y + 21, 11, model.commandMenu === "units" ? C.text : C.muted, "center");
@@ -409,9 +427,9 @@ const title = (ctx, model) => {
   const offsetY = model.height / 2 - 380;
   const ui = commandUiLayout(model.height);
   box(ctx, ui.fullscreen, "rgba(36, 68, 91, 0.82)", "rgba(190,229,239,0.4)", 7);
-  text(ctx, model.fullscreenActive ? "×" : "□", 395, 29, 16, C.text, "center");
-  box(ctx, { x: 343, y: 12, width: 30, height: 34 }, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
-  text(ctx, model.soundEnabled ? "♪" : "×", 358, 29, 13, model.soundEnabled ? C.text : C.muted, "center");
+  text(ctx, model.fullscreenActive ? "×" : "□", 393, 30, 16, C.text, "center");
+  box(ctx, COMMAND_UI.sound, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
+  text(ctx, model.soundEnabled ? "♪" : "×", 349, 30, 13, model.soundEnabled ? C.text : C.muted, "center");
   const singleLane = model.mapDefinition?.lanes.length === 1;
   const halo = ctx.createRadialGradient(model.width / 2, 224 + offsetY, 8, model.width / 2, 224 + offsetY, 150);
   halo.addColorStop(0, "rgba(239,199,127,0.28)");
@@ -422,17 +440,18 @@ const title = (ctx, model) => {
   text(ctx, "STRATEGY", model.width / 2, 201 + offsetY, 30, C.text, "center");
   text(ctx, "GALALAXY", model.width / 2, 233 + offsetY, 30, C.text, "center");
   text(ctx, "BUILD A FLEET · HOLD THE LINE", model.width / 2, 265 + offsetY, 10, C.muted, "center", 650);
-  commandFrame(ctx, { x: 52, y: 288 + offsetY, width: model.width - 104, height: 240 }, { fill: "rgba(12,28,48,0.9)", strong: true, radius: 14 });
-  text(ctx, singleLane ? "ONE LANE · ONE SUNWELL · LIVE COMBAT" : "TWO LANES · LIVE COMBAT", model.width / 2, 315 + offsetY, 9, C.text, "center", 600);
-  text(ctx, "SWIPE THE MAP · PLAN EACH 22s WAVE", model.width / 2, 337 + offsetY, 8, C.muted, "center", 600);
+  commandFrame(ctx, { x: 52, y: 288 + offsetY, width: model.width - 104, height: 254 }, { fill: "rgba(12,28,48,0.9)", strong: true, radius: 14 });
+  text(ctx, singleLane ? "ONE LANE · LIVE FLEET COMBAT" : "TWO LANES · LIVE FLEET COMBAT", model.width / 2, 315 + offsetY, 9, C.text, "center", 600);
+  text(ctx, "SWIPE THE MAP · TAP SHIPS TO LAUNCH", model.width / 2, 337 + offsetY, 9, C.muted, "center", 600);
+  text(ctx, "FREE DRONES EVERY 22s · ENERGY FLOWS LIVE", model.width / 2, 355 + offsetY, 9, C.muted, "center", 600);
   text(ctx, "‹  MISSION  ›", model.width / 2, 382 + offsetY, 8, C.gold, "center", 650);
-  box(ctx, { x: 104, y: 398 + offsetY, width: 212, height: 32 }, "rgba(83,78,65,0.9)", "rgba(239,199,127,0.62)", 8);
-  text(ctx, `LEVEL ${model.selectedLevel ?? 1} · ${model.mapDefinition?.title ?? "ORBITAL GARDEN"}`, model.width / 2, 414 + offsetY, 10, C.gold, "center");
-  box(ctx, { ...ui.fullscreen, x: 104, y: 438 + offsetY, width: 212, height: 32 }, "rgba(37,72,93,0.82)", "rgba(190,229,239,0.32)", 8);
+  box(ctx, { ...COMMAND_UI.titleLevel, y: COMMAND_UI.titleLevel.y + offsetY }, "rgba(83,78,65,0.9)", "rgba(239,199,127,0.62)", 8);
+  text(ctx, `LEVEL ${model.selectedLevel ?? 1} · ${model.mapDefinition?.title ?? "ORBITAL GARDEN"}`, model.width / 2, 411 + offsetY, 10, C.gold, "center");
+  box(ctx, { ...COMMAND_UI.titleDifficulty, y: COMMAND_UI.titleDifficulty.y + offsetY }, "rgba(37,72,93,0.82)", "rgba(190,229,239,0.32)", 8);
   const difficulty = { cadet: "CADET · RELAXED", tactician: "TACTICIAN · NORMAL", admiral: "ADMIRAL · HARD" }[model.aiProfile] ?? "TACTICIAN · NORMAL";
-  text(ctx, difficulty, model.width / 2, 454 + offsetY, 10, C.text, "center");
-  box(ctx, { x: 104, y: 478 + offsetY, width: 212, height: 38 }, model.levelLoading ? "rgba(65,72,78,0.9)" : "rgba(54,139,145,0.88)", model.levelLoading ? C.gold : "#b8edf0", 9);
-  text(ctx, model.levelLoading ? "PREPARING MISSION…" : "START MATCH", model.width / 2, 497 + offsetY, 11, C.text, "center");
+  text(ctx, difficulty, model.width / 2, 459 + offsetY, 10, C.text, "center");
+  box(ctx, { ...COMMAND_UI.titleStart, y: COMMAND_UI.titleStart.y + offsetY }, model.levelLoading ? "rgba(65,72,78,0.9)" : "rgba(54,139,145,0.88)", model.levelLoading ? C.gold : "#b8edf0", 9);
+  text(ctx, model.levelLoading ? "PREPARING MISSION…" : "START MATCH", model.width / 2, 509 + offsetY, 11, C.text, "center");
 };
 const loading = (ctx, model) => {
   const progress = Math.max(0, Math.min(1, model.assetProgress ?? 0));
