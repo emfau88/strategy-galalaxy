@@ -2,6 +2,8 @@
 
 Stand: 7. Oktober 2026. Der Nutzer hat die Reihenfolge ausdrücklich auf **Kampagne zuerst** geändert. Das erste Paket ist lokal umgesetzt; Missionen 2–6, neue Fähigkeiten und die endgültige Balance folgen später.
 
+**Neue Richtung als isolierter Versuch:** Für „Die letzte Werft“ gilt der [separate Umsetzungsplan](LAST_SHIPYARD_EXPERIMENT_PLAN.md) mit eigenem Codebereich, Spielstand und geplantem Pages-Link. Seine sechs Missionen und neuen Mechaniken werden zunächst ausschließlich in dieser Testfassung umgesetzt. Dieses Dokument bleibt der bisherige Verbesserungsplan der bestehenden Fassung.
+
 Das Ziel: Eine Flottenschlacht auf dem Smartphone verstehen, gezielt Verstärkung schicken und die Wirkung erkennen. Die Kampagne führt neue Entscheidungen schrittweise ein. Schiffsmengen, verfügbare Klassen, Upgrades und Gegnerverhalten werden pro Mission dosiert.
 
 Ausgangspunkt ist der geprüfte Stand `e4761e2` auf `codex/quality-recovery`, der selektiv auf der alten GitHub-Basis aufbaut. Frühere lokale Arbeit bleibt gesichert. Der [Qualitätsbericht](QUALITY_RECOVERY_REPORT.md) dokumentiert diese Wiederaufnahme.
