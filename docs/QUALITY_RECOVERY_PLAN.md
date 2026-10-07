@@ -1,7 +1,7 @@
 # Strategy Galalaxy – Qualitäts- und Wiederaufnahmeplan
 
 Stand: 7. Oktober 2026  
-Status: Umsetzung läuft; Bulk 0 abgeschlossen, Kampfkorrekturen in Arbeit.  
+Status: Bulks 0–2 softwareseitig geprüft; Präsentation und Bedienung aus Bulks 3–4 umgesetzt und im Browser geprüft. Geräte-/Spielerabnahme und extreme Flottendichte bleiben offen.
 Entscheidung: Vom bestätigten alten GitHub-Stand weiterarbeiten und lokale Ergänzungen einzeln bewerten.
 
 ## 1. Ziel und verbindlicher Umfang
@@ -34,6 +34,8 @@ Eine starre gemeinsame Frontlinie ist kein eigenes Abnahmeziel. Neue Levels, Geb
 | Assets und Karten | In den sieben Zusatzcommits nicht gelöscht oder ersetzt |
 | Aktueller Live-Stand auf GitHub | Nicht unabhängig bestätigt; direkte Abfrage scheiterte an der Netzwerkverbindung |
 | Aktuelle visuelle Laufzeitabnahme | Nicht durchgeführt; Browserzugriff war nicht möglich |
+
+Die Tabelle beschreibt den historischen Audit vor der Umsetzung. GitHub HEAD und main wurden inzwischen am 7. Oktober live als `ed8802b` bestätigt; Quellstand und gebautes Spiel sind inzwischen im Browser geprüft. Der aktuelle [Qualitätsbericht](QUALITY_RECOVERY_REPORT.md) enthält die Umsetzungsergebnisse.
 
 Die folgenden Ergebnisse stammen aus tatsächlich ausgeführten Simulationen und Prüfungen. Sie ersetzen keine Geräte- oder Spielspaßabnahme.
 
@@ -71,6 +73,8 @@ Der alte Wellentakt bleibt bis zum gezielten Tempoexperiment bestehen. Frühe Le
 
 ## 4. Bulks und Abnahme
 
+Die Häkchen dokumentieren ausgeführte Implementierung und Softwareprüfungen. Die gesonderten Abnahmekriterien bleiben maßgeblich: menschliche Balancebewertung, Blind-Lesbarkeit, Handhaltung und reale Geräte sind weiterhin offen.
+
 ### Bulk 0 – Historie sichern und Ausgangsbasis herstellen
 
 **Ziel:** Ein nachvollziehbarer Ausgangspunkt, ohne lokale Arbeit zu verlieren.
@@ -91,14 +95,14 @@ Der alte Wellentakt bleibt bis zum gezielten Tempoexperiment bestehen. Frühe Le
 
 **Ziel:** Schiffe stehen sinnvoll, kämpfen tatsächlich und setzen nach einem Sieg ihren Weg fort.
 
-- [ ] Mixed-Role-Reichweitenfall, Drone-Duell, breite und schmale Lane, dichte Mischflotte, Zielverlust, Randposition und Carrier-Belagerung reproduzierbar abdecken.
-- [ ] Reichweite als euklidischen Abstand prüfen; seitliche Position und Reihenabstand gemeinsam berücksichtigen.
-- [ ] Sollpositionen an erreichbare Ziele binden. Tiefere Positionen dürfen nicht zu dauerhaft untätigen Angreifern führen; mögliche Reserveplätze werden ausdrücklich als solche behandelt.
-- [ ] Lokale, stabile Abstände und Zielbindungen verbessern, soweit die Baseline das erfordert. Keine globale Kampflinie erzwingen.
-- [ ] Rückwärtsdrift, Endlosorbits, hektische Richtungswechsel und feststeckende Überlebende prüfen und gezielt beheben.
-- [ ] Frigate-Breitseite einschließlich Ausrichtung, Feuerfreigabe und vollständiger Salve prüfen.
-- [ ] Level-1-Stalemates untersuchen: Bewegung, erreichbare Feuerpositionen, Treffer, Zielwechsel und tatsächlich verursachten Schaden zeitlich aufzeichnen.
-- [ ] Geometrische Ursachen beheben; verbleibende Economy- oder Regenerationsursachen für Bulk 2 dokumentieren.
+- [x] Mixed-Role-Reichweitenfall, Drone-Duell, breite und schmale Lane, dichte Mischflotte, Zielverlust, Randposition und Carrier-Belagerung reproduzierbar abdecken.
+- [x] Reichweite als euklidischen Abstand prüfen; seitliche Position und Reihenabstand gemeinsam berücksichtigen.
+- [x] Sollpositionen an erreichbare Ziele binden. Tiefere Positionen dürfen nicht zu dauerhaft untätigen Angreifern führen; mögliche Reserveplätze werden ausdrücklich als solche behandelt.
+- [x] Lokale, stabile Abstände und Zielbindungen verbessern, soweit die Baseline das erfordert. Keine globale Kampflinie erzwingen.
+- [x] Rückwärtsdrift, Endlosorbits, hektische Richtungswechsel und feststeckende Überlebende prüfen und gezielt beheben.
+- [x] Frigate-Breitseite einschließlich Ausrichtung, Feuerfreigabe und vollständiger Salve prüfen.
+- [x] Level-1-Stalemates untersuchen: Bewegung, erreichbare Feuerpositionen, Treffer, Zielwechsel und tatsächlich verursachten Schaden zeitlich aufzeichnen.
+- [x] Geometrische Ursachen beheben; verbleibende Economy- oder Regenerationsursachen für Bulk 2 dokumentieren.
 
 **Abnahme:** Der konkrete Reichweitenfall ist behoben und durch Verhaltenstests abgesichert. Auch im dichten Gefecht bleiben Feuerfreigabe, Lane-Zuordnung und Weiterflug intakt. Die bestehenden Cluster-Grenzen bestehen weiterhin. Es gibt keinen ungeklärten geometrisch verursachten Stillstand in der Prüfsammlung.
 
@@ -106,14 +110,14 @@ Der alte Wellentakt bleibt bis zum gezielten Tempoexperiment bestehen. Frühe Le
 
 **Ziel:** Jede Kaufoption hat einen verständlichen Zweck, und beide Karten entwickeln einen entscheidbaren Kampf.
 
-- [ ] Bomber-Zielwahl zuerst bearbeiten: erreichbare schwere Ziele berücksichtigen, bevor ein weit entfernter Carrier den lokalen Kampf überstimmt. Nicht zuerst HP oder Schaden erhöhen.
-- [ ] Rollen anhand echter Begegnungen prüfen: Scouts als schnelle Screens, Fighter als Eskorte/Anti-Light/Anti-Bomber, Bomber gegen Heavy und Strukturen, Frigate als schwerer Anker.
-- [ ] Rush, gemischte Flotte, frühe Economy und frühe Forschung mit vertauschten Seiten und Lane-Präferenzen vergleichen.
-- [ ] Unter anderem Startenergie, Einkommen, Kosten, Cooldowns, Schildregeneration und kostenlose Verstärkung untersuchen. Pro Experiment nur eine zusammenhängende Parametergruppe verändern.
-- [ ] Verbleibende Level-1-Stalemates beheben und vor der Änderung nachgewiesene Fälle erneut ausführen.
-- [ ] Tactician-/Admiral-Ergebnisse untersuchen; Schwierigkeit nach tatsächlicher Herausforderung bewerten, nicht nach Entscheidungsfrequenz allein.
-- [ ] Matchdauer, Zeit bis zum Erstkontakt, Kaufmix, Schaden nach Klasse, Einkommensinvestitionen, Timeouts und Ausgaben gegen die Baseline vergleichen.
-- [ ] Wellentakt und Heimat-Drones nur als gesonderte, begründete Experimente bewerten. Eine halbierte Matchdauer gilt nicht automatisch als Verbesserung.
+- [x] Bomber-Zielwahl zuerst bearbeiten: erreichbare schwere Ziele berücksichtigen, bevor ein weit entfernter Carrier den lokalen Kampf überstimmt. Nicht zuerst HP oder Schaden erhöhen.
+- [x] Rollen anhand echter Begegnungen prüfen: Scouts als schnelle Screens, Fighter als Eskorte/Anti-Light/Anti-Bomber, Bomber gegen Heavy und Strukturen, Frigate als schwerer Anker.
+- [x] Rush, gemischte Flotte, frühe Economy und frühe Forschung mit vertauschten Seiten und Lane-Präferenzen vergleichen.
+- [x] Unter anderem Startenergie, Einkommen, Kosten, Cooldowns, Schildregeneration und kostenlose Verstärkung untersuchen. Pro Experiment nur eine zusammenhängende Parametergruppe verändern.
+- [x] Verbleibende Level-1-Stalemates beheben und vor der Änderung nachgewiesene Fälle erneut ausführen.
+- [x] Tactician-/Admiral-Ergebnisse untersuchen; Schwierigkeit nach tatsächlicher Herausforderung bewerten, nicht nach Entscheidungsfrequenz allein.
+- [x] Matchdauer, Zeit bis zum Erstkontakt, Kaufmix, Schaden nach Klasse, Einkommensinvestitionen, Timeouts und Ausgaben gegen die Baseline vergleichen.
+- [x] Wellentakt und Heimat-Drones nur als gesonderte, begründete Experimente bewerten. Eine halbierte Matchdauer gilt nicht automatisch als Verbesserung.
 
 **Abnahme:** Die bisherigen Level-1-Timeoutfälle enden regulär oder ihr legitimer Pattfall ist nachvollziehbar belegt. Jede bezahlte Klasse hat mindestens ein nachgewiesenes Einsatzgebiet. Mehrere Ausgabenstrategien sind situativ brauchbar. Spieler und KI bleiben regelgleich. Gespiegelte Ergebnisse allein reichen nicht zur Abnahme.
 
@@ -121,13 +125,13 @@ Der alte Wellentakt bleibt bis zum gezielten Tempoexperiment bestehen. Frühe Le
 
 **Ziel:** Die vorhandenen Assets wirken als zusammenhängende Flotte mit materiellen Waffen und Treffern.
 
-- [ ] Start → Flug → Bremsen → Angriff → Treffer → Verlust → Weiterflug als vollständige Ereigniskette auf beiden Karten prüfen.
-- [ ] Düsen, Mündungen und Schilde an die tatsächlichen Hüllen und deren Drehung binden; vorhandene korrekte Hardpoints erhalten.
-- [ ] Kleine Drones, Scouts, Fighter, Bomber und Frigates nach Silhouette, Größe und Feuerprofil unterscheiden.
-- [ ] Waffenursprung, Geschosskörper und Einschlag sichtbar halten; Trails, Glow und Explosionen bei Bedarf reduzieren.
-- [ ] Dezentes Startfeedback aus dem Lokalstand isoliert erproben. Keine zusätzliche Grafik darf den korrigierten Düsenursprung verdecken.
-- [ ] Ruhige Hintergrundkorridore und strikte Draufsicht erhalten. Neue Assets erst erzeugen, wenn eine konkrete Lücke nachgewiesen ist.
-- [ ] Den [Visual Readability Contract](VISUAL_READABILITY_CONTRACT.md) am kleinsten unterstützten Viewport anwenden; veraltete Node-/Turret-Passagen für den aktiven Core-Slice bereinigen.
+- [x] Start → Flug → Bremsen → Angriff → Treffer → Verlust → Weiterflug als vollständige Ereigniskette auf beiden Karten prüfen.
+- [x] Düsen, Mündungen und Schilde an die tatsächlichen Hüllen und deren Drehung binden; vorhandene korrekte Hardpoints erhalten.
+- [x] Kleine Drones, Scouts, Fighter, Bomber und Frigates nach Silhouette, Größe und Feuerprofil unterscheiden.
+- [x] Waffenursprung, Geschosskörper und Einschlag sichtbar halten; Trails, Glow und Explosionen bei Bedarf reduzieren.
+- [x] Dezentes Startfeedback aus dem Lokalstand isoliert erproben. Keine zusätzliche Grafik darf den korrigierten Düsenursprung verdecken.
+- [x] Ruhige Hintergrundkorridore und strikte Draufsicht erhalten. Neue Assets erst erzeugen, wenn eine konkrete Lücke nachgewiesen ist.
+- [x] Den [Visual Readability Contract](VISUAL_READABILITY_CONTRACT.md) am kleinsten unterstützten Viewport anwenden; veraltete Node-/Turret-Passagen für den aktiven Core-Slice bereinigen.
 
 **Abnahme:** Bei nativer Breite von 360 Pixeln sind Klasse, Fraktion, Schütze, Ziel und Waffenrolle erkennbar. Schäden und Kills lassen sich ohne dauerhaft eingeblendete Healthbars verstehen. Frühe, gemischte und dichte Szenen belegen das; sichtbare Sprite-Stapel werden separat von Simulationsüberschneidungen bewertet.
 
@@ -135,12 +139,12 @@ Der alte Wellentakt bleibt bis zum gezielten Tempoexperiment bestehen. Frühe Le
 
 **Ziel:** Beobachtung und Entscheidung funktionieren auch mit Handhaltung und verdeckenden Fingern.
 
-- [ ] Lane-Wahl, Kauf, Cooldown und Sperrgründe auf `360×800`, `390×844`, `393×852`, `412×915` und `420×760` prüfen.
-- [ ] Fleet-/Upgrade-Wechsel, Carrier-Tap, Command-Dock, Pause, Restart und Main Menu erneut testen.
-- [ ] Gekaufte Verstärkung innerhalb der in der Vision erlaubten maximalen 1,5 Sekunden sichtbar starten lassen.
-- [ ] Scrollen und Navigator so prüfen, dass Käufe keine ungewollten Kamerabewegungen auslösen.
-- [ ] Relevante Ereignisse außerhalb des Bildschirms verständlich anzeigen und zur betroffenen Front führen.
-- [ ] Einen knappen Einstieg und verständliche Rollenbeschreibungen bereitstellen; Beschreibungen müssen zur tatsächlichen Mechanik passen.
+- [x] Lane-Wahl, Kauf, Cooldown und Sperrgründe auf `360×800`, `390×844`, `393×852`, `412×915` und `420×760` prüfen.
+- [x] Fleet-/Upgrade-Wechsel, Carrier-Tap, Command-Dock, Pause, Restart und Main Menu erneut testen.
+- [x] Gekaufte Verstärkung innerhalb der in der Vision erlaubten maximalen 1,5 Sekunden sichtbar starten lassen.
+- [x] Scrollen und Navigator so prüfen, dass Käufe keine ungewollten Kamerabewegungen auslösen.
+- [x] Relevante Ereignisse außerhalb des Bildschirms verständlich anzeigen und zur betroffenen Front führen.
+- [x] Einen knappen Einstieg und verständliche Rollenbeschreibungen bereitstellen; Beschreibungen müssen zur tatsächlichen Mechanik passen.
 
 **Abnahme:** Käufe landen zuverlässig in der gewählten Lane. Energie-/Cooldown-Gründe sind unterscheidbar. Primäre Touch-Ziele liegen vorzugsweise bei mindestens 42 Designpixeln. Öffnen und Schließen des Docks bleibt auf allen Zielgrößen sicher; die Front lässt sich nach einer Entscheidung wiederfinden.
 
@@ -152,7 +156,7 @@ Der alte Wellentakt bleibt bis zum gezielten Tempoexperiment bestehen. Frühe Le
 - [ ] Frühe, gemischte und dichte Kämpfe, Rush, Economy und Forschung spielen; mindestens einige Beobachtungen durch Spieler ohne Projekterfahrung erfassen.
 - [ ] Ladezeit, kalten Start, Assetfehler, Framezeiten, Speichertrend, längeres Spielen und thermische Verlangsamung prüfen.
 - [ ] Als anfängliches Leistungsziel 60 FPS auf dem festgelegten Referenzgerät ansetzen: p95 der gesamten Frame-Arbeitszeit möglichst unter 16,7 ms. Eine begründete 30-FPS-Untergrenze für schwächere Geräte wird explizit dokumentiert, nicht stillschweigend akzeptiert.
-- [ ] Simulation und Cooldowns müssen unabhängig von Kamera und Renderfrequenz korrekt bleiben. Kapazitätsbudgets bleiben eingehalten.
+- [x] Simulation und Cooldowns müssen unabhängig von Kamera und Renderfrequenz korrekt bleiben. Kapazitätsbudgets bleiben eingehalten.
 - [ ] Blind prüfen, ob Spieler Klassen unterscheiden, Lane-Druck erkennen, eine Verstärkung begründet wählen und deren Wirkung erklären können.
 - [ ] Nur beobachtete Restprobleme nacharbeiten; anschließend die betroffenen Szenen erneut abnehmen.
 
@@ -191,12 +195,15 @@ Für die Gameplay-Prüfung werden verschiedene Klassenkombinationen, Kaufstrateg
 
 | Arbeit | Status |
 | --- | --- |
-| Vergleich von gespeichertem Remote-Stand und lokalem Stand | durchgeführt; Live-Remote und visuelle Abnahme offen |
+| Vergleich von Remote-Stand und lokalem Stand | durchgeführt; GitHub HEAD/main am 7. Oktober live bestätigt |
 | Lokale Reichweitenregression und Zwischenstand-Pendeln | reproduziert |
 | Level-1-Timeouts auf beiden Ständen | reproduziert |
 | Dieser Wiederaufnahmeplan | erstellt |
 | Ausgangsbasis sichern und Arbeitsbranch herstellen | abgeschlossen, siehe Qualitätsbericht |
-| Bulk 1 | in Arbeit |
-| Bulks 2–6 | offen |
+| Bulk 1 | Reichweite, Bewegung und Salven softwareseitig geprüft; Cluster-Grenzen bestanden |
+| Bulk 2 | Rollen-/KI-Korrekturen geprüft; 16 reguläre Matchenden; menschliche Balancebewertung offen |
+| Bulks 3–4 | umgesetzt; zehn Browser-/Build-Kombinationen bestanden; extreme Hüllenstapel und Handhaltungs-/Blindtest offen |
+| Bulk 5 / Meilenstein A | reale Geräte, lange Sessions und neue Spieler noch offen; Software-/Kapazitätsprüfungen bestanden |
+| Bulk 6 | gemäß Plan zurückgestellt bis Meilenstein A; keine neue Gameplay-Erweiterung |
 
-**Nächster Umsetzungsschritt ist Bulk 1.** Alle Abnahmen und verbleibenden Grenzen werden im [Qualitätsbericht](QUALITY_RECOVERY_REPORT.md) fortgeschrieben. Eine reale Smartphone-Abnahme ist weiterhin offen.
+**Nächster Abnahmeschritt ist die reale Geräte-/Spielerprüfung.** Die [Geräteabnahme](DEVICE_ACCEPTANCE.md) beschreibt den gebauten Vorschau-Stand und konkrete Prüfszenen. Die Lesbarkeit extremer Flottenstapel ist dabei ausdrücklich zu bewerten und gegebenenfalls weiter zu korrigieren. Der [Qualitätsbericht](QUALITY_RECOVERY_REPORT.md) enthält die ausgeführten Nachweise. Meilenstein A und die gesamte Qualitätsabnahme sind noch nicht abgeschlossen.

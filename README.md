@@ -16,7 +16,7 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 
 ## Aktueller Spielstand
 
-Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Bulks 1 bis 8 sind technisch umgesetzt; die reale Smartphone-Abnahme bleibt offen. Die Runtime nutzt sofortiges Squad-Deployment, davon unabhängige automatische Drone-Waves und eine kontinuierlich reagierende Live-KI. Core-Maps enthalten keine Nodes oder Turrets mehr und werden von randständigen Command Carriern gerahmt.
+Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Der Qualitätsbranch `codex/quality-recovery` baut auf dem am 7. Oktober 2026 bestätigten GitHub-Stand `ed8802b` auf und übernimmt lokale Verbesserungen selektiv. Kampf-, KI- und Bedienungsfehler sind korrigiert und automatisiert geprüft. Die reale Smartphone-Abnahme und die Lesbarkeit extremer Flottendichte bleiben offen; Nachweise stehen im [Qualitätsbericht](docs/QUALITY_RECOVERY_REPORT.md). Die Runtime nutzt sofortiges Squad-Deployment, davon unabhängige automatische Drone-Waves und eine kontinuierlich reagierende Live-KI. Core-Maps enthalten keine Nodes oder Turrets und werden von randständigen Command Carriern gerahmt.
 
 - Kontinuierlicher `LIVE_MATCH` ohne Kauf-Queue, Lock-in, Refund oder bezahlte Wave-Slots.
 - Scout Wings mit drei und Fighter Wings mit zwei individuell verwundbaren Schiffen starten unmittelbar in der gewählten Lane. Bomber und Frigate bleiben Einzelschiffe; eine kurze gemeinsame Hangar-Traversal inszeniert den Launch.
@@ -71,18 +71,22 @@ Die lizenzierte Bibliothek liegt unter `assets/library/galalaxy/`. Übernommen w
 Das Projekt nutzt native Browsermodule und benötigt keinen Build-Schritt.
 
 ```powershell
-python -m http.server 8765 --directory .
+npm.cmd run dev
 ```
 
-Anschließend `http://127.0.0.1:8765/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste. Ein Tap auf den eigenen Command Carrier oder den unteren Command-Dock öffnet Fleet und Upgrades; dort werden Lane, Wings und Forschung gewählt. Der kleine Pfeil zwischen den Tabs schließt die Konsole wieder. `P` pausiert; das Pause-Menü kann fortsetzen oder zum Hauptmenü zurückkehren. Das Symbol oben rechts fordert Browser-Fullscreen an.
+Anschließend `http://127.0.0.1:7100/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste. Ein Tap auf den eigenen Command Carrier oder den unteren Command-Dock öffnet Fleet und Upgrades; dort werden Lane, Wings und Forschung gewählt. Der Pfeil zwischen den Tabs schließt die Konsole wieder. `P` pausiert; das Pause-Menü kann fortsetzen oder zum Hauptmenü zurückkehren. Das Symbol oben rechts fordert Browser-Fullscreen an.
 
 Für das schlanke GitHub-Pages-Artefakt wird `npm.cmd run build:pages` verwendet. Es kopiert Code und nur die tatsächlich aktiven Level-, Flotten-, Projektil- und VFX-Dateien nach `dist/`.
+
+`npm.cmd run preview` zeigt anschließend ausschließlich dieses gebaute Artefakt. Für reale Smartphones enthält die [Geräteabnahme](docs/DEVICE_ACCEPTANCE.md) die Startschritte und Prüfkriterien.
 
 ## Prüfen
 
 ```powershell
 npm.cmd run check
+npm.cmd run test:quality
 npm.cmd run test:stress
+npm.cmd run test:cluster
 npm.cmd run test:browser
 npm.cmd run test:pages
 npm.cmd run balance:sim -- 100
@@ -90,10 +94,13 @@ npm.cmd run balance:experiments -- 30
 npm.cmd run balance:investments -- 8
 ```
 
-Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische Waves, Economy, Upgrades, Capture-Migrationsbestand, Targeting, Kartengeometrie, dichte Flotten, Projektile, alle Runtime-Manifeste und die 516 Dateien der importierten Bibliothek ab. Der Browserlauf emuliert beide Levels auf fünf echten Mobile-Viewports und prüft Start, Schwierigkeitswahl, Live-Touch-Deployment, Pause, Sound, Kamera, Console-/Netzwerkfehler sowie einen maximal gefüllten Render-Stressfall.
+Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische Waves, Economy, Upgrades, Capture-Migrationsbestand, Targeting, Kartengeometrie, dichte Flotten, Projektile, alle Runtime-Manifeste und die 516 Dateien der importierten Bibliothek ab. Die Qualitätsmatrix vergleicht 16 deterministische Partien auf beiden Karten und Seiten. Der Browserlauf emuliert beide Levels auf fünf Mobile-Viewports und prüft Start, Schwierigkeitswahl, Live-Touch-Deployment, Pause, Sound, Kamera, Console-/Netzwerkfehler sowie einen maximal gefüllten Render-Stressfall. Das ersetzt keine Prüfung auf echten Smartphones.
 
 ## Dokumentation
 
+- [Qualitäts- und Wiederaufnahmeplan](docs/QUALITY_RECOVERY_PLAN.md)
+- [Geprüfte Änderungen und offene Qualitätsgrenzen](docs/QUALITY_RECOVERY_REPORT.md)
+- [Reale Geräteabnahme](docs/DEVICE_ACCEPTANCE.md)
 - [Verbindliche Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md)
 - [Aktuelle Core-Rework-Roadmap](IMPLEMENTATION_ROADMAP.md)
 - [Aktuelle Product-Polish-Gesamt-To-do-Liste](docs/PRODUCT_POLISH_ROADMAP.md)
@@ -109,4 +116,4 @@ Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische
 
 ## Status
 
-Bulks 1 bis 6 des neuen Core-Reworks sind abgeschlossen: Bezahlte Wings starten sofort, automatische Waves bleiben getrennt und optionale Map-Features sind vollständig isoliert. Das HUD nennt Energiefehlbetrag, Rest-Cooldown oder fehlende Lane-Slots direkt an der Unit Card. Die KI reagiert live, kann sparen und vorbereitete Pushes starten. Kampflesbarkeit, Time-to-kill, Mobile-Budgets und die Abnahme beider Levels sind als Regression-Gates verankert.
+Software-Korrekturen und Browser-/Build-Prüfung der Qualitäts-Wiederaufnahme sind durchgeführt. Alle 16 Vergleichspartien enden regulär, beide Karten bestehen die Bedienungsprüfungen auf fünf Viewports. Die bisherigen lokalen Commits bleiben unverändert gesichert. Meilenstein A ist wegen ausstehender Geräte-/Spielerabnahme und verbleibender dichter Hüllenstapel noch nicht erreicht; zusätzliche Gameplay-Systeme aus Bulk 6 bleiben zurückgestellt. Dieser Branch ist lokal und noch nicht veröffentlicht; der öffentliche Spiellink zeigt weiterhin den bisherigen GitHub-Stand.
