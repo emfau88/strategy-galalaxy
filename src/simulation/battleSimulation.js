@@ -412,6 +412,7 @@ export class BattleSimulation {
     tactical.speedLimit = motionDefinition.speed * (COMBAT_SPEED_SCALE[unit.unitType] ?? 0.55);
     tactical.separationVx = separationVx;
     this.steerUnit(unit, tactical, motionDefinition, dt, tactical.heading);
+    if (Math.abs(unit.vx) < 3 && Math.abs(tactical.x - unit.x) < 6) unit.vx = 0;
     this.constrainToLane(unit);
     this.observeUnitMobility(unit, startX, startY, dt);
     const aligned = !definition.broadside || Math.abs(angleDelta(unit.heading, tactical.heading)) <= 0.32;
@@ -453,31 +454,42 @@ export class BattleSimulation {
     const lane = this.state.map.lanes.find((item) => item.id === unit.laneId);
     const laneCenter = lane?.centerX ?? unit.x - unit.slotOffsetX;
     const targetBearing = Math.atan2(target.y - unit.y, target.x - unit.x);
+    // A slot is useful only if the weapon can reach from it. Clamp to the
+    // intersection of the lane and the target's range disc, including lateral
+    // displacement and rear rows. The margin allows separation during combat.
+    const inset = definition.collisionRadius + 5;
+    const minX = laneCenter - (lane?.width ?? 160) / 2 + inset;
+    const maxX = laneCenter + (lane?.width ?? 160) / 2 - inset;
+    const firingRadius = Math.min(definition.attackRange * 0.96, standoff + combatDepth * 0.08);
+    const reachablePosition = (x, y) => {
+      const lo = Math.max(minX, target.x - firingRadius * 0.92);
+      const hi = Math.min(maxX, target.x + firingRadius * 0.92);
+      const reachableX = lo <= hi ? clamp(x, lo, hi) : clamp(target.x, minX, maxX);
+      const forward = Math.sqrt(Math.max(0, firingRadius ** 2 - (reachableX - target.x) ** 2));
+      return { x: reachableX, y: target.y + clamp(y - target.y, -forward, forward) };
+    };
     if (definition.broadside) {
       const broadsideOffset = Math.min(standoff * 0.88, (lane?.width ?? standoff * 2) * 0.32);
       const forwardOffset = Math.sqrt(Math.max(0, standoff ** 2 - broadsideOffset ** 2));
       const broadsideSide = combatSlot?.broadsideSide ?? unit.broadsideSide;
       return {
-        x: laneCenter + broadsideSide * broadsideOffset,
-        y: target.y - direction * (forwardOffset + (combatSlot?.broadsideDepth ?? combatDepth)),
+        ...reachablePosition(laneCenter + broadsideSide * broadsideOffset,
+          target.y - direction * (forwardOffset + (combatSlot?.broadsideDepth ?? combatDepth))),
         heading: targetBearing + broadsideSide * direction * Math.PI / 2,
       };
     }
-    const distance = Math.hypot(target.x - unit.x, target.y - unit.y);
-    if (distance < standoff * 0.72) {
-      const breakDistance = Math.min(36, Math.max(14, (standoff - distance) * 0.58));
-      return {
-        x: clamp(laneCenter + combatLateral + (combatSlot?.broadsideSide ?? unit.broadsideSide) * breakDistance, laneCenter - (lane?.width ?? 160) * 0.38, laneCenter + (lane?.width ?? 160) * 0.38),
-        y: unit.y,
-        heading: targetBearing,
-        preventReverseHeading: targetBearing,
-      };
-    }
+    const destination = reachablePosition(laneCenter + combatLateral, target.y - direction * (standoff + combatDepth));
+    const targetDistance = Math.hypot(target.x - unit.x, target.y - unit.y);
+    const controlBearing = targetDistance > 8 ? targetBearing : direction * Math.PI / 2;
+    const along = (destination.x - unit.x) * Math.cos(controlBearing) + (destination.y - unit.y) * Math.sin(controlBearing);
+    // Only use this repair now that the range fix reproduces threshold chatter:
+    // a fixed-sided, continuous escape avoids toggling between hold and retreat.
+    const push = Math.min(36, Math.max(0, -along) * 0.6);
+    const side = combatSlot?.broadsideSide ?? unit.broadsideSide;
     return {
-      x: laneCenter + combatLateral,
-      y: target.y - direction * (standoff + combatDepth),
-      heading: targetBearing,
-      preventReverseHeading: targetBearing,
+      ...reachablePosition(destination.x + side * push, destination.y),
+      heading: controlBearing,
+      preventReverseHeading: controlBearing,
     };
   }
 

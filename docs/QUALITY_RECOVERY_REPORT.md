@@ -32,6 +32,14 @@ Die Browser-Framewerte sind Desktop-Messungen unter paralleler Diagnoselast, kei
 
 Prüfartefakte liegen unter `tmp/quality-recovery/baseline/`; Browserbilder und Metadaten unter `tmp/quality-recovery/baseline/browser/`. Das Verzeichnis ist absichtlich nicht versioniert. Bei der visuellen Prüfung waren Flottenfamilien, Waffen und Hintergründe geladen; die Darstellung zeigt zugleich enge Sprite-Gruppen. Sie ersetzt keinen Blindtest.
 
+## Bulk 1: erreichbare Feuerpositionen
+
+Der alte Stand setzt hintere Reihen teilweise außerhalb ihrer Waffenreichweite ab. Alle aktiven Feuerpositionen berücksichtigen jetzt seitlichen Abstand, Lane-Grenzen und tatsächliche Reichweite gemeinsam. Organische, lokale Gruppen bleiben erhalten. Eine kontinuierliche Ansteuerung mit stabiler Ausweichseite verhindert das dabei zunächst reproduzierte seitliche Pendeln; dafür wurde das Prinzip aus `8b9ee40` gezielt angepasst.
+
+36 gespiegelte Szenarien auf beiden Karten prüfen gemischte Klassen, Randziele, hintere Mitglieder und Carrier: Alle Schiffe feuern und verursachen Schaden. Ein Verhaltenstest prüft Weiterflug nach Zielverlust. Foundation und Stress bestanden. Der Cluster-Test besteht mit maximal neun Richtungswechseln, 107,5 mittleren und 148 maximalen Überschneidungen. Das ist keine generelle Beseitigung sichtbarer Stapel (Baseline-Mittel 105,6).
+
+Die ersten vier Vergleichspartien mit korrigierter Geometrie endeten nach 126,5–320,5 Sekunden; beide früher feststehenden Level-1-Partien endeten. Bomber feuerten weiterhin selten oder gar nicht: Ihre Zielpriorität bevorzugt den entfernten Carrier vor lokalen Fregatten. Dieser separate Rollenfehler wird in Bulk 2 bearbeitet. Eine breitere Balanceprüfung folgt dort.
+
 ## Noch offene externe Abnahme
 
 Reale Smartphones, Handhaltung, thermische Drosselung, längere Sessions und Beobachtungen neuer Spieler stehen aus. Meilenstein A ist erst nach diesen Nachweisen erreicht. Bulk 6 mit neuen Gameplay-Systemen bleibt bis dahin zurückgestellt.
