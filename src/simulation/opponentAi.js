@@ -7,8 +7,11 @@ export const INVESTMENT_BIASES = Object.freeze({ BALANCED: "balanced", FLEET: "f
 
 const unitStrength = (unit) => {
   const definition = UNIT_DEFINITIONS[unit.unitType];
-  if (!definition || !unit.alive) return 0;
-  return (definition.damage * 4 + definition.maxHp * 0.12 + definition.attackRange * 0.08) * (unit.hp / unit.maxHp);
+  if (!definition || !unit.alive || unit.launching) return 0;
+  const remainingDefense = unit.hp + (unit.shield ?? 0);
+  const maximumDefense = unit.maxHp + (unit.maxShield ?? 0);
+  return (definition.damage / definition.fireInterval * 4 + maximumDefense * 0.12 + definition.attackRange * 0.08)
+    * (remainingDefense / maximumDefense);
 };
 
 const turretStrength = (state, team, laneId) => {
@@ -55,7 +58,7 @@ export class OpponentAi {
     const friendlyTurret = usesTurrets ? turretStrength(state, this.team, laneId) : 0;
     const enemyTurret = usesTurrets ? turretStrength(state, enemyTeam, laneId) : 0;
     const node = usesCaptureNodes ? [...state.nodes.values()].find((value) => value.laneId === laneId) : null;
-    const composition = (ids) => ids.map((id) => state.units.get(id)).filter((unit) => unit?.alive).reduce((counts, unit) => {
+    const composition = (ids) => ids.map((id) => state.units.get(id)).filter((unit) => unit?.alive && !unit.launching).reduce((counts, unit) => {
       counts[unit.unitType] = (counts[unit.unitType] ?? 0) + 1;
       return counts;
     }, { drone: 0, scout: 0, fighter: 0, bomber: 0, frigate: 0 });
@@ -85,6 +88,12 @@ export class OpponentAi {
     const purchases = [];
     const upgrades = [];
     const economy = director.economy.get(this.team);
+    const home = [...director.simulation.state.structures.values()].find((structure) => structure.team === this.team && structure.structureType === "hq");
+    const emergency = defense.threat > 20 && [...director.simulation.state.units.values()].some((unit) => (
+      unit.alive && !unit.launching && unit.team !== this.team && unit.laneId === defense.laneId
+      && home && Math.hypot(unit.x - home.x, unit.y - home.y) < STRUCTURE_DEFINITIONS.hq.attackRange
+    ));
+    if (emergency) { this.pushPlan = null; this.upgradePlan = null; }
     const buy = (upgradeId, reserve) => {
       const cost = director.economy.upgradeCost(this.team, upgradeId);
       if (cost !== null && economy.energy >= cost + reserve) {
@@ -138,12 +147,17 @@ export class OpponentAi {
       return ["weapons", "shield", "fireRate", "economy"].find(available) ?? null;
     };
 
+    // A beginner deliberately leaves reaction windows, using the same budget.
+    if (this.profile === AI_PROFILES.CADET && this.decisionNumber > 1 && this.decisionNumber % 4 !== 0) return finish("waiting");
+
     // Every few live decisions the AI banks Energy for a two-part push. This is
     // deterministic, visible through a quiet saving window, and uses normal
     // player-facing deployment commands when the reserve is ready.
-    const pushCadence = { [AI_PROFILES.CADET]: 15, [AI_PROFILES.TACTICIAN]: 10, [AI_PROFILES.ADMIRAL]: 8 }[this.profile];
-    if (!this.pushPlan && !this.upgradePlan && this.decisionNumber > 1 && this.decisionNumber % pushCadence === 0) {
-      const unitTypes = this.profile === AI_PROFILES.CADET ? ["bomber", "fighter"] : ["frigate", "fighter"];
+    const interval = this.decisionIntervalSeconds(director.config.timing.aiDecisionIntervalSeconds);
+    const pushCadence = this.profile === AI_PROFILES.CADET ? 15 : Math.max(1, Math.round(15 / interval));
+    if (!emergency && !this.pushPlan && !this.upgradePlan && this.decisionNumber > 1 && this.decisionNumber % pushCadence === 0) {
+      const unitTypes = this.profile === AI_PROFILES.CADET ? ["scout", "fighter"]
+        : push.enemyComposition.frigate > push.friendlyComposition.bomber ? ["bomber", "fighter"] : ["frigate", "fighter"];
       this.pushPlan = {
         laneId: push.laneId,
         unitTypes,
@@ -162,8 +176,8 @@ export class OpponentAi {
 
     // Research is a real plan, not a one-tick impulse: once selected the AI
     // visibly banks Energy and buys through the exact same command as the player.
-    const upgradeCadence = this.profile === AI_PROFILES.ADMIRAL ? 7 : 9;
-    if (!this.upgradePlan && this.profile !== AI_PROFILES.CADET && this.investmentBias !== INVESTMENT_BIASES.FLEET && this.decisionNumber % upgradeCadence === 0) {
+    const upgradeCadence = Math.max(1, Math.round(13.5 / interval));
+    if (!emergency && !this.upgradePlan && this.profile !== AI_PROFILES.CADET && this.investmentBias !== INVESTMENT_BIASES.FLEET && this.decisionNumber % upgradeCadence === 0) {
       const upgradeId = defense.threat > 70 && isMapFeatureEnabled(director.mapDefinition, "defensiveTurrets")
         ? "turret"
         : nextUpgrade();
@@ -185,13 +199,13 @@ export class OpponentAi {
 
     const defenseChoice = defense.enemyComposition.bomber > defense.friendlyComposition.fighter
       ? "fighter"
-      : defense.enemyComposition.frigate > defense.friendlyComposition.bomber && economy.energy >= UNIT_DEFINITIONS.bomber.cost + 80
+      : defense.enemyComposition.frigate > defense.friendlyComposition.bomber
         ? "bomber"
         : economy.energy >= UNIT_DEFINITIONS.frigate.cost + 90 && defense.threat > 35 ? "frigate" : "fighter";
     const desiredLane = defense.threat > 20 ? defense.laneId : push.laneId;
-    const desiredType = defense.threat > 20 ? defenseChoice
+    const desiredType = this.profile === AI_PROFILES.CADET ? (this.decisionNumber % 3 === 0 ? "scout" : "fighter") : defense.threat > 20 ? defenseChoice
       : push.enemyComposition.frigate > push.friendlyComposition.bomber ? "bomber"
-        : this.decisionNumber % 3 === 0 ? "scout" : "fighter";
+        : this.profile !== AI_PROFILES.ADMIRAL && this.decisionNumber % 3 === 0 ? "scout" : "fighter";
     const availability = director.liveDeployment.availability({
       simulation: director.simulation,
       economy: director.economy,
@@ -204,7 +218,10 @@ export class OpponentAi {
     }
     if (availability.ok) deploy(desiredLane, desiredType);
     else {
-      const fallback = ["fighter", "scout", "bomber"].find((unitType) => director.liveDeployment.availability({
+      const fallbackTypes = this.profile === AI_PROFILES.ADMIRAL
+        ? (defense.enemyComposition.frigate > defense.friendlyComposition.bomber ? ["fighter", "bomber"] : ["fighter"])
+        : ["fighter", "scout", "bomber"];
+      const fallback = fallbackTypes.find((unitType) => director.liveDeployment.availability({
         simulation: director.simulation,
         economy: director.economy,
         team: this.team,

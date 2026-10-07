@@ -4,6 +4,8 @@ import { TEAM } from "../src/core/constants.js";
 import { ORBITAL_GARDEN, CLASSIC_LANES, UNIT_DEFINITIONS } from "../src/data/definitions.js";
 import { BattleSimulation } from "../src/simulation/battleSimulation.js";
 import { createBattleState } from "../src/simulation/battleState.js";
+import { planUnitTargets } from "../src/simulation/targeting.js";
+import { MatchDirector } from "../src/simulation/matchDirector.js";
 
 let scenarios = 0;
 for (const map of [ORBITAL_GARDEN, CLASSIC_LANES]) for (const lane of map.lanes) for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
@@ -37,6 +39,9 @@ for (const map of [ORBITAL_GARDEN, CLASSIC_LANES]) for (const lane of map.lanes)
     }
     assert.ok(members.every((unit) => Number.isFinite(unit.lastShotAt)), "all roles and rear members actually fire from the assigned formation");
     assert.ok(target.hp < target.maxHp, "the formation delivers damage, not just nominal firing positions");
+    for (const type of ["scout_pulse", "fighter_laser", "siege_missile", "heavy_cannon"]) {
+      assert.ok(simulation.state.events.some((event) => event.type === "hit" && event.projectileType === type && event.hullDamage > 0), `${type} actually hits the assigned target`);
+    }
     scenarios += 1;
   }
 }
@@ -51,3 +56,61 @@ const before = survivor.y;
 for (let i = 0; i < 240; i += 1) advance.step(1 / 60);
 assert.ok(survivor.y < before - 20, "surviving ships resume advancing after target loss");
 console.log(`Combat geometry and actual fire verified in ${scenarios} mirrored ship/structure scenarios; target-loss advance passed.`);
+
+for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
+  const simulation = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
+  const other = team === TEAM.PLAYER ? TEAM.ENEMY : TEAM.PLAYER;
+  const direction = team === TEAM.PLAYER ? -1 : 1;
+  const bomber = simulation.spawnUnit(team, lane.id, "bomber", { x: 210, y: 590 });
+  const heavy = simulation.spawnUnit(other, lane.id, "frigate", { x: 210, y: 590 + direction * 110 });
+  const light = simulation.spawnUnit(other, lane.id, "fighter", { x: 220, y: 590 + direction * 70 });
+  assert.equal(planUnitTargets(simulation.state).get(bomber.id), heavy.id, "bomber counters the local heavy ship before a distant carrier");
+  heavy.alive = false;
+  assert.equal(planUnitTargets(simulation.state).get(bomber.id), light.id, "bomber engages the remaining local front instead of chasing a distant carrier");
+  light.alive = false;
+  const carrier = [...simulation.state.structures.values()].find((s) => s.team === other);
+  assert.equal(planUnitTargets(simulation.state).get(bomber.id), carrier.id, "bomber advances to siege the carrier after the local front clears");
+}
+console.log("Mirrored bomber heavy-target, fallback and carrier advance checks passed.");
+
+const emergency = new MatchDirector({ mapDefinition: ORBITAL_GARDEN });
+emergency.start();
+for (let i = 0; i < 8; i += 1) emergency.simulation.spawnUnit(TEAM.PLAYER, lane.id, "fighter", { x: 210 + i * 4, y: 100, spawnCycle: 800 + i });
+emergency.liveDeployment.advance(10);
+emergency.economy.get(TEAM.ENEMY).energy = 150;
+emergency.ai.upgradePlan = { upgradeId: "economy", targetEnergy: 310 };
+const response = emergency.ai.plan(emergency).decision;
+assert.ok(response.purchases.length > 0 && response.upgrades.length === 0, "AI interrupts an investment to reinforce an immediately threatened carrier");
+assert.equal(emergency.ai.upgradePlan, null);
+assert.equal(emergency.economy.get(TEAM.ENEMY).energy, 60, "emergency reinforcement still pays the normal player cost");
+console.log("Carrier emergency interrupts banking and uses normal deployment costs.");
+
+const spacing = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
+const left = spacing.spawnUnit(TEAM.PLAYER, lane.id, "fighter", { x: 200, y: 650, spawnCycle: 901 });
+const right = spacing.spawnUnit(TEAM.PLAYER, lane.id, "fighter", { x: 220, y: 660, spawnCycle: 902 });
+spacing.combatSlots.set(left.id, { lateral: 44 });
+spacing.combatSlots.set(right.id, { lateral: -44 });
+const separated = spacing.resolveLaneSpacing(1 / 60);
+assert.ok(separated.get(left.id) < 0 && separated.get(right.id) > 0, "independent target-local slot signs never pull overlapping allies together");
+assert.ok(left.separationVy < 0 && right.separationVy > 0, "depth overlaps receive opposing spacing pressure");
+
+const opening = new MatchDirector({ mapDefinition: ORBITAL_GARDEN });
+opening.start();
+assert.equal(opening.ai.laneAssessment(opening, lane.id).threat, 0, "still-launching purchases cannot bias sequential opening decisions");
+const launchEvents = opening.simulation.state.events.filter((event) => event.type === "launch");
+assert.equal(launchEvents.length, 1, "only the paid opening emits navigator launch feedback");
+const launchCount = launchEvents.length;
+opening.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.ENEMY, laneId: lane.id, unitType: "fighter" });
+assert.equal(opening.simulation.state.events.filter((event) => event.type === "launch").length, launchCount, "a rejected purchase never announces a launch");
+console.log("Overlap direction, unbiased launch assessment and successful-only launch feedback passed.");
+
+const birthOrder = new BattleSimulation({ state: createBattleState({ map: ORBITAL_GARDEN }) });
+for (let i = 0; i < 8; i += 1) birthOrder.state.ids.next();
+const older = birthOrder.spawnUnit(TEAM.PLAYER, lane.id, "fighter", { x: 210, y: 650 });
+const newer = birthOrder.spawnUnit(TEAM.PLAYER, lane.id, "fighter", { x: 210, y: 650 });
+assert.equal(older.id, "entity-9");
+assert.equal(newer.id, "entity-10");
+const orderedSlots = birthOrder.combatSlotsFor(new Map([[older.id, "enemy-hq"], [newer.id, "enemy-hq"]]));
+assert.equal(orderedSlots.get(older.id).lateral, 0, "the older ship keeps first claim when IDs cross a decimal boundary");
+assert.notEqual(orderedSlots.get(newer.id).lateral, 0);
+console.log("Decimal ID boundaries preserve chronological formation claims.");

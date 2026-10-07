@@ -2,7 +2,7 @@ import { CONFIG } from "../config.js";
 import { PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
 import { LANE, TEAM } from "../core/constants.js";
 import { addProjectileToState, addUnitToState, createBattleState, emitSimulationEvent, enemyOf, laneFor, removeDeadEntities } from "./battleState.js";
-import { createProjectile, createUnit, UNIT_STATE } from "./entities.js";
+import { compareUnitOrder, createProjectile, createUnit, UNIT_STATE } from "./entities.js";
 import { acquireStructureTarget, acquireUnitTarget, getEntity, inRange, planUnitTargets } from "./targeting.js";
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -45,6 +45,8 @@ const COMBAT_COLUMNS = Object.freeze([0, -1, 1]);
 const TARGET_PLAN_INTERVAL_STEPS = 12;
 const SEPARATION_RESPONSE = 9;
 const SEPARATION_SPEED_RATIO = 0.42;
+const COMBAT_AXIS_SEPARATION_RATIO = 0.3;
+const COMBAT_SPACING_RETREAT_RATIO = 0.18;
 
 const squadIdFor = (team, laneId, spawnCycle) => `${team}:${laneId}:${spawnCycle}`;
 const vectorLimit = (x, y, maximum) => {
@@ -251,10 +253,11 @@ export class BattleSimulation {
 
   resolveLaneSpacing(dt = this.config.timing.fixedStepSeconds) {
     const requested = new Map();
+    const requestedY = new Map();
     for (const lane of this.state.lanes.values()) {
       const laneDefinition = this.state.map.lanes.find((item) => item.id === lane.id);
       for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
-        const units = lane.unitIds.get(team).map((id) => this.state.units.get(id)).filter((unit) => unit?.alive && !unit.launching).sort((left, right) => left.y - right.y || left.id.localeCompare(right.id));
+        const units = lane.unitIds.get(team).map((id) => this.state.units.get(id)).filter((unit) => unit?.alive && !unit.launching).sort((left, right) => left.y - right.y || compareUnitOrder(left, right));
         for (let first = 0; first < units.length; first += 1) {
           for (let second = first + 1; second < units.length; second += 1) {
             const left = units[first];
@@ -266,13 +269,11 @@ export class BattleSimulation {
             const dy = right.y - left.y;
             const current = Math.hypot(dx, dy);
             if (current >= minimum) continue;
-            const leftSlot = this.combatSlots.get(left.id)?.lateral ?? left.slotOffsetX;
-            const rightSlot = this.combatSlots.get(right.id)?.lateral ?? right.slotOffsetX;
-            const direction = Math.abs(rightSlot - leftSlot) > 0.5
-              ? Math.sign(rightSlot - leftSlot)
-              : Math.abs(dx) > 0.5
-                ? Math.sign(dx)
-                : left.id.localeCompare(right.id) < 0 ? 1 : -1;
+            // Claims are local to different targets and cannot order ships
+            // globally. Separate their actual hull positions, never pull two
+            // overlapping hulls together because their local slot signs differ.
+            const direction = Math.abs(dx) > 0.5
+              ? Math.sign(dx) : compareUnitOrder(left, right) < 0 ? 1 : -1;
             const overlap = 1 - current / Math.max(1, minimum);
             const leftMass = leftSpacing ** 2;
             const rightMass = rightSpacing ** 2;
@@ -280,6 +281,9 @@ export class BattleSimulation {
             const speed = minimum * overlap * 2.4;
             requested.set(left.id, (requested.get(left.id) ?? 0) - direction * speed * rightMass / totalMass);
             requested.set(right.id, (requested.get(right.id) ?? 0) + direction * speed * leftMass / totalMass);
+            const axisPressure = current > 0.5 ? dy / current * speed : 0;
+            requestedY.set(left.id, (requestedY.get(left.id) ?? 0) - axisPressure * rightMass / totalMass);
+            requestedY.set(right.id, (requestedY.get(right.id) ?? 0) + axisPressure * leftMass / totalMass);
           }
         }
         const minX = laneDefinition.centerX - laneDefinition.width / 2;
@@ -293,6 +297,8 @@ export class BattleSimulation {
           else if (target > 0) target *= clamp(((maxX - inset) - unit.x) / boundaryFade, 0, 1);
           const response = 1 - Math.exp(-SEPARATION_RESPONSE * dt);
           unit.separationVx += (target - (unit.separationVx ?? 0)) * response;
+          const axisTarget = clamp(requestedY.get(unit.id) ?? 0, -definition.speed * COMBAT_AXIS_SEPARATION_RATIO, definition.speed * COMBAT_AXIS_SEPARATION_RATIO);
+          unit.separationVy = (unit.separationVy ?? 0) + (axisTarget - (unit.separationVy ?? 0)) * response;
           if (Math.abs(unit.separationVx) < 0.01 && target === 0) unit.separationVx = 0;
         }
       }
@@ -313,7 +319,7 @@ export class BattleSimulation {
     const slots = new Map();
     const activeClaims = new Map();
     for (const [groupKey, members] of groups) {
-      members.sort((left, right) => left.id.localeCompare(right.id));
+      members.sort(compareUnitOrder);
       const occupied = new Set();
       const slotIndexFor = new Map();
       for (const unit of members) {
@@ -411,6 +417,10 @@ export class BattleSimulation {
     const tactical = this.tacticalPosition(unit, targetPosition, definition, combatSlots?.get(unit.id));
     tactical.speedLimit = motionDefinition.speed * (COMBAT_SPEED_SCALE[unit.unitType] ?? 0.55);
     tactical.separationVx = separationVx;
+    tactical.separationVy = unit.separationVy ?? 0;
+    // Only real friendly overlap permits a slow spacing step away from a
+    // target. Ordinary combat steering still cannot produce reverse drift.
+    tactical.spacingRetreat = Math.abs(tactical.separationVy) > 0.5;
     this.steerUnit(unit, tactical, motionDefinition, dt, tactical.heading);
     if (Math.abs(unit.vx) < 3 && Math.abs(tactical.x - unit.x) < 6) unit.vx = 0;
     this.constrainToLane(unit);
@@ -473,12 +483,12 @@ export class BattleSimulation {
       const forwardOffset = Math.sqrt(Math.max(0, standoff ** 2 - broadsideOffset ** 2));
       const broadsideSide = combatSlot?.broadsideSide ?? unit.broadsideSide;
       return {
-        ...reachablePosition(laneCenter + broadsideSide * broadsideOffset,
+        ...reachablePosition(target.x + broadsideSide * broadsideOffset,
           target.y - direction * (forwardOffset + (combatSlot?.broadsideDepth ?? combatDepth))),
         heading: targetBearing + broadsideSide * direction * Math.PI / 2,
       };
     }
-    const destination = reachablePosition(laneCenter + combatLateral, target.y - direction * (standoff + combatDepth));
+    const destination = reachablePosition(target.x + combatLateral, target.y - direction * (standoff + combatDepth));
     const targetDistance = Math.hypot(target.x - unit.x, target.y - unit.y);
     const controlBearing = targetDistance > 8 ? targetBearing : direction * Math.PI / 2;
     const along = (destination.x - unit.x) * Math.cos(controlBearing) + (destination.y - unit.y) * Math.sin(controlBearing);
@@ -506,13 +516,15 @@ export class BattleSimulation {
       desiredVy += dy / magnitude * correctionSpeed;
     }
     desiredVx += destination.separationVx ?? 0;
+    desiredVy += destination.separationVy ?? 0;
     if (Number.isFinite(destination.preventReverseHeading)) {
       const forwardX = Math.cos(destination.preventReverseHeading);
       const forwardY = Math.sin(destination.preventReverseHeading);
       const reverseComponent = desiredVx * forwardX + desiredVy * forwardY;
-      if (reverseComponent < 0) {
-        desiredVx -= forwardX * reverseComponent;
-        desiredVy -= forwardY * reverseComponent;
+      const retreatLimit = destination.spacingRetreat ? -definition.speed * COMBAT_SPACING_RETREAT_RATIO : 0;
+      if (reverseComponent < retreatLimit) {
+        desiredVx -= forwardX * (reverseComponent - retreatLimit);
+        desiredVy -= forwardY * (reverseComponent - retreatLimit);
       }
     }
     const desired = vectorLimit(desiredVx, desiredVy, speedLimit);
@@ -523,9 +535,10 @@ export class BattleSimulation {
       const forwardX = Math.cos(destination.preventReverseHeading);
       const forwardY = Math.sin(destination.preventReverseHeading);
       const reverseComponent = unit.vx * forwardX + unit.vy * forwardY;
-      if (reverseComponent < 0) {
-        unit.vx -= forwardX * reverseComponent;
-        unit.vy -= forwardY * reverseComponent;
+      const retreatLimit = destination.spacingRetreat ? -definition.speed * COMBAT_SPACING_RETREAT_RATIO : 0;
+      if (reverseComponent < retreatLimit) {
+        unit.vx -= forwardX * (reverseComponent - retreatLimit);
+        unit.vy -= forwardY * (reverseComponent - retreatLimit);
       }
     }
     unit.x += unit.vx * dt;

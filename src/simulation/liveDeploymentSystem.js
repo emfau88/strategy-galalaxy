@@ -1,4 +1,5 @@
 import { TEAM } from "../core/constants.js";
+import { emitSimulationEvent } from "./battleState.js";
 import { UNIT_DEFINITIONS } from "../data/definitions.js";
 
 const teams = Object.freeze([TEAM.PLAYER, TEAM.ENEMY]);
@@ -92,6 +93,10 @@ export class LiveDeploymentSystem {
     economy.recordFleetPurchase(team, definition.cost);
     this.cooldowns.get(team).set(unitType, definition.deploymentCooldownSeconds ?? 0);
     this.nextFormationSequence += 1;
+    emitSimulationEvent(simulation.state, {
+      type: "launch", team, laneId,
+      x: spawned[0].launchTargetX, y: spawned[0].launchTargetY,
+    });
     this.lastDeployment = {
       team,
       laneId,

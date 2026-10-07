@@ -1,7 +1,7 @@
 import { STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
 import { TEAM } from "../core/constants.js";
 import { enemyOf, laneFor } from "./battleState.js";
-import { UNIT_STATE } from "./entities.js";
+import { compareUnitOrder, UNIT_STATE } from "./entities.js";
 
 const squaredDistance = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 const inRange = (a, b, range) => squaredDistance(a, b) <= range ** 2 + 1e-6;
@@ -17,9 +17,9 @@ const isHostileUnitAhead = (unit, candidate, positions = null) => (
 const rolePriority = (unit, candidate) => {
   const type = candidate.unitType;
   if (unit.unitType === "bomber") {
-    if (candidate.structureType === "turret") return 0;
-    if (candidate.structureType === "hq") return 1;
-    if (type === "frigate") return 2;
+    if (type === "frigate") return 0;
+    if (candidate.structureType === "turret") return 1;
+    if (candidate.structureType === "hq") return 2;
     return 8;
   }
   if (unit.unitType === "fighter") {
@@ -78,7 +78,11 @@ const unitTargetCandidates = (state, unit, positions = null) => {
     && rolePriority(unit, current) <= 2
     && !candidates.some((candidate) => candidate.id === current.id)) candidates.push(current);
   const structureTarget = nextStructureTarget(state, unit);
-  if (unit.unitType === "bomber" && structureTarget && !candidates.some((candidate) => candidate.id === structureTarget.id)) candidates.push(structureTarget);
+  // Siege preference applies to reachable structures, never to a carrier beyond
+  // the current hostile front. Otherwise bombers sail through local heavy ships.
+  if (unit.unitType === "bomber" && structureTarget
+    && inRange(positioned(unit, positions), positioned(structureTarget, positions), definition.attackRange)
+    && !candidates.some((candidate) => candidate.id === structureTarget.id)) candidates.push(structureTarget);
   if (candidates.length) return candidates;
   if (unit.unitType === "scout") {
     const node = [...state.nodes.values()].find((item) => item.laneId === unit.laneId);
@@ -98,7 +102,7 @@ export const planUnitTargets = (state, positions = null) => {
     .filter((unit) => unit.alive && !unit.launching)
     .sort((left, right) => left.team.localeCompare(right.team)
       || left.laneId.localeCompare(right.laneId)
-      || left.id.localeCompare(right.id));
+      || compareUnitOrder(left, right));
   for (const unit of attackers) {
     const candidates = unitTargetCandidates(state, unit, positions);
     candidates.sort((left, right) => {
@@ -108,7 +112,7 @@ export const planUnitTargets = (state, positions = null) => {
       const rightLoad = (targetLoads.get(right.id) ?? 0) / targetCapacity(right) - (right.id === unit.targetId ? 0.2 : 0);
       return leftLoad - rightLoad
         || squaredDistance(positioned(unit, positions), positioned(left, positions)) - squaredDistance(positioned(unit, positions), positioned(right, positions))
-        || left.id.localeCompare(right.id);
+        || compareUnitOrder(left, right);
     });
     const selected = candidates[0] ?? null;
     assignments.set(unit.id, selected?.id ?? null);
@@ -123,7 +127,7 @@ export const acquireUnitTarget = (state, unit, positions = null) => {
   const candidates = unitTargetCandidates(state, unit, positions);
   candidates.sort((a, b) => rolePriority(unit, a) - rolePriority(unit, b)
     || squaredDistance(positioned(unit, positions), positioned(a, positions)) - squaredDistance(positioned(unit, positions), positioned(b, positions))
-    || a.id.localeCompare(b.id));
+    || compareUnitOrder(a, b));
   if (candidates[0]) return candidates[0];
   return null;
 };
@@ -146,7 +150,7 @@ export const acquireStructureTarget = (state, structure, positions = null) => {
     .filter((unit) => unit?.alive && !unit.launching && inRange(positioned(structure, positions), positioned(unit, positions), definition.attackRange));
   candidates.sort((a, b) => squaredDistance(positioned(structure, positions), positioned(a, positions)) - squaredDistance(positioned(structure, positions), positioned(b, positions))
     || a.laneId.localeCompare(b.laneId)
-    || a.id.localeCompare(b.id));
+    || compareUnitOrder(a, b));
   return candidates[0] ?? null;
 };
 

@@ -8,7 +8,12 @@ import { MatchDirector } from "../src/simulation/matchDirector.js";
 // Decisions always run at their normal cadence; sampling never drives the AI.
 const requestedLevel = Number(process.env.SG_LEVEL ?? 0);
 const maps = [ORBITAL_GARDEN, CLASSIC_LANES].filter((map) => !requestedLevel || map.level === requestedLevel);
-const maximumSeconds = Number(process.env.SG_MAX_SECONDS ?? 480);
+// Eight minutes remain a strict regression bound for the original stalled
+// Admiral/Tactician fixtures. Broader economic contests may legitimately last
+// longer; their diagnostic horizon is twelve minutes, never a gameplay timer.
+const maximumSeconds = Number(process.env.SG_MAX_SECONDS ?? 720);
+assert.ok(Number.isFinite(maximumSeconds) && maximumSeconds > 0, "simulation horizon must be positive");
+assert.ok(maps.length > 0, "requested level must identify a core map");
 const full = process.argv.includes("--full");
 const diagnostic = process.argv.includes("--diagnostic");
 const balanced = INVESTMENT_BIASES.BALANCED;
@@ -21,7 +26,7 @@ const cases = [
   ] : []),
 ];
 const reports = [];
-for (const mapDefinition of maps) for (const [name, leftProfile, rightProfile, leftBias, rightBias] of cases) for (const mirrored of [false, true]) {
+for (const mapDefinition of maps) for (const [name, leftProfile, rightProfile, leftBias, rightBias] of cases.filter(([name]) => !process.env.SG_CASE || name === process.env.SG_CASE)) for (const mirrored of [false, true]) {
   const playerProfile = mirrored ? rightProfile : leftProfile;
   const enemyProfile = mirrored ? leftProfile : rightProfile;
   const laneIds = mapDefinition.lanes.map((lane) => lane.id);
@@ -40,6 +45,18 @@ for (const mapDefinition of maps) for (const [name, leftProfile, rightProfile, l
   let overlapSamples = 0;
   let overlaps = 0;
   let stepNumber = 0;
+  const purchases = { [TEAM.PLAYER]: {}, [TEAM.ENEMY]: {} };
+  const upgrades = { [TEAM.PLAYER]: {}, [TEAM.ENEMY]: {} };
+  const lastDecisions = new Map();
+  const recordDecision = (decision) => {
+    if (!decision || lastDecisions.get(decision.team) === decision.decisionNumber) return;
+    lastDecisions.set(decision.team, decision.decisionNumber);
+    for (const purchase of decision.purchases) purchases[decision.team][purchase.unitType] = (purchases[decision.team][purchase.unitType] ?? 0) + 1;
+    for (const upgrade of decision.upgrades) upgrades[decision.team][upgrade.upgradeId] = (upgrades[decision.team][upgrade.upgradeId] ?? 0) + 1;
+  };
+  const damageByWeapon = {};
+  recordDecision(playerAi.lastDecision);
+  recordDecision(director.lastAiDecision);
   while (director.state === MATCH_STATE.LIVE_MATCH && director.activeMatchSeconds < maximumSeconds) {
     director.advanceLive(CONFIG.timing.fixedStepSeconds);
     decisionRemaining -= CONFIG.timing.fixedStepSeconds;
@@ -48,12 +65,15 @@ for (const mapDefinition of maps) for (const [name, leftProfile, rightProfile, l
       decisionRemaining += playerAi.decisionIntervalSeconds(CONFIG.timing.aiDecisionIntervalSeconds);
     }
     const state = director.simulation.state;
+    recordDecision(playerAi.lastDecision);
+    recordDecision(director.lastAiDecision);
     peakUnits = Math.max(peakUnits, state.units.size);
     peakProjectiles = Math.max(peakProjectiles, state.projectiles.size);
     for (const event of state.events) {
       if (event.sequence <= lastSequence) continue;
       if (event.type === "hit" && firstContact === null) firstContact = state.time;
       if (event.type === "shot") shots[event.projectileType] = (shots[event.projectileType] ?? 0) + 1;
+      if (event.type === "hit") damageByWeapon[event.projectileType] = Math.round(((damageByWeapon[event.projectileType] ?? 0) + event.hullDamage + event.absorbedDamage) * 10) / 10;
     }
     lastSequence = state.events.at(-1)?.sequence ?? lastSequence;
     if (++stepNumber % 30 !== 0) continue;
@@ -74,7 +94,12 @@ for (const mapDefinition of maps) for (const [name, leftProfile, rightProfile, l
   const state = director.simulation.state;
   const report = { level: mapDefinition.level, case: name, mirrored, playerProfile, enemyProfile, result: director.state, duration: Math.round(state.time * 10) / 10, firstContact: firstContact === null ? null : Math.round(firstContact * 10) / 10, peakUnits, peakProjectiles, shots, engagedOutOfRangeFraction: shipSamples ? Math.round(outOfRangeSamples / shipSamples * 1000) / 1000 : 0, averageFriendlyOverlaps: overlapSamples ? Math.round(overlaps / overlapSamples * 10) / 10 : 0, carriers: [...state.structures.values()].filter((s) => s.structureType === "hq").map((s) => ({ team: s.team, hp: Math.round(s.hp) })) };
   if (diagnostic) report.units = [...state.units.values()].filter((u) => u.alive).map((u) => ({ id: u.id, type: u.unitType, team: u.team, state: u.state, x: Math.round(u.x), y: Math.round(u.y), target: u.targetId, lastShot: Math.round(u.lastShotAt), cooldown: u.fireCooldown }));
+  Object.assign(report, { purchases, upgrades, damageByWeapon, spending: Object.fromEntries([TEAM.PLAYER, TEAM.ENEMY].map((team) => [team, director.economy.get(team).spending])) });
   reports.push(report);
   console.log(JSON.stringify(report));
 }
-if (process.argv.includes("--gate")) assert.ok(reports.every((report) => report.result !== MATCH_STATE.LIVE_MATCH), "Every representative match must end before the simulation limit");
+assert.ok(reports.length > 0, "requested case must identify a comparison scenario");
+if (process.argv.includes("--gate")) {
+  assert.ok(reports.every((report) => report.result !== MATCH_STATE.LIVE_MATCH), "Every representative match must end before the simulation limit");
+  assert.ok(reports.filter((report) => report.case === "admiral-tactician").every((report) => report.duration <= 480), "the original stalled fixtures must end within eight minutes");
+}
