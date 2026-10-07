@@ -19,6 +19,7 @@ export class CommandSystem {
   buyUpgrade(director, { team, upgradeId }) {
     if (director.state !== MATCH_STATE.LIVE_MATCH) return { ok: false, reason: "WRONG_PHASE" };
     if (!validTeams.has(team)) return { ok: false, reason: "INVALID_TEAM_OR_LANE" };
+    if (!director.upgradeAllowed(upgradeId)) return { ok: false, reason: "MISSION_LOCKED_UPGRADE" };
     if (upgradeId === "logistics" || (upgradeId === "turret" && director.mapDefinition.features?.defensiveTurrets === false)) {
       return { ok: false, reason: "UNAVAILABLE_UPGRADE" };
     }

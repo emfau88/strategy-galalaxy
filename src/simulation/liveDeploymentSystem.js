@@ -44,6 +44,7 @@ export class LiveDeploymentSystem {
 
   availability({ simulation, economy, team, laneId, unitType }) {
     const definition = UNIT_DEFINITIONS[unitType];
+    if (this.config.rules?.units && !this.config.rules.units.includes(unitType)) return { ok: false, reason: "MISSION_LOCKED_UNIT" };
     if (!definition || definition.enabled === false || definition.purchasable === false || definition.cost <= 0) {
       return { ok: false, reason: "UNAVAILABLE_UNIT" };
     }

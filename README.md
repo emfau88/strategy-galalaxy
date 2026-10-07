@@ -16,6 +16,8 @@ Es gibt keine direkte Schiffssteuerung und keine Kampfunterbrechung zum Planen. 
 
 ## Aktueller Spielstand
 
+Der lokale Stand startet jetzt im eigenen Hauptmenü. **Kampagne → Erstkontakt → Mission starten** führt zur ersten spielbaren Mission: eine Lane, Scout und Fighter, vorläufig zwölf Schiffe je Seite und zunächst keine Forschung. Briefing, Pause, Ergebnis, Wiederholen und lokal gespeicherter Abschluss sind integriert. Missionen 2 und 3 sind klar markierte Vorschauen. Das freie Gefecht bietet weiterhin die bisherigen Klassen, Forschung und beide Karten. Die Missionswerte werden im nächsten Gestaltungsschritt angepasst; Details stehen im [Kampagnenbericht](docs/CAMPAIGN_FIRST_SLICE.md).
+
 Die verbindliche Zielrichtung steht in [Core Gameplay Vision](STRATEGY_GALALAXY_CORE_VISION.md). Der Qualitätsbranch `codex/quality-recovery` baut auf dem am 7. Oktober 2026 bestätigten GitHub-Stand `ed8802b` auf und übernimmt lokale Verbesserungen selektiv. Kampf-, KI- und Bedienungsfehler sind korrigiert und automatisiert geprüft. Die reale Smartphone-Abnahme und die Lesbarkeit extremer Flottendichte bleiben offen; Nachweise stehen im [Qualitätsbericht](docs/QUALITY_RECOVERY_REPORT.md). Die Runtime nutzt sofortiges Squad-Deployment, davon unabhängige automatische Drone-Waves und eine kontinuierlich reagierende Live-KI. Core-Maps enthalten keine Nodes oder Turrets und werden von randständigen Command Carriern gerahmt.
 
 - Kontinuierlicher `LIVE_MATCH` ohne Kauf-Queue, Lock-in, Refund oder bezahlte Wave-Slots.
@@ -74,7 +76,7 @@ Das Projekt nutzt native Browsermodule und benötigt keinen Build-Schritt.
 npm.cmd run dev
 ```
 
-Anschließend `http://127.0.0.1:7100/` öffnen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste. Ein Tap auf den eigenen Command Carrier oder den unteren Command-Dock öffnet Fleet und Upgrades; dort werden Lane, Wings und Forschung gewählt. Der Pfeil zwischen den Tabs schließt die Konsole wieder. `P` pausiert; das Pause-Menü kann fortsetzen oder zum Hauptmenü zurückkehren. Das Symbol oben rechts fordert Browser-Fullscreen an.
+Anschließend `http://127.0.0.1:7100/` öffnen. Das Hauptmenü bietet Kampagne, freies Gefecht und Sound-Einstellungen. `?debug=1` blendet Diagnosewerte ein; `?test=match` startet direkt einen reproduzierbaren freien Testmatch. Beides lässt sich kombinieren. Im Spiel zieht man das Schlachtfeld vertikal oder springt über die rechte Kartenleiste. Ein Tap auf den eigenen Command Carrier oder den unteren Command-Dock öffnet die Kaufkonsole; ihre Auswahl folgt den Missionsregeln. Der Pfeil zwischen den Tabs schließt die Konsole wieder. `P` pausiert; das Pause-Menü kann fortsetzen oder zum Hauptmenü zurückkehren. Das Symbol oben rechts fordert Browser-Fullscreen an.
 
 Für das schlanke GitHub-Pages-Artefakt wird `npm.cmd run build:pages` verwendet. Es kopiert Code und nur die tatsächlich aktiven Level-, Flotten-, Projektil- und VFX-Dateien nach `dist/`.
 
@@ -98,6 +100,9 @@ Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische
 
 ## Dokumentation
 
+- [Verständlicher Verbesserungsplan: Dichte, Carrier und Kampagne](docs/GAME_IMPROVEMENT_PLAN.md)
+- [Erstes Kampagnenpaket: Funktionen, Prüfung und offene Punkte](docs/CAMPAIGN_FIRST_SLICE.md)
+- [Eigene Menügestaltung und empfohlene Assets](docs/MENU_ART_DIRECTION.md)
 - [Qualitäts- und Wiederaufnahmeplan](docs/QUALITY_RECOVERY_PLAN.md)
 - [Geprüfte Änderungen und offene Qualitätsgrenzen](docs/QUALITY_RECOVERY_REPORT.md)
 - [Reale Geräteabnahme](docs/DEVICE_ACCEPTANCE.md)
@@ -116,4 +121,4 @@ Die Prüfungen decken Simulation, sofortiges Deployment, Cooldowns, automatische
 
 ## Status
 
-Software-Korrekturen und Browser-/Build-Prüfung der Qualitäts-Wiederaufnahme sind durchgeführt. Alle 16 Vergleichspartien enden regulär, beide Karten bestehen die Bedienungsprüfungen auf fünf Viewports. Die bisherigen lokalen Commits bleiben unverändert gesichert. Meilenstein A ist wegen ausstehender Geräte-/Spielerabnahme und verbleibender dichter Hüllenstapel noch nicht erreicht; zusätzliche Gameplay-Systeme aus Bulk 6 bleiben zurückgestellt. Dieser Branch ist lokal und noch nicht veröffentlicht; der öffentliche Spiellink zeigt weiterhin den bisherigen GitHub-Stand.
+Software-Korrekturen und Browser-/Build-Prüfung der Qualitäts-Wiederaufnahme sind durchgeführt. Alle 16 Vergleichspartien enden regulär, beide Karten bestehen die Bedienungsprüfungen auf fünf Viewports. Das anschließend ausdrücklich beauftragte erste Kampagnenpaket ist lokal spielbar und seine Menü-/Ergebnisabläufe sind geprüft. Die bisherigen lokalen Commits bleiben unverändert gesichert. Meilenstein A bleibt wegen ausstehender Geräte-/Spielerabnahme und dichter Hüllenstapel offen. Neue Carrier-Fähigkeiten, weitere Missionen und das endgültige Menü-Artwork folgen später. Dieser Branch ist lokal und noch nicht veröffentlicht; der öffentliche Spiellink zeigt weiterhin den bisherigen GitHub-Stand.

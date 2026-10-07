@@ -29,12 +29,12 @@ export const createUnit = ({ id, team, laneId, unitType, x, y, slotOffsetX = 0, 
   };
 };
 
-export const createStructure = ({ id, team, laneId, structureType, x, y }) => {
+export const createStructure = ({ id, team, laneId, structureType, x, y, maxHp }) => {
   const definition = STRUCTURE_DEFINITIONS[structureType];
   if (!definition) throw new Error(`Unknown structure type: ${structureType}`);
   return {
     id, team, laneId, structureType, x, y,
-    hp: definition.maxHp, maxHp: definition.maxHp, fireCooldown: 0, lastShotAt: -Infinity,
+    hp: maxHp ?? definition.maxHp, maxHp: maxHp ?? definition.maxHp, fireCooldown: 0, lastShotAt: -Infinity,
     targetId: null, alive: true, lastDamagedAt: -Infinity,
   };
 };

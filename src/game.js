@@ -16,6 +16,9 @@ import { commandActionAt, commandUiBottomInset, containsPoint, endActionAt, paus
 import { cameraNavigatorRatioAt } from "./ui/cameraUi.js";
 import { AI_PROFILES } from "./simulation/opponentAi.js";
 import { CLASSIC_LANES, ORBITAL_GARDEN, UNIT_DEFINITIONS } from "./data/definitions.js";
+import { missionById, missionMatchOptions, missionUnlocked } from "./data/campaign.js";
+import { CampaignProgress } from "./campaign/progress.js";
+import { campaignActionAt } from "./ui/campaignUi.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
 const LEVELS = Object.freeze([ORBITAL_GARDEN, CLASSIC_LANES]);
@@ -35,6 +38,10 @@ export class Game {
     this.renderer = new Renderer(canvas, context);
     this.effects = new PresentationEffects();
     this.sound = new SoundSystem();
+    this.campaign = new CampaignProgress();
+    this.menuScreen = "main";
+    this.selectedMissionId = this.campaign.data.lastMissionId ?? "first-contact";
+    this.recordedMissionResult = null;
     this.lastInput = null;
     this.levelIndex = Math.max(0, LEVELS.findIndex((level) => level.level === options.level));
     this.selectedLaneId = LEVELS[this.levelIndex].lanes[0].id;
@@ -156,9 +163,10 @@ export class Game {
       }
     }
     if (input.kind === "down" && [MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(this.match.state)) {
-      const action = endActionAt(input, this.transform?.designHeight);
-      if (action?.type === "RETURN_TO_TITLE") {
+      const action = endActionAt(input, this.transform?.designHeight, Boolean(this.match.mission));
+      if (action?.type === "RETURN_TO_TITLE" || action?.type === "RETURN_TO_MISSIONS") {
         this.returnToTitle();
+        if (action.type === "RETURN_TO_MISSIONS") this.menuScreen = "missions";
         return;
       }
       if (action?.type === "RESTART_MATCH") {
@@ -186,6 +194,13 @@ export class Game {
       return;
     }
     if (this.match.state === MATCH_STATE.TITLE) {
+      const menuAction = campaignActionAt(input, this.menuScreen, this.transform?.designHeight);
+      if (menuAction) {
+        this.executeMenuAction(menuAction);
+        this.syncMatchState();
+        return;
+      }
+      if (this.menuScreen !== "skirmish") return;
       const action = titleActionAt(input, this.transform?.designHeight);
       if (action?.type === "CYCLE_DIFFICULTY") {
         const index = (this.aiProfiles.indexOf(this.match.aiProfile) + 1) % this.aiProfiles.length;
@@ -208,14 +223,55 @@ export class Game {
       if (!this.levelAssetsReady(this.match.mapDefinition)) {
         const pendingMap = this.match.mapDefinition;
         this.prepareLevelAssets(pendingMap).then(() => {
-          if (this.match.state === MATCH_STATE.TITLE && this.match.mapDefinition === pendingMap) this.startSelectedMatch();
+          if (this.menuScreen === "skirmish" && this.match.state === MATCH_STATE.TITLE && this.match.mapDefinition === pendingMap) this.startSelectedMatch();
         });
         return;
       }
       this.startSelectedMatch();
     }
-    else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight, this.match.mapDefinition.lanes.map((lane) => lane.id), this.commandDockOpen));
+    else if (this.match.state === MATCH_STATE.LIVE_MATCH) this.executeCommandAction(commandActionAt(input, this.commandMenu, this.transform?.designHeight, this.match.mapDefinition.lanes.map((lane) => lane.id), this.commandDockOpen, this.match.config.rules));
     this.syncMatchState();
+  }
+
+  executeMenuAction(action) {
+    this.sound.play("select");
+    if (action.type === "OPEN_CAMPAIGN") this.menuScreen = "missions";
+    else if (action.type === "OPEN_SETTINGS") this.menuScreen = "settings";
+    else if (action.type === "MENU_BACK") this.menuScreen = this.menuScreen === "briefing" ? "missions" : "main";
+    else if (action.type === "TOGGLE_SOUND") this.sound.toggleMuted();
+    else if (action.type === "OPEN_SKIRMISH") {
+      const mapDefinition = LEVELS[this.levelIndex];
+      this.match = new MatchDirector({ config: configForMap(mapDefinition), mapDefinition });
+      this.selectedLaneId = mapDefinition.lanes[0].id;
+      this.menuScreen = "skirmish";
+      this.prepareLevelAssets(mapDefinition);
+    } else if (action.type === "SELECT_MISSION") {
+      const mission = missionById(action.missionId);
+      if (!mission?.available || !missionUnlocked(mission, this.campaign.data.completed)) return;
+      this.selectedMissionId = mission.id;
+      this.menuScreen = "briefing";
+      this.prepareLevelAssets(mission.map);
+    } else if (action.type === "START_MISSION") this.startMission();
+  }
+
+  startMission() {
+    const mission = missionById(this.selectedMissionId);
+    if (this.menuScreen !== "briefing" || this.match.state !== MATCH_STATE.TITLE
+      || !mission?.available || !missionUnlocked(mission, this.campaign.data.completed)) return false;
+    if (!this.levelAssetsReady(mission.map)) {
+      this.prepareLevelAssets(mission.map).then(() => {
+        if (this.selectedMissionId === mission.id && this.menuScreen === "briefing") this.startMission();
+      });
+      return false;
+    }
+    this.match = new MatchDirector(missionMatchOptions(mission));
+    this.selectedLaneId = mission.map.lanes[0].id;
+    this.commandMenu = "units";
+    this.setCommandDockOpen(false);
+    this.commandFeedback = null;
+    this.recordedMissionResult = null;
+    this.campaign.begin(mission.id);
+    return this.startSelectedMatch();
   }
 
   levelAssetsReady(mapDefinition) {
@@ -224,7 +280,7 @@ export class Game {
 
   prepareLevelAssets(mapDefinition) {
     if (this.levelAssetsReady(mapDefinition)) return Promise.resolve(this.loader);
-    if (this.levelLoadPromise) return this.levelLoadPromise;
+    if (this.levelLoadPromise) return this.levelLoadPromise.then(() => this.prepareLevelAssets(mapDefinition));
     this.levelLoading = true;
     const requestedLevel = mapDefinition.level;
     this.levelLoadPromise = this.loader.load(levelAssetManifest(requestedLevel)).finally(() => {
@@ -250,6 +306,9 @@ export class Game {
   restartMatch() {
     if (!this.match.restart()) return false;
     this.setCommandDockOpen(false);
+    this.commandMenu = "units";
+    this.commandFeedback = null;
+    this.recordedMissionResult = null;
     this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
     this.camera.reset("player");
     this.effects.reset();
@@ -262,6 +321,7 @@ export class Game {
   returnToTitle() {
     if (!this.match.returnToTitle()) return false;
     this.cameraGesture = null;
+    this.menuScreen = "main";
     this.commandMenu = "units";
     this.setCommandDockOpen(false);
     this.commandFeedback = null;
@@ -364,6 +424,10 @@ export class Game {
       return;
     }
     if (action.type === "SET_COMMAND_MENU") {
+      if (action.menu === "upgrades" && this.match.config.rules?.upgrades?.length === 0) {
+        this.showFeedback("FORSCHUNG FOLGT IN SPÄTEREN MISSIONEN");
+        return;
+      }
       this.commandMenu = action.menu;
       this.syncCommandViewport();
       this.sound.play("select");
@@ -378,12 +442,20 @@ export class Game {
     }
     const result = this.match.executeCommand({ ...action, team: TEAM.PLAYER, laneId: this.selectedLaneId });
     const deploymentLabel = UNIT_DEFINITIONS[action.unitType]?.deploymentLabel ?? action.unitType?.toUpperCase();
-    this.showFeedback(result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE ONLINE" : `${deploymentLabel} LAUNCHED`) : this.commandFailureLabel(result.reason));
+    this.showFeedback(result.ok ? (action.type === "BUY_UPGRADE" ? "UPGRADE ONLINE" : `${deploymentLabel} ${this.match.mission ? "GESTARTET" : "LAUNCHED"}`) : this.commandFailureLabel(result.reason));
     this.sound.play(result.ok ? "purchase" : "error");
     if (result.ok) this.sound.vibrate(9);
   }
 
   commandFailureLabel(reason) {
+    if (this.match.mission && reason === "LANE_CAPACITY") {
+      const count = this.match.simulation.state.lanes.get(this.selectedLaneId).unitIds.get(TEAM.PLAYER).length;
+      return `ZU WENIG PLATZ · ${count}/${this.match.config.caps.unitsPerLaneTeam}`;
+    }
+    if (this.match.mission) return {
+      INSUFFICIENT_ENERGY: "NICHT GENUG ENERGIE", COOLDOWN_ACTIVE: "EINHEIT LÄDT NACH",
+      MISSION_LOCKED_UNIT: "IN DIESER MISSION NICHT VERFÜGBAR", MISSION_LOCKED_UPGRADE: "FORSCHUNG FOLGT SPÄTER",
+    }[reason] ?? "BEFEHL NICHT VERFÜGBAR";
     return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", LANE_CAPACITY: "LANE AT CAPACITY", COOLDOWN_ACTIVE: "WING RECHARGING", UNAVAILABLE_UPGRADE: "UPGRADE UNAVAILABLE", WRONG_PHASE: "COMMAND UNAVAILABLE", MAX_LEVEL: "UPGRADE ALREADY MAXED" })[reason] ?? "COMMAND UNAVAILABLE";
   }
 
@@ -415,6 +487,10 @@ export class Game {
 
   syncMatchState() {
     this.state = this.assetsReady ? this.match.state : MATCH_STATE.LOADING;
+    if (this.match.mission && this.match.state === MATCH_STATE.VICTORY && this.recordedMissionResult !== this.match) {
+      this.campaign.complete(this.match.mission.id);
+      this.recordedMissionResult = this.match;
+    }
   }
 
   frame(now) {
@@ -449,6 +525,10 @@ export class Game {
       activeBattleSeconds: this.match.activeBattleSeconds,
       economy: this.match.simulation ? this.match.economy : null,
       director: this.match,
+      menuScreen: this.menuScreen,
+      selectedMissionId: this.selectedMissionId,
+      campaignProgress: this.campaign.snapshot(),
+      mission: this.match.mission,
       aiProfile: this.match.aiProfile,
       lastAiDecision: this.match.lastAiDecision,
       mapDefinition: this.match.mapDefinition,

@@ -12,9 +12,10 @@ import { CLASSIC_LANES, isMapFeatureEnabled } from "../data/definitions.js";
 
 /** Coordinates a continuous match; specialized systems own combat, economy, capture, and deployment. */
 export class MatchDirector {
-  constructor({ config = CONFIG, mapDefinition = CLASSIC_LANES, aiProfile = AI_PROFILES.TACTICIAN, aiPreferredLane = null, aiInvestmentBias = INVESTMENT_BIASES.BALANCED } = {}) {
+  constructor({ config = CONFIG, mapDefinition = CLASSIC_LANES, aiProfile = AI_PROFILES.TACTICIAN, aiPreferredLane = null, aiInvestmentBias = INVESTMENT_BIASES.BALANCED, mission = null } = {}) {
     this.config = { ...config, balance: { ...config.balance, ...(mapDefinition.balanceOverrides ?? {}) } };
     this.mapDefinition = mapDefinition;
+    this.mission = mission;
     this.aiProfile = aiProfile;
     this.aiPreferredLane = aiPreferredLane ?? mapDefinition.lanes[0].id;
     this.aiInvestmentBias = aiInvestmentBias;
@@ -51,12 +52,19 @@ export class MatchDirector {
     // Free pressure starts immediately; paid commands remain independent of this cadence.
     this.deployWaves();
     this.planAi();
-    this.aiDecisionRemaining = this.ai.decisionIntervalSeconds(this.config.timing.aiDecisionIntervalSeconds);
+    this.aiDecisionRemaining = this.aiDecisionIntervalSeconds;
     return true;
   }
 
   executeCommand(command) {
     return this.commands.execute(this, command);
+  }
+
+  unitAllowed(unitType) { return !this.config.rules?.units || this.config.rules.units.includes(unitType); }
+  upgradeAllowed(upgradeId) { return !this.config.rules?.upgrades || this.config.rules.upgrades.includes(upgradeId); }
+  get aiDecisionIntervalSeconds() {
+    return this.ai.decisionIntervalSeconds(this.config.timing.opponentAiDecisionIntervalSeconds
+      ?? this.config.timing.aiDecisionIntervalSeconds);
   }
 
   advanceLive(step) {
@@ -79,7 +87,7 @@ export class MatchDirector {
     let liveDecision = false;
     if (this.aiDecisionRemaining <= Number.EPSILON) {
       this.planAi();
-      this.aiDecisionRemaining += this.ai.decisionIntervalSeconds(this.config.timing.aiDecisionIntervalSeconds);
+      this.aiDecisionRemaining += this.aiDecisionIntervalSeconds;
       liveDecision = true;
     }
 

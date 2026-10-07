@@ -1,10 +1,12 @@
 # Strategy Galalaxy – Core Gameplay Vision
 
-Stand: 2026-09-10
+Stand: 2026-09-10; ergänzte Produktentscheidung vom 2026-10-07.
 
 Dieses Dokument ist die verbindliche Produktvorgabe für den laufenden Core-Gameplay-Umbau. Es ersetzt den früheren Vertrag mit festen 22-Sekunden-Kauf-Queues, Lock-in und grundsätzlich zwei Lanes.
 
 Der aktuell spielbare Ausgangscode enthält Teile dieses alten Modells noch. Die Migration erfolgt in getrennten, testbaren Bulks. Bei Widersprüchen zwischen älteren Roadmaps, Konzepten oder Mockups und diesem Dokument gilt dieses Dokument.
+
+**Ergänzung vom 7. Oktober 2026:** Der Nutzer hat ausdrücklich „Kampagne zuerst“ und ein kleines Hauptmenü beauftragt. Ein erstes Paket mit Missionsauswahl, Briefing, lokal gespeichertem Abschluss und einer Einstiegsmission auf der bestehenden Karte ist deshalb vor der vollständigen Geräteabnahme erlaubt. Verfügbare Klassen, Forschung, Economy, Flottenlimit, Waves, Carrier-Lebenspunkte und Gegner-Taktung dürfen pro Mission dosiert werden. Das Matchziel bleibt die Carrier-Zerstörung; Kosten, Cooldowns und Kapazitäten gelten für beide Seiten. Diese Freigabe ersetzt die frühere Reihenfolge für Menü und Kampagnengerüst. Neue Commander-Fähigkeiten und umfangreiche Meta-Systeme bleiben zurückgestellt. Missionswerte sind vorläufig; vor der weiteren Missionsgestaltung werden keine zusätzlichen Balance-Matrizen abgearbeitet. Der Menübereich erhält eine eigene visuelle Identität unabhängig von den Levelkarten.
 
 ## Produktkern
 

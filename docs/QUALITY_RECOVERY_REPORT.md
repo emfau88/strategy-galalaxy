@@ -96,3 +96,9 @@ Der Vorschau-Server kann mit `npm run preview` ausschließlich das geprüfte `di
 ## Noch offene externe Abnahme
 
 Reale Smartphones, Handhaltung, thermische Drosselung, längere Sessions und Beobachtungen neuer Spieler stehen aus. Extreme Hüllenstapel, Akzeptanz längerer Economy-Partien und menschliche Rush-/Tech-Gegenspiele sind zusätzlich zu bewerten. Meilenstein A und die gesamte Qualitätsabnahme sind noch nicht erreicht. Bulk 6 mit neuen Gameplay-Systemen bleibt gemäß Plan bis dahin zurückgestellt. Der geprüfte Stand wird lokal gesichert; GitHub und der öffentliche Spiellink wurden nicht aktualisiert.
+
+## Ergänzung: erstes Kampagnenpaket
+
+Nach der Qualitäts-Wiederaufnahme hat der Nutzer die Reihenfolge ausdrücklich auf Kampagne zuerst geändert. Hauptmenü, Missionsauswahl, Briefing, eine vorläufige Erstkontakt-Mission und lokal gespeicherte Abschlüsse sind jetzt integriert. Die Menüszene verwendet keine Levelkarte. Missionen 2 und 3 bleiben gekennzeichnete Vorschauen; die endgültige Missionsgestaltung und Balance folgen später.
+
+Der [Kampagnenbericht](CAMPAIGN_FIRST_SLICE.md) enthält die ausgeführten Funktionsprüfungen und offenen Punkte. Diese Ergänzung ersetzt weder die bisher offene Geräte-/Spielerabnahme noch die Bewertung dichter Gefechte. Auf Wunsch des Nutzers werden vor dem nächsten Missionsumbau keine weiteren Balance-Matrizen durchgeführt. Der [Verbesserungsplan](GAME_IMPROVEMENT_PLAN.md) beschreibt die neue Reihenfolge und die [Menü-Asset-Empfehlung](MENU_ART_DIRECTION.md) die gewünschte Gestaltung.

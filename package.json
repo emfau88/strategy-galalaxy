@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
     "preview": "node scripts/dev-server.mjs --dist",
-    "test": "node tests/foundation.test.mjs && node tests/combat-quality.test.mjs",
+    "test": "node tests/foundation.test.mjs && node tests/combat-quality.test.mjs && node tests/campaign.test.mjs",
     "check": "npm test && node scripts/verify-assets.mjs",
     "build:pages": "node scripts/build-pages.mjs",
     "verify:assets": "node scripts/verify-assets.mjs",
@@ -15,6 +15,7 @@
     "balance:investments": "node scripts/investment-experiments.mjs",
     "test:browser": "node scripts/browser-check.mjs",
     "test:pages": "npm run build:pages && node scripts/browser-check.mjs --dist",
+    "test:campaign:pages": "npm run build:pages && node scripts/browser-check.mjs --dist --campaign-only",
     "test:stress": "node scripts/stress-check.mjs",
     "test:cluster": "node scripts/cluster-check.mjs",
     "test:quality": "node scripts/quality-match-check.mjs --full --gate"

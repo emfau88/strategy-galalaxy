@@ -10,6 +10,34 @@ const drawCover = (ctx, image, width, height, verticalAnchor = 0.5) => {
   ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
 };
 
+// An independent menu scene: no map art, combat objects or battlefield camera.
+const renderMenuBackground = (ctx, width, height) => {
+  ctx.fillStyle = "#080f1c";
+  ctx.fillRect(0, 0, width, height);
+  const glow = ctx.createRadialGradient(width * 0.86, height * 0.12, 0, width * 0.86, height * 0.12, width * 0.95);
+  glow.addColorStop(0, "rgba(48,112,133,0.28)");
+  glow.addColorStop(1, "rgba(8,15,28,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+  ctx.save();
+  ctx.strokeStyle = "rgba(131,192,211,0.12)";
+  ctx.lineWidth = 1;
+  for (const radius of [180, 202, 260]) {
+    ctx.beginPath();
+    ctx.arc(width + 72, 12, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // Deterministic stars stay peripheral so title and navigation remain calm.
+  for (let index = 0; index < 42; index += 1) {
+    const x = (index * 137 + 23) % width;
+    const y = (index * 211 + 41) % height;
+    if (x > 42 && x < width - 42 && y > height * 0.2 && y < height * 0.85) continue;
+    ctx.fillStyle = index % 5 === 0 ? "rgba(185,220,235,0.45)" : "rgba(185,220,235,0.2)";
+    ctx.fillRect(x, y, index % 5 === 0 ? 1.5 : 1, 1);
+  }
+  ctx.restore();
+};
+
 export class Renderer {
   constructor(canvas, context) {
     this.canvas = canvas;
@@ -31,8 +59,10 @@ export class Renderer {
     ctx.translate(transform.offsetX, transform.offsetY);
     ctx.scale(transform.scale, transform.scale);
     const sceneModel = { ...model, width: transform.designWidth, height: transform.designHeight };
-    renderBackground(ctx, transform.designWidth, transform.designHeight, model.frameTime, model.assets);
-    if (model.state === "TITLE" && model.mapDefinition?.visualTheme === "orbital_garden") {
+    const menuScene = model.state === "LOADING" || (model.state === "TITLE" && model.menuScreen !== "skirmish");
+    if (menuScene) renderMenuBackground(ctx, transform.designWidth, transform.designHeight);
+    else renderBackground(ctx, transform.designWidth, transform.designHeight, model.frameTime, model.assets);
+    if (!menuScene && model.state === "TITLE" && model.mapDefinition?.visualTheme === "orbital_garden") {
       const garden = model.assets?.get("background-orbital-garden-player") ?? model.assets?.get("background-orbital-garden");
       if (garden) {
         ctx.save();
@@ -54,9 +84,11 @@ export class Renderer {
       ctx.rect(view.x, view.y, view.width, view.height);
       ctx.clip();
     }
-    renderBattlefieldLayer(ctx, sceneModel);
-    renderEntityLayer(ctx, sceneModel);
-    renderEffectsLayer(ctx, sceneModel);
+    if (!menuScene) {
+      renderBattlefieldLayer(ctx, sceneModel);
+      renderEntityLayer(ctx, sceneModel);
+      renderEffectsLayer(ctx, sceneModel);
+    }
     ctx.restore();
     renderUiLayer(ctx, sceneModel);
   }

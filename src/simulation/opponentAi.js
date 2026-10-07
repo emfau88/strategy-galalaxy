@@ -128,7 +128,7 @@ export class OpponentAi {
     };
 
     const nextUpgrade = () => {
-      const available = (upgradeId) => director.economy.upgradeCost(this.team, upgradeId) !== null;
+      const available = (upgradeId) => director.upgradeAllowed(upgradeId) && director.economy.upgradeCost(this.team, upgradeId) !== null;
       if (this.investmentBias === INVESTMENT_BIASES.ECONOMY) return available("economy") ? "economy" : null;
       if (this.investmentBias === INVESTMENT_BIASES.WEAPONS) {
         if (economy.weaponLevel < 1 && available("weapons")) return "weapons";
@@ -158,11 +158,12 @@ export class OpponentAi {
     if (!emergency && !this.pushPlan && !this.upgradePlan && this.decisionNumber > 1 && this.decisionNumber % pushCadence === 0) {
       const unitTypes = this.profile === AI_PROFILES.CADET ? ["scout", "fighter"]
         : push.enemyComposition.frigate > push.friendlyComposition.bomber ? ["bomber", "fighter"] : ["frigate", "fighter"];
-      this.pushPlan = {
+      const allowedTypes = unitTypes.filter((unitType) => director.unitAllowed(unitType));
+      this.pushPlan = allowedTypes.length ? {
         laneId: push.laneId,
-        unitTypes,
-        targetEnergy: unitTypes.reduce((sum, unitType) => sum + UNIT_DEFINITIONS[unitType].cost, 0),
-      };
+        unitTypes: allowedTypes,
+        targetEnergy: allowedTypes.reduce((sum, unitType) => sum + UNIT_DEFINITIONS[unitType].cost, 0),
+      } : null;
     }
     if (this.pushPlan) {
       if (economy.energy + Number.EPSILON < this.pushPlan.targetEnergy) {
@@ -181,7 +182,7 @@ export class OpponentAi {
       const upgradeId = defense.threat > 70 && isMapFeatureEnabled(director.mapDefinition, "defensiveTurrets")
         ? "turret"
         : nextUpgrade();
-      const cost = upgradeId ? director.economy.upgradeCost(this.team, upgradeId) : null;
+      const cost = upgradeId && director.upgradeAllowed(upgradeId) ? director.economy.upgradeCost(this.team, upgradeId) : null;
       if (upgradeId && cost !== null) this.upgradePlan = { upgradeId, targetEnergy: cost + 90 };
     }
     if (this.upgradePlan) {

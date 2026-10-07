@@ -41,7 +41,10 @@ export class DeploymentDirector {
         const active = simulation.state.lanes.get(laneId).unitIds.get(team).length;
         const available = Math.max(0, this.config.caps.unitsPerLaneTeam - active);
         const acceptedBase = baseEntries.slice(0, available);
-        this.baseWaveBacklog.get(team).set(laneId, baseEntries.slice(acceptedBase.length));
+        const pending = baseEntries.slice(acceptedBase.length);
+        const backlogLimit = this.config.balance.maximumBacklogWaves;
+        this.baseWaveBacklog.get(team).set(laneId, backlogLimit === undefined ? pending
+          : pending.slice(0, this.baseWaveSize(simulation.state.time) * backlogLimit));
         deployment.push({ team, laneId, unitTypes: acceptedBase });
       }
     }

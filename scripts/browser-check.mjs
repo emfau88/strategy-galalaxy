@@ -6,6 +6,8 @@ import { createServer } from "node:http";
 import { createServer as createNetServer } from "node:net";
 import { extname, normalize, resolve, sep } from "node:path";
 import { runtimeAssetManifestForLevel } from "../src/assets.js";
+import { campaignUiLayout } from "../src/ui/campaignUi.js";
+import { CAMPAIGN_STORAGE_KEY } from "../src/campaign/progress.js";
 
 const root = resolve(new URL("../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
 const siteRoot = process.argv.includes("--dist") ? resolve(root, "dist") : root;
@@ -171,6 +173,11 @@ try {
   await navigateAndWait(`http://127.0.0.1:${serverPort}/?debug=1&seed=1180`);
   await waitForGame();
   await assertRuntimeAssetsLoaded(1);
+  const mainMenu = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.menuScreen", returnByValue: true });
+  assert.equal(mainMenu.result.value, "main", "normal launch enters the campaign main menu");
+  const mainScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+  await writeFile(resolve(output, "campaign-main-420x760.png"), Buffer.from(mainScreenshot.data, "base64"));
+  await touch(210, 453);
   let titleState = await send("Runtime.evaluate", { expression: "({ state: window.__strategyGalalaxy.state, difficulty: window.__strategyGalalaxy.match.aiProfile, level: window.__strategyGalalaxy.match.mapDefinition.level })", returnByValue: true });
   assert.deepEqual(titleState.result.value, { state: "TITLE", difficulty: "tactician", level: 1 });
   const titleScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
@@ -189,6 +196,134 @@ try {
   await touch(274, 407);
   titleState = await send("Runtime.evaluate", { expression: "window.__strategyGalalaxy.state", returnByValue: true });
   assert.equal(titleState.result.value, "TITLE", "the pause menu returns to the main menu");
+
+  const campaignReports = [];
+  const gameValue = async (expression) => {
+    const response = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+    assert.equal(response.exceptionDetails, undefined, "campaign browser evaluation succeeds");
+    return response.result.value;
+  };
+  const capture = async (name) => {
+    await delay(60);
+    const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+    await writeFile(resolve(output, name), Buffer.from(screenshot.data, "base64"));
+  };
+  for (const [width, height] of viewports) {
+    await gameValue(`localStorage.removeItem(${JSON.stringify(CAMPAIGN_STORAGE_KEY)})`);
+    await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: true, screenWidth: width, screenHeight: height });
+    const campaignUrl = `http://127.0.0.1:${serverPort}/?debug=1&seed=${width + height}`;
+    await navigateAndWait(campaignUrl);
+    await waitForGame();
+    const transform = await gameValue("window.__strategyGalalaxy.getViewportSnapshot()");
+    const ui = campaignUiLayout(transform.designHeight);
+    const tapRect = (rect) => touch((rect.x + rect.width / 2) * transform.scale, (rect.y + rect.height / 2) * transform.scale);
+    const screen = () => gameValue("window.__strategyGalalaxy.menuScreen");
+    assert.equal(await screen(), "main");
+    await capture(`campaign-main-${width}x${height}.png`);
+    await tapRect(ui.settings);
+    assert.equal(await screen(), "settings");
+    const sound = await gameValue("window.__strategyGalalaxy.sound.enabled");
+    await tapRect(ui.sound);
+    assert.equal(await gameValue("window.__strategyGalalaxy.sound.enabled"), !sound);
+    await tapRect(ui.sound);
+    assert.equal(await gameValue("window.__strategyGalalaxy.sound.enabled"), sound);
+    await tapRect(ui.back);
+    await tapRect(ui.campaign);
+    assert.equal(await screen(), "missions");
+    await capture(`campaign-missions-${width}x${height}.png`);
+    await tapRect(ui.missions[1]);
+    assert.equal(await screen(), "missions", "unimplemented missions cannot start");
+    await tapRect(ui.missions[0]);
+    assert.equal(await screen(), "briefing");
+    await capture(`campaign-briefing-${width}x${height}.png`);
+    await tapRect(ui.start);
+    const mission = await gameValue(`(() => { const g = window.__strategyGalalaxy; return { state: g.state, mission: g.match.mission.id, limit: g.match.config.caps.unitsPerLaneTeam, units: g.match.config.rules.units, upgrades: g.match.config.rules.upgrades, completed: g.campaign.data.completed }; })()`);
+    assert.deepEqual(mission, { state: "LIVE_MATCH", mission: "first-contact", limit: 12, units: ["scout", "fighter"], upgrades: [], completed: [] });
+    const h = transform.designHeight;
+    await touch(70 * transform.scale, (h - 42) * transform.scale);
+    assert.equal(await gameValue("window.__strategyGalalaxy.commandDockOpen"), true);
+    await touch(300 * transform.scale, (h - 141) * transform.scale);
+    assert.equal(await gameValue("window.__strategyGalalaxy.match.economy.get('TEAM_PLAYER').spending.fleet"), 90, "mission Fighter purchase pays the real cost");
+    await touch(300 * transform.scale, (h - 195) * transform.scale);
+    assert.equal(await gameValue("window.__strategyGalalaxy.commandMenu"), "units", "mission without research stays on its fleet");
+    await capture(`campaign-fleet-${width}x${height}.png`);
+    await touch(305 * transform.scale, 30 * transform.scale);
+    assert.equal(await gameValue("window.__strategyGalalaxy.state"), "PAUSED");
+    await touch(274 * transform.scale, (h / 2 + 27) * transform.scale);
+    assert.equal(await screen(), "main");
+    assert.deepEqual(await gameValue("window.__strategyGalalaxy.campaign.data.completed"), [], "abandoning never unlocks the next mission");
+    campaignReports.push({ width, height, menus: "passed", missionLaunch: "passed", purchases: "passed", pauseReturn: "passed" });
+
+    if (width === 420) {
+      await tapRect(ui.campaign);
+      await tapRect(ui.missions[0]);
+      // Let one driver own simulation time during accelerated combat. RAF keeps
+      // rendering screenshots, but cannot add unplanned enemy-only steps while
+      // CDP changes the viewport. Normal touch/clock behavior is tested above.
+      await gameValue(`(() => { const g = window.__strategyGalalaxy; g.__qaClockAdvance = g.clock.advance; g.clock.advance = function(dt) { this.frameTime += dt; }; })()`);
+      await tapRect(ui.start);
+      const advanceCampaign = async (until) => gameValue(`(async () => {
+        const { OpponentAi } = await import('./src/simulation/opponentAi.js');
+        const g = window.__strategyGalalaxy;
+        const qa = g.__campaignQa ??= { ai: new OpponentAi({ team: 'TEAM_PLAYER', preferredLane: 'LANE_CENTER', profile: 'tactician' }), remaining: 0 };
+        while (g.match.state === 'LIVE_MATCH' && g.match.activeMatchSeconds < ${until}) {
+          g.match.advanceLive(1 / 60); qa.remaining -= 1 / 60;
+          if (qa.remaining <= 0 && g.match.state === 'LIVE_MATCH') { qa.ai.plan(g.match); qa.remaining += qa.ai.decisionIntervalSeconds(g.match.config.timing.aiDecisionIntervalSeconds); }
+        }
+        g.syncMatchState();
+        return { state: g.state, units: g.match.simulation.state.units.size, completed: g.campaign.data.completed, seconds: g.match.activeMatchSeconds };
+      })()`);
+      const combat = await advanceCampaign(60);
+      assert.equal(combat.state, "LIVE_MATCH");
+      assert.ok(combat.units <= 24, "campaign combat stays within its actual fleet budget");
+      await gameValue("window.__strategyGalalaxy.camera.jumpToWorld(590)");
+      await capture("campaign-combat-420x760.png");
+      await send("Emulation.setDeviceMetricsOverride", { width: 360, height: 800, deviceScaleFactor: 1, mobile: true, screenWidth: 360, screenHeight: 800 });
+      await capture("campaign-combat-360x800.png");
+      await send("Emulation.setDeviceMetricsOverride", { width: 420, height: 760, deviceScaleFactor: 1, mobile: true, screenWidth: 420, screenHeight: 760 });
+      const win = await advanceCampaign(480);
+      await gameValue("delete window.__strategyGalalaxy.__campaignQa");
+      await gameValue("(() => { const g = window.__strategyGalalaxy; g.clock.advance = g.__qaClockAdvance; delete g.__qaClockAdvance; })()");
+      if (win.state !== "VICTORY") {
+        const diagnostic = await gameValue(`(() => { const g = window.__strategyGalalaxy; return { state: g.state, seconds: g.match.activeMatchSeconds, playerEconomy: g.match.economy.get('TEAM_PLAYER'), enemyEconomy: g.match.economy.get('TEAM_ENEMY'), carriers: [...g.match.simulation.state.structures.values()], units: [...g.match.simulation.state.units.values()], ai: g.match.lastAiDecision }; })()`);
+        await writeFile(resolve(output, "campaign-incomplete-diagnostic.json"), JSON.stringify(diagnostic, null, 2));
+        await capture("campaign-incomplete.png");
+      }
+      assert.equal(win.state, "VICTORY", "mission ends by actual combat and legal purchases");
+      assert.deepEqual(win.completed, ["first-contact"]);
+      await capture("campaign-victory-420x760.png");
+      await touch(146, h / 2 + 39);
+      assert.equal(await gameValue("window.__strategyGalalaxy.state"), "LIVE_MATCH", "replay starts the same mission");
+      assert.equal(await gameValue("window.__strategyGalalaxy.match.config.caps.unitsPerLaneTeam"), 12);
+      await touch(305, 30);
+      await touch(274, h / 2 + 27);
+      await navigateAndWait(campaignUrl);
+      await waitForGame();
+      assert.deepEqual(await gameValue("window.__strategyGalalaxy.campaign.data.completed"), ["first-contact"], "victory survives a full page reload");
+      await tapRect(ui.campaign);
+      await capture("campaign-progress-420x760.png");
+      await tapRect(ui.missions[1]);
+      assert.equal(await screen(), "missions", "unlocked future mission is clearly a preview");
+      await gameValue(`localStorage.removeItem(${JSON.stringify(CAMPAIGN_STORAGE_KEY)})`);
+      await navigateAndWait(campaignUrl);
+      await waitForGame();
+      await tapRect(ui.campaign);
+      await tapRect(ui.missions[0]);
+      await tapRect(ui.start);
+      const loss = await gameValue(`(() => { const g = window.__strategyGalalaxy; while (g.match.state === 'LIVE_MATCH' && g.match.activeMatchSeconds < 480) g.match.advanceLive(1 / 60); g.syncMatchState(); return { state: g.state, completed: g.campaign.data.completed, seconds: g.match.activeMatchSeconds }; })()`);
+      assert.equal(loss.state, "DEFEAT", "the mission can also be lost through actual combat");
+      assert.deepEqual(loss.completed, [], "defeat never completes the mission");
+      await capture("campaign-defeat-420x760.png");
+      await touch(274, h / 2 + 39);
+      assert.equal(await screen(), "missions", "result screen returns to mission selection");
+      campaignReports.push({ actualWinSeconds: Math.round(win.seconds * 10) / 10, actualLossSeconds: Math.round(loss.seconds * 10) / 10, replay: "passed", persistentVictory: "passed" });
+    }
+  }
+  if (process.argv.includes("--campaign-only")) {
+    assert.deepEqual(failures, []);
+    console.log(JSON.stringify({ browser, campaignReports, failures }, null, 2));
+  } else {
+  await send("Emulation.setDeviceMetricsOverride", { width: 420, height: 760, deviceScaleFactor: 1, mobile: true, screenWidth: 420, screenHeight: 760 });
 
   await navigateAndWait(`http://127.0.0.1:${serverPort}/?test=match&debug=1&level=1&seed=640`);
   await waitForGame();
@@ -585,7 +720,8 @@ try {
   }
   }
   assert.deepEqual(failures, []);
-  console.log(JSON.stringify({ browser, reports, densePerformance, failures }, null, 2));
+  console.log(JSON.stringify({ browser, campaignReports, reports, densePerformance, failures }, null, 2));
+  }
 } finally {
   try { if (socket?.readyState === WebSocket.OPEN) await send("Browser.close"); } catch {}
   socket?.close();
