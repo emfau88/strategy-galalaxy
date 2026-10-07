@@ -1,5 +1,7 @@
 # Strategy Galalaxy
 
+**Isolierte Testkampagne:** [Die letzte Werft – lokal starten](experiments/last-shipyard/README.md) · [Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Bulk 0: eine vorläufige Mission, eigener Spielstand. Der öffentliche Testlink folgt in Bulk 1; die Testfassung ist noch nicht veröffentlicht.
+
 **[▶ Strategy Galalaxy spielen](https://emfau88.github.io/strategy-galalaxy/)**
 
 Strategy Galalaxy ist ein eigenständiges Mobile-First-Space-Lane-Wars-Spiel im Portraitformat. Zwei Flotten kämpfen kontinuierlich auf einer hohen, vertikal erkundbaren Karte. Energie entsteht permanent, kostenlose Drone-Waves halten die Front aktiv und bezahlte Einheiten beziehungsweise Squads sollen unmittelbar nach der Entscheidung starten.

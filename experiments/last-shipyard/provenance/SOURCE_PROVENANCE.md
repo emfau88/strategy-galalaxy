@@ -41,8 +41,3 @@ The portrait backgrounds, all structures outside `assets/library/galalaxy/`, the
 - Separate byte-for-byte copies, normalized aliases, adapted code and conceptual inspiration.
 - Keep active assets in the boot manifest and retained fallback/source assets in named validation groups; library presence never implies automatic loading.
 - Verify licensing before distribution and continue excluding material with unclear rights.
-
-
-## Die letzte Werft – isolierte Übernahme (Bulk 0)
-
-Quelle: Strategy Galalaxy, Commit `311af9efca548bbd11b2951cb3e67e86effb453b`; Ziel: `experiments/last-shipyard/`. Der zusammenhängende Kampagnenkern (36 src-Dateien plus HTML) wird bewusst begrenzt kopiert, um neue Missionsregeln ohne gemeinsame Runtime-Imports zu erproben. 51 aktive Bilder werden unverändert übernommen; Bibliotheksarchive bleiben ausgeschlossen. Anpassungen betreffen Identität, Speicher und Menügrenzen, keine Kampfregeln. Alle ursprünglichen Pfade, Zielpfade und Herkunftshashes: [Importmanifest](../experiments/last-shipyard/provenance/import-manifest.json). Lizenztexte und historische Provenienzberichte sind beigefügt. Die Classic-Basis bleibt `ed8802b2652d07ae2e7884f1dc2eabd195b34057`.

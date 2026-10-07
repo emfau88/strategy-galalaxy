@@ -1,0 +1,22 @@
+# Die letzte Werft – Produktvorgabe
+
+Gilt ausschließlich für dieses Experiment. Verbindlicher Umfang: [Umsetzungsplan](../../docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md).
+
+Du führst eine kleine Flotte, befreist den Sektor um deine Heimatwerft und entwickelst deinen Carrier zu einem taktischen Werkzeug. Jede Mission bringt eine neue Entscheidung und eine garantierte Freischaltung. Käufe starten sofort, Energie fließt kontinuierlich, Flotten kämpfen automatisch.
+
+## Gestaltungsregeln
+
+- Sechs gestaltete Missionen; zuerst drei als abgeschlossenes Kapitel. Ziele und angekündigte Angriffe dosieren die Schiffsmengen.
+- Vier vorhandene Kaufklassen, höchstens eine Ionenbomber-Variante, zwei Carrier-Fähigkeiten und ein Schildrelais-Typ.
+- Fortschritt durch kostenlose Baupläne und Ausrüstungswahl; keine Zufallsbelohnungen, Wartezeiten oder wiederholten Pflichtkämpfe.
+- Gegner verwenden nachvollziehbare Kosten, Cooldowns und Kapazitätsgrenzen.
+- Die Werft erhält eine eigene Darstellung. Menü, Briefing und Kampf müssen auf einem Smartphone lesbar sein.
+- Keine neue Währung, großen Forschungsbäume, frei baubaren Basen, Multiplayer oder dauerhaften Schiffsverluste.
+
+## Stand Bulk 0
+
+Spielbar ist ausschließlich die übernommene vorläufige Erstkontakt-Mission. Ihre Regeln und Balance sind unverändert. Zwei alte Missionsvorschauen sind Platzhalter, keine umgesetzten neuen Einsätze. Werft, Forschung, Carrier-Fähigkeiten und neue Missionsziele folgen erst in späteren Bulks.
+
+## Technische Grenze
+
+Alle Runtime-Imports und aktiven Assets liegen innerhalb dieses Ordners. Fortschritt und Sound verwenden eigene versionierte Schlüssel. Keine Migration, Löschung oder Änderung von Classic-Daten. Die gemeinsame Browser-Origin ist keine Sicherheitsgrenze. Gemeinsamer Build und Veröffentlichung werden erst in Bulk 1 ergänzt.

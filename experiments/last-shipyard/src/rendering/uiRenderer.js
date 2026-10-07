@@ -1,0 +1,609 @@
+import { EXPERIMENT } from "../experiment.js";
+import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
+import { UNIT_DEFINITIONS } from "../data/definitions.js";
+import { COMMAND_UI, commandUiLayout, overlayUiLayout } from "../ui/commandUi.js";
+import { cameraNavigatorLayout } from "../ui/cameraUi.js";
+import { campaignUiLayout } from "../ui/campaignUi.js";
+import { MISSIONS, missionById, missionUnlocked } from "../data/campaign.js";
+
+const C = Object.freeze({
+  panel: "rgba(18, 34, 53, 0.94)", outline: "rgba(244, 228, 190, 0.52)", text: "#fff8e9", muted: "#bdc9d9",
+  player: "#74f2f0", enemy: "#ff927d", gold: "#ffd679", select: "rgba(47, 119, 132, 0.88)", card: "rgba(34, 65, 86, 0.96)",
+});
+const UPGRADE_UI = Object.freeze({
+  economy: Object.freeze({
+    label: "REACTOR", active: "economyLevel", maximum: "economyUpgradeMaxLevel", icon: "upgrade-reactor-icon", accent: "#f2c47d",
+    effect: (balance, level) => `${(balance.baseIncomePerSecond * (1 + level * balance.economyUpgradeIncomeBonus)).toFixed(1)} → ${(balance.baseIncomePerSecond * (1 + (level + 1) * balance.economyUpgradeIncomeBonus)).toFixed(1)} E/s`,
+  }),
+  weapons: Object.freeze({
+    label: "ARSENAL", active: "weaponLevel", maximum: "weaponUpgradeMaxLevel", icon: "upgrade-arsenal-icon", accent: "#d6b6ff",
+    effect: (balance, level) => `DMG +${Math.round(level * balance.weaponUpgradeDamageBonus * 100)}% → +${Math.round((level + 1) * balance.weaponUpgradeDamageBonus * 100)}%`,
+  }),
+  fireRate: Object.freeze({
+    label: "AUTOLOADER", active: "fireRateLevel", maximum: "fireRateUpgradeMaxLevel", icon: "upgrade-autoloader-icon", accent: "#7cebf0",
+    effect: (balance, level) => `RELOAD -${Math.round(level * balance.fireRateUpgradeIntervalReduction * 100)}% → -${Math.round((level + 1) * balance.fireRateUpgradeIntervalReduction * 100)}%`,
+  }),
+  salvo: Object.freeze({
+    label: "MULTI CANNON", active: "salvoLevel", maximum: "salvoUpgradeMaxLevel", icon: "upgrade-multicannon-icon", accent: "#ffad72",
+    effect: (balance) => `+1 SHOT · +${Math.round(balance.salvoUpgradeDamageBonus * 100)}% SALVO`,
+  }),
+  shield: Object.freeze({
+    label: "SHIELD ARRAY", active: "shieldLevel", maximum: "shieldUpgradeMaxLevel", icon: "upgrade-shield-icon", accent: "#75f3e8",
+    effect: (balance, level) => `SHIELD +${Math.round((balance.shieldUpgradeCapacityRatios[level] ?? 0) * 100)}% → +${Math.round((balance.shieldUpgradeCapacityRatios[level + 1] ?? 0) * 100)}%`,
+  }),
+});
+const text = (ctx, value, x, y, size, color, align = "left", weight = 700) => {
+  ctx.fillStyle = color; ctx.font = `${weight} ${Math.max(9, size)}px Inter, system-ui, sans-serif`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillText(value, x, y);
+};
+const box = (ctx, rect, fill = C.panel, stroke = C.outline, radius = 8) => {
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(rect.x, rect.y, rect.width, rect.height, radius); else ctx.rect(rect.x, rect.y, rect.width, rect.height);
+  ctx.fillStyle = fill; ctx.fill();
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
+};
+const commandFrame = (ctx, rect, { fill = C.panel, strong = false, radius = 10 } = {}) => {
+  ctx.save();
+  ctx.shadowColor = "rgba(2,8,18,0.72)";
+  ctx.shadowBlur = strong ? 8 : 5;
+  box(ctx, rect, fill, strong ? "rgba(255,214,121,0.86)" : "rgba(239,199,127,0.58)", radius);
+  ctx.shadowBlur = 0;
+  const inset = strong ? 5 : 4;
+  ctx.strokeStyle = strong ? "rgba(255,244,210,0.28)" : "rgba(190,224,236,0.18)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(rect.x + inset, rect.y + inset, rect.width - inset * 2, rect.height - inset * 2, Math.max(3, radius - 4));
+  else ctx.rect(rect.x + inset, rect.y + inset, rect.width - inset * 2, rect.height - inset * 2);
+  ctx.stroke();
+  const corner = strong ? 13 : 10;
+  const offset = 2;
+  ctx.strokeStyle = strong ? C.gold : "rgba(239,199,127,0.72)";
+  ctx.lineWidth = strong ? 1.5 : 1;
+  for (const [x, y, sx, sy] of [
+    [rect.x + offset, rect.y + offset, 1, 1], [rect.x + rect.width - offset, rect.y + offset, -1, 1],
+    [rect.x + offset, rect.y + rect.height - offset, 1, -1], [rect.x + rect.width - offset, rect.y + rect.height - offset, -1, -1],
+  ]) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + sy * corner); ctx.lineTo(x, y); ctx.lineTo(x + sx * corner, y); ctx.stroke();
+  }
+  if (strong) {
+    for (const y of [rect.y + 1, rect.y + rect.height - 1]) {
+      ctx.save(); ctx.translate(rect.x + rect.width / 2, y); ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = C.gold; ctx.fillRect(-2.5, -2.5, 5, 5); ctx.restore();
+    }
+  }
+  ctx.restore();
+};
+const laneName = (laneId) => (laneId === LANE.CENTER ? "MAIN" : laneId === LANE.LEFT ? "LEFT" : "RIGHT");
+const laneIdsFor = (model) => model.simulation?.state.map.lanes.map((lane) => lane.id) ?? model.mapDefinition?.lanes.map((lane) => lane.id) ?? [LANE.LEFT, LANE.RIGHT];
+const structure = (simulation, id) => simulation?.state.structures.get(id);
+const ratio = (target) => target?.alive ? Math.max(0, target.hp / target.maxHp) : 0;
+const laneStrength = (model, laneId, team) => {
+  const lane = model.simulation.state.lanes.get(laneId);
+  return lane.unitIds.get(team).map((id) => model.simulation.state.units.get(id)).reduce((sum, unit) => {
+    const def = UNIT_DEFINITIONS[unit.unitType];
+    return sum + def.maxHp * 0.08 + def.damage * 3;
+  }, 0);
+};
+
+const miniBar = (ctx, x, y, width, value, color, align = "left") => {
+  const start = align === "right" ? x - width : x;
+  ctx.fillStyle = "rgba(214,231,240,0.14)";
+  ctx.fillRect(start, y, width, 4);
+  ctx.fillStyle = color;
+  const fill = width * Math.max(0, Math.min(1, value));
+  ctx.fillRect(align === "right" ? x - fill : x, y, fill, 4);
+};
+
+const header = (ctx, model, ui) => {
+  const economy = model.economy;
+  const playerHq = structure(model.simulation, "player-hq");
+  const enemyHq = structure(model.simulation, "enemy-hq");
+  const income = economy && model.simulation ? Math.round(economy.incomePerSecond(model.simulation.state, TEAM.PLAYER, model.activeBattleSeconds)) : 0;
+  const nodeIncome = economy && model.simulation
+    ? Math.round(economy.controlledNodes(model.simulation.state, TEAM.PLAYER) * economy.balance.nodeIncomePerSecond * economy.escalationMultiplier(model.activeBattleSeconds))
+    : 0;
+  commandFrame(ctx, { x: 8, y: 8, width: model.width - 16, height: 48 }, { fill: "rgba(13,29,47,0.96)", strong: true, radius: 10 });
+  text(ctx, `${model.mission ? "DU" : "YOU"}  ${Math.round(ratio(playerHq) * 100)}%`, 18, 22, 11, C.player);
+  miniBar(ctx, 18, 31, 102, ratio(playerHq), C.player);
+  const incomeLabel = model.simulation?.state.map.features?.captureNodes === false
+    ? `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s`
+    : `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s · NODE ${nodeIncome}`;
+  text(ctx, incomeLabel, 18, 44, 8, C.text);
+  text(ctx, model.mission ? "NÄCHSTE WELLE" : "NEXT WAVE", 158, 22, 9, C.text, "center");
+  text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, 158, 42, 14, C.text, "center");
+  text(ctx, `${Math.round(ratio(enemyHq) * 100)}%  ${model.mission ? "GEGNER" : "RIVAL"}`, 280, 22, 10, C.enemy, "right");
+  miniBar(ctx, 280, 31, 72, ratio(enemyHq), C.enemy, "right");
+  const fleetCount = model.simulation?.state.lanes.get(model.selectedLaneId)?.unitIds.get(TEAM.PLAYER).length ?? 0;
+  text(ctx, model.mission ? `FLOTTE ${fleetCount}/${model.director.config.caps.unitsPerLaneTeam}` : "LIVE DEPLOY", 280, 44, 9, C.muted, "right", 600);
+  box(ctx, COMMAND_UI.pause, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
+  text(ctx, model.state === MATCH_STATE.PAUSED ? "▶" : "Ⅱ", 305, 30, 12, C.text, "center");
+  box(ctx, COMMAND_UI.sound, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
+  text(ctx, model.soundEnabled ? "♪" : "×", 349, 30, 13, model.soundEnabled ? C.text : C.muted, "center");
+  box(ctx, ui.fullscreen, "rgba(36, 68, 91, 0.82)", "rgba(190,229,239,0.4)", 7);
+  text(ctx, model.fullscreenActive ? "×" : "□", 395, 29, 16, C.text, "center");
+};
+
+const drawShipIcon = (ctx, model, unitType, x, y, size = 22) => {
+  const spriteType = unitType;
+  const unifiedSprite = model.assets?.get(`unified-player-${spriteType}`);
+  const sprite = unifiedSprite ?? model.assets?.get(`nairan-${spriteType}`);
+  const crop = { scout: [20, 23, 24, 22], fighter: [17, 20, 30, 27], bomber: [16, 18, 32, 30], frigate: [11, 9, 42, 42] }[unitType] ?? [0, 0, 64, 64];
+  const unifiedCrop = {
+    drone: [101, 116, 182, 190], scout: [115, 100, 155, 185],
+    fighter: [68, 60, 248, 232], bomber: [78, 50, 228, 250], frigate: [105, 18, 174, 298],
+  }[unitType] ?? [0, 0, 384, 384];
+  if (unifiedSprite) {
+    const [, , sourceWidth, sourceHeight] = unifiedCrop;
+    const scale = size / Math.max(sourceWidth, sourceHeight);
+    const width = sourceWidth * scale;
+    const height = sourceHeight * scale;
+    ctx.drawImage(unifiedSprite, ...unifiedCrop, x - width / 2, y - height / 2, width, height);
+  }
+  else if (sprite) { ctx.save(); ctx.globalCompositeOperation = "screen"; ctx.drawImage(sprite, ...crop, x - size / 2, y - size / 2, size, size); ctx.restore(); }
+  else { ctx.fillStyle = UNIT_DEFINITIONS[unitType]?.color ?? C.player; ctx.beginPath(); ctx.arc(x, y, size * 0.3, 0, Math.PI * 2); ctx.fill(); }
+};
+
+const footerLaneSelector = (ctx, model, rect) => {
+  const selected = model.selectedLaneId === rect.laneId;
+  const player = laneStrength(model, rect.laneId, TEAM.PLAYER);
+  const enemy = laneStrength(model, rect.laneId, TEAM.ENEMY);
+  const total = Math.max(1, player + enemy);
+  box(ctx, rect, selected ? "rgba(47,119,132,0.82)" : "rgba(18,42,63,0.92)", selected ? C.gold : "rgba(123,185,203,0.34)", 6);
+  text(ctx, laneName(rect.laneId), rect.x + rect.width / 2, rect.y + 12, 8, selected ? C.text : C.muted, "center");
+  ctx.fillStyle = "rgba(224,235,242,0.16)";
+  ctx.fillRect(rect.x + 6, rect.y + 26, rect.width - 12, 3);
+  ctx.fillStyle = C.player;
+  ctx.fillRect(rect.x + 6, rect.y + 26, (rect.width - 12) * player / total, 3);
+  ctx.fillStyle = C.enemy;
+  ctx.fillRect(rect.x + 6 + (rect.width - 12) * player / total, rect.y + 26, (rect.width - 12) * enemy / total, 3);
+};
+
+const strategicNavigator = (ctx, model) => {
+  const camera = model.camera;
+  const state = model.simulation?.state;
+  if (!camera || !state) return;
+  const layout = cameraNavigatorLayout(camera.viewport);
+  const { track } = layout;
+  const worldHeight = Math.max(1, camera.worldHeight);
+  const trackY = (worldY) => track.y + Math.max(0, Math.min(1, worldY / worldHeight)) * track.height;
+  const laneIds = state.map.lanes.map((lane) => lane.id);
+  const laneX = (laneId) => {
+    const index = Math.max(0, laneIds.indexOf(laneId));
+    return laneIds.length === 1 ? track.x + track.width / 2 : track.x + 4 + index * 6;
+  };
+
+  box(ctx, { x: track.x - 3, y: track.y - 5, width: track.width + 6, height: track.height + 10 }, "rgba(8,18,34,0.68)", "rgba(178,219,234,0.2)", 7);
+  ctx.strokeStyle = "rgba(210,232,241,0.22)";
+  ctx.lineWidth = 1;
+  for (const x of laneIds.map(laneX)) {
+    ctx.beginPath();
+    ctx.moveTo(x, track.y);
+    ctx.lineTo(x, track.y + track.height);
+    ctx.stroke();
+  }
+
+  for (const node of state.nodes.values()) {
+    ctx.fillStyle = node.ownerTeam === TEAM.PLAYER ? C.player : node.ownerTeam === TEAM.ENEMY ? C.enemy : C.muted;
+    ctx.globalAlpha = 0.82;
+    ctx.save();
+    ctx.translate(laneX(node.laneId), trackY(node.y));
+    ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-2.2, -2.2, 4.4, 4.4);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+
+  for (const structure of state.structures.values()) {
+    const y = trackY(structure.y);
+    const color = structure.team === TEAM.PLAYER ? C.player : C.enemy;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = structure.alive ? 0.9 : 0.22;
+    if (structure.structureType === "hq") ctx.fillRect(track.x + 2, y - 1.5, track.width - 4, 3);
+    else {
+      const x = laneX(structure.laneId);
+      const direction = structure.team === TEAM.PLAYER ? -1 : 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y + direction * -3);
+      ctx.lineTo(x - 2.7, y + direction * 2.5);
+      ctx.lineTo(x + 2.7, y + direction * 2.5);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  for (const laneId of laneIds) {
+    const lane = state.lanes.get(laneId);
+    for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
+      const units = lane.unitIds.get(team).map((id) => state.units.get(id)).filter((unit) => unit?.alive);
+      if (!units.length) continue;
+      const averageY = units.reduce((sum, unit) => sum + unit.y, 0) / units.length;
+      const radius = Math.min(4, 1.5 + Math.sqrt(units.length) * 0.45);
+      ctx.fillStyle = team === TEAM.PLAYER ? C.player : C.enemy;
+      const x = laneX(laneId) + (team === TEAM.PLAYER ? -1.5 : 1.5);
+      const y = trackY(averageY);
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x - radius * 0.72, y - radius, radius * 1.44, radius * 2, radius * 0.72);
+      else ctx.rect(x - radius * 0.7, y - radius, radius * 1.4, radius * 2);
+      ctx.fill();
+    }
+  }
+
+  const recentOffscreenCombat = state.events.filter((event) => (
+    (event.type === "hit" || event.type === "destroyed")
+    && Number.isFinite(event.time)
+    && Number.isFinite(event.y)
+    && state.time - event.time < 0.9
+    && (event.y < camera.y || event.y > camera.y + camera.viewport.height)
+  )).slice(-8);
+  for (const event of recentOffscreenCombat) {
+    const age = state.time - event.time;
+    const progress = Math.max(0, Math.min(1, age / 0.9));
+    const laneId = event.laneId ?? laneIds[Math.min(laneIds.length - 1, Math.floor(event.x / state.map.bounds.width * laneIds.length))];
+    const x = laneX(laneId);
+    const y = trackY(event.y);
+    ctx.globalAlpha = 0.85 * (1 - progress);
+    ctx.strokeStyle = event.type === "destroyed" ? C.gold : event.team === TEAM.PLAYER ? C.player : C.enemy;
+    ctx.lineWidth = event.type === "destroyed" ? 2 : 1;
+    ctx.beginPath();
+    ctx.arc(x, y, 2.5 + progress * 4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  for (const event of state.events.filter((event) => event.type === "launch" && state.time - event.time < 1.2).slice(-6)) {
+    const progress = Math.max(0, (state.time - event.time) / 1.2);
+    const origin = [...state.structures.values()].find((structure) => structure.team === event.team && structure.structureType === "hq");
+    if (!origin) continue;
+    const x = laneX(event.laneId);
+    const fromY = trackY(origin.y);
+    const toY = trackY(event.y);
+    const headY = fromY + (toY - fromY) * Math.min(1, progress * 2);
+    ctx.save();
+    ctx.globalAlpha = (1 - progress) * 0.8;
+    ctx.strokeStyle = event.team === TEAM.PLAYER ? C.player : C.enemy;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, fromY); ctx.lineTo(x, headY); ctx.stroke();
+    ctx.fillStyle = C.text;
+    ctx.beginPath(); ctx.arc(x, headY, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  const windowTop = trackY(camera.y);
+  const windowBottom = trackY(camera.y + camera.viewport.height);
+  ctx.fillStyle = "rgba(255,214,121,0.055)";
+  ctx.fillRect(track.x - 2, windowTop, track.width + 4, Math.max(8, windowBottom - windowTop));
+  ctx.strokeStyle = C.gold;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(track.x - 2, windowTop, track.width + 4, Math.max(8, windowBottom - windowTop));
+};
+
+const unitCard = (ctx, model, rect) => {
+  const def = UNIT_DEFINITIONS[rect.unitType];
+  const availability = model.director?.liveDeployment.availability({
+    simulation: model.simulation,
+    economy: model.economy,
+    team: TEAM.PLAYER,
+    laneId: model.selectedLaneId,
+    unitType: rect.unitType,
+  }) ?? { ok: false, reason: "UNAVAILABLE_UNIT" };
+  box(ctx, rect, availability.ok ? C.card : "rgba(35, 45, 58, 0.82)", availability.ok ? C.outline : "rgba(132,151,166,0.2)", 8);
+  const role = (model.mission ? { scout: "SCHUTZ", fighter: "ESKORTE", bomber: "ANTI-HEAVY", frigate: "FRONT" }
+    : { scout: "SCREEN", fighter: "ANTI-LIGHT", bomber: "HEAVY / SIEGE", frigate: "FRONTLINE" })[rect.unitType];
+  drawShipIcon(ctx, model, rect.unitType, rect.x + 24, rect.y + 25, 38);
+  text(ctx, def.deploymentLabel ?? def.id.toUpperCase(), rect.x + 49, rect.y + 16, 10, availability.ok ? C.text : C.muted);
+  const count = def.squadSize > 1 ? ` ×${def.squadSize}` : "";
+  const detail = availability.reason === "COOLDOWN_ACTIVE"
+    ? `CD ${availability.cooldownRemaining.toFixed(1)}s · ${def.cost} E`
+    : availability.reason === "INSUFFICIENT_ENERGY"
+      ? model.mission ? `FEHLEN ${Math.ceil(availability.missingEnergy)} E · ${def.cost} E` : `NEED ${Math.ceil(availability.missingEnergy)} E · COST ${def.cost}`
+      : availability.reason === "LANE_CAPACITY"
+        ? model.mission ? `PLATZ FÜR ${def.squadSize ?? 1} SCHIFFE NÖTIG` : `LANE FULL · NEED ${def.squadSize ?? 1} SLOTS`
+        : `${role}${count} · ${def.cost} E`;
+  text(ctx, detail, rect.x + 49, rect.y + 35, 9, availability.ok ? C.gold : availability.reason === "COOLDOWN_ACTIVE" ? C.enemy : C.muted, "left", 650);
+  if (availability.reason === "COOLDOWN_ACTIVE") {
+    const ratio = Math.max(0, Math.min(1, availability.cooldownRemaining / def.deploymentCooldownSeconds));
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fillRect(rect.x + 49, rect.y + rect.height - 5, rect.width - 58, 2);
+    ctx.fillStyle = C.enemy;
+    ctx.fillRect(rect.x + 49, rect.y + rect.height - 5, (rect.width - 58) * ratio, 2);
+  }
+};
+
+const upgradeCard = (ctx, model, rect) => {
+  const cost = model.economy.upgradeCost(TEAM.PLAYER, rect.upgradeId);
+  const economy = model.economy.get(TEAM.PLAYER);
+  const upgrade = UPGRADE_UI[rect.upgradeId];
+  const activeKey = upgrade.active;
+  const affordable = cost !== null && economy.energy >= cost;
+  const level = economy[activeKey];
+  const maximum = model.economy.balance[upgrade.maximum];
+  box(ctx, rect, affordable ? "rgba(42, 77, 79, 0.94)" : "rgba(37, 43, 56, 0.9)", affordable ? upgrade.accent : "rgba(132,151,166,0.2)", 8);
+  const icon = model.assets?.get(upgrade.icon);
+  if (icon) {
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = affordable ? 1 : 0.48;
+    const frameSize = icon.naturalHeight || 32;
+    const frameCount = Math.max(1, Math.floor((icon.naturalWidth || frameSize) / frameSize));
+    const frame = Math.floor(model.frameTime * 8) % frameCount;
+    ctx.drawImage(icon, frame * frameSize, 0, frameSize, frameSize, rect.x + 6, rect.y + 9, 32, 32);
+    ctx.restore();
+  }
+  text(ctx, upgrade.label, rect.x + 43, rect.y + 10, 10, affordable ? C.text : C.muted);
+  for (let index = 0; index < maximum; index += 1) {
+    ctx.fillStyle = index < level ? upgrade.accent : "rgba(210,225,234,0.2)";
+    ctx.beginPath(); ctx.arc(rect.x + rect.width - 9 - index * 8, rect.y + 10, 2.5, 0, Math.PI * 2); ctx.fill();
+  }
+  text(ctx, cost === null ? "UPGRADE COMPLETE" : upgrade.effect(model.economy.balance, level), rect.x + 43, rect.y + 26, 8, cost === null ? upgrade.accent : affordable ? C.gold : C.muted, "left", 650);
+  const detail = cost === null
+    ? `MAX · LV ${level}`
+    : affordable ? `LV ${level} · ${cost} E · INSTANT` : `LV ${level} · NEED ${Math.ceil(cost - economy.energy)} E`;
+  text(ctx, detail, rect.x + 43, rect.y + 41, 8, affordable ? C.text : C.muted, "left", 650);
+};
+
+const drawCommandMedallion = (ctx, model, x, y, size) => {
+  const medallion = model.assets?.get("ui-command-medallion");
+  if (medallion) ctx.drawImage(medallion, x, y, size, size);
+  else {
+    ctx.fillStyle = C.player;
+    ctx.beginPath(); ctx.arc(x + size / 2, y + size / 2, size * 0.3, 0, Math.PI * 2); ctx.fill();
+  }
+};
+
+const commandSelectionLink = (ctx, model, ui) => {
+  const hq = structure(model.simulation, "player-hq");
+  if (!hq?.alive || !model.camera) return;
+  const screenY = model.camera.viewport.y + hq.y - model.camera.y;
+  if (screenY < model.camera.viewport.y - 50 || screenY > model.camera.viewport.y + model.camera.viewport.height + 50) return;
+  ctx.save();
+  ctx.strokeStyle = "rgba(110,255,247,0.88)";
+  ctx.shadowColor = C.player; ctx.shadowBlur = 9; ctx.lineWidth = 2;
+  const halfWidth = 72;
+  const halfHeight = 47;
+  const cornerLength = 15;
+  ctx.beginPath();
+  ctx.moveTo(hq.x - halfWidth, screenY - halfHeight + cornerLength);
+  ctx.lineTo(hq.x - halfWidth, screenY - halfHeight);
+  ctx.lineTo(hq.x - halfWidth + cornerLength, screenY - halfHeight);
+  ctx.moveTo(hq.x + halfWidth - cornerLength, screenY - halfHeight);
+  ctx.lineTo(hq.x + halfWidth, screenY - halfHeight);
+  ctx.lineTo(hq.x + halfWidth, screenY - halfHeight + cornerLength);
+  ctx.moveTo(hq.x - halfWidth, screenY + halfHeight - cornerLength);
+  ctx.lineTo(hq.x - halfWidth, screenY + halfHeight);
+  ctx.lineTo(hq.x - halfWidth + cornerLength, screenY + halfHeight);
+  ctx.moveTo(hq.x + halfWidth - cornerLength, screenY + halfHeight);
+  ctx.lineTo(hq.x + halfWidth, screenY + halfHeight);
+  ctx.lineTo(hq.x + halfWidth, screenY + halfHeight - cornerLength);
+  ctx.stroke();
+  ctx.shadowColor = C.gold; ctx.strokeStyle = "rgba(255,214,121,0.9)"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(hq.x, screenY + halfHeight + 3); ctx.lineTo(model.width / 2, ui.panel.y - 1); ctx.stroke();
+  ctx.restore();
+};
+
+const collapsedCommandDock = (ctx, model, ui) => {
+  commandFrame(ctx, ui.panel, { fill: "rgba(13,29,47,0.97)", strong: true, radius: 10 });
+  box(ctx, ui.command, "rgba(45,70,82,0.98)", C.gold, 8);
+  drawCommandMedallion(ctx, model, ui.command.x + 6, ui.command.y + 4, 40);
+  text(ctx, "COMMAND", ui.command.x + 82, ui.command.y + 24, 10, C.text, "center");
+  box(ctx, ui.deploy, "rgba(17,42,63,0.94)", "rgba(116,242,240,0.28)", 7);
+  text(ctx, laneName(model.selectedLaneId), ui.deploy.x + 8, ui.deploy.y + 12, 8, C.player);
+  text(ctx, model.mission ? "SOFORT VERSTÄRKEN" : "INSTANT DEPLOY", ui.deploy.x + ui.deploy.width / 2, ui.deploy.y + 33, 9, C.text, "center");
+  box(ctx, ui.status, "rgba(21,54,72,0.96)", "rgba(116,242,240,0.34)", 7);
+  text(ctx, model.mission ? "DRONE-WELLE" : "AUTO WAVE", ui.status.x + ui.status.width / 2, ui.status.y + 12, 8, C.text, "center");
+  text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, ui.status.x + ui.status.width / 2, ui.status.y + 33, 17, C.player, "center");
+};
+
+const expandedCommandPanel = (ctx, model, ui) => {
+  commandSelectionLink(ctx, model, ui);
+  commandFrame(ctx, ui.panel, { fill: "rgba(13,29,47,0.985)", strong: true, radius: 12 });
+  box(ctx, ui.close, "rgba(255,214,121,0.92)", "#fff2c7", 7);
+  text(ctx, "⌄", ui.close.x + ui.close.width / 2, ui.close.y + ui.close.height / 2, 16, "#23374b", "center");
+  box(ctx, ui.fleetTab, model.commandMenu === "units" ? "rgba(68,91,93,0.98)" : "rgba(20,45,67,0.94)", model.commandMenu === "units" ? C.gold : "rgba(125,180,201,0.34)", 8);
+  drawCommandMedallion(ctx, model, ui.fleetTab.x + 10, ui.fleetTab.y + 6, 30);
+  text(ctx, model.mission ? "FLOTTE" : "FLEET", ui.fleetTab.x + 112, ui.fleetTab.y + 21, 11, model.commandMenu === "units" ? C.text : C.muted, "center");
+  box(ctx, ui.upgradeTab, model.commandMenu === "upgrades" ? "rgba(68,91,93,0.98)" : "rgba(20,45,67,0.94)", model.commandMenu === "upgrades" ? C.gold : "rgba(125,180,201,0.34)", 8);
+  text(ctx, model.mission && !model.mission.upgrades.length ? "ERSTKONTAKT" : "⌃  UPGRADES", ui.upgradeTab.x + ui.upgradeTab.width / 2, ui.upgradeTab.y + 21, 10, model.commandMenu === "upgrades" ? C.text : C.muted, "center");
+  const cards = model.commandMenu === "units" ? ui.units : ui.upgrades;
+  for (const rect of cards) model.commandMenu === "units" ? unitCard(ctx, model, rect) : upgradeCard(ctx, model, rect);
+  if (model.mission && !model.mission.upgrades.length) {
+    text(ctx, "Scouts bilden den Schutzschirm.", 24, ui.panel.y + 129, 11, C.muted, "left", 500);
+    text(ctx, "Fighter verstärken den Angriff.", 24, ui.panel.y + 148, 11, C.muted, "left", 500);
+  }
+  for (const rect of ui.lanes) footerLaneSelector(ctx, model, rect);
+  box(ctx, ui.undo, "rgba(31,66,78,0.9)", null, 6);
+  text(ctx, "LIVE", ui.undo.x + ui.undo.width / 2, ui.undo.y + 18, 8, C.player, "center");
+  box(ctx, ui.deploy, "rgba(17,42,63,0.96)", "rgba(116,242,240,0.28)", 6);
+  text(ctx, model.mission ? "SCHIFF ANTIPPEN" : "TAP SHIP TO LAUNCH", ui.deploy.x + ui.deploy.width / 2, ui.deploy.y + 18, 8, C.text, "center");
+  box(ctx, ui.status, "rgba(21,54,72,0.96)", "rgba(116,242,240,0.34)", 6);
+  text(ctx, model.mission ? "WELLE" : "WAVE", ui.status.x + ui.status.width / 2, ui.status.y + 10, 8, C.text, "center");
+  text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, ui.status.x + ui.status.width / 2, ui.status.y + 26, 14, C.player, "center");
+  const tutorial = model.activeBattleSeconds < 10
+    ? model.mission ? "TIPPE AUF EIN SCHIFF · SOFORT VERSTÄRKEN" : (laneIdsFor(model).length === 1 ? "TAP A SHIP · DEPLOY NOW" : "PICK A LANE · TAP A SHIP")
+    : null;
+  const feedback = model.commandFeedback ?? tutorial;
+  if (feedback) {
+    box(ctx, { x: 78, y: ui.feedbackY - 9, width: 264, height: 18 }, "rgba(10,22,42,0.88)", null, 7);
+    text(ctx, feedback, model.width / 2, ui.feedbackY, 9, C.gold, "center");
+  }
+};
+
+const commandPanel = (ctx, model, ui) => model.commandDockOpen
+  ? expandedCommandPanel(ctx, model, ui)
+  : collapsedCommandDock(ctx, model, ui);
+
+const title = (ctx, model) => {
+  const offsetY = model.height / 2 - 380;
+  const ui = commandUiLayout(model.height);
+  box(ctx, ui.fullscreen, "rgba(36, 68, 91, 0.82)", "rgba(190,229,239,0.4)", 7);
+  text(ctx, model.fullscreenActive ? "×" : "□", 393, 30, 16, C.text, "center");
+  box(ctx, COMMAND_UI.sound, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
+  text(ctx, model.soundEnabled ? "♪" : "×", 349, 30, 13, model.soundEnabled ? C.text : C.muted, "center");
+  const singleLane = model.mapDefinition?.lanes.length === 1;
+  const halo = ctx.createRadialGradient(model.width / 2, 224 + offsetY, 8, model.width / 2, 224 + offsetY, 150);
+  halo.addColorStop(0, "rgba(239,199,127,0.28)");
+  halo.addColorStop(1, "rgba(239,199,127,0)");
+  ctx.fillStyle = halo;
+  ctx.fillRect(38, 78 + offsetY, model.width - 76, 292);
+  text(ctx, "ORBITAL COMMAND", model.width / 2, 166 + offsetY, 9, C.gold, "center", 650);
+  text(ctx, "STRATEGY", model.width / 2, 201 + offsetY, 30, C.text, "center");
+  text(ctx, "GALALAXY", model.width / 2, 233 + offsetY, 30, C.text, "center");
+  text(ctx, "BUILD A FLEET · HOLD THE LINE", model.width / 2, 265 + offsetY, 10, C.muted, "center", 650);
+  commandFrame(ctx, { x: 52, y: 288 + offsetY, width: model.width - 104, height: 254 }, { fill: "rgba(12,28,48,0.9)", strong: true, radius: 14 });
+  text(ctx, singleLane ? "ONE LANE · LIVE FLEET COMBAT" : "TWO LANES · LIVE FLEET COMBAT", model.width / 2, 315 + offsetY, 9, C.text, "center", 600);
+  text(ctx, "SWIPE THE MAP · TAP SHIPS TO LAUNCH", model.width / 2, 337 + offsetY, 9, C.muted, "center", 600);
+  text(ctx, "FREE DRONES EVERY 22s · ENERGY FLOWS LIVE", model.width / 2, 355 + offsetY, 9, C.muted, "center", 600);
+  text(ctx, "‹  MISSION  ›", model.width / 2, 382 + offsetY, 8, C.gold, "center", 650);
+  box(ctx, { ...COMMAND_UI.titleLevel, y: COMMAND_UI.titleLevel.y + offsetY }, "rgba(83,78,65,0.9)", "rgba(239,199,127,0.62)", 8);
+  text(ctx, `LEVEL ${model.selectedLevel ?? 1} · ${model.mapDefinition?.title ?? "ORBITAL GARDEN"}`, model.width / 2, 411 + offsetY, 10, C.gold, "center");
+  box(ctx, { ...COMMAND_UI.titleDifficulty, y: COMMAND_UI.titleDifficulty.y + offsetY }, "rgba(37,72,93,0.82)", "rgba(190,229,239,0.32)", 8);
+  const difficulty = { cadet: "CADET · RELAXED", tactician: "TACTICIAN · NORMAL", admiral: "ADMIRAL · HARD" }[model.aiProfile] ?? "TACTICIAN · NORMAL";
+  text(ctx, difficulty, model.width / 2, 459 + offsetY, 10, C.text, "center");
+  box(ctx, { ...COMMAND_UI.titleStart, y: COMMAND_UI.titleStart.y + offsetY }, model.levelLoading ? "rgba(65,72,78,0.9)" : "rgba(54,139,145,0.88)", model.levelLoading ? C.gold : "#b8edf0", 9);
+  text(ctx, model.levelLoading ? "PREPARING MISSION…" : "START MATCH", model.width / 2, 509 + offsetY, 11, C.text, "center");
+  menuButton(ctx, campaignUiLayout(model.height).back, "ZURÜCK", false);
+};
+
+const menuButton = (ctx, rect, label, primary = true, enabled = true) => {
+  box(ctx, rect, enabled ? primary ? "rgba(36,100,116,0.96)" : "rgba(21,36,54,0.94)" : "rgba(28,38,52,0.95)",
+    enabled ? primary ? "rgba(116,242,240,0.6)" : "rgba(178,210,232,0.22)" : "rgba(132,151,166,0.2)", 7);
+  text(ctx, label, rect.x + rect.width / 2, rect.y + rect.height / 2, 13, enabled ? C.text : C.muted, "center");
+};
+const menuFrame = (ctx, rect, prominent = false) => box(ctx, rect, "rgba(15,27,43,0.92)",
+  prominent ? "rgba(151,204,220,0.3)" : "rgba(151,204,220,0.14)", 12);
+
+const campaignTitle = (ctx, model) => {
+  const ui = campaignUiLayout(model.height);
+  const offset = model.height / 2 - 380;
+  const progress = model.campaignProgress ?? { completed: [], lastMissionId: null, persistent: true };
+  const heading = (subtitle) => {
+    text(ctx, "TESTKAMPAGNE", 210, 120 + offset, 10, C.gold, "center");
+    text(ctx, subtitle, 210, 158 + offset, 24, C.text, "center");
+  };
+  if (model.menuScreen === "main") {
+    text(ctx, "TESTKAMPAGNE", 210, 166 + offset, 10, C.gold, "center");
+    text(ctx, "DIE LETZTE", 210, 201 + offset, 30, C.text, "center");
+    text(ctx, "WERFT", 210, 235 + offset, 30, C.text, "center");
+    text(ctx, "DEINE FLOTTE. DEINE ENTSCHEIDUNG.", 210, 267 + offset, 11, C.muted, "center");
+    menuFrame(ctx, ui.panel, true);
+    text(ctx, "KAPITEL 01 · ERSTKONTAKT", 210, 320 + offset, 12, C.gold, "center");
+    text(ctx, "Beobachte die Front. Schicke Verstärkung.", 210, 344 + offset, 11, C.muted, "center", 500);
+    menuButton(ctx, ui.campaign, progress.lastMissionId ? "KAMPAGNE FORTSETZEN" : "KAMPAGNE STARTEN");
+    menuButton(ctx, ui.settings, "EINSTELLUNGEN", false);
+    text(ctx, progress.completed.length ? "ERSTKONTAKT ABGESCHLOSSEN" : "Eine Lane. Zwei Schiffsklassen. Dein erster Einsatz.", 210, 602 + offset, 11, progress.completed.length ? C.player : C.muted, "center", 500);
+    text(ctx, progress.persistent ? "Fortschritt wird auf diesem Gerät gespeichert." : "Fortschritt bleibt nur für diese Sitzung erhalten.", 210, 628 + offset, 10, C.muted, "center", 500);
+    text(ctx, `TESTKAMPAGNE · ${EXPERIMENT.version}`, 210, 662 + offset, 10, C.muted, "center", 500);
+  } else if (model.menuScreen === "missions") {
+    heading("KAMPAGNE");
+    text(ctx, "SEKTOR 01 · ORBITAL GARDEN", 210, 183 + offset, 10, C.muted, "center");
+    for (const rect of ui.missions) {
+      const mission = missionById(rect.missionId);
+      const unlocked = missionUnlocked(mission, progress.completed);
+      const completed = progress.completed.includes(mission.id);
+      menuFrame(ctx, rect, mission.available);
+      text(ctx, String(mission.number).padStart(2, "0"), rect.x + 28, rect.y + 30, 19, mission.available ? C.gold : C.muted, "center");
+      text(ctx, mission.title, rect.x + 54, rect.y + 27, 16, mission.available ? C.text : C.muted);
+      const status = completed ? "ABGESCHLOSSEN · ERNEUT SPIELEN"
+        : mission.available ? "BEREIT ZUM START" : unlocked ? "FREIGESCHALTET · BALD VERFÜGBAR" : "GESPERRT · BALD VERFÜGBAR";
+      text(ctx, status, rect.x + 54, rect.y + 51, 10, completed ? C.player : mission.available ? C.gold : C.muted);
+      text(ctx, mission.lesson, rect.x + 16, rect.y + 75, 10, C.muted, "left", 500);
+    }
+    text(ctx, "Weitere Einsätze folgen nach Erstkontakt.", 210, 555 + offset, 11, C.muted, "center", 500);
+    menuButton(ctx, ui.back, "HAUPTMENÜ", false);
+  } else if (model.menuScreen === "briefing") {
+    const mission = missionById(model.selectedMissionId);
+    if (!mission?.available) return;
+    heading(`MISSION ${mission.number} · ${mission.title.toUpperCase()}`);
+    menuFrame(ctx, { x: 36, y: 203 + offset, width: 348, height: 330 }, true);
+    text(ctx, "DEIN AUFTRAG", 60, 233 + offset, 11, C.gold);
+    text(ctx, mission.objective, 60, 260 + offset, 14, C.text);
+    drawShipIcon(ctx, model, "scout", 143, 309 + offset, 47);
+    drawShipIcon(ctx, model, "fighter", 277, 309 + offset, 55);
+    for (const [index, line] of mission.briefing.entries()) text(ctx, line, 210, 352 + index * 23 + offset, 12, C.muted, "center", 500);
+    text(ctx, `${mission.fleetLimit} Schiffe je Seite · ${mission.startingEnergy} E Start · +${mission.income} E/s`, 210, 411 + offset, 11, C.gold, "center");
+    text(ctx, `Eine kostenlose Drone alle ${mission.waveSeconds} Sekunden.`, 210, 434 + offset, 11, C.muted, "center", 500);
+    text(ctx, "Käufe starten sofort. Forschung folgt später.", 210, 454 + offset, 11, C.muted, "center", 500);
+    text(ctx, "Gegner: Kadett · langsames Verstärkungstempo.", 210, 474 + offset, 11, C.gold, "center", 500);
+    text(ctx, "COMMAND öffnet deine Flotte.", 210, 499 + offset, 12, C.player, "center");
+    text(ctx, "Wische über die Karte, um die Front zu beobachten.", 210, 518 + offset, 10, C.muted, "center", 500);
+    menuButton(ctx, ui.start, model.levelLoading ? "EINSATZ WIRD VORBEREITET …" : "MISSION STARTEN", true, !model.levelLoading);
+    menuButton(ctx, ui.back, "ZUR MISSIONSWAHL", false);
+  } else if (model.menuScreen === "settings") {
+    heading("EINSTELLUNGEN");
+    menuFrame(ctx, ui.panel, true);
+    text(ctx, "KAMPFSOUND", 210, 328 + offset, 11, C.gold, "center");
+    menuButton(ctx, ui.sound, model.soundEnabled ? "SOUND: AN" : "SOUND: AUS");
+    text(ctx, "Die Einstellung bleibt auf diesem Gerät erhalten.", 210, 448 + offset, 10, C.muted, "center", 500);
+    text(ctx, "Fortschritt wird automatisch gespeichert.", 210, 484 + offset, 11, C.muted, "center", 500);
+    text(ctx, "Vollbild: Symbol rechts oben im Gefecht.", 210, 511 + offset, 11, C.muted, "center", 500);
+    menuButton(ctx, ui.back, "HAUPTMENÜ", false);
+  }
+};
+const loading = (ctx, model) => {
+  const progress = Math.max(0, Math.min(1, model.assetProgress ?? 0));
+  const panel = { x: 48, y: model.height / 2 - 78, width: model.width - 96, height: 156 };
+  commandFrame(ctx, panel, { fill: "rgba(10,24,43,0.96)", strong: true, radius: 14 });
+  text(ctx, "ORBITAL COMMAND", model.width / 2, panel.y + 34, 9, C.gold, "center", 650);
+  text(ctx, "PREPARING FLEET", model.width / 2, panel.y + 62, 18, C.text, "center");
+  ctx.fillStyle = "rgba(214,231,240,0.14)"; ctx.fillRect(panel.x + 28, panel.y + 91, panel.width - 56, 6);
+  ctx.fillStyle = C.player; ctx.fillRect(panel.x + 28, panel.y + 91, (panel.width - 56) * progress, 6);
+  text(ctx, `${Math.round(progress * 100)}%`, model.width / 2, panel.y + 117, 9, C.muted, "center", 650);
+  if (model.assetErrors) text(ctx, "RETRYING SLOW ASSETS", model.width / 2, panel.y + 137, 8, C.gold, "center", 650);
+};
+const endState = (ctx, model) => {
+  const win = model.state === MATCH_STATE.VICTORY;
+  const draw = model.state === MATCH_STATE.DRAW;
+  const color = draw ? C.gold : win ? C.player : C.enemy;
+  const ui = overlayUiLayout(model.height);
+  if (model.mission) {
+    const center = model.height / 2;
+    box(ctx, { x: 36, y: center - 142, width: 348, height: 284 }, "rgba(10,24,43,0.97)", color, 14);
+    text(ctx, win ? "MISSION GESCHAFFT" : draw ? "UNENTSCHIEDEN" : "MISSION GESCHEITERT", 210, center - 96, 21, color, "center");
+    text(ctx, model.mission.title, 210, center - 62, 15, C.text, "center");
+    const seconds = Math.floor(model.activeBattleSeconds);
+    text(ctx, `Einsatzdauer: ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`, 210, center - 34, 12, C.muted, "center");
+    text(ctx, win ? "Der gegnerische Carrier ist zerstört." : "Versuche eine andere Mischung aus Scout und Fighter.", 210, center - 9, 10, C.muted, "center", 500);
+    menuButton(ctx, ui.endRestart, "NOCHMAL");
+    menuButton(ctx, ui.endMenu, "MISSIONEN", false);
+    text(ctx, win ? "Mission 2 freigeschaltet · bald verfügbar" : "Dein bisheriger Fortschritt bleibt erhalten.", 210, center + 90, 11, win ? C.gold : C.muted, "center");
+    text(ctx, model.campaignProgress?.persistent ? "Fortschritt auf diesem Gerät gespeichert." : "Fortschritt nur für diese Sitzung gespeichert.", 210, center + 117, 10, C.muted, "center", 500);
+    return;
+  }
+  box(ctx, ui.endPanel, "rgba(10,24,43,0.94)", color, 14);
+  text(ctx, draw ? "STALEMATE" : win ? "VICTORY" : "DEFEAT", model.width / 2, model.height / 2 - 48, 24, color, "center");
+  text(ctx, "THE ORBITAL FRONT IS QUIET", model.width / 2, model.height / 2 - 15, 9, C.muted, "center", 600);
+  box(ctx, ui.endRestart, "rgba(54,139,145,0.88)", "#b8edf0", 9);
+  text(ctx, "PLAY AGAIN", ui.endRestart.x + ui.endRestart.width / 2, ui.endRestart.y + 23, 10, C.text, "center");
+  box(ctx, ui.endMenu, "rgba(83,78,65,0.9)", "rgba(239,199,127,0.62)", 9);
+  text(ctx, "MAIN MENU", ui.endMenu.x + ui.endMenu.width / 2, ui.endMenu.y + 23, 10, C.gold, "center");
+};
+
+const paused = (ctx, model) => {
+  const ui = overlayUiLayout(model.height);
+  const y = model.height / 2;
+  box(ctx, ui.pausePanel, "rgba(10,24,43,0.95)", C.gold, 14);
+  text(ctx, model.mission ? "PAUSE" : "PAUSED", model.width / 2, y - 58, 22, C.gold, "center");
+  text(ctx, model.mission ? "DAS GEFECHT IST ANGEHALTEN" : "THE BATTLE IS ON HOLD", model.width / 2, y - 27, 9, C.muted, "center", 600);
+  box(ctx, ui.pauseResume, "rgba(54,139,145,0.88)", "#b8edf0", 9);
+  text(ctx, model.mission ? "WEITER" : "RESUME", ui.pauseResume.x + ui.pauseResume.width / 2, ui.pauseResume.y + 23, 10, C.text, "center");
+  box(ctx, ui.pauseMenu, "rgba(83,78,65,0.9)", "rgba(239,199,127,0.62)", 9);
+  text(ctx, model.mission ? "HAUPTMENÜ" : "MAIN MENU", ui.pauseMenu.x + ui.pauseMenu.width / 2, ui.pauseMenu.y + 23, 10, C.gold, "center");
+};
+
+export const renderUiLayer = (ctx, model) => {
+  if (model.state === MATCH_STATE.LOADING) return loading(ctx, model);
+  if (model.state === MATCH_STATE.TITLE) return model.menuScreen && model.menuScreen !== "skirmish" ? campaignTitle(ctx, model) : title(ctx, model);
+  const ui = commandUiLayout(model.height, laneIdsFor(model), model.commandDockOpen, model.commandMenu, model.director?.config.rules);
+  header(ctx, model, ui);
+  if ((model.state === MATCH_STATE.LIVE_MATCH || model.state === MATCH_STATE.PAUSED) && model.simulation) {
+    strategicNavigator(ctx, model);
+    commandPanel(ctx, model, ui);
+    if (model.mission && !model.commandDockOpen && model.activeBattleSeconds < 15) {
+      box(ctx, { x: 40, y: ui.feedbackY - 30, width: 326, height: 42 }, "rgba(10,24,43,0.92)", null, 8);
+      text(ctx, "Ziel: Zerstöre den gegnerischen Carrier.", 203, ui.feedbackY - 17, 11, C.gold, "center");
+      text(ctx, "Tippe auf COMMAND und schicke Verstärkung.", 203, ui.feedbackY + 1, 10, C.text, "center", 500);
+    }
+    if (model.state === MATCH_STATE.PAUSED) paused(ctx, model);
+  } else if ([MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(model.state)) endState(ctx, model);
+  if (model.debugEnabled && model.lastAiDecision) text(ctx, `QA · AI ${laneName(model.lastAiDecision.defenseLane)} HOLD / ${laneName(model.lastAiDecision.pushLane)} PUSH`, model.width / 2, ui.debugY, 8, "#b8afcf", "center");
+};

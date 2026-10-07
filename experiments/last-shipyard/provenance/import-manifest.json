@@ -1,0 +1,471 @@
+{
+  "sourceCommit": "311af9efca548bbd11b2951cb3e67e86effb453b",
+  "classicCommit": "ed8802b2652d07ae2e7884f1dc2eabd195b34057",
+  "files": [
+    {
+      "source": "index.html",
+      "destination": "index.html",
+      "sha256": "641af50e15ce7f6a18f0b96921d59533e3d1ef6bd31957587bbf4e59b2d4640c"
+    },
+    {
+      "source": "src/assets.js",
+      "destination": "src/assets.js",
+      "sha256": "c65b87180d8d7aa47fcaa23168cedac6edcbe5371e3d20db1a7d5ab924ed3469"
+    },
+    {
+      "source": "src/audio/soundSystem.js",
+      "destination": "src/audio/soundSystem.js",
+      "sha256": "991cf8ef65bd74d8653c8a6a4d7248ab7809158b017b12546fce09ea3bfde77e"
+    },
+    {
+      "source": "src/campaign/progress.js",
+      "destination": "src/campaign/progress.js",
+      "sha256": "d79b7e1af757c0a3fee2b742ac8998ead9f0f5bb94390b7b510a35e5914a5147"
+    },
+    {
+      "source": "src/config.js",
+      "destination": "src/config.js",
+      "sha256": "b373c285f83df9b313e3181bbccd877c076b9dccd82caaab4e6ec809076617b9"
+    },
+    {
+      "source": "src/core/battlefieldCamera.js",
+      "destination": "src/core/battlefieldCamera.js",
+      "sha256": "df3975626cbd5fe8cf318a7cb18db7e402d5a221ab5c42e79e377fffb914f4bd"
+    },
+    {
+      "source": "src/core/clock.js",
+      "destination": "src/core/clock.js",
+      "sha256": "a3167790d518f543c377d1786f5e78c9290d7c081219973488191c53ad15ce81"
+    },
+    {
+      "source": "src/core/constants.js",
+      "destination": "src/core/constants.js",
+      "sha256": "02286da9209c7df8efcfab94466458bfe0deafb658c83c1b8506cb77f09afa79"
+    },
+    {
+      "source": "src/core/ids.js",
+      "destination": "src/core/ids.js",
+      "sha256": "46fa21ee4e903280a023c4b67204e13336ef3069456dbf0165e7de6c900d5818"
+    },
+    {
+      "source": "src/core/rng.js",
+      "destination": "src/core/rng.js",
+      "sha256": "1c0ffd01166786a5b541362b64958d3006d150cd528790cd74f3cc0bb923845e"
+    },
+    {
+      "source": "src/core/viewport.js",
+      "destination": "src/core/viewport.js",
+      "sha256": "ee7db3d8ba2f5e9ea997f4faf97794fdb2eb317f8aa77b531c8ae86f7b84f3db"
+    },
+    {
+      "source": "src/data/campaign.js",
+      "destination": "src/data/campaign.js",
+      "sha256": "7e947acdf127bddc7c4ffdc23a7081f81b002bc35ef7103f37f4701d9fbe22d6"
+    },
+    {
+      "source": "src/data/definitions.js",
+      "destination": "src/data/definitions.js",
+      "sha256": "51257b2588be057c4aed6985d3b98858d3b8f86fffcd3661e6e856ebbdab7a38"
+    },
+    {
+      "source": "src/data/visuals.js",
+      "destination": "src/data/visuals.js",
+      "sha256": "ec78bdcb380cc13e532a4a3406939fd158af32e216519389041ce648f6e55c45"
+    },
+    {
+      "source": "src/game.js",
+      "destination": "src/game.js",
+      "sha256": "f4311d9952a1f7f0756e93855d3062a935248d92f98cae9b44ca627cbb8ff10c"
+    },
+    {
+      "source": "src/main.js",
+      "destination": "src/main.js",
+      "sha256": "9ff6327bfdb1dcf64cc2aa2a46055daa8ac4d4331969beb8098be90ae0ff9290"
+    },
+    {
+      "source": "src/qa/matchTestMode.js",
+      "destination": "src/qa/matchTestMode.js",
+      "sha256": "fffe2e34e1e973928e1113e1e98dcea6dabfe9faa399d75263235716a33b96c9"
+    },
+    {
+      "source": "src/rendering/assetLoader.js",
+      "destination": "src/rendering/assetLoader.js",
+      "sha256": "b3d1520b5d831f2a1a4106cb657aa70738acb0a1add9d146739483b6dfb0ca5a"
+    },
+    {
+      "source": "src/rendering/battlefieldRenderer.js",
+      "destination": "src/rendering/battlefieldRenderer.js",
+      "sha256": "c239e274ae910f36332c39664dc262cc8dc0443e31fa86f0a89a9a1855be0ee5"
+    },
+    {
+      "source": "src/rendering/presentationEffects.js",
+      "destination": "src/rendering/presentationEffects.js",
+      "sha256": "bbe733c32ccbd4023ddad80df89eb0cbae0735caa7697d9ee16572e82216b0d0"
+    },
+    {
+      "source": "src/rendering/renderer.js",
+      "destination": "src/rendering/renderer.js",
+      "sha256": "d1e293910c8bd44c250b8634021f1eedb96668b833175c9eb3e34114bdf11917"
+    },
+    {
+      "source": "src/rendering/uiRenderer.js",
+      "destination": "src/rendering/uiRenderer.js",
+      "sha256": "7c48444b4dbe7bc447114d970d0b5361dafa91fe8eee31a09dc5da94a39c86fb"
+    },
+    {
+      "source": "src/simulation/battleSimulation.js",
+      "destination": "src/simulation/battleSimulation.js",
+      "sha256": "cb0c709a967c59253b6c3d971c70255d51cc1e5b51dd98c0fac2bee207732a86"
+    },
+    {
+      "source": "src/simulation/battleState.js",
+      "destination": "src/simulation/battleState.js",
+      "sha256": "db606af669a4148ef6be204dd09d2cbc291cbe66af933f09230d07cb7174eb75"
+    },
+    {
+      "source": "src/simulation/captureSystem.js",
+      "destination": "src/simulation/captureSystem.js",
+      "sha256": "fb183ae64db643b1c1e4f62be0d89f21f21f0ffe358ce87674a6c01ce6a89e03"
+    },
+    {
+      "source": "src/simulation/commandSystem.js",
+      "destination": "src/simulation/commandSystem.js",
+      "sha256": "3e251c770a7eecac1708e073d9f754f3d4a5422d6e30c652a6b0acfd70cd3761"
+    },
+    {
+      "source": "src/simulation/deploymentDirector.js",
+      "destination": "src/simulation/deploymentDirector.js",
+      "sha256": "57370123b8d218b54a1e4e22271889f4a2090c70434228587d038242405a093c"
+    },
+    {
+      "source": "src/simulation/economySystem.js",
+      "destination": "src/simulation/economySystem.js",
+      "sha256": "ebb7c3c3d1aa44312758bb087f626e43a5b99168cda79d8a7c7337171f359f48"
+    },
+    {
+      "source": "src/simulation/entities.js",
+      "destination": "src/simulation/entities.js",
+      "sha256": "7ad29fac80984f37d653ec8bdbb086511ab993481a3f9c4e3d7284c7e5177dae"
+    },
+    {
+      "source": "src/simulation/liveDeploymentSystem.js",
+      "destination": "src/simulation/liveDeploymentSystem.js",
+      "sha256": "5b38e2b90c2d4e65b80b7a3964555bb4fd5b43493a6be30164d2283a963db8e0"
+    },
+    {
+      "source": "src/simulation/matchDirector.js",
+      "destination": "src/simulation/matchDirector.js",
+      "sha256": "44f14f0462bfde69e830b977cac6e5ec18644d86fe89d359cf889378ae300a7f"
+    },
+    {
+      "source": "src/simulation/opponentAi.js",
+      "destination": "src/simulation/opponentAi.js",
+      "sha256": "87471850675e5dadd91946240e536f404883749bacb294b176c723711e43395f"
+    },
+    {
+      "source": "src/simulation/targeting.js",
+      "destination": "src/simulation/targeting.js",
+      "sha256": "4e5c49a0281ce8722c8e21d943aed37cad58ef6a312fa28bbb7e24ef22e0dc8b"
+    },
+    {
+      "source": "src/ui/cameraUi.js",
+      "destination": "src/ui/cameraUi.js",
+      "sha256": "fada7c546315d14e39272aa2967a2cf418142d88765e9f7f64a0703ce79a9cbb"
+    },
+    {
+      "source": "src/ui/campaignUi.js",
+      "destination": "src/ui/campaignUi.js",
+      "sha256": "13f02fa885ef44285b46d78af4d4104e26842cb632beb60fcb90e18b73742199"
+    },
+    {
+      "source": "src/ui/commandUi.js",
+      "destination": "src/ui/commandUi.js",
+      "sha256": "f46ecc336563bfd6a75b4dd4eab3028b8577dd84b06b3215b02907d67459075b"
+    },
+    {
+      "source": "src/ui/inputRouter.js",
+      "destination": "src/ui/inputRouter.js",
+      "sha256": "13607b3624f0d8894353b295f2d79bb0953f206ebff7ebc4b7a1770403feaada"
+    },
+    {
+      "source": "assets/factions/klaed/bomber-destruction.png",
+      "destination": "assets/factions/klaed/bomber-destruction.png",
+      "sha256": "801a270bf1189fd3dc62749145a5c5abb03e981a03b39a08f95bddc488e8880d"
+    },
+    {
+      "source": "assets/factions/klaed/bomber-shield.png",
+      "destination": "assets/factions/klaed/bomber-shield.png",
+      "sha256": "a849a438b2fc39e10e485348a02730e17b7111f6d8c3813916ac51276c0a953f"
+    },
+    {
+      "source": "assets/factions/klaed/fighter-destruction.png",
+      "destination": "assets/factions/klaed/fighter-destruction.png",
+      "sha256": "74ba91259c12038497e18d70676c7762136c9e68b83ef0123caa027af905aa34"
+    },
+    {
+      "source": "assets/factions/klaed/fighter-shield.png",
+      "destination": "assets/factions/klaed/fighter-shield.png",
+      "sha256": "dec79cc02b0f3e5d91d68fca754f090575c62ca46a9fe91052ef776e8f1b13f2"
+    },
+    {
+      "source": "assets/factions/klaed/frigate-destruction.png",
+      "destination": "assets/factions/klaed/frigate-destruction.png",
+      "sha256": "87db4e148561d3b049010032d062092c43a026138403586ed8f081f14928c65a"
+    },
+    {
+      "source": "assets/factions/klaed/frigate-shield.png",
+      "destination": "assets/factions/klaed/frigate-shield.png",
+      "sha256": "375442b7226f4fddd0115441736d3d9c41090b7ea35461a9b1ed5a7bb5155ebb"
+    },
+    {
+      "source": "assets/factions/klaed/scout-destruction.png",
+      "destination": "assets/factions/klaed/scout-destruction.png",
+      "sha256": "904bc3b1af660b35ca977a4dd59b534c4d9678434e784285a5c4cb3d53bfbacd"
+    },
+    {
+      "source": "assets/factions/klaed/scout-engine.png",
+      "destination": "assets/factions/klaed/scout-engine.png",
+      "sha256": "a2605a73bbc1f13f57928129eb9cb6140a8d19afcea97e2510d98703e639c8b2"
+    },
+    {
+      "source": "assets/factions/klaed/scout-shield.png",
+      "destination": "assets/factions/klaed/scout-shield.png",
+      "sha256": "dadfeeb23ccfde184e1a9d4f1c47ad02be36ad2290bb7c616a4cb067f890c4ee"
+    },
+    {
+      "source": "assets/factions/nairan/bomber-destruction.png",
+      "destination": "assets/factions/nairan/bomber-destruction.png",
+      "sha256": "05f9afefc8fe6ad5933634b60dd456ecb0ace0d163ca37f79969e8fdbee08ff5"
+    },
+    {
+      "source": "assets/factions/nairan/bomber-shield.png",
+      "destination": "assets/factions/nairan/bomber-shield.png",
+      "sha256": "3583de08f294263911b11fed8d3efda562e2fb24bb36e4629bef1ba434b4927f"
+    },
+    {
+      "source": "assets/factions/nairan/fighter-destruction.png",
+      "destination": "assets/factions/nairan/fighter-destruction.png",
+      "sha256": "cc8e322767292086544a4578c83e7179f1fcbb8e79303e20d22d016b253282d4"
+    },
+    {
+      "source": "assets/factions/nairan/fighter-shield.png",
+      "destination": "assets/factions/nairan/fighter-shield.png",
+      "sha256": "58289302be9d09f392ee00c42460f034f64f5dbfe50aee7fe0b14f0beb4ecf44"
+    },
+    {
+      "source": "assets/factions/nairan/frigate-destruction.png",
+      "destination": "assets/factions/nairan/frigate-destruction.png",
+      "sha256": "34a810384ff341bfba0cef1b63cb2efa1c11cdd05730af658e54fe457c96aa0d"
+    },
+    {
+      "source": "assets/factions/nairan/frigate-shield.png",
+      "destination": "assets/factions/nairan/frigate-shield.png",
+      "sha256": "72b1f9fc411a522118f5aabf45d6ca63acd3f69a83b1ce3338243847f78e3529"
+    },
+    {
+      "source": "assets/factions/nairan/scout-destruction.png",
+      "destination": "assets/factions/nairan/scout-destruction.png",
+      "sha256": "7b8acae6388ac7718bc88ed24ac78479cd7e6ad10b5da82e2447e026bb4d88d2"
+    },
+    {
+      "source": "assets/factions/nairan/scout-engine.png",
+      "destination": "assets/factions/nairan/scout-engine.png",
+      "sha256": "4adabdc506da50d43e91a41d0b7dd8f01835757333ac324e5fb86bdd25c206ad"
+    },
+    {
+      "source": "assets/factions/nairan/scout-shield.png",
+      "destination": "assets/factions/nairan/scout-shield.png",
+      "sha256": "3f49fd6b4426b4d7f439b01436af0bc1a6543a7d7248355c67ec8017cdba5d43"
+    },
+    {
+      "source": "assets/factions/unified/enemy-bomber-v2.png",
+      "destination": "assets/factions/unified/enemy-bomber-v2.png",
+      "sha256": "d483b00010c9e3ed23773a90e28219928ca0b0f981edd442282f80646d6f6c74"
+    },
+    {
+      "source": "assets/factions/unified/enemy-drone-v1.png",
+      "destination": "assets/factions/unified/enemy-drone-v1.png",
+      "sha256": "d9ad4be5397c622cda3ff8908a8cdc97b5a41037062b40db8af82f007164e847"
+    },
+    {
+      "source": "assets/factions/unified/enemy-fighter-v2.png",
+      "destination": "assets/factions/unified/enemy-fighter-v2.png",
+      "sha256": "24e7cf2564e3c4c2aa066535c4cc641a0fd5d9d51a9d47d0ead5d041206346ab"
+    },
+    {
+      "source": "assets/factions/unified/enemy-frigate-v2.png",
+      "destination": "assets/factions/unified/enemy-frigate-v2.png",
+      "sha256": "c0ff0072c7d32d29422b79b94b8989dd93f7ccca78f3271dc4db91446db9a853"
+    },
+    {
+      "source": "assets/factions/unified/enemy-scout-v2.png",
+      "destination": "assets/factions/unified/enemy-scout-v2.png",
+      "sha256": "cd610fee9a1a4e350039b27a737491623d53ad0b266dcdb52d7ad1d2bf12db40"
+    },
+    {
+      "source": "assets/factions/unified/player-bomber-v2.png",
+      "destination": "assets/factions/unified/player-bomber-v2.png",
+      "sha256": "2f6ffb7abed6c54bd4d955550c086cc1b0a7c6c47c3758818ab72d8628b64765"
+    },
+    {
+      "source": "assets/factions/unified/player-drone-v1.png",
+      "destination": "assets/factions/unified/player-drone-v1.png",
+      "sha256": "0e3e4ec37c7123b4c5da9b1fdfc77353ba7c1afbd1de2808a024752cfe44921b"
+    },
+    {
+      "source": "assets/factions/unified/player-fighter-v2.png",
+      "destination": "assets/factions/unified/player-fighter-v2.png",
+      "sha256": "a10fb5fa61104d921f245fa20325e9cb4ab432cb8a9fd6d131d22f845a6599a8"
+    },
+    {
+      "source": "assets/factions/unified/player-frigate-v2.png",
+      "destination": "assets/factions/unified/player-frigate-v2.png",
+      "sha256": "7b9d3b268932bc05cd351cc1aa53505cb0d609b405f4315263635516f86ed37b"
+    },
+    {
+      "source": "assets/factions/unified/player-scout-v2.png",
+      "destination": "assets/factions/unified/player-scout-v2.png",
+      "sha256": "e02cd9f61d9bae588a5d151f74138633df5f28a157557c007b0bb4830b17ef23"
+    },
+    {
+      "source": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Engines/PNGs/Pickup Icon - Engines - Big Pulse Engine.png",
+      "destination": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Engines/PNGs/Pickup Icon - Engines - Big Pulse Engine.png",
+      "sha256": "97c2902aca4949ea66a7f1a28f29d6f30149fbb2f455409508b29bee77326fe6"
+    },
+    {
+      "source": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Engines/PNGs/Pickup Icon - Engines - Supercharged Engine.png",
+      "destination": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Engines/PNGs/Pickup Icon - Engines - Supercharged Engine.png",
+      "sha256": "cb2256628a796d40d252e30eb39249e2394ca420a2070f9fbe7c2b934c6c44c8"
+    },
+    {
+      "source": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Shield Generators/PNGs/Pickup Icon - Shield Generator - All around shield.png",
+      "destination": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Shield Generators/PNGs/Pickup Icon - Shield Generator - All around shield.png",
+      "sha256": "e10df1fdd2ec0e991c2f80d8a285bc2848987046557e60e97ee107df8bfcb1ea"
+    },
+    {
+      "source": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Weapons/PNGs/Pickup Icon - Weapons - Auto Cannons.png",
+      "destination": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Weapons/PNGs/Pickup Icon - Weapons - Auto Cannons.png",
+      "sha256": "b9a02e8ab549b3d20a8048f8fd1616ab9aeed28f8cf601216184d9fa9174e770"
+    },
+    {
+      "source": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Weapons/PNGs/Pickup Icon - Weapons - Big Space Gun 2000.png",
+      "destination": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Weapons/PNGs/Pickup Icon - Weapons - Big Space Gun 2000.png",
+      "sha256": "e40d995f76edf51dee246d9d96a63b563c20e67946f69e172c2a5b14e268122b"
+    },
+    {
+      "source": "assets/projectiles/unified/enemy-fighter-laser-v2.png",
+      "destination": "assets/projectiles/unified/enemy-fighter-laser-v2.png",
+      "sha256": "59896ffdd6f6131c93dc92ca763796548bc09d595ea0ccf4005eda8ceaaab624"
+    },
+    {
+      "source": "assets/projectiles/unified/enemy-heavy-cannon-v2.png",
+      "destination": "assets/projectiles/unified/enemy-heavy-cannon-v2.png",
+      "sha256": "b0a2e1265c1d7d587982d692f2ade883538b3c8e495f4ea8072549768cd48a20"
+    },
+    {
+      "source": "assets/projectiles/unified/enemy-scout-pulse-v2.png",
+      "destination": "assets/projectiles/unified/enemy-scout-pulse-v2.png",
+      "sha256": "97fc30a8aff7b93e71b4ae2b28a366953d238eba5c8c0554513616f6c589a705"
+    },
+    {
+      "source": "assets/projectiles/unified/enemy-siege-missile-v2.png",
+      "destination": "assets/projectiles/unified/enemy-siege-missile-v2.png",
+      "sha256": "ebef21b278cbe76f1229f8bf105cd2b668e251cf06dea57b49e02fe85b2e6c2b"
+    },
+    {
+      "source": "assets/projectiles/unified/player-fighter-laser-v2.png",
+      "destination": "assets/projectiles/unified/player-fighter-laser-v2.png",
+      "sha256": "1fe1651b1b6c2a9617a5ff5168017d145f39e97ae0eb2899d87081c071f1a203"
+    },
+    {
+      "source": "assets/projectiles/unified/player-heavy-cannon-v2.png",
+      "destination": "assets/projectiles/unified/player-heavy-cannon-v2.png",
+      "sha256": "0b096785a2fd4b9c037f4645f9c6e66966fe6e2bc9776eca7a30ecd9c1c9ea6b"
+    },
+    {
+      "source": "assets/projectiles/unified/player-scout-pulse-v2.png",
+      "destination": "assets/projectiles/unified/player-scout-pulse-v2.png",
+      "sha256": "62e17d44b09b0602add870a8ef0ea06a585514f415867bc368c146c7becffa9e"
+    },
+    {
+      "source": "assets/projectiles/unified/player-siege-missile-v2.png",
+      "destination": "assets/projectiles/unified/player-siege-missile-v2.png",
+      "sha256": "b6901b7d316a77b3c23d918457d9a4391b5c611917a8f4fb360eebbadbaab972"
+    },
+    {
+      "source": "assets/runtime/environment/orbital-garden-player-sector-v1.png",
+      "destination": "assets/runtime/environment/orbital-garden-player-sector-v1.png",
+      "sha256": "e6282c36bf46b384c1d42833328080d68d2919fb38d6897414a576b5f2d29479"
+    },
+    {
+      "source": "assets/runtime/environment/orbital-garden-rival-sector-v1.png",
+      "destination": "assets/runtime/environment/orbital-garden-rival-sector-v1.png",
+      "sha256": "a7465db6996185e001bc5d04487c1e5832b22ccec39a992cc35722e868228ed2"
+    },
+    {
+      "source": "assets/runtime/environment/strategy-galaxy-background-v1.png",
+      "destination": "assets/runtime/environment/strategy-galaxy-background-v1.png",
+      "sha256": "1479444ce2057311a8021a9d7876d79a82325bf4ec4e19d27233b3fc10ab39ff"
+    },
+    {
+      "source": "assets/runtime/environment/twin-foundries-player-sector-v1.png",
+      "destination": "assets/runtime/environment/twin-foundries-player-sector-v1.png",
+      "sha256": "4757c9b4f2ec9d964410b4866ff9ef2da7b25bee1643924edc99dca2d5300b3d"
+    },
+    {
+      "source": "assets/runtime/environment/twin-foundries-rival-sector-v1.png",
+      "destination": "assets/runtime/environment/twin-foundries-rival-sector-v1.png",
+      "sha256": "b05bc110f9a28a8a4b14e84685645e26c0f208980c128e75b7777f65f58fb734"
+    },
+    {
+      "source": "assets/runtime/structures/command-hq-foundry-player-v1.png",
+      "destination": "assets/runtime/structures/command-hq-foundry-player-v1.png",
+      "sha256": "724f843a4627d3359710a7586a3b5f8a96669cafab087c859ed9ee510670abc8"
+    },
+    {
+      "source": "assets/runtime/structures/command-hq-foundry-rival-v1.png",
+      "destination": "assets/runtime/structures/command-hq-foundry-rival-v1.png",
+      "sha256": "11c76aa2f9228b5311566ef7dbd6500a4496ff6faf8ae8e80720cc26179d2015"
+    },
+    {
+      "source": "assets/runtime/structures/command-hq-garden-player-v1.png",
+      "destination": "assets/runtime/structures/command-hq-garden-player-v1.png",
+      "sha256": "8dcfa5f16c64e7e7aee469aa417adf8dc3f0a24346a496454d76b3e6ae9eb1eb"
+    },
+    {
+      "source": "assets/runtime/structures/command-hq-garden-rival-v1.png",
+      "destination": "assets/runtime/structures/command-hq-garden-rival-v1.png",
+      "sha256": "1164e207e7a33d3430bc2e72a014c6c54c83e83e7e3a83f77d133c074849c286"
+    },
+    {
+      "source": "assets/runtime/ui/orbital-command-medallion-v1.png",
+      "destination": "assets/runtime/ui/orbital-command-medallion-v1.png",
+      "sha256": "43286e951cf20649b6764bd8f0c862f073b8c2f3b227c6bd2162acf42342d510"
+    },
+    {
+      "source": "assets/library/galalaxy/Foozle_2DS0012_Void_EnemyFleet_1/Readme.txt",
+      "destination": "provenance/licenses/Foozle_2DS0012_Void_EnemyFleet_1.txt",
+      "sha256": "6f6a7d4cd6d0b0d5d7c5898b6c34a67388ed58161fb92a7516b91a2561624181"
+    },
+    {
+      "source": "assets/library/galalaxy/Foozle_2DS0013_Void_EnemyFleet_2/Readme.txt",
+      "destination": "provenance/licenses/Foozle_2DS0013_Void_EnemyFleet_2.txt",
+      "sha256": "b9010ba360c541eb854869faaa9a206f8e075ca9ccf96c2b8118b9ba9b737ef4"
+    },
+    {
+      "source": "assets/library/galalaxy/Foozle_2DS0016_Void_PickupsPack/Readme.txt",
+      "destination": "provenance/licenses/Foozle_2DS0016_Void_PickupsPack.txt",
+      "sha256": "f14c20225c14aacafb75e690542c97be4d1b87a22cbaecae8894487c3c89df47"
+    },
+    {
+      "source": "docs/SOURCE_PROVENANCE.md",
+      "destination": "provenance/SOURCE_PROVENANCE.md",
+      "sha256": "35b1b254e117f51745dc94002320197ab3020fbb970da289b40156e7e394c4aa"
+    },
+    {
+      "source": "docs/GENERATED_ASSETS.md",
+      "destination": "provenance/GENERATED_ASSETS.md",
+      "sha256": "a1bd4d259340beaa6bf52421dd3b1aadddba2365269fcc1dfdcf5882f19af94a"
+    }
+  ]
+}

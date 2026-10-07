@@ -1,0 +1,83 @@
+import { CLASSIC_LANES, isMapFeatureEnabled } from "../data/definitions.js";
+import { LANE, TEAM } from "../core/constants.js";
+import { createIdFactory } from "../core/ids.js";
+import { createStructure } from "./entities.js";
+
+const MAX_SIMULATION_EVENTS = 1024;
+
+export const createBattleState = ({ map = CLASSIC_LANES } = {}) => {
+  const state = {
+    map,
+    time: 0,
+    units: new Map(),
+    structures: new Map(),
+    projectiles: new Map(),
+    nodes: new Map(),
+    lanes: new Map(),
+    events: [],
+    nextEventSequence: 1,
+    terminalTeam: null,
+    ids: createIdFactory("entity"),
+  };
+  for (const lane of map.lanes) {
+    state.lanes.set(lane.id, {
+      id: lane.id,
+      unitIds: new Map([[TEAM.PLAYER, []], [TEAM.ENEMY, []]]),
+      projectileIds: [],
+    });
+    if (isMapFeatureEnabled(map, "captureNodes") && lane.node) {
+      state.nodes.set(lane.node.id, {
+        id: lane.node.id, laneId: lane.id, x: lane.node.x, y: lane.node.y, radius: lane.node.radius,
+        progress: 0, ownerTeam: null, contested: false, capturePower: { [TEAM.PLAYER]: 0, [TEAM.ENEMY]: 0 },
+      });
+    }
+  }
+  for (const structure of map.structures ?? []) {
+    if (structure.structureType === "hq" && !isMapFeatureEnabled(map, "commandCarriers")) continue;
+    if (structure.structureType === "turret" && !isMapFeatureEnabled(map, "defensiveTurrets")) continue;
+    if (structure.structureType === "economy" && !isMapFeatureEnabled(map, "economyBuildings")) continue;
+    if (structure.structureType === "neutral" && !isMapFeatureEnabled(map, "neutralStructures")) continue;
+    state.structures.set(structure.id, createStructure(structure));
+  }
+  return state;
+};
+
+export const emitSimulationEvent = (state, event) => {
+  state.events.push({ time: state.time, ...event, sequence: state.nextEventSequence });
+  state.nextEventSequence += 1;
+  if (state.events.length > MAX_SIMULATION_EVENTS) state.events.splice(0, state.events.length - MAX_SIMULATION_EVENTS);
+};
+
+export const laneFor = (state, laneId) => {
+  const lane = state.lanes.get(laneId);
+  if (!lane) throw new Error(`Unknown lane: ${laneId}`);
+  return lane;
+};
+
+export const enemyOf = (team) => (team === TEAM.PLAYER ? TEAM.ENEMY : TEAM.PLAYER);
+
+export const addUnitToState = (state, unit) => {
+  state.units.set(unit.id, unit);
+  laneFor(state, unit.laneId).unitIds.get(unit.team).push(unit.id);
+  return unit;
+};
+
+export const addProjectileToState = (state, projectile) => {
+  state.projectiles.set(projectile.id, projectile);
+  laneFor(state, projectile.laneId).projectileIds.push(projectile.id);
+  return projectile;
+};
+
+export const removeDeadEntities = (state) => {
+  for (const lane of state.lanes.values()) {
+    for (const team of [TEAM.PLAYER, TEAM.ENEMY]) {
+      const active = lane.unitIds.get(team);
+      lane.unitIds.set(team, active.filter((id) => state.units.get(id)?.alive));
+    }
+    lane.projectileIds = lane.projectileIds.filter((id) => state.projectiles.get(id)?.alive);
+  }
+  for (const [id, unit] of state.units) if (!unit.alive) state.units.delete(id);
+  for (const [id, projectile] of state.projectiles) if (!projectile.alive) state.projectiles.delete(id);
+};
+
+export const defaultLaneIds = Object.freeze([LANE.LEFT, LANE.RIGHT]);
