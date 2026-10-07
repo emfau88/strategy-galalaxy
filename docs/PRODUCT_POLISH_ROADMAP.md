@@ -2,10 +2,17 @@
 
 Stand: 11. September 2026
 
-Diese Datei ist ab jetzt die kanonische Liste aller noch offenen Produktarbeiten. Die
-ältere `IMPLEMENTATION_ROADMAP.md` dokumentiert die bereits abgeschlossenen großen
-Umbauten; hier stehen nur der aktuelle Befund, die sinnvollste Reihenfolge und die
-Abnahmekriterien für den nächsten Ausbau.
+> Aktualisierung vom 7. Oktober 2026: Die nächsten Arbeiten werden im
+> [Qualitäts- und Wiederaufnahmeplan](QUALITY_RECOVERY_PLAN.md) geführt. Er beschreibt
+> die Rückkehr zur bestätigten alten GitHub-Basis, die Auswahl lokaler Ergänzungen
+> und die neuen Abnahmekriterien. Die folgende Liste bleibt als bisheriger
+> Arbeitsnachweis erhalten; ihre Häkchen ersetzen keine erneute Qualitätsabnahme.
+
+Diese Datei dokumentiert den bisherigen Produkt-Polish und dessen offene Ideen. Die
+ältere `IMPLEMENTATION_ROADMAP.md` hält die abgeschlossenen großen Umbauten fest.
+Für die nächsten Arbeiten gelten Reihenfolge und Abnahmekriterien des oben
+verlinkten Qualitäts- und Wiederaufnahmeplans; die Core Gameplay Vision bleibt die
+verbindliche Produktvorgabe.
 
 ## Aktueller Befund
 

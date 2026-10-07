@@ -4,12 +4,13 @@ import { createReadStream, existsSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { createServer as createNetServer } from "node:net";
-import { extname, normalize, resolve } from "node:path";
+import { extname, normalize, resolve, sep } from "node:path";
 import { runtimeAssetManifestForLevel } from "../src/assets.js";
 
 const root = resolve(new URL("../", import.meta.url).pathname.replace(/^\/(.:)/, "$1"));
 const siteRoot = process.argv.includes("--dist") ? resolve(root, "dist") : root;
-const output = resolve(root, "tmp", "browser-qa");
+const output = resolve(root, process.env.SG_QA_OUTPUT ?? "tmp/browser-qa");
+assert.ok(output.startsWith(resolve(root, "tmp") + sep), "QA output must remain inside the project's tmp directory");
 const viewports = [[360, 800], [390, 844], [393, 852], [412, 915], [420, 760]];
 const mime = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".png": "image/png", ".gif": "image/gif", ".txt": "text/plain", ".md": "text/markdown" };
 
@@ -38,6 +39,12 @@ const debugPort = portProbe.address().port;
 await new Promise((resolveClose) => portProbe.close(resolveClose));
 await mkdir(output, { recursive: true });
 const browserProfile = await mkdtemp(resolve(output, "profile-"));
+assert.ok(browserProfile.startsWith(output + sep), "Temporary browser profile stays inside the QA output directory");
+await writeFile(resolve(output, "qa-metadata.json"), JSON.stringify({
+  commit: spawnSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).stdout.trim(),
+  workingChanges: spawnSync("git", ["--no-optional-locks", "status", "--porcelain=v1"], { cwd: root, encoding: "utf8" }).stdout.trim(),
+  siteRoot, capturedAt: new Date().toISOString(), viewports,
+}, null, 2));
 const delay = (ms) => new Promise((resolveDelay) => setTimeout(resolveDelay, ms));
 
 const browserProcess = spawn(browser, [
