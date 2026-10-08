@@ -85,6 +85,7 @@ export const commandActionAt = (point, menu = "units", height = 760, laneIds = [
     if (containsPoint(layout.deploy, point)) return { type: catalog ? "FOCUS_FRONT" : "TOGGLE_COMMAND_DOCK" };
     return null;
   }
+  if (catalog?.allowLaneStance && containsPoint(layout.undo, point)) return { type: "TOGGLE_LANE_STANCE" };
   if (containsPoint(layout.close, point)) return { type: "TOGGLE_COMMAND_DOCK" };
   if (containsPoint(layout.fleetTab, point)) return { type: "SET_COMMAND_MENU", menu: "units" };
   if (catalog?.upgrades?.length !== 0 && containsPoint(layout.upgradeTab, point)) return { type: "SET_COMMAND_MENU", menu: "upgrades" };

@@ -1,6 +1,6 @@
 # Die letzte Werft – Testkampagne
 
-Version **0.0.4-bulk3**. Kapitel 1 ist mit drei Missionen spielbar: Erstkontakt, Schwerer Widerstand und Hafen im Feuer. Missionen 4–6 sind klar bezeichnete Vorschauen.
+Version **0.0.5-bulk4**. Fünf gestaltete Missionen sind spielbar; Das Schildnetz ist noch eine Vorschau.
 
 ## Lokal spielen
 
@@ -45,3 +45,7 @@ Zwei gestaltete Angriffsmissionen: Erstkontakt (Scout/Fighter) und Schwerer Wide
 ## Bulk 3 – Hafenverteidigung
 
 Drei angekündigte Angriffe vollständig abwehren; eigene Carrier-Zerstörung bedeutet Niederlage. Die Flotte hält automatisch eine sichtbare Abwehrlinie. Aegis wird nach Mission 2 ausgerüstet und kann im Briefing kostenlos ab-/angewählt werden. 80 E, sechs Sekunden Schutz, 60 % Schadensminderung, 28 Sekunden Cooldown; betrifft Carrier und eigene Flotte der gewählten Lane. Kein permanentes Schild-Upgrade. Nach Mission 3 stehen Fregatten in Wiederholungen der Missionen 2–3 bereit. Ausrüstung und Fortschritt bleiben erhalten. [Abnahme und offene menschliche Spielbeobachtung](../../docs/LAST_SHIPYARD_BULK3_REPORT.md).
+
+## Bulk 4 – Zwei Fronten und Ausrüstung
+
+Geteilte Front begrenzt beide Lanes zusammen auf 18 eigene Schiffe. HALTEN/VORSTOSS lässt sich pro Lane wählen. Das Zeitfenster bietet eine 48-Sekunden-Aufbaupause für den Gegenstoß. Nach Mission 4 ist der Ionenbomber kostenlos auswählbar (2s Waffenunterbrechung, weniger Strukturschaden); nach Mission 5 Störimpuls (100 E, 3,5s, 32s Cooldown, nur gegnerische Schiffe der gewählten Lane). Werft speichert genau eine Fähigkeit und eine Bomber-Ausführung. [Abnahme](../../docs/LAST_SHIPYARD_BULK4_REPORT.md). Der gezielte Browserlauf für diese Inhalte lautet `node experiments/last-shipyard/scripts/browser-smoke.mjs --site --latest`.

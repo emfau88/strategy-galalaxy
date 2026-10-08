@@ -1,5 +1,5 @@
 import { renderBackground, renderBattlefieldLayer, renderEffectsLayer, renderEntityLayer } from "./battlefieldRenderer.js";
-import { renderAegisField, renderDefenseLine } from "./abilityRenderer.js";
+import { renderAegisField, renderDefenseLine, renderCombatStatus } from "./abilityRenderer.js";
 import { renderUiLayer } from "./uiRenderer.js";
 
 const drawCover = (ctx, image, width, height, verticalAnchor = 0.5) => {
@@ -98,6 +98,7 @@ export class Renderer {
       renderDefenseLine(ctx, sceneModel);
       renderEntityLayer(ctx, sceneModel);
       renderAegisField(ctx, sceneModel);
+      renderCombatStatus(ctx, sceneModel);
       renderEffectsLayer(ctx, sceneModel);
     }
     ctx.restore();

@@ -1,8 +1,10 @@
+import { DISRUPTION } from "../campaign/disruptionSystem.js";
 import { AEGIS } from "../campaign/aegisSystem.js";
 import { abilityUiLayout } from "../ui/abilityUi.js";
 
 export const renderDefenseLine = (ctx, model) => {
-  const line = model.simulation?.state.map.defenseLineY;
+  const state = model.simulation?.state;
+  const line = state?.map.defenseLineY ?? (state?.laneStances?.get(model.selectedLaneId) === "hold" ? 780 : null);
   if (!Number.isFinite(line)) return;
   const y = model.camera.viewport.y + line - model.camera.y;
   ctx.save(); ctx.strokeStyle = "rgba(128,222,219,.3)"; ctx.lineWidth = 1; ctx.setLineDash([6, 8]);
@@ -28,7 +30,7 @@ export const renderAegisField = (ctx, model) => {
 };
 
 export const renderAbilityHud = (ctx, model) => {
-  const ability = model.director?.aegis;
+  const ability = model.director?.carrierAbility;
   if (!ability?.equipped) return;
   const ui = abilityUiLayout();
   const draw = (rect, title, detail, active = false) => {
@@ -40,10 +42,30 @@ export const renderAbilityHud = (ctx, model) => {
     ctx.font = "500 9px Inter, system-ui, sans-serif"; ctx.fillStyle = "#9faebf"; ctx.fillText(detail, rect.x + rect.width / 2, rect.y + 33);
   };
   draw(ui.home, "ZUM CARRIER  ↓", "Deine Heimatbasis im Blick");
+  const disrupt = model.director.equippedAbility === "disrupt", name = disrupt ? "STÖRIMPULS" : "AEGIS", spec = disrupt ? DISRUPTION : AEGIS;
   const allowed = ability.availability(model.director, model.selectedLaneId).ok;
-  const title = ability.activeRemaining > 0 ? `AEGIS AKTIV · ${ability.activeRemaining.toFixed(1)}s`
-    : ability.cooldownRemaining > 0 ? `AEGIS LÄDT · ${Math.ceil(ability.cooldownRemaining)}s` : `AEGIS · ${AEGIS.cost} E`;
-  const detail = ability.activeRemaining > 0 ? "Carrier + Flotte: 60% Schaden abgefangen"
+  const title = ability.activeRemaining > 0 ? `${name} AKTIV · ${ability.activeRemaining.toFixed(1)}s`
+    : ability.cooldownRemaining > 0 ? `${name} LÄDT · ${Math.ceil(ability.cooldownRemaining)}s` : `${name} · ${spec.cost} E`;
+  const detail = disrupt ? "Schiffswaffen aus · Carrier/Relais immun" : ability.activeRemaining > 0 ? "Carrier + Flotte: 60% Schaden abgefangen"
     : `6s Schutz · 28s Cooldown${allowed ? " · BEREIT" : ""}`;
   draw(ui.aegis, title, detail, allowed || ability.activeRemaining > 0);
+};
+
+export const renderCombatStatus = (ctx, model) => {
+  if (!model.simulation) return;
+  const state = model.simulation.state;
+  ctx.save(); ctx.textAlign = "center";
+  for (const unit of state.units.values()) {
+    if (!unit.alive) continue;
+    const y = model.camera.viewport.y + unit.y - model.camera.y;
+    if (unit.bomberVariant === "ion") { ctx.fillStyle = "#bba0ff"; ctx.fillRect(unit.x - 10, y - 10, 20, 3); }
+    if ((unit.weaponsDisabledUntil ?? 0) > state.time) {
+      ctx.fillStyle = "rgba(24,16,43,.86)"; ctx.fillRect(unit.x - 28, y + 19, 56, 13);
+      ctx.fillStyle = "#c8acff"; ctx.font = "600 8px Inter, system-ui, sans-serif"; ctx.fillText("GESTÖRT", unit.x, y + 28);
+    }
+  }
+  for (const projectile of state.projectiles.values()) if (projectile.ionSeconds) {
+    ctx.fillStyle = "#c4a8ff"; ctx.beginPath(); ctx.arc(projectile.x, model.camera.viewport.y + projectile.y - model.camera.y, 3, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
 };

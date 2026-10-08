@@ -47,7 +47,7 @@ assert.deepEqual(progress.data.completed, [], "Classic completion is not importe
 assert.equal(progress.begin("first-contact"), true);
 assert.equal(progress.complete("first-contact"), true);
 assert.deepEqual(new CampaignProgress(storage).data.completed, ["first-contact"]);
-assert.equal(progress.complete("split-front"), false, "Preview cannot be completed");
+assert.equal(progress.complete("shield-network"), false, "Preview cannot be completed");
 values.set(STORAGE_KEYS.progress, "{broken");
 assert.deepEqual(new CampaignProgress(storage).data.completed, []);
 const previous = Object.getOwnPropertyDescriptor(globalThis, "localStorage");

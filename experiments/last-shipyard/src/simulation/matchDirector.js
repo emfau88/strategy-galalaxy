@@ -1,3 +1,4 @@
+import { DisruptionSystem } from "../campaign/disruptionSystem.js";
 import { AegisSystem } from "../campaign/aegisSystem.js";
 import { MissionRuntime } from "../campaign/missionRuntime.js";
 import { CONFIG } from "../config.js";
@@ -21,6 +22,7 @@ export class MatchDirector {
     this.missionRuntime = null;
     this.equippedAbility = equippedAbility;
     this.aegis = null;
+    this.disrupt = null;
     this.aiProfile = aiProfile;
     this.aiPreferredLane = aiPreferredLane ?? mapDefinition.lanes[0].id;
     this.aiInvestmentBias = aiInvestmentBias;
@@ -53,6 +55,8 @@ export class MatchDirector {
     this.missionRuntime = this.mission ? new MissionRuntime(this.mission) : null;
     this.aegis = new AegisSystem(Boolean(this.mission && this.equippedAbility === "aegis"));
     this.simulation.protection = this.aegis;
+    this.disrupt = new DisruptionSystem(Boolean(this.mission && this.equippedAbility === "disrupt"));
+    this.simulation.state.laneStances = new Map(this.mapDefinition.lanes.map((lane, index) => [lane.id, this.mission?.defaultHoldLane === index ? "hold" : "push"]));
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
     this.aiDecisionRemaining = 0;
@@ -65,10 +69,15 @@ export class MatchDirector {
   }
 
   executeCommand(command) {
-    if (command?.type === "ACTIVATE_AEGIS") {
+    if (command?.type === "SET_LANE_STANCE") {
+      if (this.state !== MATCH_STATE.LIVE_MATCH) return { ok: false, reason: "WRONG_PHASE" };
+      if (!this.config.rules?.allowLaneStance || command.team !== TEAM.PLAYER || !this.simulation.state.lanes.has(command.laneId) || !["hold", "push"].includes(command.stance)) return { ok: false, reason: "INVALID_TEAM_OR_LANE" };
+      this.simulation.state.laneStances.set(command.laneId, command.stance); return { ok: true };
+    }
+    if (command?.type === "ACTIVATE_AEGIS" || command?.type === "ACTIVATE_CARRIER") {
       if (command.team !== TEAM.PLAYER) return { ok: false, reason: "INVALID_TEAM_OR_LANE" };
-      const result = this.aegis?.activate(this, command.laneId) ?? { ok: false, reason: "ABILITY_NOT_EQUIPPED" };
-      if (result.ok) this.missionRuntime.aegisUsed = true;
+      const result = (command.type === "ACTIVATE_AEGIS" ? this.aegis : this.carrierAbility)?.activate(this, command.laneId) ?? { ok: false, reason: "ABILITY_NOT_EQUIPPED" };
+      if (result.ok) { this.missionRuntime.aegisUsed = true; this.missionRuntime.abilityUses = (this.missionRuntime.abilityUses ?? 0) + 1; }
       return result;
     }
     const result = this.commands.execute(this, command);
@@ -88,6 +97,7 @@ export class MatchDirector {
     this.economy.advance(this.simulation.state, step, this.activeMatchSeconds);
     this.liveDeployment.advance(step);
     this.aegis?.advance(step);
+    this.disrupt?.advance(step);
     this.simulation.step(step);
     this.capture?.advance(this.simulation.state, step);
     this.activeMatchSeconds += step;
@@ -114,7 +124,7 @@ export class MatchDirector {
     if (this.state !== MATCH_STATE.LIVE_MATCH) return false;
     this.state = team === TEAM.PLAYER ? MATCH_STATE.VICTORY : team === TEAM.ENEMY ? MATCH_STATE.DEFEAT : MATCH_STATE.DRAW;
     this.simulation.state.terminalTeam = team;
-    this.missionRuntime?.finish(); this.aegis?.cancel();
+    this.missionRuntime?.finish(); this.aegis?.cancel(); this.disrupt?.cancel();
     this.events.push({ type: "MATCH_ENDED", state: this.state, reason, cycle: this.cycle });
     return true;
   }
@@ -174,7 +184,7 @@ export class MatchDirector {
     if (this.state === MATCH_STATE.TITLE) return false;
     this.state = MATCH_STATE.TITLE;
     this.resumeState = null;
-    this.aegis?.cancel();
+    this.aegis?.cancel(); this.disrupt?.cancel();
     this.missionRuntime = null;
     this.simulation = null;
     this.activeMatchSeconds = 0;
@@ -182,6 +192,7 @@ export class MatchDirector {
     return true;
   }
 
+  get carrierAbility() { return this.equippedAbility === "disrupt" ? this.disrupt : this.aegis; }
   get baseWaveBacklog() { return this.deployment.baseWaveBacklog; }
   get cycle() { return this.deployment.cycleNumber; }
   get lastDeploymentAt() { return this.deployment.lastDeploymentAt; }

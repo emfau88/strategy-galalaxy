@@ -47,10 +47,35 @@ export const MISSIONS = Object.freeze([
     threats: ["3 Scouts + 2 Fighter", "1 Fregatte + 2 Fighter", "2 Fighter + 1 Bomber + 3 Scouts"],
     reward: "FREGATTEN-BAUPLAN", rewardDetail: "Kapitel 1 beendet. Der Hafen erwacht wieder zum Leben.",
   },
-  { id: "split-front", number: 4, title: "Geteilte Front", available: false, map: CLASSIC_LANES,
-    lesson: "Eine Front halten. Auf der anderen vorstoßen." },
-  { id: "the-window", number: 5, title: "Das Zeitfenster", available: false, map: ORBITAL_GARDEN,
-    lesson: "Die Aufbaupause für den Gegenstoß nutzen." },
+  {
+    id: "split-front", number: 4, title: "Geteilte Front", available: true, map: CLASSIC_LANES, kind: "assault", allowLaneStance: true,
+    objective: "Halte eine Front. Brich auf der anderen zum Carrier durch.",
+    briefing: ["Links starten deine Schiffe im Haltemodus.", "Wähle eine Lane: HALTEN oder VORSTOSS im Flottenmenü."],
+    lesson: "Fregatte hält links. Bomber stoßen rechts vor.",
+    units: ["scout", "fighter", "bomber", "frigate"], enemyUnits: ["scout", "fighter", "bomber", "frigate"], upgrades: [],
+    fleetLimit: 12, fleetTotal: 18, enemyFleetLimit: 9, enemyFleetTotal: 14,
+    startingEnergy: 320, enemyEnergy: 350, income: 14, enemyIncome: 10, carrierHp: 1600, enemyCarrierHp: 1400,
+    waveSeconds: 30, introSeconds: 10, warningSeconds: 8, assaultSeconds: 22, recoverySeconds: 30,
+    defaultHoldLane: 0,
+    attacks: [[{unitType:"frigate",lane:0,at:0},{unitType:"scout",lane:1,at:3},{unitType:"fighter",lane:0,at:5},{unitType:"bomber",lane:1,at:9}]],
+    threat: "Links schwer · rechts schnelle Angriffe",
+    laneThreats: ["LINKS: Fregatte + Fighter", "RECHTS: Scouts + Bomber"],
+    reward: "IONENBOMBER-BAUPLAN", rewardDetail: "Ionenbomber bereit. In der Werft kostenlos wechseln.",
+  },
+  {
+    id: "the-window", number: 5, title: "Das Zeitfenster", available: true, map: ORBITAL_GARDEN, kind: "assault", allowLaneStance: true,
+    objective: "Überstehe die Belagerung. Nutze die lange Aufbaupause.",
+    briefing: ["Halte zuerst die Linie. Dann auf VORSTOSS umschalten.", "Standardbomber belagern; Ionenbomber stören Schiffswaffen."],
+    lesson: "Ein schwerer Ansturm. Ein langer Gegenstoß.",
+    units: ["scout", "fighter", "bomber", "frigate"], enemyUnits: ["fighter", "bomber", "frigate"], upgrades: [],
+    fleetLimit: 16, enemyFleetLimit: 8, startingEnergy: 320, enemyEnergy: 400,
+    income: 14, enemyIncome: 10, carrierHp: 1700, enemyCarrierHp: 1500,
+    waveSeconds: 30, introSeconds: 8, warningSeconds: 8, assaultSeconds: 20, recoverySeconds: 48,
+    defaultHoldLane: 0,
+    attacks: [[{unitType:"frigate",at:0},{unitType:"bomber",at:3},{unitType:"fighter",at:7}]],
+    threat: "Fregatte + Bomber + Fighter",
+    reward: "STÖRIMPULS-BAUPLAN", rewardDetail: "Neue Carrier-Fähigkeit. In der Werft statt Aegis wählen.",
+  },
   { id: "shield-network", number: 6, title: "Das Schildnetz", available: false, map: CLASSIC_LANES,
     lesson: "Relais ausschalten. Die Werft endgültig sichern." },
 ].map(mission => Object.freeze(mission)));
@@ -65,7 +90,7 @@ export const nextMission = mission => MISSIONS[mission.number] ?? null;
 export const shipyardStage = completed => completed.includes("harbor-fire") ? 2 : completed.includes("first-contact") ? 1 : 0;
 
 // Each mission owns its arsenal and budget. Enemy purchases use the same legal commands.
-export const missionMatchOptions = mission => {
+export const missionMatchOptions = (mission, equipment = {}) => {
   if (!mission?.available) throw new Error("This mission is not playable yet.");
   return {
     mission,
@@ -75,6 +100,7 @@ export const missionMatchOptions = mission => {
         ? { ...structure, maxHp: structure.team === TEAM.PLAYER ? mission.carrierHp : mission.enemyCarrierHp } : structure) },
     config: { ...CONFIG,
       caps: { ...CONFIG.caps, unitsPerLaneTeam: mission.fleetLimit,
+        unitsPerTeamByTeam: { [TEAM.PLAYER]: mission.fleetTotal ?? mission.fleetLimit, [TEAM.ENEMY]: mission.enemyFleetTotal ?? mission.enemyFleetLimit },
         unitsPerLaneTeamByTeam: { [TEAM.PLAYER]: mission.fleetLimit, [TEAM.ENEMY]: mission.enemyFleetLimit } },
       timing: { ...CONFIG.timing, deploymentIntervalSeconds: mission.waveSeconds },
       balance: { ...CONFIG.balance, startingEnergy: mission.startingEnergy, energyCap: 400,
@@ -84,7 +110,8 @@ export const missionMatchOptions = mission => {
         baseWaveDronesPerLane: 1, freeDronesByTeam: { [TEAM.PLAYER]: 1, [TEAM.ENEMY]: 0 },
         baseWaveDroneEscalationMaximumBonus: 0, maximumBacklogWaves: 1,
         escalation: [{ fromBattleSeconds: 0, multiplier: 1 }] },
-      rules: { missionOwnsVictory: true, units: mission.units, unitsByTeam: { [TEAM.PLAYER]: mission.units, [TEAM.ENEMY]: mission.enemyUnits }, upgrades: [] },
+      rules: { missionOwnsVictory: true, allowLaneStance: Boolean(mission.allowLaneStance),
+        bomberVariant: equipment.bomberVariant === "ion" ? "ion" : "standard", units: mission.units, unitsByTeam: { [TEAM.PLAYER]: mission.units, [TEAM.ENEMY]: mission.enemyUnits }, upgrades: [] },
     },
   };
 };

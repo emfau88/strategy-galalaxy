@@ -4,7 +4,8 @@ import { containsPoint } from "./commandUi.js";
 export const campaignUiLayout = (height = 760) => {
   const offset = height / 2 - 380;
   const rect = (x, y, width, h) => ({ x, y: y + offset, width, height: h });
-  return { campaign: rect(44, 530, 332, 52), settings: rect(44, 594, 332, 46),
+  return { campaign: rect(44, 530, 332, 52), shipyard: rect(44, 594, 332, 44), settings: rect(44, 646, 332, 44),
+    bomber: rect(48, 255, 324, 44), ability: rect(48, 390, 324, 44),
     panel: rect(28, 262, 364, 292), sound: rect(58, 365, 304, 48),
     equipment: rect(48, 535, 324, 44),
     back: rect(44, 684, 332, 46), start: rect(44, 614, 332, 52),
@@ -14,9 +15,12 @@ export const campaignActionAt = (point, screen, height = 760) => {
   const ui = campaignUiLayout(height);
   if (screen === "main") {
     if (containsPoint(ui.campaign, point)) return { type: "OPEN_CAMPAIGN" };
+    if (containsPoint(ui.shipyard, point)) return { type: "OPEN_SHIPYARD" };
     if (containsPoint(ui.settings, point)) return { type: "OPEN_SETTINGS" };
   } else {
     if (containsPoint(ui.back, point)) return { type: "MENU_BACK" };
+    if (screen === "shipyard" && containsPoint(ui.bomber, point)) return { type: "TOGGLE_BOMBER" };
+    if (screen === "shipyard" && containsPoint(ui.ability, point)) return { type: "TOGGLE_AEGIS" };
     if (screen === "settings" && containsPoint(ui.sound, point)) return { type: "TOGGLE_SOUND" };
     if (screen === "briefing" && containsPoint(ui.equipment, point)) return { type: "TOGGLE_AEGIS" };
     if (screen === "briefing" && containsPoint(ui.start, point)) return { type: "START_MISSION" };

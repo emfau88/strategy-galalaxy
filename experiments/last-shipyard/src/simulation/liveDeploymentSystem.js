@@ -65,6 +65,8 @@ export class LiveDeploymentSystem {
       return { ok: false, reason: "LANE_CAPACITY", cost: definition.cost, active, requiredCapacity: memberTypes.length };
     }
 
+    const total = [...simulation.state.units.values()].filter(unit => unit.alive && unit.team === team).length;
+    if (total + memberTypes.length > (this.config.caps.unitsPerTeamByTeam?.[team] ?? Infinity)) return { ok: false, reason: "TEAM_CAPACITY", cost: definition.cost, active: total, requiredCapacity: memberTypes.length };
     const teamEconomy = economy.get(team);
     if (teamEconomy.energy < definition.cost) {
       return { ok: false, reason: "INSUFFICIENT_ENERGY", cost: definition.cost, missingEnergy: definition.cost - teamEconomy.energy };

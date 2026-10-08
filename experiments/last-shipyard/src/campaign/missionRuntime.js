@@ -26,7 +26,7 @@ export class MissionRuntime {
       const order = this.orders[this.orderIndex];
       if (order && this.attackElapsed >= order.at && this.retryIn <= 0) {
         const result = director.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.ENEMY,
-          laneId: director.mapDefinition.lanes[0].id, unitType: order.unitType });
+          laneId: director.mapDefinition.lanes[order.lane ?? 0].id, unitType: order.unitType });
         this.retryIn = 1;
         if (result.ok) { this.orderIndex++; result.spawnedIds.forEach(id => this.attackerIds.add(id)); }
       }
@@ -70,6 +70,8 @@ export class MissionRuntime {
       if (!this.aegisUsed) return "AEGIS schützt Carrier + Flotte. Nutze es, wenn Treffer drohen.";
       return this.phase === "recovery" ? "Angriff abgewehrt. Verstärke vor der nächsten Ankündigung." : "Alle Angreifer und ihre Salven beseitigen. Dein Carrier muss leben.";
     }
+    if (this.mission.id === "split-front") return "Lane wählen. Fregatte hält; Bomber + Eskorte stoßen vor.";
+    if (this.mission.id === "the-window") return this.phase === "recovery" ? "48s Gegenstoß: Im Flottenmenü auf VORSTOSS schalten." : "Belagerungsangriff: Fregatte halten lassen. Eskorte gegen Bomber.";
     if (this.mission.id === "first-contact") {
       if (!this.purchases.has("scout")) return "FLOTTE öffnen: Schicke zuerst einen Scout-Verband.";
       if (!this.purchases.has("fighter")) return "Scouts unterwegs. Ergänze jetzt eine Fighter-Eskorte.";
@@ -80,10 +82,11 @@ export class MissionRuntime {
     if (!this.purchases.has("bomber")) return "Eskorte unterwegs. Starte einen Bomber gegen die Fregatte.";
     return this.phase === "recovery" ? "Dein Zeitfenster: Ergänze Bomber für den Carrier-Angriff." : "Bomber gegen schwere Ziele. Fighter gegen ihre Eskorte.";
   }
-  snapshot(state = null) {
+  snapshot(state = null, laneId = null) {
     const defense = this.mission.kind === "defense";
     const attack = Math.min(this.phase === "assault" ? this.attackNumber : this.attackNumber + 1, this.mission.attacks.length);
-    const threat = this.mission.threats?.[Math.max(0, attack - 1)] ?? this.mission.threat;
+    const laneIndex = this.mission.map.lanes.findIndex(lane => lane.id === laneId);
+    const threat = this.mission.laneThreats?.[laneIndex] ?? this.mission.threats?.[Math.max(0, attack - 1)] ?? this.mission.threat;
     const count = state ? [...state.units.values()].filter(unit => unit.alive && unit.team === TEAM.ENEMY).length : 0;
     return { phase: this.phase, label: defense ? `${PHASE_LABELS[this.phase]} · ${attack}/3` : PHASE_LABELS[this.phase],
       remaining: this.remaining, counter: defense && this.phase === "assault" ? `${count} Angreifer` : `${Math.ceil(this.remaining)}s`,

@@ -1,6 +1,6 @@
 # Die letzte Werft – Plan für eine isolierte Testkampagne
 
-Stand: 8. Oktober 2026. **Status: Bulk 0–2 abgeschlossen; Bulk 3 technisch umgesetzt. Drei Missionen, Aegis und Kapitelabschluss sind spielbar. Der Ersttest mit ein bis zwei Personen bleibt offen. Bulk 4–6 sind offen.**
+Stand: 8. Oktober 2026. **Status: Bulk 0–2 und 4 abgeschlossen; Bulk 3 technisch umgesetzt. Fünf Missionen, Werftausrüstung, Ionenbomber und zwei Carrier-Fähigkeiten sind spielbar. Der menschliche Ersttest bleibt offen. Bulk 5–6 sind offen.**
 
 Arbeitsbranch: `codex/last-shipyard`. [Lokaler Einstieg und Befehle](../experiments/last-shipyard/README.md) · [Herkunft und Abnahme](../experiments/last-shipyard/BASELINE.md). Umgesetzte Maßnahmen und offene Abnahmen sind unten einzeln gekennzeichnet.
 
@@ -37,7 +37,7 @@ Der Erfolg wird an diesen Beobachtungen gemessen. Eine hohe Featurezahl oder vie
 | Schauplätze | Vorhandene Karten, eigenständige Menü-/Werftdarstellung und wenige ergänzende Assets |
 | Dauer | Zielvorstellung: überwiegend drei bis sechs Minuten pro Mission; keine künstliche Zeitgrenze für normale Angriffsmissionen |
 
-Zurückgestellt bleiben Roguelite-Modus, Multiplayer, neue Ressourcen, dauerhafte Schiffsverluste, große Forschungsbäume, frei baubare Gebäude, bewegliche Transporter als Missionsziel und acht oder mehr Missionen. Das Zielmenü umfasst Kampagne, Werft und Einstellungen. Aktuell vorhanden sind Kampagne und Einstellungen; die Werft folgt in Bulk 4. Das freie Gefecht bleibt über den bisherigen Play-Link zugänglich.
+Zurückgestellt bleiben Roguelite-Modus, Multiplayer, neue Ressourcen, dauerhafte Schiffsverluste, große Forschungsbäume, frei baubare Gebäude, bewegliche Transporter als Missionsziel und acht oder mehr Missionen. Das Zielmenü umfasst Kampagne, Werft und Einstellungen. Kampagne, Werft und Einstellungen sind vorhanden. Das freie Gefecht bleibt über den bisherigen Play-Link zugänglich.
 
 Die Core Vision wird **nur innerhalb dieses Experiments** um neue Missionsziele, Spezialisierung und Carrier-Fähigkeiten erweitert. Die Regeln der bestehenden Fassung werden dadurch nicht geändert. Das Experiment erhält eine kurze eigene Produktvorgabe mit Verweis auf diesen Plan.
 
@@ -99,7 +99,7 @@ Die bewusste Codekopie ist für dieses begrenzte Experiment akzeptabel. Erfolgre
 | Bisheriges Spiel | `https://emfau88.github.io/strategy-galalaxy/` |
 | Die letzte Werft | `https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/` |
 
-Beide Links sind **seit Bulk 1 live**. Aktuell enthält die Testkampagne drei gestaltete Missionen. [Abnahme und Deployment](LAST_SHIPYARD_BULK1_REPORT.md).
+Beide Links sind **seit Bulk 1 live**. Aktuell enthält die Testkampagne fünf gestaltete Missionen. [Abnahme und Deployment](LAST_SHIPYARD_BULK1_REPORT.md).
 
 GitHub Pages bietet eine Projektwebsite pro Repository. Deshalb werden die beiden Fassungen als Unterverzeichnisse **eines gemeinsamen Artefakts** veröffentlicht. Ein Branch allein erzeugt keine zweite Pages-Website. Grundlage: [GitHub Pages – Website-Typen](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
 
@@ -130,10 +130,10 @@ Feature-Branches bauen und prüfen Artefakte. Die Veröffentlichung erfolgt nach
 - [▶ Bisheriges Spiel](https://emfau88.github.io/strategy-galalaxy/)
 - [🧪 Die letzte Werft – Testkampagne](https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/)
 
-Die Testkampagne besitzt einen eigenen Spielstand. Aktuell spielbar: drei Missionen („Erstkontakt“, „Schwerer Widerstand“, „Hafen im Feuer“).
+Die Testkampagne besitzt einen eigenen Spielstand. Aktuell spielbar: fünf Missionen, einschließlich „Geteilte Front“ und „Das Zeitfenster“.
 ```
 
-Die README auf main enthält beide Play-Links und nennt drei spielbare Missionen. Die Missionszahl wird bei weiteren Veröffentlichungen an die tatsächlich spielbaren Inhalte angepasst.
+Die README auf main enthält beide Play-Links und nennt fünf spielbare Missionen. Die Missionszahl wird bei weiteren Veröffentlichungen an die tatsächlich spielbaren Inhalte angepasst.
 
 Für lokale Arbeit startet `npm run dev:werft` das Experiment auf `127.0.0.1:7101`. Nach `npm run build:pages` startet `npm run preview` die gemeinsame Vorschau auf Port 7102 unter `/strategy-galalaxy/` und dessen Experiment-Unterpfad. Der neue Vorschau-Server löst Verzeichnisse auf ihre index.html auf und ergänzt fehlende abschließende Slashes. Der gezielte Browsercheck wurde lokal und öffentlich ausgeführt.
 
@@ -260,13 +260,13 @@ Jeder Bulk endet mit einem überschaubaren Commit beziehungsweise PR, einem spie
 
 **Ziel:** Vorbereitung und zwei Lanes erzeugen unterschiedliche Spielweisen.
 
-- [ ] Mission 4 mit zwei verschieden besetzten Lanes und einem begrenzten Gesamtbudget umsetzen.
-- [ ] Fregatte als haltenden Verband verständlich einsetzen; Warnungen und Frontsprung beziehen sich auf die gewählte Lane.
-- [ ] Einen einfachen Werftbildschirm für kostenlose Ausrüstungswechsel einführen.
-- [ ] Den Ionenbomber nach Mission 4 freischalten. Waffenunterbrechung und Immunität erhalten sichtbare Anzeigen; Standardbomber behalten ihre volle Belagerungsrolle.
-- [ ] Mission 5 um einen angekündigten Belagerungsangriff und eine echte Gelegenheit zum Gegenstoß gestalten.
-- [ ] Störimpuls auf Basis derselben Unterbrechungsregeln fertigstellen und nach Mission 5 freischalten.
-- [ ] Auswahl von genau einer Carrier-Fähigkeit speichern. Kosten, Cooldown und Grenzen vor dem Start verständlich zeigen.
+- [x] Mission 4 mit zwei verschieden besetzten Lanes und einem begrenzten Gesamtbudget umsetzen.
+- [x] Fregatte als haltenden Verband verständlich einsetzen; Warnungen und Frontsprung beziehen sich auf die gewählte Lane.
+- [x] Einen einfachen Werftbildschirm für kostenlose Ausrüstungswechsel einführen.
+- [x] Den Ionenbomber nach Mission 4 freischalten. Waffenunterbrechung und Immunität erhalten sichtbare Anzeigen; Standardbomber behalten ihre volle Belagerungsrolle.
+- [x] Mission 5 um einen angekündigten Belagerungsangriff und eine echte Gelegenheit zum Gegenstoß gestalten.
+- [x] Störimpuls auf Basis derselben Unterbrechungsregeln fertigstellen und nach Mission 5 freischalten.
+- [x] Auswahl von genau einer Carrier-Fähigkeit speichern. Kosten, Cooldown und Grenzen vor dem Start verständlich zeigen.
 
 **Abnahme:** Standard- und Ionenbomber haben einen verständlichen Einsatzgrund. Beide Varianten können regulär eingesetzt werden. Die zweite Lane erzeugt eine Verteilungsentscheidung, ohne die Flottenmenge unkontrolliert zu erhöhen.
 
@@ -333,4 +333,6 @@ Eine aufwendigere Balanceprüfung kommt erst bei stabilen Inhalten und einem kon
 
 **Noch offen in Bulk 3:** Ersttest mit ein bis zwei echten Personen. Browser- und Mechanikprüfungen ersetzen ihn nicht. Es wird kein erfundener Spieltest abgehakt.
 
-**Nächster Entscheidungspunkt:** Die drei Missionen ausprobieren und Verständlichkeit, Druck und Länge beurteilen. Bulk 4–6 werden erst nach weiterer Beauftragung umgesetzt.
+**Bulk 4 abgeschlossen:** Missionen 4–5, gemeinsames Flottenbudget, Lane-Haltemodus, kostenlose Werftwahl, Ionenbomber und Störimpuls. [Abnahme Bulk 4](LAST_SHIPYARD_BULK4_REPORT.md). Beide Missionen über normale Käufe abgeschlossen; Classic-Dateien unverändert.
+
+**Nächster Schritt:** Bulk 5 ist ausdrücklich beauftragt: Schildrelais und Kampagnenfinale. Bulk 6 und echte Spielbeobachtung bleiben offen.

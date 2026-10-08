@@ -116,7 +116,7 @@ const header = (ctx, model, ui) => {
   text(ctx, model.mission?.kind === "defense" ? `ABGEWEHRT ${model.director.missionRuntime.defeatedAttacks}/3` : `${Math.round(ratio(enemyHq) * 100)}%  ${model.mission ? "GEGNER" : "RIVAL"}`, 280, 22, 10, C.enemy, "right");
   miniBar(ctx, 280, 31, 72, model.mission?.kind === "defense" ? model.director.missionRuntime.defeatedAttacks / 3 : ratio(enemyHq), C.enemy, "right");
   const fleetCount = model.simulation?.state.lanes.get(model.selectedLaneId)?.unitIds.get(TEAM.PLAYER).length ?? 0;
-  text(ctx, model.mission ? `FLOTTE ${fleetCount}/${model.director.config.caps.unitsPerLaneTeam}` : "LIVE DEPLOY", 280, 44, 9, C.muted, "right", 600);
+  text(ctx, model.mission ? model.mission.fleetTotal ? `L ${fleetCount}/${model.mission.fleetLimit} · Σ ${[...model.simulation.state.units.values()].filter(u => u.alive && u.team === TEAM.PLAYER).length}/${model.mission.fleetTotal}` : `FLOTTE ${fleetCount}/${model.director.config.caps.unitsPerLaneTeam}` : "LIVE DEPLOY", 280, 44, 9, C.muted, "right", 600);
   box(ctx, COMMAND_UI.pause, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
   text(ctx, model.state === MATCH_STATE.PAUSED ? "▶" : "Ⅱ", 305, 30, 12, C.text, "center");
   box(ctx, COMMAND_UI.sound, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
@@ -290,7 +290,7 @@ const unitCard = (ctx, model, rect) => {
     unitType: rect.unitType,
   }) ?? { ok: false, reason: "UNAVAILABLE_UNIT" };
   box(ctx, rect, availability.ok ? C.card : "rgba(35, 45, 58, 0.82)", availability.ok ? C.outline : "rgba(132,151,166,0.2)", 8);
-  const role = (model.mission ? { scout: "SCHUTZ", fighter: "ESKORTE", bomber: "ANTI-HEAVY", frigate: "FRONT" }
+  const role = rect.unitType === "bomber" && model.director.config.rules?.bomberVariant === "ion" ? "ION · STÖRUNG" : (model.mission ? { scout: "SCHUTZ", fighter: "ESKORTE", bomber: "ANTI-HEAVY", frigate: "FRONT" }
     : { scout: "SCREEN", fighter: "ANTI-LIGHT", bomber: "HEAVY / SIEGE", frigate: "FRONTLINE" })[rect.unitType];
   drawShipIcon(ctx, model, rect.unitType, rect.x + 24, rect.y + 25, 38);
   text(ctx, def.deploymentLabel ?? def.id.toUpperCase(), rect.x + 49, rect.y + 16, 10, availability.ok ? C.text : C.muted);
@@ -299,7 +299,7 @@ const unitCard = (ctx, model, rect) => {
     ? `CD ${availability.cooldownRemaining.toFixed(1)}s · ${def.cost} E`
     : availability.reason === "INSUFFICIENT_ENERGY"
       ? model.mission ? `FEHLEN ${Math.ceil(availability.missingEnergy)} E · ${def.cost} E` : `NEED ${Math.ceil(availability.missingEnergy)} E · COST ${def.cost}`
-      : availability.reason === "LANE_CAPACITY"
+      : (availability.reason === "LANE_CAPACITY" || availability.reason === "TEAM_CAPACITY")
         ? model.mission ? `PLATZ FÜR ${def.squadSize ?? 1} SCHIFFE NÖTIG` : `LANE FULL · NEED ${def.squadSize ?? 1} SLOTS`
         : `${role}${count} · ${def.cost} E`;
   text(ctx, detail, rect.x + 49, rect.y + 35, 9, availability.ok ? C.gold : availability.reason === "COOLDOWN_ACTIVE" ? C.enemy : C.muted, "left", 650);
@@ -414,7 +414,7 @@ const expandedCommandPanel = (ctx, model, ui) => {
   }
   for (const rect of ui.lanes) footerLaneSelector(ctx, model, rect);
   box(ctx, ui.undo, "rgba(31,66,78,0.9)", null, 6);
-  text(ctx, "LIVE", ui.undo.x + ui.undo.width / 2, ui.undo.y + 18, 8, C.player, "center");
+  text(ctx, model.director.config.rules?.allowLaneStance ? model.simulation.state.laneStances.get(model.selectedLaneId) === "hold" ? "HALTEN" : "VORSTOSS" : "LIVE", ui.undo.x + ui.undo.width / 2, ui.undo.y + 18, 8, C.player, "center");
   box(ctx, ui.deploy, "rgba(17,42,63,0.96)", "rgba(116,242,240,0.28)", 6);
   text(ctx, model.mission ? "SCHIFF ANTIPPEN" : "TAP SHIP TO LAUNCH", ui.deploy.x + ui.deploy.width / 2, ui.deploy.y + 18, 8, C.text, "center");
   box(ctx, ui.status, "rgba(21,54,72,0.96)", "rgba(116,242,240,0.34)", 6);

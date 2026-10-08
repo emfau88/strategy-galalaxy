@@ -70,7 +70,7 @@ const unitTargetCandidates = (state, unit, positions = null) => {
     .map((id) => state.units.get(id))
     .filter((candidate) => candidate?.alive
       && !candidate.launching
-      && ((unit.team === TEAM.PLAYER && Number.isFinite(state.map.defenseLineY))
+      && ((unit.team === TEAM.PLAYER && (Number.isFinite(state.map.defenseLineY) || state.laneStances?.get(unit.laneId) === "hold"))
         || isHostileUnitAhead(unit, candidate, positions)
         || (friendlyHq && inRange(positioned(friendlyHq, positions), positioned(candidate, positions), homeDefenseRange)))
       && inRange(positioned(unit, positions), positioned(candidate, positions), definition.aggroRange));

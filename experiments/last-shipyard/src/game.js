@@ -182,7 +182,7 @@ export class Game {
         return;
       }
     }
-    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && this.match.aegis?.equipped) {
+    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && this.match.carrierAbility?.equipped) {
       const ability = abilityActionAt(input);
       if (ability) { this.executeCommandAction(ability); this.syncMatchState(); return; }
     }
@@ -247,7 +247,9 @@ export class Game {
 
   executeMenuAction(action) {
     this.sound.play("select");
-    if (action.type === "OPEN_CAMPAIGN") this.menuScreen = "missions";
+    if (action.type === "OPEN_SHIPYARD") this.menuScreen = "shipyard";
+    else if (action.type === "TOGGLE_BOMBER") this.campaign.toggleBomber();
+    else if (action.type === "OPEN_CAMPAIGN") this.menuScreen = "missions";
     else if (action.type === "OPEN_SETTINGS") this.menuScreen = "settings";
     else if (action.type === "MENU_BACK") this.menuScreen = this.menuScreen === "briefing" ? "missions" : "main";
     else if (action.type === "TOGGLE_SOUND") this.sound.toggleMuted();
@@ -277,7 +279,7 @@ export class Game {
       });
       return false;
     }
-    this.match = new MatchDirector({ ...missionMatchOptions(mission), equippedAbility: this.campaign.data.equipment.ability });
+    this.match = new MatchDirector({ ...missionMatchOptions(mission, this.campaign.data.equipment), equippedAbility: this.campaign.data.equipment.ability });
     this.selectedLaneId = mission.map.lanes[0].id;
     this.commandMenu = "units";
     this.setCommandDockOpen(false);
@@ -433,15 +435,20 @@ export class Game {
   executeCommandAction(action) {
     if (!action) return;
     if (action.type === "FOCUS_CARRIER") { this.camera.reset("player"); this.sound.play("select"); return; }
-    if (action.type === "ACTIVATE_AEGIS") {
+    if (action.type === "TOGGLE_LANE_STANCE") {
+      const stance = this.match.simulation.state.laneStances.get(this.selectedLaneId) === "hold" ? "push" : "hold";
+      this.match.executeCommand({ type: "SET_LANE_STANCE", team: TEAM.PLAYER, laneId: this.selectedLaneId, stance });
+      this.showFeedback(stance === "hold" ? "LANE HÄLT DIE ABWEHRLINIE" : "LANE IM VORSTOSS"); return;
+    }
+    if (action.type === "ACTIVATE_AEGIS" || action.type === "ACTIVATE_CARRIER") {
       const result = this.match.executeCommand({ ...action, team: TEAM.PLAYER, laneId: this.selectedLaneId });
-      this.showFeedback(result.ok ? "AEGIS AKTIV · 6 SEKUNDEN SCHUTZ" : this.commandFailureLabel(result.reason));
+      this.showFeedback(result.ok ? this.match.equippedAbility === "disrupt" ? "STÖRIMPULS · 3,5s WAFFENPAUSE" : "AEGIS AKTIV · 6 SEKUNDEN SCHUTZ" : this.commandFailureLabel(result.reason));
       this.sound.play(result.ok ? "purchase" : "error");
       if (result.ok) this.sound.vibrate([12, 20, 12]);
       return;
     }
     if (action.type === "FOCUS_FRONT") {
-      const units = [...this.match.simulation.state.units.values()].filter(unit => unit.alive && unit.team === TEAM.PLAYER);
+      const units = [...this.match.simulation.state.units.values()].filter(unit => unit.alive && unit.team === TEAM.PLAYER && unit.laneId === this.selectedLaneId);
       const engaged = units.filter(unit => unit.targetId);
       const frontY = engaged.length ? engaged.reduce((sum, unit) => sum + unit.y, 0) / engaged.length : units.length ? Math.min(...units.map(unit => unit.y)) : this.match.mapDefinition.bounds.height - 120;
       this.camera.jumpToWorld(frontY);
@@ -483,7 +490,8 @@ export class Game {
       return `ZU WENIG PLATZ · ${count}/${this.match.config.caps.unitsPerLaneTeam}`;
     }
     if (this.match.mission) return {
-      ABILITY_COOLDOWN: "AEGIS LÄDT NOCH", ABILITY_NOT_EQUIPPED: "AEGIS NICHT AUSGERÜSTET",
+      TEAM_CAPACITY: "GESAMTFLOTTE VOLL · AUF VERLUSTE WARTEN", NO_ABILITY_TARGETS: "KEINE GEGNERSCHIFFE IN DIESER LANE",
+      ABILITY_COOLDOWN: "CARRIER-FÄHIGKEIT LÄDT NOCH", ABILITY_NOT_EQUIPPED: "AEGIS NICHT AUSGERÜSTET",
       INSUFFICIENT_ENERGY: "NICHT GENUG ENERGIE", COOLDOWN_ACTIVE: "EINHEIT LÄDT NACH",
       MISSION_LOCKED_UNIT: "IN DIESER MISSION NICHT VERFÜGBAR", MISSION_LOCKED_UPGRADE: "FORSCHUNG FOLGT SPÄTER",
     }[reason] ?? "BEFEHL NICHT VERFÜGBAR";
@@ -497,7 +505,7 @@ export class Game {
 
   syncCommandViewport() {
     if (!this.camera) return;
-    const topInset = this.match.mission ? this.match.aegis?.equipped ? 180 : 126 : CONFIG.camera.battlefieldTopInset;
+    const topInset = this.match.mission ? this.match.carrierAbility?.equipped ? 180 : 126 : CONFIG.camera.battlefieldTopInset;
     if (this.camera.config.battlefieldTopInset !== topInset) {
       this.camera.config = { ...CONFIG.camera, battlefieldTopInset: topInset };
       this.camera.resize(this.camera.designWidth, this.camera.designHeight);

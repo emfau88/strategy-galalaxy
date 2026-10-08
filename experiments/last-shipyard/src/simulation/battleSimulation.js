@@ -1,3 +1,4 @@
+import { interruptWeapons } from "../campaign/weaponStatus.js";
 import { CONFIG } from "../config.js";
 import { PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
 import { LANE, TEAM } from "../core/constants.js";
@@ -98,6 +99,7 @@ export class BattleSimulation {
     const lane = laneFor(this.state, laneId);
     const laneDefinition = this.state.map.lanes.find((item) => item.id === laneId);
     const active = lane.unitIds.get(team);
+    if ([...this.state.units.values()].filter(unit => unit.alive && unit.team === team).length >= (this.config.caps.unitsPerTeamByTeam?.[team] ?? Infinity)) return null;
     if (active.length >= (this.config.caps.unitsPerLaneTeamByTeam?.[team] ?? this.config.caps.unitsPerLaneTeam)) return null;
     const spawn = team === TEAM.PLAYER ? laneDefinition.playerSpawn : laneDefinition.enemySpawn;
     const targetX = x ?? spawn.x + slotOffsetX;
@@ -109,6 +111,7 @@ export class BattleSimulation {
       heading: team === TEAM.PLAYER ? -Math.PI / 2 : Math.PI / 2,
       launch,
     }));
+    unit.bomberVariant = unitType === "bomber" && team === TEAM.PLAYER ? this.config.rules?.bomberVariant ?? "standard" : "standard";
     this.syncUnitShield(unit, { refill: true });
     const squad = this.squads.get(formationId);
     const unitSpeed = UNIT_DEFINITIONS[unitType].speed * (this.state.map.movementScale ?? 1);
@@ -134,6 +137,7 @@ export class BattleSimulation {
     const validFormation = Array.isArray(unitTypes)
       && unitTypes.every((unitType) => UNIT_DEFINITIONS[unitType] && UNIT_DEFINITIONS[unitType].enabled !== false)
       && active
+      && [...this.state.units.values()].filter(unit => unit.alive && unit.team === team).length + unitTypes.length <= (this.config.caps.unitsPerTeamByTeam?.[team] ?? Infinity)
       && active.length + unitTypes.length <= (this.config.caps.unitsPerLaneTeamByTeam?.[team] ?? this.config.caps.unitsPerLaneTeam);
     if (!validFormation) return [];
     const direction = forwardDirection(team);
@@ -382,10 +386,11 @@ export class BattleSimulation {
     unit.fireCooldown = Math.max(0, unit.fireCooldown - dt);
     if (!engaged) {
       const node = unit.unitType === "scout" ? [...this.state.nodes.values()].find((item) => item.laneId === unit.laneId) : null;
+      const defenseLine = this.config.rules?.allowLaneStance && this.state.laneStances?.get(unit.laneId) === "hold" ? 780 : this.state.map.defenseLineY;
       const nodeAhead = node && (node.y - unit.y) * forwardDirection(unit.team) >= -node.radius;
-      if (unit.team === TEAM.PLAYER && Number.isFinite(this.state.map.defenseLineY)) {
+      if (unit.team === TEAM.PLAYER && Number.isFinite(defenseLine)) {
         const lane = this.state.map.lanes.find(item => item.id === unit.laneId);
-        const holdY = this.state.map.defenseLineY + unit.slotOffsetY;
+        const holdY = defenseLine + unit.slotOffsetY;
         if (Math.abs(unit.y - holdY) < 15) unit.state = UNIT_STATE.HOLDING;
         this.steerUnit(unit, { x: lane.centerX + unit.slotOffsetX, y: holdY, separationVx }, motionDefinition, dt);
       } else if (nodeAhead && node.ownerTeam !== unit.team) {
@@ -431,7 +436,7 @@ export class BattleSimulation {
     this.constrainToLane(unit);
     this.observeUnitMobility(unit, startX, startY, dt);
     const aligned = !definition.broadside || Math.abs(angleDelta(unit.heading, tactical.heading)) <= 0.32;
-    if (inRange(unitPosition, targetPosition, definition.attackRange) && aligned && unit.fireCooldown === 0) {
+    if (inRange(unitPosition, targetPosition, definition.attackRange) && aligned && unit.fireCooldown === 0 && (unit.weaponsDisabledUntil ?? 0) <= this.state.time) {
       this.fire(unit, target, definition, positions);
     }
   }
@@ -618,6 +623,7 @@ export class BattleSimulation {
         vx: Math.cos(projectileAngle) * projectileDefinition.speed, vy: Math.sin(projectileAngle) * projectileDefinition.speed,
         damage: totalDamage / requestedShots, targetId: target.id, launchDelay, hardpointIndex: mirroredIndex, salvoCount: requestedShots,
       });
+      projectile.ionSeconds = owner.bomberVariant === "ion" ? 2 : 0;
       projectile.remainingLife = projectileDefinition.lifetime;
       addProjectileToState(this.state, projectile);
       if (launchDelay === 0) this.emitShot(projectile);
@@ -651,6 +657,7 @@ export class BattleSimulation {
   damageMultiplier(owner, target) {
     if (owner.unitType === "drone" && (target.structureType || target.unitType === "frigate")) return 0.25;
     if (owner.unitType === "fighter") return target.structureType || target.unitType === "frigate" ? 0.55 : 1.3;
+    if (owner.unitType === "bomber" && owner.bomberVariant === "ion") return target.structureType ? 0.6 : target.unitType === "frigate" ? 0.85 : 0.7;
     if (owner.unitType === "bomber") return target.structureType || target.unitType === "frigate" ? 1.55 : 0.4;
     if (owner.unitType === "scout" && (target.structureType || target.unitType === "frigate")) return 0.55;
     return 1;
@@ -686,7 +693,7 @@ export class BattleSimulation {
         projectile.alive = false;
         damageEvents.push({
           projectileId: projectile.id, projectileType: projectile.projectileType, targetId: target.id,
-          damage: projectile.damage, ownerTeam: projectile.ownerTeam, laneId: projectile.laneId,
+          damage: projectile.damage, ionSeconds: projectile.ionSeconds ?? 0, ownerTeam: projectile.ownerTeam, laneId: projectile.laneId,
           impactX: projectile.x, impactY: projectile.y, incomingVx: projectile.vx, incomingVy: projectile.vy,
         });
       } else if (projectile.remainingLife <= 0) {
@@ -701,6 +708,7 @@ export class BattleSimulation {
     for (const event of events) {
       const target = getEntity(this.state, event.targetId);
       if (!target?.alive || target.team === event.ownerTeam) continue;
+      if (event.ionSeconds) interruptWeapons(this.state, target, event.ionSeconds);
       const availableShield = target.structureType ? 0 : target.shield ?? 0;
       const abilityAbsorption = this.protection?.absorbedDamage(target, event.damage) ?? 0;
       const shieldAbsorption = Math.min(availableShield, event.damage - abilityAbsorption);

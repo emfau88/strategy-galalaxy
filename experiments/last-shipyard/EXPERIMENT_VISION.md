@@ -28,3 +28,7 @@ Heimatwerft mit eigenem Portraitmotiv und Vektoremblem. Erste zwei Missionen ver
 ## Stand Bulk 3
 
 Erstes Kapitel mit drei Missionen. Angriffserfolg bedeutet Gegner-Carrier zerstört; Verteidigungserfolg bedeutet alle drei angekündigten Verbände und deren Geschosse beseitigt, während der eigene Carrier lebt. Verteidiger halten eine automatische Abwehrlinie. Aegis schützt kurz Carrier und Flotte; Energieverbrauch konkurriert mit Verstärkung. Fähigkeit und Baupläne sind gratis ausrüstbar. Fregatten können nach Mission 3 in den späteren Wiederholungen ausprobiert werden. Menschliche Spielbeobachtung und Smartphone-Abnahme bleiben offen.
+
+## Stand Bulk 4
+
+Fünf Missionen. Zwei Lanes teilen sich ein Gesamtbudget; Halten und Vorstoß werden pro Lane gewählt. Die Werft speichert Bomber-Ausführung und genau eine Carrier-Fähigkeit. Ionenbomber unterbrechen Schiffswaffen zwei Sekunden und verzichten auf volle Belagerungswirkung. Störimpuls pausiert Schiffswaffen 3,5 Sekunden für 100 E; Strukturen sind immun. Mission 5 bietet einen angekündigten Belagerungsangriff und 48 Sekunden Aufbaupause.

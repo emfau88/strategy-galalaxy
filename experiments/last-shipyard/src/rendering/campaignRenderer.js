@@ -71,9 +71,10 @@ export const renderCampaignMenu = (ctx, model) => {
       text(ctx, `0${dock}`, x + 12, at(496), 10, active ? C.cyan : C.muted);
     }
     button(ctx, ui.campaign, progress.lastMissionId ? "KAMPAGNE FORTSETZEN  →" : "KAMPAGNE BEGINNEN  →", true);
+    button(ctx, ui.shipyard, "WERFT · AUSRÜSTUNG");
     button(ctx, ui.settings, "EINSTELLUNGEN");
-    text(ctx, progress.persistent ? "Fortschritt wird auf diesem Gerät gespeichert." : "Fortschritt bleibt in dieser Sitzung erhalten.", 210, at(667), 10, C.muted, "center");
-    text(ctx, `TESTKAMPAGNE · ${EXPERIMENT.version}`, 210, at(707), 9, C.muted, "center");
+    text(ctx, progress.persistent ? "Fortschritt wird auf diesem Gerät gespeichert." : "Fortschritt bleibt in dieser Sitzung erhalten.", 210, at(712), 10, C.muted, "center");
+    text(ctx, `TESTKAMPAGNE · ${EXPERIMENT.version}`, 210, at(737), 9, C.muted, "center");
     return;
   }
   // Subpages use the same material/typography, with calm opaque panels over the art.
@@ -102,24 +103,41 @@ export const renderCampaignMenu = (ctx, model) => {
     text(ctx, "AUFTRAG", 48, at(203), 10, C.brass, "left", 700);
     wrap(ctx, m.objective, 48, at(227), 324, 14, C.ivory);
     text(ctx, "DEINE FLOTTE", 48, at(276), 10, C.cyan, "left", 700);
-    text(ctx, m.units.map(className).join(" · "), 48, at(300), 12);
-    text(ctx, `${m.startingEnergy} E Start · +${m.income} E/s · maximal ${m.fleetLimit} Schiffe`, 48, at(322), 11, C.muted);
+    text(ctx, m.units.map(type => type === "bomber" && progress.equipment?.bomberVariant === "ion" ? "Ionenbomber" : className(type)).join(" · "), 48, at(300), 12);
+    text(ctx, `${m.startingEnergy} E · +${m.income}/s · ${m.fleetLimit}/Lane${m.fleetTotal ? ` · ${m.fleetTotal} gesamt` : ""}`, 48, at(322), 11, C.muted);
     text(ctx, `1 kostenlose Drone alle ${m.waveSeconds}s · Käufe starten sofort`, 48, at(342), 10, C.muted);
     text(ctx, "GEGNERISCHER PLAN", 48, at(376), 10, C.brass, "left", 700);
     text(ctx, m.threat, 48, at(400), 12);
-    text(ctx, `${m.enemyEnergy} E Start · +${m.enemyIncome} E/s · maximal ${m.enemyFleetLimit} Schiffe`, 48, at(422), 11, C.muted);
+    text(ctx, `${m.enemyEnergy} E · +${m.enemyIncome}/s · ${m.enemyFleetLimit}/Lane${m.enemyFleetTotal ? ` · ${m.enemyFleetTotal} gesamt` : ""}`, 48, at(422), 11, C.muted);
     text(ctx, `Ankündigung: ${m.warningSeconds}s · Aufbaupause: ${m.recoverySeconds}s`, 48, at(442), 11, C.muted);
     text(ctx, m.kind === "defense" ? "Angriffe aus dem Korridor. Kein Gegner-Carrier als Ziel." : "Keine kostenlosen Gegner-Waves.", 48, at(462), 10, C.muted);
     wrap(ctx, m.briefing.join(" "), 48, at(486), 324, 12, C.ivory);
     if (progress.completed.includes("heavy-resistance")) {
-      const equipped = progress.equipment?.ability === "aegis";
+      const equipped = Boolean(progress.equipment?.ability), disrupted = progress.equipment?.ability === "disrupt";
       panel(ctx, ui.equipment, equipped);
-      text(ctx, equipped ? "AEGIS AUSGERÜSTET · 80 E" : "KEINE FÄHIGKEIT · AEGIS AUSRÜSTEN", 210, ui.equipment.y + 15, 11, C.ivory, "center", 700);
-      text(ctx, "Carrier + Flotte · 60% Schutz · 6s · 28s Cooldown", 210, ui.equipment.y + 33, 9, C.muted, "center");
+      text(ctx, equipped ? disrupted ? "STÖRIMPULS AUSGERÜSTET · 100 E" : "AEGIS AUSGERÜSTET · 80 E" : "KEINE FÄHIGKEIT · AEGIS AUSRÜSTEN", 210, ui.equipment.y + 15, 11, C.ivory, "center", 700);
+      text(ctx, disrupted ? "Schiffswaffen 3,5s aus · 32s Cooldown · Strukturen immun" : "Carrier + Flotte · 60% Schutz · 6s · 28s Cooldown", 210, ui.equipment.y + 33, 9, C.muted, "center");
     }
     text(ctx, `GARANTIERTER BAUPLAN: ${m.reward.replace("-BAUPLAN", "")}`, 48, at(progress.completed.includes("heavy-resistance") ? 591 : 566), 10, C.cyan, "left", 700);
     button(ctx, ui.start, model.levelLoading ? "EINSATZ WIRD VORBEREITET …" : "MISSION STARTEN  →", true, !model.levelLoading);
     button(ctx, ui.back, "ZURÜCK ZU DEN EINSÄTZEN");
+  } else if (model.menuScreen === "shipyard") {
+    text(ctx, "WERFT · AUSRÜSTUNG", 28, at(130), 25, C.ivory, "left", 700);
+    panel(ctx, {x:28,y:at(183),width:364,height:128});
+    text(ctx, "BOMBER-AUSFÜHRUNG", 48, at(210), 11, C.brass, "left", 700);
+    text(ctx, progress.equipment?.bomberVariant === "ion" ? "Schiffswaffen 2s aus · weniger Belagerungsschaden" : "Volle Wirkung gegen schwere Ziele und Strukturen", 48, at(235), 10, C.muted);
+    button(ctx, ui.bomber, progress.completed.includes("split-front") ? progress.equipment?.bomberVariant === "ion" ? "IONENBOMBER · ZU STANDARD WECHSELN" : "STANDARDBOMBER · ZU ION WECHSELN" : "IONENBOMBER NACH MISSION 4", true, progress.completed.includes("split-front"));
+    panel(ctx, {x:28,y:at(328),width:364,height:145});
+    const ability = progress.equipment?.ability;
+    text(ctx, "CARRIER-FÄHIGKEIT · GENAU EINE WAHL", 48, at(354), 10, C.brass, "left", 700);
+    text(ctx, ability === "disrupt" ? "100 E · 3,5s Waffenpause · 32s Cooldown" : ability === "aegis" ? "80 E · 6s Schutz · 60% · 28s Cooldown" : "Ohne Fähigkeit. Energie bleibt für Verstärkung.", 48, at(377), 11, C.muted);
+    button(ctx, ui.ability, ability === "disrupt" ? "STÖRIMPULS · NÄCHSTE AUSWAHL" : ability === "aegis" ? "AEGIS · NÄCHSTE AUSWAHL" : "KEINE FÄHIGKEIT · NÄCHSTE AUSWAHL", true, progress.completed.includes("heavy-resistance"));
+    text(ctx, ability === "disrupt" ? "Nur Schiffe der Lane · Carrier und Relais sind immun" : "Aegis schützt Carrier und eigene Schiffe der Lane", 48, at(454), 10, C.muted);
+    text(ctx, "FREISCHALTUNGEN", 48, at(508), 11, C.brass, "left", 700);
+    text(ctx, progress.completed.includes("harbor-fire") ? "Scout · Fighter · Bomber · Fregatte verfügbar" : "Schiffsbaupläne entstehen durch Missionssiege.", 48, at(532), 11, C.ivory);
+    text(ctx, progress.completed.includes("the-window") ? "Aegis und Störimpuls verfügbar" : "Störimpuls nach Mission 5", 48, at(558), 11, C.muted);
+    text(ctx, "Wechsel sind kostenlos. Kein Grind, keine Reparaturkosten.", 210, at(610), 10, C.muted, "center");
+    button(ctx, ui.back, "ZURÜCK ZUM HAFEN");
   } else if (model.menuScreen === "settings") {
     text(ctx, "EINSTELLUNGEN", 28, at(136), 25, C.ivory, "left", 700);
     panel(ctx, ui.panel);
@@ -152,7 +170,7 @@ export const renderCampaignResult = (ctx, model) => {
 };
 
 export const renderMissionHud = (ctx, model) => {
-  const run = model.director.missionRuntime?.snapshot(model.simulation.state);
+  const run = model.director.missionRuntime?.snapshot(model.simulation.state, model.selectedLaneId);
   if (!run) return;
   panel(ctx, { x: 8, y: 62, width: 404, height: 59 });
   text(ctx, run.label, 20, 78, 10, run.phase === "warning" ? C.brass : C.cyan, "left", 700);
