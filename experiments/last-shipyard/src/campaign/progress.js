@@ -48,5 +48,15 @@ export class CampaignProgress {
     return true;
   }
 
+  reset() {
+    this.data = emptyProgress();
+    try {
+      if (!this.storage) { this.persistent = false; return true; }
+      this.storage.removeItem(CAMPAIGN_STORAGE_KEY);
+      this.persistent = true;
+    } catch { this.persistent = false; }
+    return true;
+  }
+
   snapshot() { return { ...this.data, completed: [...this.data.completed], persistent: this.persistent }; }
 }

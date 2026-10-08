@@ -1,6 +1,6 @@
 # Die letzte Werft – Plan für eine isolierte Testkampagne
 
-Stand: 7. Oktober 2026. **Status: Bulk 0 umgesetzt und lokal geprüft; noch nicht veröffentlicht.**
+Stand: 8. Oktober 2026. **Status: Bulk 0 abgeschlossen; Bulk 1 lokal geprüft, öffentliche Abnahme noch offen.**
 
 Arbeitsbranch: `codex/last-shipyard`. [Lokaler Einstieg und Befehle](../experiments/last-shipyard/README.md) · [Herkunft und Abnahme](../experiments/last-shipyard/BASELINE.md). Die folgenden Bulks sind weiterhin offen.
 
@@ -210,12 +210,12 @@ Jeder Bulk endet mit einem überschaubaren Commit beziehungsweise PR, einem spie
 
 **Ziel:** Die Testversion ist früh über GitHub erreichbar.
 
-- [ ] Eigenen Experiment-Build und gemeinsamen Site-Build einführen.
-- [ ] Den zentralen Pages-Workflow auf das vollständige Artefakt umstellen; doppelte Testaufrufe entfernen.
-- [ ] Gemeinsame lokale Vorschau mit korrektem Unterpfad und separaten Modul-/Assetpfaden ermöglichen.
-- [ ] Einen Start-/Kauf-/Rückkehrablauf im gebauten Experiment prüfen; Classic startet weiterhin.
-- [ ] Speichertrennung prüfen: Experiment abschließen/zurücksetzen darf Classic-Daten nicht verändern.
-- [ ] Classic-Ausgabe mit der festgehaltenen Baseline vergleichen; experimentelle Dateien dürfen ihre Pfade nicht überschreiben.
+- [x] Eigenen Experiment-Build und gemeinsamen Site-Build einführen.
+- [x] Den zentralen Pages-Workflow auf das vollständige Artefakt umstellen; doppelte Testaufrufe entfernen.
+- [x] Gemeinsame lokale Vorschau mit korrektem Unterpfad und separaten Modul-/Assetpfaden ermöglichen.
+- [x] Einen Start-/Kauf-/Rückkehrablauf im gebauten Experiment prüfen; Classic startet weiterhin.
+- [x] Speichertrennung prüfen: Experiment abschließen/zurücksetzen darf Classic-Daten nicht verändern.
+- [x] Classic-Ausgabe mit der festgehaltenen Baseline vergleichen; experimentelle Dateien dürfen ihre Pfade nicht überschreiben.
 - [ ] Änderungen integriert veröffentlichen, beide echten Play-Links prüfen und den README-Eintrag mit der tatsächlichen Missionszahl ergänzen.
 
 **Abnahme:** Beide Links öffnen die richtige Fassung. Reload und Direktaufruf des Experimentpfads funktionieren. Der README-Link ist auf dem Standardbranch sichtbar. Die Testversion meldet ihre aktuelle Build-Version.

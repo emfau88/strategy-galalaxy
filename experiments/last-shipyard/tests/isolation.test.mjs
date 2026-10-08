@@ -39,13 +39,13 @@ for (const entry of manifest.files.filter(file => file.destination.startsWith("s
   const bytes = readFileSync(resolve(root, entry.destination));
   assert.equal(createHash("sha256").update(bytes).digest("hex"), entry.sha256, `Unmodified source module: ${entry.destination}`);
 }
-const changedClassic = execFileSync("git", ["diff", "--name-only", manifest.classicCommit, "--", "index.html", "src", "assets", "scripts", "package.json", ".github"], { cwd: repo, encoding: "utf8", windowsHide: true });
-assert.equal(changedClassic.trim(), "", "Classic runtime/build/deploy stays at verified public baseline");
+const changedClassic = execFileSync("git", ["diff", "--name-only", manifest.classicCommit, "--", "index.html", "src", "assets", "scripts/build-pages.mjs"], { cwd: repo, encoding: "utf8", windowsHide: true });
+assert.equal(changedClassic.trim(), "", "Classic runtime and original builder stay at verified public baseline");
 
 const sentinels = { "strategy-galalaxy-campaign-v1": '{"version":1,"completed":["first-contact"]}', "strategy-galalaxy-sound-muted": "false" };
 const values = new Map(Object.entries(sentinels));
 const accesses = [];
-const storage = { getItem: key => { accesses.push(key); return values.get(key) ?? null; }, setItem: (key, value) => { accesses.push(key); values.set(key, value); } };
+const storage = { getItem: key => { accesses.push(key); return values.get(key) ?? null; }, setItem: (key, value) => { accesses.push(key); values.set(key, value); }, removeItem: key => { accesses.push(key); values.delete(key); } };
 let progress = new CampaignProgress(storage);
 assert.deepEqual(progress.data.completed, [], "Classic completion is not imported");
 assert.equal(progress.begin("first-contact"), true);
@@ -61,6 +61,10 @@ try {
   assert.equal(sound.muted, false);
   sound.toggleMuted();
   assert.equal(new SoundSystem().muted, true);
+  progress.reset();
+  assert.deepEqual(new CampaignProgress(storage).data.completed, []);
+  assert.equal(values.has(STORAGE_KEYS.progress), false);
+  assert.equal(new SoundSystem().muted, true, "Progress reset retains sound");
 } finally {
   if (previous) Object.defineProperty(globalThis, "localStorage", previous); else delete globalThis.localStorage;
 }

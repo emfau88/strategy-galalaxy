@@ -14,14 +14,16 @@ const browser = (process.platform === "win32"
   ? ["C:/Program Files/Google/Chrome/Application/chrome.exe", "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"]
   : ["/usr/bin/google-chrome", "/usr/bin/chromium"]).find(existsSync);
 assert.ok(browser, "Chrome or Edge required for this short browser check");
-const output = resolve(experimentRoot, "../../tmp/last-shipyard-bulk0");
+const live = process.argv.includes("--live");
+const siteMode = live || process.argv.includes("--site");
+const output = resolve(experimentRoot, `../../tmp/last-shipyard-${live ? "live" : siteMode ? "bulk1" : "standalone"}`);
 await mkdir(output, { recursive: true });
 const profile = await mkdtemp(resolve(output, "profile-"));
 assert.ok(profile.startsWith(output + sep));
 const prefix = "/strategy-galalaxy/experiments/last-shipyard/";
-const server = createExperimentServer({ prefix });
-await new Promise(done => server.listen(0, "127.0.0.1", done));
-const origin = `http://127.0.0.1:${server.address().port}`;
+const server = live ? null : siteMode ? (await import("../../../scripts/dev-server.mjs")).createSiteServer() : createExperimentServer({ prefix });
+if (server) await new Promise(done => server.listen(0, "127.0.0.1", done));
+const origin = live ? "https://emfau88.github.io" : `http://127.0.0.1:${server.address().port}`;
 const probe = createNetServer();
 await new Promise(done => probe.listen(0, "127.0.0.1", done));
 const debugPort = probe.address().port;
@@ -82,6 +84,21 @@ try {
   await Promise.all([send("Runtime.enable"), send("Log.enable"), send("Network.enable"), send("Page.enable")]);
   await send("Emulation.setDeviceMetricsOverride", { width: 360, height: 800, deviceScaleFactor: 1, mobile: true });
   await send("Emulation.setTouchEmulationEnabled", { enabled: true });
+  if (siteMode) {
+    await send("Page.navigate", { url: origin + "/strategy-galalaxy/?debug=1" });
+    let ready = false;
+    for (let attempt = 0; attempt < 200; attempt++) {
+      ready = await evaluate("Boolean(window.__strategyGalalaxy?.running && window.__strategyGalalaxy.assetsReady && window.__strategyGalalaxy.loader.isSettled)");
+      if (ready) break;
+      await delay(50);
+    }
+    assert.ok(ready, "Classic starts from the common artifact");
+    assert.equal(await evaluate("document.title"), "Strategy Galalaxy");
+    assert.equal(await evaluate("window.__strategyGalalaxy.match.state"), "TITLE");
+    assert.deepEqual(await evaluate("[...window.__strategyGalalaxy.loader.errors]"), []);
+    await capture("classic-360x800.png");
+    requests.clear();
+  }
   const url = origin + prefix + "?debug=1&seed=1180";
   await send("Page.navigate", { url });
   await waitReady();
@@ -138,8 +155,28 @@ try {
   assert.equal(await evaluate("window.__lastShipyard.sound.muted"), true);
   for (const [key, value] of Object.entries(classic)) assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(key)})`), value, "Classic storage unchanged");
   assert.ok([...requests].every(address => address.startsWith(origin + prefix) || address === origin + "/favicon.ico"), "All runtime requests stay in experiment subpath");
+  assert.equal(await evaluate("window.__lastShipyard.campaign.reset()"), true);
+  assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.progress)})`), null);
+  await send("Page.reload", { ignoreCache: true });
+  await delay(150);
+  await waitReady();
+  assert.deepEqual(await evaluate("window.__lastShipyard.campaign.data.completed"), []);
+  assert.equal(await evaluate("window.__lastShipyard.sound.muted"), true, "Progress reset leaves sound intact");
+  for (const [key, value] of Object.entries(classic)) assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(key)})`), value, "Classic storage survives reset");
+  if (siteMode) {
+    await send("Page.navigate", { url: origin + "/strategy-galalaxy/?debug=1" });
+    let ready = false;
+    for (let attempt = 0; attempt < 200; attempt++) {
+      ready = await evaluate("Boolean(window.__strategyGalalaxy?.assetsReady && window.__strategyGalalaxy.loader.isSettled)");
+      if (ready) break;
+      await delay(50);
+    }
+    assert.ok(ready, "Classic still starts after experiment reset");
+    assert.equal(await evaluate("window.__strategyGalalaxy.sound.muted"), false);
+    assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.soundMuted)})`), "true");
+  }
   assert.deepEqual(failures, []);
-  const report = { result: "PASS", viewport: "360x800", prefix, runtimeRequests: requests.size, checks: ["own menu identity", "active assets", "touch start and purchase", "pause and return", "own progress and sound reload", "Classic sentinel unchanged", "no requests outside experiment"], completedVia: "persistence API; no simulated mission victory", failures };
+  const report = { result: "PASS", mode: live ? "public" : siteMode ? "built-site" : "standalone", classicStarts: siteMode, viewport: "360x800", prefix, runtimeRequests: requests.size, checks: ["own menu identity", "active assets", "touch start and purchase", "pause and return", "own progress and sound reload", "Classic sentinel unchanged", "no requests outside experiment", "own progress reset", "Classic after reset"], completedVia: "persistence API; no simulated mission victory", failures };
   await writeFile(resolve(output, "report.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report, null, 2));
 } finally {
@@ -147,7 +184,7 @@ try {
   socket?.close();
   if (process.platform === "win32" && processHandle.pid) spawnSync("taskkill.exe", ["/PID", String(processHandle.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
   else processHandle.kill();
-  await new Promise(done => server.close(done));
+  if (server) await new Promise(done => server.close(done));
   assert.ok(profile.startsWith(output + sep));
   await rm(profile, { recursive: true, force: true, maxRetries: 4, retryDelay: 125 }).catch(() => {});
 }

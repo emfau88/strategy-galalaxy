@@ -6,7 +6,7 @@
   "scripts": {
     "test": "node tests/foundation.test.mjs",
     "check": "node scripts/foundation-check.mjs && node scripts/verify-assets.mjs",
-    "build:pages": "node scripts/build-pages.mjs",
+    "build:pages": "node scripts/build-site.mjs",
     "verify:assets": "node scripts/verify-assets.mjs",
     "balance:sim": "node scripts/balance-sim.mjs",
     "balance:experiments": "node scripts/balance-experiments.mjs",
@@ -14,6 +14,12 @@
     "test:browser": "node scripts/browser-check.mjs",
     "test:pages": "npm run build:pages && node scripts/browser-check.mjs --dist",
     "test:stress": "node scripts/stress-check.mjs",
-    "test:cluster": "node scripts/cluster-check.mjs"
+    "test:cluster": "node scripts/cluster-check.mjs",
+    "build:classic": "node scripts/build-pages.mjs",
+    "dev:werft": "npm --prefix experiments/last-shipyard run dev",
+    "preview": "node scripts/dev-server.mjs",
+    "check:werft": "npm --prefix experiments/last-shipyard run check",
+    "test:site": "node tests/site-build.test.mjs",
+    "test:site:browser": "node scripts/site-browser-smoke.mjs"
   }
 }
