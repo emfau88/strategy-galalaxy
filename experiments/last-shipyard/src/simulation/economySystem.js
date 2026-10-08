@@ -6,7 +6,7 @@ export class EconomySystem {
   constructor({ balance }) {
     this.balance = balance;
     this.teams = new Map(teams.map((team) => [team, {
-      energy: balance.startingEnergy,
+      energy: balance.startingEnergyByTeam?.[team] ?? balance.startingEnergy,
       economyLevel: 0,
       turretLevel: 0,
       weaponLevel: 0,
@@ -33,7 +33,7 @@ export class EconomySystem {
 
   incomePerSecond(state, team, activeBattleSeconds) {
     const economy = this.get(team);
-    const baseIncome = this.balance.baseIncomePerSecond * (1 + economy.economyLevel * this.balance.economyUpgradeIncomeBonus);
+    const baseIncome = (this.balance.incomePerSecondByTeam?.[team] ?? this.balance.baseIncomePerSecond) * (1 + economy.economyLevel * this.balance.economyUpgradeIncomeBonus);
     const nodeIncome = this.controlledNodes(state, team) * this.balance.nodeIncomePerSecond;
     return (baseIncome + nodeIncome) * this.escalationMultiplier(activeBattleSeconds);
   }

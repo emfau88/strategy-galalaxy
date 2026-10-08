@@ -1,3 +1,4 @@
+import { MissionRuntime } from "../campaign/missionRuntime.js";
 import { CONFIG } from "../config.js";
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
 import { createBattleState } from "./battleState.js";
@@ -16,6 +17,7 @@ export class MatchDirector {
     this.config = { ...config, balance: { ...config.balance, ...(mapDefinition.balanceOverrides ?? {}) } };
     this.mapDefinition = mapDefinition;
     this.mission = mission;
+    this.missionRuntime = null;
     this.aiProfile = aiProfile;
     this.aiPreferredLane = aiPreferredLane ?? mapDefinition.lanes[0].id;
     this.aiInvestmentBias = aiInvestmentBias;
@@ -45,6 +47,7 @@ export class MatchDirector {
     this.deployment = new DeploymentDirector({ config: this.config, laneIds: this.mapDefinition.lanes.map((lane) => lane.id) });
     this.liveDeployment = new LiveDeploymentSystem({ config: this.config });
     this.events = [{ type: "MATCH_STARTED", state: this.state }];
+    this.missionRuntime = this.mission ? new MissionRuntime(this.mission) : null;
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
     this.aiDecisionRemaining = 0;
@@ -57,7 +60,9 @@ export class MatchDirector {
   }
 
   executeCommand(command) {
-    return this.commands.execute(this, command);
+    const result = this.commands.execute(this, command);
+    if (result.ok && command.team === TEAM.PLAYER && command.type === "DEPLOY_UNIT") this.missionRuntime?.notePurchase(command.unitType);
+    return result;
   }
 
   unitAllowed(unitType) { return !this.config.rules?.units || this.config.rules.units.includes(unitType); }
@@ -79,10 +84,12 @@ export class MatchDirector {
       this.state = this.simulation.state.terminalTeam === TEAM.PLAYER
         ? MATCH_STATE.VICTORY
         : this.simulation.state.terminalTeam === TEAM.ENEMY ? MATCH_STATE.DEFEAT : MATCH_STATE.DRAW;
+      this.missionRuntime?.finish();
       this.events.push({ type: "MATCH_ENDED", state: this.state, cycle: this.cycle });
       return true;
     }
 
+    this.missionRuntime?.advance(this, step);
     this.aiDecisionRemaining -= step;
     let liveDecision = false;
     if (this.aiDecisionRemaining <= Number.EPSILON) {
@@ -110,6 +117,7 @@ export class MatchDirector {
   }
 
   planAi() {
+    if (this.mission) return { ok: false, reason: "AUTHORED_MISSION" };
     const result = this.ai.plan(this);
     if (result.ok) {
       this.lastAiDecision = result.decision;

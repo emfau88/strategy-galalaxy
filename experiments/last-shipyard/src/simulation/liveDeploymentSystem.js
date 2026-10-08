@@ -44,7 +44,8 @@ export class LiveDeploymentSystem {
 
   availability({ simulation, economy, team, laneId, unitType }) {
     const definition = UNIT_DEFINITIONS[unitType];
-    if (this.config.rules?.units && !this.config.rules.units.includes(unitType)) return { ok: false, reason: "MISSION_LOCKED_UNIT" };
+    const allowed = this.config.rules?.unitsByTeam?.[team] ?? this.config.rules?.units;
+    if (allowed && !allowed.includes(unitType)) return { ok: false, reason: "MISSION_LOCKED_UNIT" };
     if (!definition || definition.enabled === false || definition.purchasable === false || definition.cost <= 0) {
       return { ok: false, reason: "UNAVAILABLE_UNIT" };
     }
@@ -60,7 +61,7 @@ export class LiveDeploymentSystem {
     const memberTypes = Array.from({ length: definition.squadSize ?? 1 }, () => unitType);
     const lane = simulation.state.lanes.get(laneId);
     const active = lane.unitIds.get(team).length;
-    if (active + memberTypes.length > this.config.caps.unitsPerLaneTeam) {
+    if (active + memberTypes.length > (this.config.caps.unitsPerLaneTeamByTeam?.[team] ?? this.config.caps.unitsPerLaneTeam)) {
       return { ok: false, reason: "LANE_CAPACITY", cost: definition.cost, active, requiredCapacity: memberTypes.length };
     }
 

@@ -1,32 +1,41 @@
-import { containsPoint } from "./commandUi.js";
 import { MISSIONS } from "../data/campaign.js";
+import { containsPoint } from "./commandUi.js";
 
 export const campaignUiLayout = (height = 760) => {
   const offset = height / 2 - 380;
   const rect = (x, y, width, h) => ({ x, y: y + offset, width, height: h });
-  return {
-    panel: rect(36, 288, 348, 290),
-    campaign: rect(60, 365, 300, 52),
-    settings: rect(60, 429, 300, 48),
-    missions: MISSIONS.map((mission, index) => ({ ...rect(32, 208 + index * 106, 356, 92), missionId: mission.id })),
-    back: rect(60, 622, 300, 46),
-    start: rect(60, 558, 300, 50),
-    sound: rect(60, 365, 300, 52),
-  };
+  return { campaign: rect(44, 530, 332, 52), settings: rect(44, 594, 332, 46),
+    panel: rect(28, 262, 364, 292), sound: rect(58, 365, 304, 48),
+    back: rect(44, 684, 332, 46), start: rect(44, 614, 332, 52),
+    missions: MISSIONS.map((mission, i) => ({ ...rect(28, 280 + i * 58, 364, 52), missionId: mission.id })) };
 };
-
 export const campaignActionAt = (point, screen, height = 760) => {
   const ui = campaignUiLayout(height);
-  if (screen !== "main" && containsPoint(ui.back, point)) return { type: "MENU_BACK" };
   if (screen === "main") {
     if (containsPoint(ui.campaign, point)) return { type: "OPEN_CAMPAIGN" };
     if (containsPoint(ui.settings, point)) return { type: "OPEN_SETTINGS" };
+  } else {
+    if (containsPoint(ui.back, point)) return { type: "MENU_BACK" };
+    if (screen === "settings" && containsPoint(ui.sound, point)) return { type: "TOGGLE_SOUND" };
+    if (screen === "briefing" && containsPoint(ui.start, point)) return { type: "START_MISSION" };
+    if (screen === "missions") {
+      const mission = ui.missions.find(rect => containsPoint(rect, point));
+      if (mission) return { type: "SELECT_MISSION", missionId: mission.missionId };
+    }
   }
-  if (screen === "missions") {
-    const mission = ui.missions.find((rect) => containsPoint(rect, point));
-    if (mission) return { type: "SELECT_MISSION", missionId: mission.missionId };
-  }
-  if (screen === "briefing" && containsPoint(ui.start, point)) return { type: "START_MISSION" };
-  if (screen === "settings" && containsPoint(ui.sound, point)) return { type: "TOGGLE_SOUND" };
+  return null;
+};
+
+export const campaignResultLayout = height => {
+  const y = height / 2;
+  return { next: { x: 52, y: y + 36, width: 316, height: 48 },
+    retry: { x: 52, y: y + 96, width: 150, height: 44 },
+    menu: { x: 218, y: y + 96, width: 150, height: 44 } };
+};
+export const campaignResultActionAt = (point, height, canContinue) => {
+  const ui = campaignResultLayout(height);
+  if (canContinue && containsPoint(ui.next, point)) return { type: "NEXT_MISSION" };
+  if (containsPoint(ui.retry, point)) return { type: "RESTART_MATCH" };
+  if (containsPoint(ui.menu, point)) return { type: "RETURN_TO_MISSIONS" };
   return null;
 };

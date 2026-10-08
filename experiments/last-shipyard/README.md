@@ -37,3 +37,7 @@ npm run preview
 ```
 
 Die gemeinsame Vorschau läuft auf http://127.0.0.1:7102/strategy-galalaxy/ und deren Unterpfad experiments/last-shipyard/. Direktaufruf und fehlender abschließender Slash funktionieren. Der Einzelbuild des Experiments schreibt in einen eigenen temporären Ordner; der gemeinsame Build enthält die unveränderte Classic-Ausgabe plus Experiment.
+
+## Bulk 2
+
+Zwei gestaltete Angriffsmissionen: Erstkontakt (Scout/Fighter) und Schwerer Widerstand (Bomber mit Eskorte gegen Fregatten). Ein Sieg öffnet den nächsten Einsatz und sichert den Bauplan. Missionen 3–6 sind klar bezeichnete Vorschauen. FLOTTE öffnet Käufe, ZUR FRONT findet deine vordersten Schiffe. Gegner kaufen nur im angekündigten Angriffsfenster, mit eigenen im Briefing sichtbaren Budgets. [Abnahme](../../docs/LAST_SHIPYARD_BULK2_REPORT.md).

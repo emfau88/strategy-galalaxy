@@ -60,7 +60,15 @@ export class Renderer {
     ctx.scale(transform.scale, transform.scale);
     const sceneModel = { ...model, width: transform.designWidth, height: transform.designHeight };
     const menuScene = model.state === "LOADING" || (model.state === "TITLE" && model.menuScreen !== "skirmish");
-    if (menuScene) renderMenuBackground(ctx, transform.designWidth, transform.designHeight);
+    if (menuScene) {
+      renderMenuBackground(ctx, transform.designWidth, transform.designHeight);
+      const art = model.assets?.get("shipyard-keyart");
+      if (art) drawCover(ctx, art, transform.designWidth, transform.designHeight, 0.48);
+      const shade = ctx.createLinearGradient(0, 0, 0, transform.designHeight);
+      shade.addColorStop(0, "rgba(4,12,23,.25)"); shade.addColorStop(.42, "rgba(4,12,23,0)"); shade.addColorStop(1, "rgba(4,12,23,.9)");
+      ctx.fillStyle = shade; ctx.fillRect(0, 0, transform.designWidth, transform.designHeight);
+      if (model.menuScreen !== "main") { ctx.fillStyle = "rgba(4,12,23,.87)"; ctx.fillRect(0, 0, transform.designWidth, transform.designHeight); }
+    }
     else renderBackground(ctx, transform.designWidth, transform.designHeight, model.frameTime, model.assets);
     if (!menuScene && model.state === "TITLE" && model.mapDefinition?.visualTheme === "orbital_garden") {
       const garden = model.assets?.get("background-orbital-garden-player") ?? model.assets?.get("background-orbital-garden");

@@ -98,7 +98,7 @@ export class BattleSimulation {
     const lane = laneFor(this.state, laneId);
     const laneDefinition = this.state.map.lanes.find((item) => item.id === laneId);
     const active = lane.unitIds.get(team);
-    if (active.length >= this.config.caps.unitsPerLaneTeam) return null;
+    if (active.length >= (this.config.caps.unitsPerLaneTeamByTeam?.[team] ?? this.config.caps.unitsPerLaneTeam)) return null;
     const spawn = team === TEAM.PLAYER ? laneDefinition.playerSpawn : laneDefinition.enemySpawn;
     const targetX = x ?? spawn.x + slotOffsetX;
     const targetY = y ?? spawn.y + slotOffsetY;
@@ -134,7 +134,7 @@ export class BattleSimulation {
     const validFormation = Array.isArray(unitTypes)
       && unitTypes.every((unitType) => UNIT_DEFINITIONS[unitType] && UNIT_DEFINITIONS[unitType].enabled !== false)
       && active
-      && active.length + unitTypes.length <= this.config.caps.unitsPerLaneTeam;
+      && active.length + unitTypes.length <= (this.config.caps.unitsPerLaneTeamByTeam?.[team] ?? this.config.caps.unitsPerLaneTeam);
     if (!validFormation) return [];
     const direction = forwardDirection(team);
     const typeCounts = new Map();

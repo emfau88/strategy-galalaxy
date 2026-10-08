@@ -42,3 +42,7 @@ Erfüllt am 7. Oktober 2026:
 - Hauptmenü und Briefing anhand von Screenshots geprüft; Testkennzeichnung und Build-Version sind sichtbar. Lokaler Bericht und Bilder liegen im ignorierten tmp/last-shipyard-bulk0/.
 
 Keine Balance-Testserien, keine echte Smartphone-Abnahme und keine Veröffentlichung. Missionsgestaltung und neue Assets folgen in späteren Bulks.
+
+## Weiterentwicklung ab Bulk 2
+
+Die importierten 51 Bilder bleiben unverändert. Die Runtime-Kopie darf jetzt gezielt Missionsregeln und Darstellung entwickeln; nur Classic bleibt an die ursprüngliche Runtime-Baseline gebunden. Neue Key-Art ist in [generated-assets.json](provenance/generated-assets.json) mit Quelle, Auftrag und SHA-256 dokumentiert.

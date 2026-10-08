@@ -80,10 +80,14 @@ const containsWithSlop = (rect, point, slop = 3) => containsPoint({ x: rect.x - 
 
 export const commandActionAt = (point, menu = "units", height = 760, laneIds = [LANE.LEFT, LANE.RIGHT], expanded = false, catalog = null) => {
   const layout = commandUiLayout(height, laneIds, expanded, menu, catalog);
-  if (!expanded) return containsPoint(layout.command, point) || containsPoint(layout.deploy, point) ? { type: "TOGGLE_COMMAND_DOCK" } : null;
+  if (!expanded) {
+    if (containsPoint(layout.command, point)) return { type: "TOGGLE_COMMAND_DOCK" };
+    if (containsPoint(layout.deploy, point)) return { type: catalog ? "FOCUS_FRONT" : "TOGGLE_COMMAND_DOCK" };
+    return null;
+  }
   if (containsPoint(layout.close, point)) return { type: "TOGGLE_COMMAND_DOCK" };
   if (containsPoint(layout.fleetTab, point)) return { type: "SET_COMMAND_MENU", menu: "units" };
-  if (containsPoint(layout.upgradeTab, point)) return { type: "SET_COMMAND_MENU", menu: "upgrades" };
+  if (catalog?.upgrades?.length !== 0 && containsPoint(layout.upgradeTab, point)) return { type: "SET_COMMAND_MENU", menu: "upgrades" };
   const lane = layout.lanes.find((rect) => containsWithSlop(rect, point));
   if (lane) return { type: "SELECT_LANE", laneId: lane.laneId };
   if (menu === "units") {

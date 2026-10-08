@@ -108,6 +108,10 @@ try {
   assert.equal(await evaluate("typeof window.__strategyGalalaxy"), "undefined");
   assert.deepEqual(await evaluate("[...window.__lastShipyard.loader.errors]"), []);
   await capture("main-360x800.png");
+  await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  await delay(150); await capture("main-390x844.png");
+  await send("Emulation.setDeviceMetricsOverride", { width: 360, height: 800, deviceScaleFactor: 1, mobile: true });
+  await delay(150);
   const classic = { "strategy-galalaxy-campaign-v1": '{"version":1,"completed":["classic-sentinel"]}', "strategy-galalaxy-sound-muted": "false" };
   await evaluate(`Object.entries(${JSON.stringify(classic)}).forEach(([k,v])=>localStorage.setItem(k,v))`);
   const transform = await evaluate("window.__lastShipyard.transform");
@@ -147,7 +151,39 @@ try {
   await tap(overlayUiLayout(transform.designHeight).pauseMenu);
   assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "main");
   assert.equal(await evaluate("window.__lastShipyard.match.state"), "TITLE");
-  // Exercise persistence directly, without playing or simulating a balance run to victory.
+  if (!live) {
+    // Verify the actual result -> next briefing -> second mission flow with legal purchases.
+    const play = async () => {
+      const result = await evaluate(`(() => {
+        const g = window.__lastShipyard, d = g.match;
+        const recipe = d.mission.id === 'first-contact' ? ['scout','fighter','fighter'] : ['fighter','bomber','scout','bomber','fighter'];
+        let choice = 0, nextBuy = 0;
+        while (d.state === 'LIVE_MATCH' && d.activeBattleSeconds < 420) {
+          if (d.activeBattleSeconds >= nextBuy) {
+            const bought = d.executeCommand({type:'DEPLOY_UNIT',team:'TEAM_PLAYER',laneId:d.mapDefinition.lanes[0].id,unitType:recipe[choice % recipe.length]});
+            if (bought.ok) choice++; nextBuy = d.activeBattleSeconds + 2;
+          }
+          d.advanceLive(1/60);
+        }
+        g.syncMatchState(); return {state:g.state,completed:g.campaign.data.completed};
+      })()`);
+      assert.equal(result.state, 'VICTORY'); await delay(150); return result;
+    };
+    await tap(ui.campaign); await tap(ui.missions[0]); await tap(ui.start);
+    await play(); await capture('mission1-unlock-360x800.png');
+    const { campaignResultLayout } = await import('../src/ui/campaignUi.js');
+    await tap(campaignResultLayout(transform.designHeight).next);
+    assert.equal(await evaluate('window.__lastShipyard.selectedMissionId'), 'heavy-resistance');
+    assert.equal(await evaluate('window.__lastShipyard.menuScreen'), 'briefing');
+    await capture('mission2-briefing-360x800.png'); await tap(ui.start);
+    await play(); await capture('mission2-unlock-360x800.png');
+    assert.deepEqual(await evaluate('window.__lastShipyard.campaign.data.completed'), ['first-contact','heavy-resistance']);
+    await tap(campaignResultLayout(transform.designHeight).menu);
+    await tap(ui.back);
+    // Existing persistence assertions below intentionally start with a one-mission save.
+    await evaluate('window.__lastShipyard.campaign.reset()');
+  }
+  // A direct API check also exercises storage isolation without repeating battle simulations publicly.
   assert.equal(await evaluate("window.__lastShipyard.campaign.complete('first-contact')"), true);
   await send("Page.reload", { ignoreCache: true });
   await delay(150);

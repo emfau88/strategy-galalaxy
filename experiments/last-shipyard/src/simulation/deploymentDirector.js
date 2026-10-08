@@ -21,7 +21,8 @@ export class DeploymentDirector {
     this.baseWaveBacklog = emptyTeamLanes(this.laneIds);
   }
 
-  baseWaveSize(simulationTime) {
+  baseWaveSize(simulationTime, team) {
+    if (this.config.balance.freeDronesByTeam?.[team] !== undefined) return this.config.balance.freeDronesByTeam[team];
     const every = this.config.balance.baseWaveDroneEscalationEverySeconds;
     const bonus = every > 0 ? Math.min(this.config.balance.baseWaveDroneEscalationMaximumBonus, Math.floor(simulationTime / every)) : 0;
     return this.config.balance.baseWaveDronesPerLane + bonus;
@@ -37,14 +38,14 @@ export class DeploymentDirector {
     for (const team of teams) {
       for (const laneId of this.laneIds) {
         const pendingBase = this.baseWaveBacklog.get(team).get(laneId);
-        const baseEntries = [...pendingBase, ...Array.from({ length: this.baseWaveSize(simulation.state.time) }, () => "drone")];
+        const baseEntries = [...pendingBase, ...Array.from({ length: this.baseWaveSize(simulation.state.time, team) }, () => "drone")];
         const active = simulation.state.lanes.get(laneId).unitIds.get(team).length;
-        const available = Math.max(0, this.config.caps.unitsPerLaneTeam - active);
+        const available = Math.max(0, (this.config.caps.unitsPerLaneTeamByTeam?.[team] ?? this.config.caps.unitsPerLaneTeam) - active);
         const acceptedBase = baseEntries.slice(0, available);
         const pending = baseEntries.slice(acceptedBase.length);
         const backlogLimit = this.config.balance.maximumBacklogWaves;
         this.baseWaveBacklog.get(team).set(laneId, backlogLimit === undefined ? pending
-          : pending.slice(0, this.baseWaveSize(simulation.state.time) * backlogLimit));
+          : pending.slice(0, this.baseWaveSize(simulation.state.time, team) * backlogLimit));
         deployment.push({ team, laneId, unitTypes: acceptedBase });
       }
     }

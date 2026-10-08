@@ -1,6 +1,6 @@
 # Die letzte Werft – Plan für eine isolierte Testkampagne
 
-Stand: 8. Oktober 2026. **Status: Bulk 0 und Bulk 1 abgeschlossen. Beide Fassungen sind veröffentlicht und geprüft. Bulk 2–7 sind offen.**
+Stand: 8. Oktober 2026. **Status: Bulk 0–2 umgesetzt. Zwei gestaltete Angriffsmissionen, Werft-Menü und garantierte Freischaltungen. Bulk 3–6 sind offen.**
 
 Arbeitsbranch: `codex/last-shipyard`. [Lokaler Einstieg und Befehle](../experiments/last-shipyard/README.md) · [Herkunft und Abnahme](../experiments/last-shipyard/BASELINE.md). Die folgenden Bulks sind weiterhin offen.
 
@@ -99,7 +99,7 @@ Die bewusste Codekopie ist für dieses begrenzte Experiment akzeptabel. Erfolgre
 | Bisheriges Spiel | `https://emfau88.github.io/strategy-galalaxy/` |
 | Die letzte Werft | `https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/` |
 
-Beide Links sind **seit Bulk 1 live**. Aktuell enthält die Testkampagne eine vorläufige spielbare Mission. [Abnahme und Deployment](LAST_SHIPYARD_BULK1_REPORT.md).
+Beide Links sind **seit Bulk 1 live**. Aktuell enthält die Testkampagne zwei gestaltete Angriffsmissionen. [Abnahme und Deployment](LAST_SHIPYARD_BULK1_REPORT.md).
 
 GitHub Pages bietet eine Projektwebsite pro Repository. Deshalb werden die beiden Fassungen als Unterverzeichnisse **eines gemeinsamen Artefakts** veröffentlicht. Ein Branch allein erzeugt keine zweite Pages-Website. Grundlage: [GitHub Pages – Website-Typen](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
 
@@ -130,10 +130,10 @@ Feature-Branches bauen und prüfen Artefakte. Die Veröffentlichung erfolgt nach
 - [▶ Bisheriges Spiel](https://emfau88.github.io/strategy-galalaxy/)
 - [🧪 Die letzte Werft – Testkampagne](https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/)
 
-Die Testkampagne besitzt einen eigenen Spielstand. Aktuell spielbar: eine vorläufige Mission („Erstkontakt“).
+Die Testkampagne besitzt einen eigenen Spielstand. Aktuell spielbar: zwei Missionen („Erstkontakt“ und „Schwerer Widerstand“).
 ```
 
-Die README auf main enthält beide Play-Links und nennt eine spielbare Mission. Die Missionszahl wird bei weiteren Veröffentlichungen an die tatsächlich spielbaren Inhalte angepasst.
+Die README auf main enthält beide Play-Links und nennt zwei spielbare Missionen. Die Missionszahl wird bei weiteren Veröffentlichungen an die tatsächlich spielbaren Inhalte angepasst.
 
 Für lokale Arbeit startet `npm run dev:werft` das Experiment auf `127.0.0.1:7101`. Nach `npm run build:pages` startet `npm run preview` die gemeinsame Vorschau auf Port 7102 unter `/strategy-galalaxy/` und dessen Experiment-Unterpfad. Der neue Vorschau-Server löst Verzeichnisse auf ihre index.html auf und ergänzt fehlende abschließende Slashes. Der gezielte Browsercheck wurde lokal und öffentlich ausgeführt.
 
@@ -226,13 +226,13 @@ Jeder Bulk endet mit einem überschaubaren Commit beziehungsweise PR, einem spie
 
 **Ziel:** Aus dem Gerüst wird ein zusammenhängender Kampagnenbeginn.
 
-- [ ] Heimatwerft-Key-Art, Emblem und kleine Sektorkarte mit sechs Positionen gestalten. Noch nicht gebaute Einsätze werden als solche gekennzeichnet.
-- [ ] Menü, Briefing, Ergebnis und garantierte Freischaltung als einheitlichen Ablauf verbinden.
-- [ ] Ein kleines Missionssystem für Einstieg, Warnung, Angriff, Erholung und Abschluss einführen. Keine universelle Skriptsprache bauen.
-- [ ] Spieler- und Gegnerarsenal getrennt definieren; Aufstellungen und Ressourcenbesonderheiten im Briefing sichtbar machen.
-- [ ] KI-Kaufabsichten missionsbezogen steuern, weiterhin über reguläre Spielbefehle.
-- [ ] Mission 1 mit verständlichen Hinweisen nach Spieleraktionen gestalten; Mission 2 auf geschützte Bomber und wenige schwere Gegner ausrichten.
-- [ ] Kaufoptionen kompakt halten, wichtige Front wiederfinden und einen echten Freischaltungsmoment nach dem Sieg zeigen.
+- [x] Heimatwerft-Key-Art, Emblem und kleine Sektorkarte mit sechs Positionen gestalten. Noch nicht gebaute Einsätze werden als solche gekennzeichnet.
+- [x] Menü, Briefing, Ergebnis und garantierte Freischaltung als einheitlichen Ablauf verbinden.
+- [x] Ein kleines Missionssystem für Einstieg, Warnung, Angriff, Erholung und Abschluss einführen. Keine universelle Skriptsprache bauen.
+- [x] Spieler- und Gegnerarsenal getrennt definieren; Aufstellungen und Ressourcenbesonderheiten im Briefing sichtbar machen.
+- [x] KI-Kaufabsichten missionsbezogen steuern, weiterhin über reguläre Spielbefehle.
+- [x] Mission 1 mit verständlichen Hinweisen nach Spieleraktionen gestalten; Mission 2 auf geschützte Bomber und wenige schwere Gegner ausrichten.
+- [x] Kaufoptionen kompakt halten, wichtige Front wiederfinden und einen echten Freischaltungsmoment nach dem Sieg zeigen.
 
 **Abnahme:** Beide Missionen unterscheiden sich erkennbar. Der Spieler kann erklären, warum und wann ein Bomber hilft. Der Abschluss schaltet den erwarteten Inhalt frei und bleibt nach Reload gespeichert.
 
@@ -325,6 +325,6 @@ Eine aufwendigere Balanceprüfung kommt erst bei stabilen Inhalten und einem kon
 | Flottenentwicklung | 4 | Fünf Missionen, zwei Lanes, Ionenbomber und Carrier-Auswahl |
 | Vollständiges Experiment | 5–6 | Sechs Missionen, Schildnetz-Finale, kompakte Abnahme und Ergebnisbericht |
 
-**Abgeschlossen:** Bulk 0 mit isoliertem Kampagnenkern, eigener Speicherung und Herkunftsnachweisen; Bulk 1 mit gemeinsamem Pages-Build, zentralem Workflow, zwei öffentlichen Play-Links und Abnahme. Die vorhandene vorläufige Erstkontakt-Mission ist spielbar. Classic-Runtime und Classic-Ausgabe entsprechen weiterhin der festgehaltenen Basis ed8802b. Neue Kampagnenmechaniken und neue Assets beginnen erst mit den folgenden Bulks.
+**Abgeschlossen:** Bulk 0–1: Isolation und gemeinsamer Play-Link. Bulk 2: eigenes Werftmotiv, sechs Sektorpositionen mit klaren Vorschauen, zwei gestaltete Missionen, reguläre gegnerische Käufe, kontextbezogene Hinweise, Frontsprung und Bomber-Freischaltung. [Abnahme Bulk 2](LAST_SHIPYARD_BULK2_REPORT.md). Classic bleibt auf ed8802b.
 
-**Nächster Schritt:** Bulk 2 – eigener visueller Einstieg, Missionsablauf und zwei gestaltete Angriffsmissionen. Bulk 2 wurde noch nicht begonnen.
+**Nächster Schritt:** Bulk 3 – eigenständige Missionsziele, Aegis und die Verteidigung des Hafens. Menschlicher Ersttest bleibt ausdrücklich Teil der offenen Abnahme.

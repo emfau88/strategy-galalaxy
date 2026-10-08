@@ -16,9 +16,9 @@ import { commandActionAt, commandUiBottomInset, containsPoint, endActionAt, paus
 import { cameraNavigatorRatioAt } from "./ui/cameraUi.js";
 import { AI_PROFILES } from "./simulation/opponentAi.js";
 import { CLASSIC_LANES, ORBITAL_GARDEN, UNIT_DEFINITIONS } from "./data/definitions.js";
-import { missionById, missionMatchOptions, missionUnlocked } from "./data/campaign.js";
+import { missionById, missionMatchOptions, missionUnlocked, nextMission } from "./data/campaign.js";
 import { CampaignProgress } from "./campaign/progress.js";
-import { campaignActionAt } from "./ui/campaignUi.js";
+import { campaignActionAt, campaignResultActionAt } from "./ui/campaignUi.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
 const LEVELS = Object.freeze([ORBITAL_GARDEN, CLASSIC_LANES]);
@@ -42,6 +42,7 @@ export class Game {
     this.menuScreen = "main";
     this.selectedMissionId = this.campaign.data.lastMissionId ?? "first-contact";
     this.recordedMissionResult = null;
+    this.rewardFirstTime = false;
     this.lastInput = null;
     this.levelIndex = Math.max(0, LEVELS.findIndex((level) => level.level === options.level));
     this.selectedLaneId = LEVELS[this.levelIndex].lanes[0].id;
@@ -163,7 +164,13 @@ export class Game {
       }
     }
     if (input.kind === "down" && [MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(this.match.state)) {
-      const action = endActionAt(input, this.transform?.designHeight, Boolean(this.match.mission));
+      const next = this.match.mission && nextMission(this.match.mission);
+      const action = this.match.mission
+        ? campaignResultActionAt(input, this.transform?.designHeight, this.match.state === MATCH_STATE.VICTORY && next?.available)
+        : endActionAt(input, this.transform?.designHeight);
+      if (action?.type === "NEXT_MISSION") {
+        this.returnToTitle(); this.selectedMissionId = next.id; this.menuScreen = "briefing"; this.prepareLevelAssets(next.map); return;
+      }
       if (action?.type === "RETURN_TO_TITLE" || action?.type === "RETURN_TO_MISSIONS") {
         this.returnToTitle();
         if (action.type === "RETURN_TO_MISSIONS") this.menuScreen = "missions";
@@ -418,6 +425,14 @@ export class Game {
 
   executeCommandAction(action) {
     if (!action) return;
+    if (action.type === "FOCUS_FRONT") {
+      const units = [...this.match.simulation.state.units.values()].filter(unit => unit.alive && unit.team === TEAM.PLAYER);
+      const engaged = units.filter(unit => unit.targetId);
+      const frontY = engaged.length ? engaged.reduce((sum, unit) => sum + unit.y, 0) / engaged.length : units.length ? Math.min(...units.map(unit => unit.y)) : this.match.mapDefinition.bounds.height - 120;
+      this.camera.jumpToWorld(frontY);
+      if (this.match.missionRuntime) this.match.missionRuntime.frontVisited = true;
+      this.sound.play("select"); return;
+    }
     if (action.type === "TOGGLE_COMMAND_DOCK") {
       this.setCommandDockOpen(!this.commandDockOpen);
       this.sound.play("select");
@@ -466,6 +481,11 @@ export class Game {
 
   syncCommandViewport() {
     if (!this.camera) return;
+    const topInset = this.match.mission ? 126 : CONFIG.camera.battlefieldTopInset;
+    if (this.camera.config.battlefieldTopInset !== topInset) {
+      this.camera.config = { ...CONFIG.camera, battlefieldTopInset: topInset };
+      this.camera.resize(this.camera.designWidth, this.camera.designHeight);
+    }
     this.camera.setBottomInset(this.commandDockOpen ? commandUiBottomInset(this.commandMenu) : CONFIG.camera.battlefieldBottomInset);
   }
 
@@ -488,6 +508,7 @@ export class Game {
   syncMatchState() {
     this.state = this.assetsReady ? this.match.state : MATCH_STATE.LOADING;
     if (this.match.mission && this.match.state === MATCH_STATE.VICTORY && this.recordedMissionResult !== this.match) {
+      this.rewardFirstTime = !this.campaign.data.completed.includes(this.match.mission.id);
       this.campaign.complete(this.match.mission.id);
       this.recordedMissionResult = this.match;
     }
@@ -529,6 +550,7 @@ export class Game {
       selectedMissionId: this.selectedMissionId,
       campaignProgress: this.campaign.snapshot(),
       mission: this.match.mission,
+      rewardFirstTime: this.rewardFirstTime,
       aiProfile: this.match.aiProfile,
       lastAiDecision: this.match.lastAiDecision,
       mapDefinition: this.match.mapDefinition,

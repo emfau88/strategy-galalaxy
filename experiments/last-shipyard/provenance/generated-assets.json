@@ -1,0 +1,13 @@
+{
+  "generator": "built-in imagegen",
+  "date": "2026-10-08",
+  "assets": [
+    {
+      "destination": "assets/campaign/shipyard-keyart-v1.png",
+      "source": "C:\\Users\\madde\\.codex\\generated_images\\01a11607-9e56-7400-b9aa-4f847b639689\\exec-54a7700c-c5e5-48ba-9dc0-d2190c7010c6.png",
+      "sha256": "107f8afa5223a1f56fa07692688245773e55a845f7d8632dce3b2bc86623464f",
+      "prompt": "Portrait cinematic home shipyard over the dark side of a planet; ivory/navy/brass/cyan, two drydock arms around a carrier under repair, quiet hopeful resilience. Upper 30% negative space for title; detailed shipyard in middle 45%; bottom fades to navy for menu. Oblique view, no combat, no text/logos/UI/watermark. Premium painted 3D concept art.",
+      "use": "Main menu key art; unedited original"
+    }
+  ]
+}

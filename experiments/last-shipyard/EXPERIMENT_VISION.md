@@ -20,3 +20,7 @@ Spielbar ist ausschließlich die übernommene vorläufige Erstkontakt-Mission. I
 ## Technische Grenze
 
 Alle Runtime-Imports und aktiven Assets liegen innerhalb dieses Ordners. Fortschritt und Sound verwenden eigene versionierte Schlüssel. Keine Migration, Löschung oder Änderung von Classic-Daten. Die gemeinsame Browser-Origin ist keine Sicherheitsgrenze. Gemeinsamer Build und Veröffentlichung werden erst in Bulk 1 ergänzt.
+
+## Konkretisiert in Bulk 2
+
+Heimatwerft mit eigenem Portraitmotiv und Vektoremblem. Erste zwei Missionen verwenden eigene Arsenale, Startenergie, Einkommen und Kapazitäten. Kleine Spieler-Drones stehen regulär bezahlten gegnerischen Angriffen gegenüber. Einführung, Warnung, Angriff und Aufbaupause erzeugen einen lesbaren Rhythmus. Bomber werden nach Mission 1 garantiert verfügbar; Aegis wird nach Mission 2 angekündigt und erst mit Bulk 3 nutzbar. Kein Forschungsbaum oder Grind in den ersten Missionen.
