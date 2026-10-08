@@ -1,6 +1,8 @@
 # Die letzte Werft – Plan für eine isolierte Testkampagne
 
-Stand: 7. Oktober 2026. **Status: geplant, noch nicht umgesetzt oder veröffentlicht.**
+Stand: 8. Oktober 2026. **Status: Bulk 0 und Bulk 1 abgeschlossen. Beide Fassungen sind veröffentlicht und geprüft. Bulk 2–7 sind offen.**
+
+Arbeitsbranch: `codex/last-shipyard`. [Lokaler Einstieg und Befehle](https://github.com/emfau88/strategy-galalaxy/blob/main/experiments/last-shipyard/README.md) · [Herkunft und Abnahme](https://github.com/emfau88/strategy-galalaxy/blob/main/experiments/last-shipyard/BASELINE.md). Die folgenden Bulks sind weiterhin offen.
 
 ## 1. Entscheidung und Ziel
 
@@ -35,7 +37,7 @@ Der Erfolg wird an diesen Beobachtungen gemessen. Eine hohe Featurezahl oder vie
 | Schauplätze | Vorhandene Karten, eigenständige Menü-/Werftdarstellung und wenige ergänzende Assets |
 | Dauer | Zielvorstellung: überwiegend drei bis sechs Minuten pro Mission; keine künstliche Zeitgrenze für normale Angriffsmissionen |
 
-Zurückgestellt bleiben Roguelite-Modus, Multiplayer, neue Ressourcen, dauerhafte Schiffsverluste, große Forschungsbäume, frei baubare Gebäude, bewegliche Transporter als Missionsziel und acht oder mehr Missionen. Im experimentellen Menü gibt es zunächst nur Kampagne, Werft und Einstellungen. Das freie Gefecht bleibt über den bisherigen Play-Link zugänglich.
+Zurückgestellt bleiben Roguelite-Modus, Multiplayer, neue Ressourcen, dauerhafte Schiffsverluste, große Forschungsbäume, frei baubare Gebäude, bewegliche Transporter als Missionsziel und acht oder mehr Missionen. Das Zielmenü umfasst Kampagne, Werft und Einstellungen. Aktuell vorhanden sind Kampagne und Einstellungen; die Werft folgt in Bulk 4. Das freie Gefecht bleibt über den bisherigen Play-Link zugänglich.
 
 Die Core Vision wird **nur innerhalb dieses Experiments** um neue Missionsziele, Spezialisierung und Carrier-Fähigkeiten erweitert. Die Regeln der bestehenden Fassung werden dadurch nicht geändert. Das Experiment erhält eine kurze eigene Produktvorgabe mit Verweis auf diesen Plan.
 
@@ -92,12 +94,12 @@ Die bewusste Codekopie ist für dieses begrenzte Experiment akzeptabel. Erfolgre
 
 ### 3.2 Zwei Play-Links, eine Pages-Veröffentlichung
 
-| Fassung | Geplante Adresse |
+| Fassung | Adresse (live) |
 | --- | --- |
 | Bisheriges Spiel | `https://emfau88.github.io/strategy-galalaxy/` |
 | Die letzte Werft | `https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/` |
 
-Der zweite Link ist **geplant und noch nicht live**.
+Beide Links sind **seit Bulk 1 live**. Aktuell enthält die Testkampagne eine vorläufige spielbare Mission. [Abnahme und Deployment](https://github.com/emfau88/strategy-galalaxy/blob/main/docs/LAST_SHIPYARD_BULK1_REPORT.md).
 
 GitHub Pages bietet eine Projektwebsite pro Repository. Deshalb werden die beiden Fassungen als Unterverzeichnisse **eines gemeinsamen Artefakts** veröffentlicht. Ein Branch allein erzeugt keine zweite Pages-Website. Grundlage: [GitHub Pages – Website-Typen](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
 
@@ -118,9 +120,9 @@ Der bestehende Classic-Build erzeugt zuerst seine Ausgabe. Danach ergänzt `buil
 
 Es gibt genau **einen produktiven Pages-Workflow**, der beide Fassungen gemeinsam hochlädt. Der vorhandene Workflow in `.github/workflows/deploy-pages.yml` wird dafür erweitert. Kein zweiter Deployment-Workflow veröffentlicht nur den Experimentordner: Sonst würde beim nächsten Deployment eine der Fassungen fehlen. GitHub unterstützt den vorgesehenen Build-/Upload-/Deploy-Ablauf über [eigene Pages-Workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
-Feature-Branches bauen und prüfen Artefakte. Die Veröffentlichung erfolgt nach Integration über den zentralen Workflow auf `main`. Auch manuelle Workflowstarts dürfen nur vom Standardbranch deployen; der Deploy-Job erhält dafür eine entsprechende Branch-Bedingung. Damit steht auch der README-Eintrag auf der normalen GitHub-Projektseite. Die späteren Veröffentlichungen sind Bestandteile der entsprechenden Umsetzungsbulks; dieser Plan veröffentlicht noch nichts.
+Feature-Branches bauen und prüfen Artefakte. Die Veröffentlichung erfolgt nach Integration über den zentralen Workflow auf `main`. Auch manuelle Workflowstarts dürfen nur vom Standardbranch deployen; der Deploy-Job besitzt dafür die entsprechende Branch-Bedingung. Damit steht auch der README-Eintrag auf der normalen GitHub-Projektseite. Bulk 1 hat die erste gemeinsame Veröffentlichung umgesetzt. Weitere Veröffentlichungen bleiben Bestandteile der entsprechenden Umsetzungsbulks.
 
-**README-Eintrag nach der ersten erfolgreichen Veröffentlichung:**
+**Play-Links und derzeit spielbarer Umfang in der README:**
 
 ```markdown
 ## Spielen
@@ -128,12 +130,12 @@ Feature-Branches bauen und prüfen Artefakte. Die Veröffentlichung erfolgt nach
 - [▶ Bisheriges Spiel](https://emfau88.github.io/strategy-galalaxy/)
 - [🧪 Die letzte Werft – Testkampagne](https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/)
 
-Die Testkampagne besitzt einen eigenen Spielstand. Aktuell spielbar: Missionen 1–3.
+Die Testkampagne besitzt einen eigenen Spielstand. Aktuell spielbar: eine vorläufige Mission („Erstkontakt“).
 ```
 
-Die Missionszahl wird jeweils an die tatsächlich spielbaren Inhalte angepasst. Zunächst steht dort eine Mission. Vor Veröffentlichung verlinkt die README nur den Plan und kennzeichnet die Testkampagne als geplant.
+Die README auf main enthält beide Play-Links und nennt eine spielbare Mission. Die Missionszahl wird bei weiteren Veröffentlichungen an die tatsächlich spielbaren Inhalte angepasst.
 
-Für lokale Arbeit werden ein eigener Startbefehl und Port vorgesehen, beispielsweise `npm run dev:werft` auf `127.0.0.1:7101`. Die gemeinsame Vorschau muss zusätzlich den echten Unterpfad testen. Der vorhandene Vorschau-Server braucht dafür eine sichere Auflösung des Unterverzeichnisses auf dessen `index.html`; bisher behandelt er nur `/` als Index.
+Für lokale Arbeit startet `npm run dev:werft` das Experiment auf `127.0.0.1:7101`. Nach `npm run build:pages` startet `npm run preview` die gemeinsame Vorschau auf Port 7102 unter `/strategy-galalaxy/` und dessen Experiment-Unterpfad. Der neue Vorschau-Server löst Verzeichnisse auf ihre index.html auf und ergänzt fehlende abschließende Slashes. Der gezielte Browsercheck wurde lokal und öffentlich ausgeführt.
 
 **Abbruch und Rückkehr:** Bei einem Experimentfehler wird das letzte funktionierende gemeinsame Artefakt erneut veröffentlicht. Der nächste reguläre Build enthält weiterhin beide Fassungen. Eine Entfernung des Experiments wäre eine eigene Entscheidung; Classic-Dateien und Classic-Speicher bleiben dabei erhalten.
 
@@ -194,11 +196,11 @@ Jeder Bulk endet mit einem überschaubaren Commit beziehungsweise PR, einem spie
 
 **Ziel:** Die Testversion kann sicher weiterentwickelt werden.
 
-- [ ] Repository und tatsächlichen aktuellen Pages-Stand prüfen; Classic-Baseline festhalten.
-- [ ] Eigenen Branch `codex/last-shipyard` aus dem geprüften Remote-Stand anlegen, bevorzugt in einem eigenen Worktree.
-- [ ] Benötigte Runtime und aktive Assets aus `311af9e` selektiv in den Experimentordner übernehmen.
-- [ ] Herkunft, Dateigrenzen und erlaubte Änderungen an gemeinsamen Build-/README-Dateien dokumentieren.
-- [ ] Eigene Produktvorgabe, Speicherschlüssel, Einstieg und Versionierung einrichten.
+- [x] Repository und tatsächlichen aktuellen Pages-Stand prüfen; Classic-Baseline festhalten.
+- [x] Eigenen Branch `codex/last-shipyard` aus dem geprüften Remote-Stand anlegen, bevorzugt in einem eigenen Worktree.
+- [x] Benötigte Runtime und aktive Assets aus `311af9e` selektiv in den Experimentordner übernehmen.
+- [x] Herkunft, Dateigrenzen und erlaubte Änderungen an gemeinsamen Build-/README-Dateien dokumentieren.
+- [x] Eigene Produktvorgabe, Speicherschlüssel, Einstieg und Versionierung einrichten.
 
 **Abnahme:** Das Experiment startet lokal aus seinem Ordner. Keine Runtime-Imports oder Speicherzugriffe koppeln es an Classic. Der bisherige Spielcode wurde nicht verändert.
 
@@ -208,13 +210,13 @@ Jeder Bulk endet mit einem überschaubaren Commit beziehungsweise PR, einem spie
 
 **Ziel:** Die Testversion ist früh über GitHub erreichbar.
 
-- [ ] Eigenen Experiment-Build und gemeinsamen Site-Build einführen.
-- [ ] Den zentralen Pages-Workflow auf das vollständige Artefakt umstellen; doppelte Testaufrufe entfernen.
-- [ ] Gemeinsame lokale Vorschau mit korrektem Unterpfad und separaten Modul-/Assetpfaden ermöglichen.
-- [ ] Einen Start-/Kauf-/Rückkehrablauf im gebauten Experiment prüfen; Classic startet weiterhin.
-- [ ] Speichertrennung prüfen: Experiment abschließen/zurücksetzen darf Classic-Daten nicht verändern.
-- [ ] Classic-Ausgabe mit der festgehaltenen Baseline vergleichen; experimentelle Dateien dürfen ihre Pfade nicht überschreiben.
-- [ ] Änderungen integriert veröffentlichen, beide echten Play-Links prüfen und den README-Eintrag mit der tatsächlichen Missionszahl ergänzen.
+- [x] Eigenen Experiment-Build und gemeinsamen Site-Build einführen.
+- [x] Den zentralen Pages-Workflow auf das vollständige Artefakt umstellen; doppelte Testaufrufe entfernen.
+- [x] Gemeinsame lokale Vorschau mit korrektem Unterpfad und separaten Modul-/Assetpfaden ermöglichen.
+- [x] Einen Start-/Kauf-/Rückkehrablauf im gebauten Experiment prüfen; Classic startet weiterhin.
+- [x] Speichertrennung prüfen: Experiment abschließen/zurücksetzen darf Classic-Daten nicht verändern.
+- [x] Classic-Ausgabe mit der festgehaltenen Baseline vergleichen; experimentelle Dateien dürfen ihre Pfade nicht überschreiben.
+- [x] Änderungen integriert veröffentlichen, beide echten Play-Links prüfen und den README-Eintrag mit der tatsächlichen Missionszahl ergänzen.
 
 **Abnahme:** Beide Links öffnen die richtige Fassung. Reload und Direktaufruf des Experimentpfads funktionieren. Der README-Link ist auf dem Standardbranch sichtbar. Die Testversion meldet ihre aktuelle Build-Version.
 
@@ -323,4 +325,6 @@ Eine aufwendigere Balanceprüfung kommt erst bei stabilen Inhalten und einem kon
 | Flottenentwicklung | 4 | Fünf Missionen, zwei Lanes, Ionenbomber und Carrier-Auswahl |
 | Vollständiges Experiment | 5–6 | Sechs Missionen, Schildnetz-Finale, kompakte Abnahme und Ergebnisbericht |
 
-**Jetzt erstellt:** dieser Plan und ein Verweis darauf in der lokalen README. Branch-Isolation, Spielcode, neue Assets, Workflowänderungen und der zusätzliche öffentliche Play-Link sind Arbeit der späteren Umsetzungsbulks. Der vorhandene Spielstand wird durch die Planerstellung nicht verändert.
+**Abgeschlossen:** Bulk 0 mit isoliertem Kampagnenkern, eigener Speicherung und Herkunftsnachweisen; Bulk 1 mit gemeinsamem Pages-Build, zentralem Workflow, zwei öffentlichen Play-Links und Abnahme. Die vorhandene vorläufige Erstkontakt-Mission ist spielbar. Classic-Runtime und Classic-Ausgabe entsprechen weiterhin der festgehaltenen Basis ed8802b. Neue Kampagnenmechaniken und neue Assets beginnen erst mit den folgenden Bulks.
+
+**Nächster Schritt:** Bulk 2 – eigener visueller Einstieg, Missionsablauf und zwei gestaltete Angriffsmissionen. Bulk 2 wurde noch nicht begonnen.
