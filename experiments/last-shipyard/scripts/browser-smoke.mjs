@@ -28,7 +28,7 @@ const probe = createNetServer();
 await new Promise(done => probe.listen(0, "127.0.0.1", done));
 const debugPort = probe.address().port;
 await new Promise(done => probe.close(done));
-const processHandle = spawn(browser, ["--headless=new", "--disable-crash-reporter", "--no-first-run", "--hide-scrollbars", "--disable-gpu-shader-disk-cache", `--remote-debugging-port=${debugPort}`, "--remote-allow-origins=*", `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore", windowsHide: true });
+const processHandle = spawn(browser, ["--headless=new", "--disable-quic", "--disable-http2", "--disable-crash-reporter", "--no-first-run", "--hide-scrollbars", "--disable-gpu-shader-disk-cache", `--remote-debugging-port=${debugPort}`, "--remote-allow-origins=*", `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore", windowsHide: true });
 const delay = ms => new Promise(done => setTimeout(done, ms));
 let socket;
 let id = 0;
@@ -37,7 +37,7 @@ const failures = [];
 const requests = new Set();
 const send = (method, params = {}) => new Promise((done, reject) => {
   const messageId = ++id;
-  const timer = setTimeout(() => { pending.delete(messageId); reject(new Error(`Timeout: ${method}`)); }, 10000);
+  const timer = setTimeout(() => { pending.delete(messageId); reject(new Error(`Timeout: ${method}`)); }, live ? 30000 : 10000);
   pending.set(messageId, { done: value => { clearTimeout(timer); done(value); }, reject: error => { clearTimeout(timer); reject(error); } });
   socket.send(JSON.stringify({ id: messageId, method, params }));
 });
@@ -47,7 +47,7 @@ const evaluate = async expression => {
   return result.result.value;
 };
 const waitReady = async () => {
-  for (let attempt = 0; attempt < 200; attempt++) {
+  for (let attempt = 0; attempt < (live ? 600 : 200); attempt++) {
     if (await evaluate("Boolean(window.__lastShipyard?.running && window.__lastShipyard.assetsReady && window.__lastShipyard.loader.isSettled)")) return;
     await delay(50);
   }
@@ -73,12 +73,12 @@ try {
       pending.delete(message.id);
       if (message.error) handler?.reject(new Error(message.error.message)); else handler?.done(message.result);
     } else if (message.method === "Runtime.exceptionThrown") failures.push(message.params.exceptionDetails.text);
-    else if (message.method === "Log.entryAdded" && message.params.entry.level === "error") failures.push(message.params.entry.text);
+    else if (message.method === "Log.entryAdded" && message.params.entry.level === "error" && !message.params.entry.url?.endsWith("/favicon.ico")) failures.push(message.params.entry.text);
     else if (message.method === "Network.loadingFailed" && !message.params.canceled) failures.push(message.params.errorText);
     else if (message.method === "Network.responseReceived") {
       const response = message.params.response;
       requests.add(response.url);
-      if (response.status >= 400) failures.push(`HTTP ${response.status}: ${response.url}`);
+      if (response.status >= 400 && !response.url.endsWith("/favicon.ico")) failures.push(`HTTP ${response.status}: ${response.url}`);
     }
   };
   await Promise.all([send("Runtime.enable"), send("Log.enable"), send("Network.enable"), send("Page.enable")]);
@@ -87,11 +87,12 @@ try {
   if (siteMode) {
     await send("Page.navigate", { url: origin + "/strategy-galalaxy/?debug=1" });
     let ready = false;
-    for (let attempt = 0; attempt < 200; attempt++) {
+    for (let attempt = 0; attempt < (live ? 600 : 200); attempt++) {
       ready = await evaluate("Boolean(window.__strategyGalalaxy?.running && window.__strategyGalalaxy.assetsReady && window.__strategyGalalaxy.loader.isSettled)");
       if (ready) break;
       await delay(50);
     }
+    if (!ready) console.error(JSON.stringify({ failures, responses: [...requests], page: await evaluate("({href:location.href,title:document.title,ready:document.readyState,game:typeof window.__strategyGalalaxy})") }, null, 2));
     assert.ok(ready, "Classic starts from the common artifact");
     assert.equal(await evaluate("document.title"), "Strategy Galalaxy");
     assert.equal(await evaluate("window.__strategyGalalaxy.match.state"), "TITLE");
@@ -166,7 +167,7 @@ try {
   if (siteMode) {
     await send("Page.navigate", { url: origin + "/strategy-galalaxy/?debug=1" });
     let ready = false;
-    for (let attempt = 0; attempt < 200; attempt++) {
+    for (let attempt = 0; attempt < (live ? 600 : 200); attempt++) {
       ready = await evaluate("Boolean(window.__strategyGalalaxy?.assetsReady && window.__strategyGalalaxy.loader.isSettled)");
       if (ready) break;
       await delay(50);

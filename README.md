@@ -2,7 +2,7 @@
 
 **[🧪 Die letzte Werft – Testkampagne spielen](https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/)**
 
-Eigener Spielstand. Aktuell spielbar: eine vorläufige Mission („Erstkontakt“); weitere Einsätze sind Vorschauen. [Lokal starten](experiments/last-shipyard/README.md) · [Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Die erste gemeinsame Veröffentlichung wird mit Bulk 1 geprüft.
+Eigener Spielstand. Aktuell spielbar: eine vorläufige Mission („Erstkontakt“); weitere Einsätze sind Vorschauen. [Lokal starten](experiments/last-shipyard/README.md) · [Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Bulk 1 ist veröffentlicht und geprüft.
 
 **[▶ Strategy Galalaxy spielen](https://emfau88.github.io/strategy-galalaxy/)**
 

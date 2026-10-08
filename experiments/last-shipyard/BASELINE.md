@@ -22,7 +22,7 @@ Anpassungen: Titel/Testkennzeichnung, eigene Versionsmetadaten, eigene Speicher-
 
 Bulk 0 ändert ausschließlich experiments/last-shipyard/, diese Plandokumentation, README und SOURCE_PROVENANCE. Classic index.html, src/, assets/, package.json, Scripts und Deployment-Workflow bleiben auf der Classic-Basis. .reference/ ist schreibgeschützt und wird nicht verwendet.
 
-Bulk 1 darf den gemeinsamen Site-Build und den bestehenden zentralen Pages-Workflow erweitern; Classic-Ausgabe darf dabei weder ersetzt noch überschrieben werden. Der zusätzliche öffentliche Play-Link ist noch nicht live.
+Bulk 1 darf den gemeinsamen Site-Build und den bestehenden zentralen Pages-Workflow erweitern; Classic-Ausgabe darf dabei weder ersetzt noch überschrieben werden. Der zusätzliche öffentliche Play-Link ist seit Bulk 1 live. [Abnahme](../../docs/LAST_SHIPYARD_BULK1_REPORT.md).
 
 ## Speicher
 

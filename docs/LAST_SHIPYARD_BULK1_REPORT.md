@@ -1,6 +1,6 @@
 # Bulk 1 – Gemeinsamer Pages-Build
 
-Stand: 8. Oktober 2026. Status: lokal geprüft, Veröffentlichung und öffentliche Abnahme noch offen.
+Stand: 8. Oktober 2026. Status: abgeschlossen, veröffentlicht und öffentlich geprüft.
 
 ## Ergebnis und Grenzen
 
@@ -27,4 +27,12 @@ Lokal bestanden am 8. Oktober 2026:
 - npm run test:site:browser: gebautes Artefakt, Chrome 360 × 800; Classic startet vor und nach dem Experiment. Kampagne → Erstkontakt → Kauf per Touch → Pause → Hauptmenü. Fortschritt und Sound überleben Reload; der Fortschritts-Reset lässt Classic-Daten und Sound unverändert. Keine Runtime- oder Netzwerkfehler.
 - Die Abschlussmarkierung wurde zur Speicherprüfung über die Fortschritts-API gesetzt, kein Missionserfolg simuliert.
 
-Öffentliche Abnahme noch offen. Keine Balance-Testserien. Die echte Smartphone-Abnahme bleibt offen.
+Öffentlich bestanden am 8. Oktober 2026:
+
+- Integration auf main: d2ff7583e9cc558027ea5df48c5a0e261c5c0600. [Erfolgreicher Pages-Run](https://github.com/emfau88/strategy-galalaxy/actions/runs/37817746127).
+- [Classic](https://emfau88.github.io/strategy-galalaxy/) und [Testkampagne](https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/) liefern HTTP 200 und öffnen die jeweilige Fassung.
+- Der gesamte kurze Browserablauf wurde gegen die öffentlichen URLs wiederholt: beide Spiele starten, Touch-Kauf funktioniert, Pause/Rückkehr funktionieren, experimenteller Fortschritt und Sound überleben Reload; eigener Reset lässt Classic-Daten und dessen Sound unverändert. Der App-Browser zeigt zusätzlich das richtige Hauptmenü, Briefing und die gestartete Mission.
+- Die README auf main enthält beide Play-Links und die tatsächliche Missionszahl. Das öffentliche version.json meldet 0.0.2-bulk1 und den gebauten Integrationscommit.
+- Erste externe Browserprüfungen stießen hier auf Navigationstimeouts. Der automatisierte öffentliche Check verwendet deshalb TCP-Transport und einen längeren Netzwerktimeout; echte Spiel-/Modul-/Assetfehler bleiben Fehler. Ausschließlich die automatische Anfrage nach dem fehlenden Favicon der Host-Domain wird ignoriert. Die Spielruntime wird dadurch nicht verändert.
+- Lokale Screenshots und Bericht: tmp/last-shipyard-live/ (ignoriert).
+- Die danach veröffentlichte Statuskorrektur ändert Dokumentation und Prüfwerkzeug, keine Spielregeln. Der endgültige gebaute Commit ist im öffentlichen version.json nachvollziehbar. Keine Balance-Testserien. Die echte Smartphone-Abnahme bleibt offen.
