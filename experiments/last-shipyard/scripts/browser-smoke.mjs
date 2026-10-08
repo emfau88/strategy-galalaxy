@@ -322,7 +322,10 @@ try {
     await send('Page.reload', {ignoreCache:true}); await delay(150); await waitReady();
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'), 'aegis');
     await evaluate("['harbor-fire','split-front','the-window'].forEach(id=>window.__lastShipyard.campaign.complete(id))");
-    await tap(ui.campaign);await tap(ui.missions[5]);await tap(ui.start);
+    await tap(ui.campaign);await tap(ui.missions[5]);
+    // The second map has a separate asset load; wait for the real briefing readiness.
+    await evaluate('(window.__lastShipyard.levelLoadPromise ?? Promise.resolve()).then(()=>true)');
+    await tap(ui.start);
     assert.equal(await evaluate('window.__lastShipyard.match.mission.id'),'shield-network');
     assert.equal(await evaluate("[...window.__lastShipyard.match.simulation.state.structures.values()].filter(r=>r.structureType==='relay'&&r.alive).length"),2);
     await evaluate("window.__lastShipyard.camera.reset('enemy')");await delay(100);await capture('public-shield-relays-360x800.png');

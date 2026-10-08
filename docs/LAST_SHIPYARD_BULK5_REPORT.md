@@ -28,3 +28,9 @@ Ein transparentes, orthografisches Relais-Atlasbild mit aktivem und ausgeschalte
 ## Offen
 
 Bulk 6, echter Smartphone-Test und Ersttest mit ein bis zwei Personen sind offen. Besonders zu beurteilen: Dauer und Schwierigkeit der neuen Missionen, Verständlichkeit des Wartens in einer freien Lane, sinnvoller Einsatz von Störimpuls und tatsächlicher Wiederspielwert der Abzeichen. Keine Balance-Testserie durchgeführt, keine abschließende Spielqualitäts-Abnahme behauptet.
+
+## Veröffentlichung bestätigt
+
+Bulk-5-Commit 00079b6 wurde separat auf main und codex/last-shipyard gepusht. [Pages-Run 37828386954](https://github.com/emfau88/strategy-galalaxy/actions/runs/37828386954) hat alle Prüfungen, Build und Veröffentlichung erfolgreich beendet. Öffentliches version.json bestätigt 0.0.6-bulk5 und sechs spielbare Missionen. Der öffentliche Browsercheck bestätigt beide Play-Links, Aegis-Touch, Ausrüstungs-Reload und den tatsächlich gestarteten Finaleinsatz mit zwei Schildrelais; keine Browserfehler. Öffentliche Missionsabschlüsse wurden als Startvoraussetzung über die Speicher-API gesetzt; es wurde kein zusätzlicher öffentlicher Balancekampf ausgeführt.
+
+Der erste Finalstart-Check wartete zu kurz auf die separat geladenen Bilder der zweiten Karte. Der Check wartet jetzt auf die bestehende Asset-Ladepromise, bevor er den Start antippen lässt; die Wiederholung bestand. Dafür war keine Änderung der Spielruntime nötig.

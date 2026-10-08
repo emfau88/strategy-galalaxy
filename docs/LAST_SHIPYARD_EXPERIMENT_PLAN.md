@@ -337,4 +337,6 @@ Eine aufwendigere Balanceprüfung kommt erst bei stabilen Inhalten und einem kon
 
 **Bulk 5 abgeschlossen:** Das Schildnetz mit zwei Relais, sichtbarem Carrier-Schutz, begrenztem Nachschub und regulärem Finale. Gesicherte Werft, gespeicherter Abschluss und zwei freiwillige Abzeichen. [Abnahme Bulk 5](LAST_SHIPYARD_BULK5_REPORT.md). Ein repräsentativer Durchlauf mit Standardbombern ohne Fähigkeit sowie Browserablauf einschließlich Wiederholung/Reload bestanden.
 
+**Veröffentlichung Bulk 5 bestätigt:** Separater Commit 00079b6; [Pages-Run 37828386954](https://github.com/emfau88/strategy-galalaxy/actions/runs/37828386954) erfolgreich. Version 0.0.6-bulk5, sechs Missionen und öffentlicher Finalstart mit beiden Relais geprüft.
+
 **Nächster Entscheidungspunkt:** Bulk 6: kompakte Gesamtbewertung und echte Smartphone-/Spielbeobachtung. Diese Abnahme ist ausdrücklich noch offen. Die kurzen technisch erfolgreichen Abläufe belegen Abschließbarkeit, keine finale Schwierigkeit oder optimale Spieldauer.
