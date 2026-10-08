@@ -21,3 +21,7 @@ Werftwechsel kosten nichts. Der Ionenbomber wird nach Mission 4 verfügbar: zwei
 - Bestehende Hafenverteidigung gezielt als Mechanikregression bestanden. Gemeinsamer Build erhält die 86 Classic-Ausgabedateien; importierte Bilder bleiben unverändert.
 
 Kein neues Bitmap für Bulk 4 erforderlich. Die vorhandene Menü-Key-Art und klare Codegrafik genügen für Varianten-/Fähigkeitsanzeigen. Menschlicher Ersttest, echte Smartphone-Abnahme und breitere Kampagnenbalance bleiben offen. Bulk 5–6 sind hier noch nicht umgesetzt.
+
+## Veröffentlichung bestätigt
+
+Commit 6a00f87 wurde separat auf main und codex/last-shipyard gepusht. [Pages-Run 37826860682](https://github.com/emfau88/strategy-galalaxy/actions/runs/37826860682) erfolgreich. Öffentlicher Browsercheck bestätigt Version 0.0.5-bulk4, fünf spielbare Missionen, beide Play-Links, Hafenstart/Aegis und gespeicherte Ausrüstung. Keine Browserfehler.

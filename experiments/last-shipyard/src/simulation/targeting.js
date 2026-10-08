@@ -1,3 +1,4 @@
+import { carrierProtected, laneWaitingForShield } from "../campaign/relayShield.js";
 import { STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
 import { TEAM } from "../core/constants.js";
 import { enemyOf, laneFor } from "./battleState.js";
@@ -18,7 +19,7 @@ const rolePriority = (unit, candidate) => {
   const type = candidate.unitType;
   if (unit.unitType === "bomber") {
     if (type === "frigate") return 0;
-    if (candidate.structureType === "turret") return 1;
+    if (candidate.structureType === "turret" || candidate.structureType === "relay") return 1;
     if (candidate.structureType === "hq") return 2;
     return 8;
   }
@@ -40,7 +41,7 @@ const rolePriority = (unit, candidate) => {
 
 const targetCapacity = (candidate) => {
   if (candidate?.structureType === "hq") return 10;
-  if (candidate?.structureType === "turret") return 4;
+  if (candidate?.structureType === "turret" || candidate?.structureType === "relay") return 4;
   return ({ drone: 2, scout: 2, fighter: 2, bomber: 3, frigate: 4 })[candidate?.unitType] ?? 2;
 };
 
@@ -54,11 +55,13 @@ export const isValidUnitTarget = (state, unit, candidate, positions = null) => (
 
 const nextStructureTarget = (state, unit) => {
   const enemyTeam = enemyOf(unit.team);
+  const relay = [...state.structures.values()].find(s => s.alive && s.team === enemyTeam && s.laneId === unit.laneId && s.structureType === "relay");
+  if (relay) return relay;
   const turret = [...state.structures.values()].find((structure) => (
     structure.alive && structure.team === enemyTeam && structure.laneId === unit.laneId && structure.structureType === "turret"
   ));
   if (turret) return turret;
-  return [...state.structures.values()].find((structure) => structure.alive && structure.team === enemyTeam && structure.structureType === "hq") ?? null;
+  return [...state.structures.values()].find((structure) => structure.alive && structure.team === enemyTeam && structure.structureType === "hq" && !carrierProtected(state, structure)) ?? null;
 };
 
 const unitTargetCandidates = (state, unit, positions = null) => {
@@ -70,7 +73,7 @@ const unitTargetCandidates = (state, unit, positions = null) => {
     .map((id) => state.units.get(id))
     .filter((candidate) => candidate?.alive
       && !candidate.launching
-      && ((unit.team === TEAM.PLAYER && (Number.isFinite(state.map.defenseLineY) || state.laneStances?.get(unit.laneId) === "hold"))
+      && ((unit.team === TEAM.PLAYER && (Number.isFinite(state.map.defenseLineY) || state.laneStances?.get(unit.laneId) === "hold" || laneWaitingForShield(state, unit)))
         || isHostileUnitAhead(unit, candidate, positions)
         || (friendlyHq && inRange(positioned(friendlyHq, positions), positioned(candidate, positions), homeDefenseRange)))
       && inRange(positioned(unit, positions), positioned(candidate, positions), definition.aggroRange));

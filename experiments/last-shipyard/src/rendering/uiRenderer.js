@@ -1,3 +1,4 @@
+import { carrierProtected } from "../campaign/relayShield.js";
 import { renderAbilityHud } from "./abilityRenderer.js";
 import { renderCampaignMenu, renderCampaignResult, renderMissionHud } from "./campaignRenderer.js";
 import { EXPERIMENT } from "../experiment.js";
@@ -113,7 +114,7 @@ const header = (ctx, model, ui) => {
   text(ctx, incomeLabel, 18, 44, 8, C.text);
   text(ctx, model.mission ? "DRONE" : "NEXT WAVE", 158, 22, 9, C.text, "center");
   text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, 158, 42, 14, C.text, "center");
-  text(ctx, model.mission?.kind === "defense" ? `ABGEWEHRT ${model.director.missionRuntime.defeatedAttacks}/3` : `${Math.round(ratio(enemyHq) * 100)}%  ${model.mission ? "GEGNER" : "RIVAL"}`, 280, 22, 10, C.enemy, "right");
+  text(ctx, model.mission?.kind === "defense" ? `ABGEWEHRT ${model.director.missionRuntime.defeatedAttacks}/3` : carrierProtected(model.simulation.state, enemyHq) ? "SCHILD AKTIV" : `${Math.round(ratio(enemyHq) * 100)}%  ${model.mission ? "GEGNER" : "RIVAL"}`, 280, 22, 10, C.enemy, "right");
   miniBar(ctx, 280, 31, 72, model.mission?.kind === "defense" ? model.director.missionRuntime.defeatedAttacks / 3 : ratio(enemyHq), C.enemy, "right");
   const fleetCount = model.simulation?.state.lanes.get(model.selectedLaneId)?.unitIds.get(TEAM.PLAYER).length ?? 0;
   text(ctx, model.mission ? model.mission.fleetTotal ? `L ${fleetCount}/${model.mission.fleetLimit} · Σ ${[...model.simulation.state.units.values()].filter(u => u.alive && u.team === TEAM.PLAYER).length}/${model.mission.fleetTotal}` : `FLOTTE ${fleetCount}/${model.director.config.caps.unitsPerLaneTeam}` : "LIVE DEPLOY", 280, 44, 9, C.muted, "right", 600);

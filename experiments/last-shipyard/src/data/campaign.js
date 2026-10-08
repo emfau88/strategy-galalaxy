@@ -76,8 +76,24 @@ export const MISSIONS = Object.freeze([
     threat: "Fregatte + Bomber + Fighter",
     reward: "STÖRIMPULS-BAUPLAN", rewardDetail: "Neue Carrier-Fähigkeit. In der Werft statt Aegis wählen.",
   },
-  { id: "shield-network", number: 6, title: "Das Schildnetz", available: false, map: CLASSIC_LANES,
-    lesson: "Relais ausschalten. Die Werft endgültig sichern." },
+  {
+    id: "shield-network", number: 6, title: "Das Schildnetz", available: true, map: CLASSIC_LANES, kind: "assault", relayShield: true, allowLaneStance: true,
+    objective: "Zerstöre beide Schildrelais. Besiege danach den Carrier.",
+    briefing: ["Je ein Relais links und rechts schützt den Carrier.", "Drei bezahlte Angriffe. Danach keine neuen Gegner."],
+    lesson: "Beide Fronten öffnen. Gemeinsam den Schild brechen.",
+    units: ["scout", "fighter", "bomber", "frigate"], enemyUnits: ["scout", "fighter", "bomber", "frigate"], upgrades: [],
+    fleetLimit: 12, fleetTotal: 18, enemyFleetLimit: 9, enemyFleetTotal: 14,
+    startingEnergy: 320, enemyEnergy: 400, income: 14, enemyIncome: 10, carrierHp: 1700, enemyCarrierHp: 1500,
+    waveSeconds: 30, introSeconds: 10, warningSeconds: 8, assaultSeconds: 22, recoverySeconds: 24, maxAttacks: 3,
+    attacks: [
+      [{unitType:"frigate",lane:0,at:0},{unitType:"fighter",lane:1,at:4},{unitType:"bomber",lane:1,at:8}],
+      [{unitType:"frigate",lane:1,at:0},{unitType:"fighter",lane:0,at:4},{unitType:"bomber",lane:0,at:8}],
+      [{unitType:"fighter",lane:0,at:0},{unitType:"fighter",lane:1,at:4},{unitType:"scout",lane:0,at:8}],
+    ],
+    threat: "Drei Angriffe · zwei Schildrelais",
+    threats: ["Links Fregatte · rechts Fighter + Bomber", "Rechts Fregatte · links Fighter + Bomber", "Fighter auf beiden Lanes · Scouts links"],
+    reward: "HEIMATWERFT GESICHERT", rewardDetail: "Die Blockade ist gebrochen. Deine Werft ist wieder frei.",
+  },
 ].map(mission => Object.freeze(mission)));
 
 export const missionById = id => MISSIONS.find(mission => mission.id === id) ?? null;
@@ -87,17 +103,17 @@ export const missionUnlocked = (mission, completed) => Boolean(mission && (missi
 export const missionForProgress = (mission, completed = []) => mission?.available && mission.number >= 2
   && completed.includes("harbor-fire") && !mission.units.includes("frigate") ? { ...mission, units: [...mission.units, "frigate"] } : mission;
 export const nextMission = mission => MISSIONS[mission.number] ?? null;
-export const shipyardStage = completed => completed.includes("harbor-fire") ? 2 : completed.includes("first-contact") ? 1 : 0;
+export const shipyardStage = completed => completed.includes("shield-network") ? 3 : completed.includes("harbor-fire") ? 2 : completed.includes("first-contact") ? 1 : 0;
 
 // Each mission owns its arsenal and budget. Enemy purchases use the same legal commands.
 export const missionMatchOptions = (mission, equipment = {}) => {
   if (!mission?.available) throw new Error("This mission is not playable yet.");
   return {
     mission,
-    mapDefinition: { ...mission.map, balanceOverrides: {}, defenseLineY: mission.kind === "defense" ? 780 : null,
+    mapDefinition: { ...mission.map, balanceOverrides: {}, relayShield: Boolean(mission.relayShield), relayStagingLineY: 400, defenseLineY: mission.kind === "defense" ? 780 : null,
       lanes: mission.kind === "defense" ? mission.map.lanes.map(lane => ({ ...lane, enemySpawn: { ...lane.enemySpawn, y: 420 } })) : mission.map.lanes,
       structures: mission.map.structures.filter(structure => mission.kind !== "defense" || structure.team !== TEAM.ENEMY).map(structure => structure.structureType === "hq"
-        ? { ...structure, maxHp: structure.team === TEAM.PLAYER ? mission.carrierHp : mission.enemyCarrierHp } : structure) },
+        ? { ...structure, maxHp: structure.team === TEAM.PLAYER ? mission.carrierHp : mission.enemyCarrierHp } : structure).concat(mission.relayShield ? mission.map.lanes.map((lane,i) => ({id:`enemy-relay-${i}`,team:TEAM.ENEMY,laneId:lane.id,structureType:"relay",x:lane.centerX,y:340,maxHp:420})) : []) },
     config: { ...CONFIG,
       caps: { ...CONFIG.caps, unitsPerLaneTeam: mission.fleetLimit,
         unitsPerTeamByTeam: { [TEAM.PLAYER]: mission.fleetTotal ?? mission.fleetLimit, [TEAM.ENEMY]: mission.enemyFleetTotal ?? mission.enemyFleetLimit },

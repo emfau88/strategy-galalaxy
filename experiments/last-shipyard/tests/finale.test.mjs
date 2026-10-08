@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict';
+import { MatchDirector } from '../src/simulation/matchDirector.js';
+import { missionById, missionMatchOptions, shipyardStage, MISSIONS } from '../src/data/campaign.js';
+import { activeRelays, carrierProtected, laneWaitingForShield } from '../src/campaign/relayShield.js';
+import { CampaignProgress } from '../src/campaign/progress.js';
+import { planUnitTargets } from '../src/simulation/targeting.js';
+import { TEAM, MATCH_STATE } from '../src/core/constants.js';
+const create=()=>{const d=new MatchDirector({...missionMatchOptions(missionById('shield-network'),{bomberVariant:'standard'}),equippedAbility:null});d.start();return d;};
+const damage=(d,target,amount)=>d.simulation.applyDamage([{targetId:target.id,damage:amount,ownerTeam:TEAM.PLAYER}]);
+const d=create(),state=d.simulation.state,[left,right]=d.mapDefinition.lanes.map(l=>l.id),hq=state.structures.get('enemy-hq');
+assert.equal(activeRelays(state).length,2);
+damage(d,hq,9999);assert.equal(hq.hp,1500);assert.equal(hq.alive,true);
+const attacker=d.simulation.spawnFormation(TEAM.PLAYER,left,['bomber'])[0];attacker.launching=false;
+assert.equal(planUnitTargets(state).get(attacker.id),'enemy-relay-0');
+damage(d,state.structures.get('enemy-relay-0'),9999);
+assert.equal(activeRelays(state).length,1);assert.equal(carrierProtected(state,hq),true);
+assert.equal(planUnitTargets(state).get(attacker.id),null,'Cleared lane never targets protected carrier or inaccessible relay');
+assert.equal(laneWaitingForShield(state,attacker),true);
+attacker.y=410;attacker.x=105;attacker.vy=0;
+for(let i=0;i<180;i++)d.advanceLive(1/60);
+assert.ok(attacker.y>330 && attacker.y<480,'Ships wait at relay staging line, rather than drifting to invulnerable HQ');
+damage(d,hq,9999);assert.equal(hq.hp,1500);
+damage(d,state.structures.get('enemy-relay-1'),9999);
+assert.equal(carrierProtected(state,hq),false);assert.equal(planUnitTargets(state).get(attacker.id),'enemy-hq');
+d.missionRuntime.evaluateGoal(d);assert.ok(d.missionRuntime.snapshot(state,left).label.includes('SCHILD GEBROCHEN'));
+damage(d,hq,9999);d.advanceLive(1/60);assert.equal(d.state,MATCH_STATE.VICTORY);
+d.start();assert.equal(activeRelays(d.simulation.state).length,2,'Restart alone restores relay setup');
+const waves=create();waves.missionRuntime.attackNumber=3;waves.missionRuntime.enter('recovery');waves.missionRuntime.remaining=0;
+waves.advanceLive(1/60);assert.equal(waves.missionRuntime.phase,'siege');
+const enemyCount=waves.simulation.state.events.filter(e=>e.type==='launch' && e.team===TEAM.ENEMY).length;
+for(let i=0;i<600;i++)waves.advanceLive(1/60);
+assert.equal(waves.missionRuntime.attackNumber,3);assert.equal(waves.simulation.state.events.filter(e=>e.type==='launch'&&e.team===TEAM.ENEMY).length,enemyCount);
+assert.equal(waves.missionRuntime.snapshot(waves.simulation.state,left).counter,'KEIN NACHSCHUB');
+const loss=create();loss.simulation.state.structures.get('player-hq').alive=false;
+for(const r of activeRelays(loss.simulation.state))damage(loss,r,9999);damage(loss,loss.simulation.state.structures.get('enemy-hq'),9999);
+loss.advanceLive(1/60);assert.equal(loss.state,MATCH_STATE.DEFEAT,'Own carrier loss wins priority over finale success');
+const values=new Map(),storage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+let p=new CampaignProgress(storage);for(const m of MISSIONS.slice(0,5))p.complete(m.id);
+p.complete('shield-network',{carrierHpRatio:.79,abilityUses:1});assert.deepEqual(p.data.badges,[]);
+p.complete('shield-network',{carrierHpRatio:.9,abilityUses:0});p.complete('shield-network',{carrierHpRatio:1,abilityUses:0});
+assert.equal(p.data.completed.length,6);assert.deepEqual(p.data.badges,['harbor-preserved','without-ability']);
+p=new CampaignProgress(storage);assert.equal(shipyardStage(p.data.completed),3);assert.deepEqual(p.data.badges,['harbor-preserved','without-ability']);
+p.reset();assert.deepEqual(p.data.badges,[]);
+// One representative finale, standard bomber and no ability. Legal paid orders only.
+const battle=create(),lanes=battle.mapDefinition.lanes.map(l=>l.id);
+const recipe=[['fighter',0],['bomber',0],['fighter',1],['bomber',1],['frigate',0],['bomber',0],['frigate',1],['bomber',1]];
+let nextBuy=0,choice=0;const relayDeaths=[];
+while(battle.state===MATCH_STATE.LIVE_MATCH && battle.activeBattleSeconds<480){
+ if(battle.activeBattleSeconds>=nextBuy){const [unitType,lane]=recipe[choice%recipe.length];const result=battle.executeCommand({type:'DEPLOY_UNIT',team:TEAM.PLAYER,laneId:lanes[lane],unitType});if(result.ok)choice++;nextBuy=battle.activeBattleSeconds+2;}
+ battle.advanceLive(1/60);
+ for(const event of battle.simulation.state.events)if(event.type==='destroyed'&&event.entityType==='relay'&&!relayDeaths.some(e=>e.entityId===event.entityId))relayDeaths.push(event);
+}
+const report={state:battle.state,seconds:Math.round(battle.activeBattleSeconds),launches:choice,attacks:battle.missionRuntime.attackNumber,relays:relayDeaths.map(e=>Math.round(e.time)),carrierHp:battle.simulation.state.structures.get('player-hq').hp};
+assert.equal(battle.state,MATCH_STATE.VICTORY,JSON.stringify(report));assert.equal(relayDeaths.length,2);
+assert.equal(battle.missionRuntime.abilityUses,0);assert.ok(battle.missionRuntime.attackNumber<=3);
+console.log('PASS: relay protection, lane targeting and waiting, shield transition, limited waves, restart, loss priority and idempotent badges; normal equipment finale.',JSON.stringify(report));

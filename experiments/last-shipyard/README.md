@@ -1,6 +1,6 @@
 # Die letzte Werft – Testkampagne
 
-Version **0.0.5-bulk4**. Fünf gestaltete Missionen sind spielbar; Das Schildnetz ist noch eine Vorschau.
+Version **0.0.6-bulk5**. Alle sechs gestalteten Missionen einschließlich des Schildnetz-Finales sind spielbar.
 
 ## Lokal spielen
 
@@ -49,3 +49,9 @@ Drei angekündigte Angriffe vollständig abwehren; eigene Carrier-Zerstörung be
 ## Bulk 4 – Zwei Fronten und Ausrüstung
 
 Geteilte Front begrenzt beide Lanes zusammen auf 18 eigene Schiffe. HALTEN/VORSTOSS lässt sich pro Lane wählen. Das Zeitfenster bietet eine 48-Sekunden-Aufbaupause für den Gegenstoß. Nach Mission 4 ist der Ionenbomber kostenlos auswählbar (2s Waffenunterbrechung, weniger Strukturschaden); nach Mission 5 Störimpuls (100 E, 3,5s, 32s Cooldown, nur gegnerische Schiffe der gewählten Lane). Werft speichert genau eine Fähigkeit und eine Bomber-Ausführung. [Abnahme](../../docs/LAST_SHIPYARD_BULK4_REPORT.md). Der gezielte Browserlauf für diese Inhalte lautet `node experiments/last-shipyard/scripts/browser-smoke.mjs --site --latest`.
+
+## Bulk 5 – Schildnetz-Finale
+
+Zwei lanegebundene Schildrelais schützen den gegnerischen Carrier. Nach dem ersten zerstörten Relais wartet die freie Lane auf die zweite Front. Nach dem zweiten fällt der Schutz und beide Flotten greifen den Carrier an. Bis zu drei regulär bezahlte Gegnerangriffe; danach kein Nachschub. Zerstörte Relais bleiben aus. Standardbomber und eine freie Fähigkeitswahl reichen aus. Kampagnenabschluss, gesicherte Werft und zwei freiwillige Finale-Abzeichen werden gespeichert. [Abnahme](../../docs/LAST_SHIPYARD_BULK5_REPORT.md). Gezielter Browserlauf: `node experiments/last-shipyard/scripts/browser-smoke.mjs --site --final`.
+
+Die zwei Abzeichen verlangen mindestens 80% Carrier-Hülle beziehungsweise keine ausgelöste Carrier-Fähigkeit im Finale. Sie sperren keine Inhalte und können in Wiederholungen nachgeholt werden.

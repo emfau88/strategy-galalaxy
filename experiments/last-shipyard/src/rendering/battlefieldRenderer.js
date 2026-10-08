@@ -995,6 +995,7 @@ export const renderEntityLayer = (ctx, model) => {
     for (const node of nodes.values()) if (visible(node.y, 120)) drawNode(ctx, node, model.frameTime, model.assets, projection, simulation.state.map.visualTheme);
   }
   for (const structure of structures.values()) {
+    if (structure.structureType === "relay") continue;
     if (structure.structureType === "turret" && simulation.state.map.features?.defensiveTurrets === false) continue;
     if (!visible(structure.y, structure.structureType === "hq" ? 80 : 50)) continue;
     ctx.globalAlpha = structure.alive ? 1 : 0.16;

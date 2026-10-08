@@ -63,7 +63,7 @@ export const renderCampaignMenu = (ctx, model) => {
     text(ctx, "Ein Hafen. Eine Flotte. Eine neue Hoffnung.", 38, at(194), 12, C.muted);
     const stage = shipyardStage(progress.completed);
     panel(ctx, { x: 44, y: at(458), width: 332, height: 52 });
-    text(ctx, ["HEIMATWERFT · NOTBETRIEB", "DOCK 01 · WIEDER IN BETRIEB", "HAFEN WIEDERBELEBT · KAPITEL 1 BEENDET"][stage], 60, at(476), 10, stage ? C.cyan : C.brass, "left", 700);
+    text(ctx, ["HEIMATWERFT · NOTBETRIEB", "DOCK 01 · WIEDER IN BETRIEB", "HAFEN WIEDERBELEBT · KAPITEL 1 BEENDET", "HEIMATWERFT GESICHERT · KAMPAGNE BEENDET"][stage], 60, at(476), 10, stage ? C.cyan : C.brass, "left", 700);
     text(ctx, `${progress.completed.length} / 6 Einsätze abgeschlossen`, 60, at(496), 11, C.muted);
     for (let dock = 1; dock <= 2; dock++) {
       const active = stage >= dock, x = 280 + (dock - 1) * 44;
@@ -82,7 +82,7 @@ export const renderCampaignMenu = (ctx, model) => {
   text(ctx, "DIE LETZTE WERFT", 73, at(57), 11, C.muted, "left", 700);
   if (model.menuScreen === "missions") {
     text(ctx, "DER WEG ZUR WERFT", 28, at(112), 25, C.ivory, "left", 700);
-    text(ctx, "KAPITEL 1 · BLOCKADE BRECHEN", 28, at(147), 10, C.brass, "left", 700);
+    text(ctx, "SECHS EINSÄTZE · DIE HEIMATWERFT BEFREIEN", 28, at(147), 10, C.brass, "left", 700);
     sectorMap(ctx, progress.completed, at(211));
     for (const rect of ui.missions) {
       const m = missionById(rect.missionId), unlocked = missionUnlocked(m, progress.completed), done = progress.completed.includes(m.id);
@@ -105,7 +105,7 @@ export const renderCampaignMenu = (ctx, model) => {
     text(ctx, "DEINE FLOTTE", 48, at(276), 10, C.cyan, "left", 700);
     text(ctx, m.units.map(type => type === "bomber" && progress.equipment?.bomberVariant === "ion" ? "Ionenbomber" : className(type)).join(" · "), 48, at(300), 12);
     text(ctx, `${m.startingEnergy} E · +${m.income}/s · ${m.fleetLimit}/Lane${m.fleetTotal ? ` · ${m.fleetTotal} gesamt` : ""}`, 48, at(322), 11, C.muted);
-    text(ctx, `1 kostenlose Drone alle ${m.waveSeconds}s · Käufe starten sofort`, 48, at(342), 10, C.muted);
+    text(ctx, `${m.map.lanes.length} kostenlose Drone${m.map.lanes.length > 1 ? "s" : ""} alle ${m.waveSeconds}s · Käufe starten sofort`, 48, at(342), 10, C.muted);
     text(ctx, "GEGNERISCHER PLAN", 48, at(376), 10, C.brass, "left", 700);
     text(ctx, m.threat, 48, at(400), 12);
     text(ctx, `${m.enemyEnergy} E · +${m.enemyIncome}/s · ${m.enemyFleetLimit}/Lane${m.enemyFleetTotal ? ` · ${m.enemyFleetTotal} gesamt` : ""}`, 48, at(422), 11, C.muted);
@@ -118,7 +118,7 @@ export const renderCampaignMenu = (ctx, model) => {
       text(ctx, equipped ? disrupted ? "STÖRIMPULS AUSGERÜSTET · 100 E" : "AEGIS AUSGERÜSTET · 80 E" : "KEINE FÄHIGKEIT · AEGIS AUSRÜSTEN", 210, ui.equipment.y + 15, 11, C.ivory, "center", 700);
       text(ctx, disrupted ? "Schiffswaffen 3,5s aus · 32s Cooldown · Strukturen immun" : "Carrier + Flotte · 60% Schutz · 6s · 28s Cooldown", 210, ui.equipment.y + 33, 9, C.muted, "center");
     }
-    text(ctx, `GARANTIERTER BAUPLAN: ${m.reward.replace("-BAUPLAN", "")}`, 48, at(progress.completed.includes("heavy-resistance") ? 591 : 566), 10, C.cyan, "left", 700);
+    text(ctx, `${m.relayShield ? "ZIEL: " : "GARANTIERTER BAUPLAN: "}${m.reward.replace("-BAUPLAN", "")}`, 48, at(progress.completed.includes("heavy-resistance") ? 591 : 566), 10, C.cyan, "left", 700);
     button(ctx, ui.start, model.levelLoading ? "EINSATZ WIRD VORBEREITET …" : "MISSION STARTEN  →", true, !model.levelLoading);
     button(ctx, ui.back, "ZURÜCK ZU DEN EINSÄTZEN");
   } else if (model.menuScreen === "shipyard") {
@@ -136,7 +136,11 @@ export const renderCampaignMenu = (ctx, model) => {
     text(ctx, "FREISCHALTUNGEN", 48, at(508), 11, C.brass, "left", 700);
     text(ctx, progress.completed.includes("harbor-fire") ? "Scout · Fighter · Bomber · Fregatte verfügbar" : "Schiffsbaupläne entstehen durch Missionssiege.", 48, at(532), 11, C.ivory);
     text(ctx, progress.completed.includes("the-window") ? "Aegis und Störimpuls verfügbar" : "Störimpuls nach Mission 5", 48, at(558), 11, C.muted);
-    text(ctx, "Wechsel sind kostenlos. Kein Grind, keine Reparaturkosten.", 210, at(610), 10, C.muted, "center");
+    if(progress.completed.includes("shield-network")) {
+      text(ctx, "FREIWILLIGE FINALE-ABZEICHEN", 48, at(598), 10, C.brass, "left", 700);
+      text(ctx, (progress.badges?.includes("harbor-preserved") ? "✓" : "○") + " Hafen bewahrt · Carrier mit mindestens 80% Hülle", 48, at(622), 10, C.ivory);
+      text(ctx, (progress.badges?.includes("without-ability") ? "✓" : "○") + " Ohne Carrier-Fähigkeit · Finale ohne Auslösung", 48, at(647), 10, C.ivory);
+    } else text(ctx, "Wechsel sind kostenlos. Kein Grind, keine Reparaturkosten.", 210, at(610), 10, C.muted, "center");
     button(ctx, ui.back, "ZURÜCK ZUM HAFEN");
   } else if (model.menuScreen === "settings") {
     text(ctx, "EINSTELLUNGEN", 28, at(136), 25, C.ivory, "left", 700);
@@ -150,21 +154,21 @@ export const renderCampaignMenu = (ctx, model) => {
 };
 
 export const renderCampaignResult = (ctx, model) => {
-  const win = model.state === "VICTORY", center = model.height / 2;
+  const win = model.state === "VICTORY", finale = model.mission.relayShield, center = model.height / 2;
   ctx.fillStyle = "rgba(3,10,20,.7)"; ctx.fillRect(0, 0, model.width, model.height);
   panel(ctx, { x: 28, y: center - 192, width: 364, height: 370 });
   emblem(ctx, 210, center - 154, 30);
-  text(ctx, win ? "SEKTOR GESICHERT" : "CARRIER VERLOREN", 210, center - 113, 23, win ? C.cyan : "#ec9c8a", "center", 700);
+  text(ctx, win ? finale ? "KAMPAGNE BEENDET" : "SEKTOR GESICHERT" : "CARRIER VERLOREN", 210, center - 113, 23, win ? C.cyan : "#ec9c8a", "center", 700);
   text(ctx, model.mission.title, 210, center - 80, 15, C.ivory, "center");
   if (win) {
-    text(ctx, model.rewardFirstTime ? "NEU FREIGESCHALTET" : "BAUPLAN BEREITS GESICHERT", 210, center - 42, 10, C.brass, "center", 700);
+    text(ctx, finale ? "DIE LETZTE WERFT IST FREI" : model.rewardFirstTime ? "NEU FREIGESCHALTET" : "BAUPLAN BEREITS GESICHERT", 210, center - 42, 10, C.brass, "center", 700);
     text(ctx, model.mission.reward, 210, center - 17, 18, C.ivory, "center", 700);
     wrap(ctx, model.mission.rewardDetail, 52, center + 7, 316, 11);
   } else wrap(ctx, model.mission.briefing.join(" "), 52, center - 38, 316, 12);
   const ui = campaignResultLayout(model.height), next = nextMission(model.mission);
   const canContinue = win && next?.available;
   if (canContinue) button(ctx, ui.next, `WEITER: ${next.title.toUpperCase()}  →`, true);
-  else text(ctx, win ? "Weitere Einsätze sind als Vorschau auf der Karte." : "Fortschritt und Baupläne bleiben erhalten.", 210, center + 60, 10, C.muted, "center");
+  else text(ctx, win ? "Freie Ausrüstung und zwei optionale Abzeichen in der Werft." : "Fortschritt und Baupläne bleiben erhalten.", 210, center + 60, 10, C.muted, "center");
   button(ctx, ui.retry, "ERNEUT SPIELEN"); button(ctx, ui.menu, "MISSIONEN");
   text(ctx, model.campaignProgress?.persistent ? "Fortschritt gespeichert" : "Fortschritt nur in dieser Sitzung", 210, center + 159, 10, C.muted, "center");
 };
@@ -175,5 +179,5 @@ export const renderMissionHud = (ctx, model) => {
   panel(ctx, { x: 8, y: 62, width: 404, height: 59 });
   text(ctx, run.label, 20, 78, 10, run.phase === "warning" ? C.brass : C.cyan, "left", 700);
   text(ctx, run.counter, 397, 78, 11, C.ivory, "right", 700);
-  wrap(ctx, run.phase === "warning" ? run.threat : run.hint, 20, 98, 374, 10, C.ivory, 13);
+  wrap(ctx, run.phase === "warning" && !model.mission.relayShield ? run.threat : run.hint, 20, 98, 374, 10, C.ivory, 13);
 };

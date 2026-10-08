@@ -1,3 +1,4 @@
+import { carrierProtected, laneWaitingForShield } from "../campaign/relayShield.js";
 import { interruptWeapons } from "../campaign/weaponStatus.js";
 import { CONFIG } from "../config.js";
 import { PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
@@ -386,7 +387,7 @@ export class BattleSimulation {
     unit.fireCooldown = Math.max(0, unit.fireCooldown - dt);
     if (!engaged) {
       const node = unit.unitType === "scout" ? [...this.state.nodes.values()].find((item) => item.laneId === unit.laneId) : null;
-      const defenseLine = this.config.rules?.allowLaneStance && this.state.laneStances?.get(unit.laneId) === "hold" ? 780 : this.state.map.defenseLineY;
+      const defenseLine = this.config.rules?.allowLaneStance && this.state.laneStances?.get(unit.laneId) === "hold" ? 780 : laneWaitingForShield(this.state, unit) ? this.state.map.relayStagingLineY : this.state.map.defenseLineY;
       const nodeAhead = node && (node.y - unit.y) * forwardDirection(unit.team) >= -node.radius;
       if (unit.team === TEAM.PLAYER && Number.isFinite(defenseLine)) {
         const lane = this.state.map.lanes.find(item => item.id === unit.laneId);
@@ -566,7 +567,7 @@ export class BattleSimulation {
   }
 
   updateStructure(structure, dt, positions = null) {
-    if (!structure.alive) return;
+    if (!structure.alive || structure.structureType === "relay") return;
     const definition = STRUCTURE_DEFINITIONS[structure.structureType];
     const target = acquireStructureTarget(this.state, structure, positions);
     structure.targetId = target?.id ?? null;
@@ -710,7 +711,7 @@ export class BattleSimulation {
       if (!target?.alive || target.team === event.ownerTeam) continue;
       if (event.ionSeconds) interruptWeapons(this.state, target, event.ionSeconds);
       const availableShield = target.structureType ? 0 : target.shield ?? 0;
-      const abilityAbsorption = this.protection?.absorbedDamage(target, event.damage) ?? 0;
+      const abilityAbsorption = carrierProtected(this.state, target) ? event.damage : this.protection?.absorbedDamage(target, event.damage) ?? 0;
       const shieldAbsorption = Math.min(availableShield, event.damage - abilityAbsorption);
       const absorbedDamage = shieldAbsorption + abilityAbsorption;
       const hullDamage = event.damage - absorbedDamage;

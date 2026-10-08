@@ -533,7 +533,8 @@ export class Game {
     this.state = this.assetsReady ? this.match.state : MATCH_STATE.LOADING;
     if (this.match.mission && this.match.state === MATCH_STATE.VICTORY && this.recordedMissionResult !== this.match) {
       this.rewardFirstTime = !this.campaign.data.completed.includes(this.match.mission.id);
-      this.campaign.complete(this.match.mission.id);
+      const hq = this.match.simulation.state.structures.get("player-hq");
+      this.campaign.complete(this.match.mission.id, {carrierHpRatio: hq.hp / hq.maxHp, abilityUses: this.match.missionRuntime.abilityUses});
       this.recordedMissionResult = this.match;
     }
   }

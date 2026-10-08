@@ -1,6 +1,7 @@
 /** Only assets owned by this isolated experiment. */
 export const ASSET_GROUPS = Object.freeze({
   boot: Object.freeze({
+  "shield-relay-atlas": "assets/campaign/shield-relay-atlas-v1.png",
   "shipyard-keyart": "assets/campaign/shipyard-keyart-v1.png",
   "background-placeholder": "assets/runtime/environment/strategy-galaxy-background-v1.png",
   "unified-player-scout": "assets/factions/unified/player-scout-v2.png",

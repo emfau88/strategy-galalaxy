@@ -50,3 +50,5 @@ Die importierten 51 Bilder bleiben unverändert. Die Runtime-Kopie darf jetzt ge
 Bulk 3 erweitert nur die isolierte Runtime: Missionsentscheidung aus Kampfereignissen, defensive Haltepositionen, temporäre Aegis-Schadensminderung und gespeicherte Ausrüstung. Die Classic-Dateien und importierten Bilder bleiben unverändert.
 
 Bulk 4 ergänzt nur die isolierte Runtime: gemeinsame Team-Kapazität, Lane-Haltemodus, kostenlose gespeicherte Ausrüstungswahl und gemeinsame Waffenunterbrechung für Ionenbomber/Störimpuls. Kein neues Bitmap; die 51 importierten Bilder und Classic bleiben unverändert.
+
+Bulk 5 ergänzt nur die isolierte Runtime: lanegebundene Schildrelais, zeitlich begrenzten Gegnernachschub, Carrier-Schutz und gespeicherten Kampagnenabschluss mit zwei freiwilligen Abzeichen. 53 aktive Bilder: 51 unveränderte Importe, Menü-Key-Art und ein neues transparentes Relais-Atlasbild mit zwei Zuständen. Keine Bearbeitung der generierten PNG; Runtime zeichnet jeweils eine Hälfte. Vollständiger Auftrag, Quelle und SHA-256 stehen in generated-assets.json. Alte version-1-Spielstände behalten ihre Ausrüstung; badges ergänzt das bestehende Schema.

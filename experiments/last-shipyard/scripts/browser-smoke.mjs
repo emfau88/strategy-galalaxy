@@ -153,7 +153,7 @@ try {
   await tap(overlayUiLayout(transform.designHeight).pauseMenu);
   assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "main");
   assert.equal(await evaluate("window.__lastShipyard.match.state"), "TITLE");
-  if (!live && !process.argv.includes("--latest")) {
+  if (!live && !process.argv.includes("--latest") && !process.argv.includes("--final")) {
     // Verify the actual result -> next briefing -> second mission flow with legal purchases.
     const play = async () => {
       const result = await evaluate(`(() => {
@@ -258,6 +258,46 @@ try {
     await tap(COMMAND_UI.pause);await tap(overlayUiLayout(transform.designHeight).pauseMenu);
     await evaluate('window.__lastShipyard.campaign.reset()');
   }
+  if (!live && process.argv.includes('--final')) {
+    await evaluate("['first-contact','heavy-resistance','harbor-fire','split-front','the-window'].forEach(id=>window.__lastShipyard.campaign.complete(id))");
+    await tap(ui.shipyard); await tap(ui.ability); await tap(ui.ability);
+    assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'),null);
+    assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.bomberVariant'),'standard');
+    await tap(ui.back); await tap(ui.campaign); await tap(ui.missions[5]);
+    await capture('finale-briefing-360x800.png'); await tap(ui.start);
+    assert.equal(await evaluate('window.__lastShipyard.match.mission.id'),'shield-network');
+    const atlas = await evaluate(`(() => {const i=window.__lastShipyard.loader.get('shield-relay-atlas'),c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;const x=c.getContext('2d');x.drawImage(i,0,0);return {width:c.width,height:c.height,cornerAlpha:x.getImageData(0,0,1,1).data[3]};})()`);
+    assert.equal(atlas.cornerAlpha,0,'Sprite retains real transparent alpha');
+    await evaluate("window.__lastShipyard.camera.reset('enemy')");await delay(100);await capture('relays-active-360x800.png');
+    const advanceFinal = async remaining => evaluate(`(() => {
+      const g=window.__lastShipyard,d=g.match,lanes=d.mapDefinition.lanes.map(l=>l.id);
+      const recipe=[['fighter',0],['bomber',0],['fighter',1],['bomber',1],['frigate',0],['bomber',0],['frigate',1],['bomber',1]];
+      const s=window.__finalSmoke??={choice:0,nextBuy:d.activeBattleSeconds};
+      while(d.state==='LIVE_MATCH'&&d.activeBattleSeconds<480){
+        if(d.activeBattleSeconds>=s.nextBuy){const [unitType,lane]=recipe[s.choice%recipe.length];if(d.executeCommand({type:'DEPLOY_UNIT',team:'TEAM_PLAYER',laneId:lanes[lane],unitType}).ok)s.choice++;s.nextBuy=d.activeBattleSeconds+2;}
+        d.advanceLive(1/60);
+        if(${remaining}>=0 && [...d.simulation.state.structures.values()].filter(r=>r.structureType==='relay'&&r.alive).length<=${remaining})break;
+      }
+      g.syncMatchState();return {state:d.state,seconds:d.activeBattleSeconds,relays:[...d.simulation.state.structures.values()].filter(r=>r.structureType==='relay'&&r.alive).length,enemyHp:d.simulation.state.structures.get('enemy-hq').hp};
+    })()`);
+    const first=await advanceFinal(1);assert.equal(first.relays,1);assert.equal(first.enemyHp,1500);
+    await delay(100);await capture('one-relay-disabled-360x800.png');
+    const open=await advanceFinal(0);assert.equal(open.relays,0);await delay(100);await capture('shield-broken-360x800.png');
+    const final=await advanceFinal(-1);assert.equal(final.state,'VICTORY');await delay(150);await capture('campaign-complete-360x800.png');
+    assert.equal(await evaluate('window.__lastShipyard.campaign.data.completed.length'),6);
+    assert.ok((await evaluate('window.__lastShipyard.campaign.data.badges')).includes('without-ability'));
+    const {campaignResultLayout}=await import('../src/ui/campaignUi.js');
+    await tap(campaignResultLayout(transform.designHeight).retry);
+    assert.equal(await evaluate("[...window.__lastShipyard.match.simulation.state.structures.values()].filter(r=>r.structureType==='relay'&&r.alive).length"),2);
+    await tap(COMMAND_UI.pause);await tap(overlayUiLayout(transform.designHeight).pauseMenu);
+    await send('Page.reload',{ignoreCache:true});await delay(150);await waitReady();
+    assert.equal(await evaluate('window.__lastShipyard.campaign.data.completed.length'),6);
+    await capture('secured-shipyard-360x800.png');await tap(ui.shipyard);await capture('finale-badges-360x800.png');
+    await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await delay(150);await capture('finale-badges-390x844.png');
+    await send('Emulation.setDeviceMetricsOverride',{width:360,height:800,deviceScaleFactor:1,mobile:true});await delay(150);
+    await evaluate('window.__lastShipyard.campaign.reset()');
+  }
+
   // A direct API check also exercises storage isolation without repeating battle simulations publicly.
   assert.equal(await evaluate("window.__lastShipyard.campaign.complete('first-contact')"), true);
   await send("Page.reload", { ignoreCache: true });
@@ -268,7 +308,7 @@ try {
   for (const [key, value] of Object.entries(classic)) assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(key)})`), value, "Classic storage unchanged");
   assert.ok([...requests].every(address => address.startsWith(origin + prefix) || address === origin + "/favicon.ico"), "All runtime requests stay in experiment subpath");
   if (live) {
-    const metadata = await evaluate("fetch('version.json?acceptance=bulk3').then(response=>response.json())");
+    const metadata = await evaluate("fetch('version.json?acceptance=bulk5').then(response=>response.json())");
     assert.equal(metadata.version, EXPERIMENT.version);
     assert.deepEqual(metadata.playableMissions, MISSIONS.filter(m => m.available).map(m => m.id));
     assert.equal(await evaluate("window.__lastShipyard.campaign.complete('heavy-resistance')"), true);
@@ -281,6 +321,13 @@ try {
     await tap(COMMAND_UI.pause); await tap(overlayUiLayout(transform.designHeight).pauseMenu);
     await send('Page.reload', {ignoreCache:true}); await delay(150); await waitReady();
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'), 'aegis');
+    await evaluate("['harbor-fire','split-front','the-window'].forEach(id=>window.__lastShipyard.campaign.complete(id))");
+    await tap(ui.campaign);await tap(ui.missions[5]);await tap(ui.start);
+    assert.equal(await evaluate('window.__lastShipyard.match.mission.id'),'shield-network');
+    assert.equal(await evaluate("[...window.__lastShipyard.match.simulation.state.structures.values()].filter(r=>r.structureType==='relay'&&r.alive).length"),2);
+    await evaluate("window.__lastShipyard.camera.reset('enemy')");await delay(100);await capture('public-shield-relays-360x800.png');
+    await tap(COMMAND_UI.pause);await tap(overlayUiLayout(transform.designHeight).pauseMenu);
+
   }
   assert.equal(await evaluate("window.__lastShipyard.campaign.reset()"), true);
   assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.progress)})`), null);
@@ -303,7 +350,7 @@ try {
     assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.soundMuted)})`), "true");
   }
   assert.deepEqual(failures, []);
-  const report = { result: "PASS", mode: live ? "public" : siteMode ? "built-site" : "standalone", classicStarts: siteMode, viewport: "360x800", prefix, runtimeRequests: requests.size, checks: ["own menu identity", "active assets", "touch start and purchase", "pause and return", "own progress and sound reload", "Classic sentinel unchanged", "no requests outside experiment", "own progress reset", "Classic after reset", ...(live ? ["published campaign version", "unlocked harbor start and Aegis touch", "equipment reload"] : (process.argv.includes("--latest") ? ["two-lane stance and purchase", "mission4/5 victories", "ion/ability loadout reload", "disruption touch"] : ["three mission victories", "equipment toggle and reload", "Aegis touch and pause", "chapter reward"]))], completedVia: live ? "persistence API; public smoke avoids repeating balance runs" : `${process.argv.includes("--latest") ? "missions 4 and 5" : "missions 1 to 3"} through legal purchases; real result/unlock/equipment flow`, failures };
+  const report = { result: "PASS", mode: live ? "public" : siteMode ? "built-site" : "standalone", classicStarts: siteMode, viewport: "360x800", prefix, runtimeRequests: requests.size, checks: ["own menu identity", "active assets", "touch start and purchase", "pause and return", "own progress and sound reload", "Classic sentinel unchanged", "no requests outside experiment", "own progress reset", "Classic after reset", ...(live ? ["published campaign version", "unlocked harbor start and Aegis touch", "equipment reload", "finale start and shield relays"] : (process.argv.includes("--final") ? ["transparent relay atlas", "legal finale victory with standard loadout", "relay states and shield transition", "campaign completion, badges and reload", "finale retry"] : process.argv.includes("--latest") ? ["two-lane stance and purchase", "mission4/5 victories", "ion/ability loadout reload", "disruption touch"] : ["three mission victories", "equipment toggle and reload", "Aegis touch and pause", "chapter reward"]))], completedVia: live ? "persistence API; public smoke avoids repeating balance runs" : `${process.argv.includes("--final") ? "mission 6" : process.argv.includes("--latest") ? "missions 4 and 5" : "missions 1 to 3"} through legal purchases; real result/unlock/equipment flow`, failures };
   await writeFile(resolve(output, "report.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report, null, 2));
 } finally {

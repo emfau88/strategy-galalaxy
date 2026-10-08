@@ -32,3 +32,7 @@ Erstes Kapitel mit drei Missionen. Angriffserfolg bedeutet Gegner-Carrier zerst�
 ## Stand Bulk 4
 
 Fünf Missionen. Zwei Lanes teilen sich ein Gesamtbudget; Halten und Vorstoß werden pro Lane gewählt. Die Werft speichert Bomber-Ausführung und genau eine Carrier-Fähigkeit. Ionenbomber unterbrechen Schiffswaffen zwei Sekunden und verzichten auf volle Belagerungswirkung. Störimpuls pausiert Schiffswaffen 3,5 Sekunden für 100 E; Strukturen sind immun. Mission 5 bietet einen angekündigten Belagerungsangriff und 48 Sekunden Aufbaupause.
+
+## Stand Bulk 5
+
+Die sechs Einsätze haben einen Abschluss. Zwei lanegebundene Relais schützen den Blockade-Carrier; die Flotte bearbeitet zuerst erreichbare Relais, danach den verwundbaren Carrier. Eine bereits freie Lane wartet, während die zweite Front geöffnet wird. Höchstens drei bezahlte Gegnerangriffe; keine Relaisregeneration. Kampagnensieg sichert die Werft. Zwei optionale Abzeichen bieten konkrete Wiederholungsziele ohne neue Freischaltpflicht. Normale Ausrüstung genügt; der repräsentative Test gewann mit Standardbombern ohne Carrier-Fähigkeit. Menschliche Spielbeobachtung und Smartphone-Abnahme bleiben offen.
