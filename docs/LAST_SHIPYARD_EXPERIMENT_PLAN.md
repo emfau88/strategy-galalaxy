@@ -2,7 +2,7 @@
 
 Stand: 8. Oktober 2026. **Status: Bulk 0–2 abgeschlossen; Bulk 3 technisch umgesetzt. Drei Missionen, Aegis und Kapitelabschluss sind spielbar. Der Ersttest mit ein bis zwei Personen bleibt offen. Bulk 4–6 sind offen.**
 
-Arbeitsbranch: `codex/last-shipyard`. [Lokaler Einstieg und Befehle](../experiments/last-shipyard/README.md) · [Herkunft und Abnahme](../experiments/last-shipyard/BASELINE.md). Die folgenden Bulks sind weiterhin offen.
+Arbeitsbranch: `codex/last-shipyard`. [Lokaler Einstieg und Befehle](../experiments/last-shipyard/README.md) · [Herkunft und Abnahme](../experiments/last-shipyard/BASELINE.md). Umgesetzte Maßnahmen und offene Abnahmen sind unten einzeln gekennzeichnet.
 
 ## 1. Entscheidung und Ziel
 
@@ -329,7 +329,7 @@ Eine aufwendigere Balanceprüfung kommt erst bei stabilen Inhalten und einem kon
 
 **Abgeschlossen:** Bulk 0–1: Isolation, gemeinsamer Build und öffentlicher Play-Link. Bulk 2: eigenständiges Werftmotiv, Missionsrhythmus, zwei gestaltete Angriffe und Bomber-Bauplan. [Abnahme Bulk 2](LAST_SHIPYARD_BULK2_REPORT.md); erfolgreicher Pages-Run [37821796443](https://github.com/emfau88/strategy-galalaxy/actions/runs/37821796443), Commit 3510995, beide öffentlichen Fassungen im Browser geprüft.
 
-**Bulk 3 technisch umgesetzt:** Hafenverteidigung mit drei vollständig abgewehrten Angriffen; eine eigene, verlustpriorisierende Missionsentscheidung; temporäres Aegis; gespeicherte Ausrüstung; Fregatte nach dem dritten Sieg auch in Wiederholungen der Missionen 2–3 verfügbar; sichtbare Dock-/Hafenprogression. [Abnahme und Grenzen](LAST_SHIPYARD_BULK3_REPORT.md). Classic bleibt auf ed8802b.
+**Bulk 3 technisch umgesetzt:** Hafenverteidigung mit drei vollständig abgewehrten Angriffen; eine eigene, verlustpriorisierende Missionsentscheidung; temporäres Aegis; gespeicherte Ausrüstung; Fregatte nach dem dritten Sieg auch in Wiederholungen der Missionen 2–3 verfügbar; sichtbare Dock-/Hafenprogression. [Abnahme und Grenzen](LAST_SHIPYARD_BULK3_REPORT.md). Veröffentlicht mit Commit 1c5b67d, [Pages-Run 37823771205](https://github.com/emfau88/strategy-galalaxy/actions/runs/37823771205) erfolgreich. Öffentliche Version 0.0.4-bulk3 einschließlich Hafenstart, Aegis-Touch und Ausrüstungs-Reload geprüft. Classic bleibt auf ed8802b.
 
 **Noch offen in Bulk 3:** Ersttest mit ein bis zwei echten Personen. Browser- und Mechanikprüfungen ersetzen ihn nicht. Es wird kein erfundener Spieltest abgehakt.
 

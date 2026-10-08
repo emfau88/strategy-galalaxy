@@ -7,7 +7,7 @@ import { resolve, sep } from "node:path";
 import { createExperimentServer, experimentRoot } from "./dev-server.mjs";
 import { campaignUiLayout } from "../src/ui/campaignUi.js";
 import { commandUiLayout, overlayUiLayout, COMMAND_UI } from "../src/ui/commandUi.js";
-import { STORAGE_KEYS } from "../src/experiment.js";
+import { STORAGE_KEYS, EXPERIMENT } from "../src/experiment.js";
 import { TEAM } from "../src/core/constants.js";
 
 const browser = (process.platform === "win32"
@@ -51,6 +51,7 @@ const waitReady = async () => {
     if (await evaluate("Boolean(window.__lastShipyard?.running && window.__lastShipyard.assetsReady && window.__lastShipyard.loader.isSettled)")) return;
     await delay(50);
   }
+  console.error(JSON.stringify({ failures, responses: [...requests], page: await evaluate("({title:document.title,ready:document.readyState,game:typeof window.__lastShipyard,progress:window.__lastShipyard?.loader.progress,errors:window.__lastShipyard?.loader.errors})") }, null, 2));
   throw new Error("Experiment did not load");
 };
 const capture = async name => {
@@ -220,6 +221,21 @@ try {
   assert.equal(await evaluate("window.__lastShipyard.sound.muted"), true);
   for (const [key, value] of Object.entries(classic)) assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(key)})`), value, "Classic storage unchanged");
   assert.ok([...requests].every(address => address.startsWith(origin + prefix) || address === origin + "/favicon.ico"), "All runtime requests stay in experiment subpath");
+  if (live) {
+    const metadata = await evaluate("fetch('version.json?acceptance=bulk3').then(response=>response.json())");
+    assert.equal(metadata.version, EXPERIMENT.version);
+    assert.deepEqual(metadata.playableMissions, ['first-contact','heavy-resistance','harbor-fire']);
+    assert.equal(await evaluate("window.__lastShipyard.campaign.complete('heavy-resistance')"), true);
+    await tap(ui.campaign); await tap(ui.missions[2]); await tap(ui.start);
+    assert.equal(await evaluate('window.__lastShipyard.match.mission.id'), 'harbor-fire');
+    const {abilityUiLayout} = await import('../src/ui/abilityUi.js');
+    await tap(abilityUiLayout().aegis);
+    assert.ok(await evaluate('window.__lastShipyard.match.aegis.activeRemaining > 0'));
+    await capture('public-aegis-360x800.png');
+    await tap(COMMAND_UI.pause); await tap(overlayUiLayout(transform.designHeight).pauseMenu);
+    await send('Page.reload', {ignoreCache:true}); await delay(150); await waitReady();
+    assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'), 'aegis');
+  }
   assert.equal(await evaluate("window.__lastShipyard.campaign.reset()"), true);
   assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.progress)})`), null);
   await send("Page.reload", { ignoreCache: true });
@@ -241,7 +257,7 @@ try {
     assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.soundMuted)})`), "true");
   }
   assert.deepEqual(failures, []);
-  const report = { result: "PASS", mode: live ? "public" : siteMode ? "built-site" : "standalone", classicStarts: siteMode, viewport: "360x800", prefix, runtimeRequests: requests.size, checks: ["own menu identity", "active assets", "touch start and purchase", "pause and return", "own progress and sound reload", "Classic sentinel unchanged", "no requests outside experiment", "own progress reset", "Classic after reset", ...(live ? [] : ["three mission victories", "equipment toggle and reload", "Aegis touch and pause", "chapter reward"])], completedVia: live ? "persistence API; public smoke avoids repeating balance runs" : "three representative missions through legal purchases; real result/unlock/equipment flow", failures };
+  const report = { result: "PASS", mode: live ? "public" : siteMode ? "built-site" : "standalone", classicStarts: siteMode, viewport: "360x800", prefix, runtimeRequests: requests.size, checks: ["own menu identity", "active assets", "touch start and purchase", "pause and return", "own progress and sound reload", "Classic sentinel unchanged", "no requests outside experiment", "own progress reset", "Classic after reset", ...(live ? ["published Bulk 3 version", "unlocked harbor start and Aegis touch", "equipment reload"] : ["three mission victories", "equipment toggle and reload", "Aegis touch and pause", "chapter reward"])], completedVia: live ? "persistence API; public smoke avoids repeating balance runs" : "three representative missions through legal purchases; real result/unlock/equipment flow", failures };
   await writeFile(resolve(output, "report.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report, null, 2));
 } finally {

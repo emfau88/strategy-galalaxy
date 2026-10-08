@@ -4,7 +4,7 @@ Stand: 8. Oktober 2026. Version: 0.0.4-bulk3. **Technisch umgesetzt. Ersttest mi
 
 ## Spielbarer Umfang
 
-Kapitel 1 besteht aus drei Missionen. Hafen im Feuer fordert drei angekündigte, vollständig abgewehrte Angriffe. Nach einem besiegten Verband und dem Auslaufen seiner gefährlichen Salven folgt eine kurze Aufbaupause. Der eigene Carrier muss überleben. Angriffe werden regulär gekauft; fehlende Energie oder Flottenplätze verschieben den Kauf. Es gibt weder versteckte kostenlose Gegner noch ein unverwundbares Gegner-HQ. Die Schiffe springen aus einem sichtbaren Korridor ein.
+Kapitel 1 besteht aus drei Missionen. Hafen im Feuer fordert drei angekündigte, vollständig abgewehrte Angriffe. Nach einem besiegten Verband und dem Auslaufen seiner gefährlichen Salven folgt eine kurze Aufbaupause. Der eigene Carrier muss überleben. Angriffe werden regulär gekauft; fehlende Energie oder Flottenplätze verschieben den Kauf. Es gibt weder versteckte kostenlose Gegner noch ein unverwundbares Gegner-HQ. Die Schiffe springen aus dem angekündigten Sprungkorridor ein.
 
 Die Spielerflotte hält automatisch eine markierte Abwehrlinie und kehrt nach Kämpfen dorthin zurück. Diese Regel entstand aus einem konkreten fehlgeschlagenen Durchlauf: Vorstoßlogik führte überlebende Verteidiger vom Hafen weg. Die Halteregel gilt nur für die Verteidigungsmission.
 
@@ -27,3 +27,11 @@ Mission 3 schaltet die Fregatte garantiert frei. Sie kann direkt in Wiederholung
 Kein echter Spieler-/Smartphone-Test wurde behauptet. Der offene Planpunkt bleibt offen. Besonders beobachten: Erkennt man Bomber und Eskorte? Ist die automatische Abwehrlinie verständlich? Hat Aegis einen passenden Einsatzmoment? Sind die kurzen ersten zwei Missionen ausreichend fordernd? Wünscht man sich nach Mission 3 den nächsten Einsatz?
 
 Bulk 4–6 sind nicht umgesetzt. Das Experiment ersetzt Classic nicht. Die neue Key-Art wurde mit dem integrierten Imagegen erstellt; vollständiger Auftrag, Quelldatei und SHA-256 stehen in [generated-assets.json](../experiments/last-shipyard/provenance/generated-assets.json). Emblem, Sektorkarte, Dockanzeige und Fähigkeitseffekte sind Code-/Vektorgrafik; nur ein neues Bitmap wurde benötigt.
+
+## Veröffentlichung bestätigt
+
+Commit 1c5b67d wurde separat auf main und codex/last-shipyard gepusht. [Pages-Run 37823771205](https://github.com/emfau88/strategy-galalaxy/actions/runs/37823771205) hat Build, Prüfungen und Veröffentlichung erfolgreich beendet. Öffentliches version.json bestätigt 0.0.4-bulk3, diesen Commit und genau drei spielbare Missionen.
+
+Der öffentliche Browsercheck bestätigt Classic-Start, isoliertes Werft-Menü, Kauf, Pause, Rückkehr, Speicherung und Reset. Zusätzlich wurden Mission 3 mit freigeschaltetem Aegis gestartet, der Schutz per Touch ausgelöst und Ausrüstung nach Reload geprüft. Keine Browserfehler im erfolgreichen Durchlauf. Ein vorheriger öffentlicher Start überschritt das Ladezeitfenster; die Wiederholung bestand. Die Ursache dieses einzelnen Lade-Timeouts wurde nicht eindeutig festgestellt. Der Check gibt bei künftigen Ladeproblemen jetzt konkrete Browser-/Ladefehler aus.
+
+Der menschliche Ersttest ist weiterhin offen. Es wurde keine Balance-Testserie nachgeschoben.
