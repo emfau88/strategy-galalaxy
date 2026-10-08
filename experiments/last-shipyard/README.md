@@ -1,6 +1,6 @@
 # Die letzte Werft – Testkampagne
 
-Version **0.0.2-bulk1**. Aktuell spielbar: die vorläufige Mission 1 „Erstkontakt“. Missionen 2–3 sind übernommene Vorschauen. Der sechs Missionen umfassende neue Kampagnenbogen wird schrittweise gebaut.
+Version **0.0.4-bulk3**. Kapitel 1 ist mit drei Missionen spielbar: Erstkontakt, Schwerer Widerstand und Hafen im Feuer. Missionen 4–6 sind klar bezeichnete Vorschauen.
 
 ## Lokal spielen
 
@@ -21,7 +21,7 @@ npm --prefix experiments/last-shipyard run check
 npm --prefix experiments/last-shipyard run test:browser
 ```
 
-Der Browsercheck benötigt lokal Chrome oder Edge, verwendet ein eigenes temporäres Profil und prüft einen kurzen Start-/Kauf-/Pause-/Rückkehrablauf sowie Speicher- und Pfadtrennung unter dem zukünftigen Unterpfad. Screenshots liegen im ignorierten tmp/. Keine Balance-Matrix.
+Der Browsercheck benötigt lokal Chrome oder Edge, verwendet ein eigenes temporäres Profil und prüft einen kurzen Start-/Kauf-/Pause-/Rückkehrablauf sowie Speicher- und Pfadtrennung unter dem veröffentlichten Unterpfad. Screenshots liegen im ignorierten tmp/. Keine Balance-Matrix.
 
 ## Gemeinsame Pages-Fassung
 
@@ -41,3 +41,7 @@ Die gemeinsame Vorschau läuft auf http://127.0.0.1:7102/strategy-galalaxy/ und 
 ## Bulk 2
 
 Zwei gestaltete Angriffsmissionen: Erstkontakt (Scout/Fighter) und Schwerer Widerstand (Bomber mit Eskorte gegen Fregatten). Ein Sieg öffnet den nächsten Einsatz und sichert den Bauplan. Missionen 3–6 sind klar bezeichnete Vorschauen. FLOTTE öffnet Käufe, ZUR FRONT findet deine vordersten Schiffe. Gegner kaufen nur im angekündigten Angriffsfenster, mit eigenen im Briefing sichtbaren Budgets. [Abnahme](../../docs/LAST_SHIPYARD_BULK2_REPORT.md).
+
+## Bulk 3 – Hafenverteidigung
+
+Drei angekündigte Angriffe vollständig abwehren; eigene Carrier-Zerstörung bedeutet Niederlage. Die Flotte hält automatisch eine sichtbare Abwehrlinie. Aegis wird nach Mission 2 ausgerüstet und kann im Briefing kostenlos ab-/angewählt werden. 80 E, sechs Sekunden Schutz, 60 % Schadensminderung, 28 Sekunden Cooldown; betrifft Carrier und eigene Flotte der gewählten Lane. Kein permanentes Schild-Upgrade. Nach Mission 3 stehen Fregatten in Wiederholungen der Missionen 2–3 bereit. Ausrüstung und Fortschritt bleiben erhalten. [Abnahme und offene menschliche Spielbeobachtung](../../docs/LAST_SHIPYARD_BULK3_REPORT.md).

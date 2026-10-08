@@ -178,8 +178,36 @@ try {
     await capture('mission2-briefing-360x800.png'); await tap(ui.start);
     await play(); await capture('mission2-unlock-360x800.png');
     assert.deepEqual(await evaluate('window.__lastShipyard.campaign.data.completed'), ['first-contact','heavy-resistance']);
-    await tap(campaignResultLayout(transform.designHeight).menu);
-    await tap(ui.back);
+    await tap(campaignResultLayout(transform.designHeight).next);
+    assert.equal(await evaluate('window.__lastShipyard.selectedMissionId'), 'harbor-fire');
+    assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'), 'aegis');
+    await tap(ui.equipment);
+    assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'), null);
+    await tap(ui.equipment);
+    await send('Page.reload', {ignoreCache:true}); await delay(150); await waitReady();
+    assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'), 'aegis');
+    // Last mission remains mission 2 until mission 3 actually starts; select 3 explicitly after reload.
+    await tap(ui.campaign); await tap(ui.missions[2]);
+    await capture('mission3-briefing-360x800.png');
+    await send('Emulation.setDeviceMetricsOverride', {width:390,height:844,deviceScaleFactor:1,mobile:true}); await delay(150);
+    await capture('mission3-briefing-390x844.png');
+    await send('Emulation.setDeviceMetricsOverride', {width:360,height:800,deviceScaleFactor:1,mobile:true}); await delay(150);
+    await tap(ui.start);
+    const {abilityUiLayout} = await import('../src/ui/abilityUi.js');
+    const abilityUi = abilityUiLayout();
+    await tap(abilityUi.aegis);
+    assert.ok(await evaluate('window.__lastShipyard.match.aegis.activeRemaining > 0'));
+    await capture('aegis-active-360x800.png');
+    await tap(COMMAND_UI.pause);
+    const held = await evaluate('window.__lastShipyard.match.aegis.activeRemaining');
+    await delay(200); assert.equal(await evaluate('window.__lastShipyard.match.aegis.activeRemaining'), held);
+    await tap(overlayUiLayout(transform.designHeight).pauseResume);
+    await play(); await capture('chapter1-result-360x800.png');
+    assert.deepEqual(await evaluate('window.__lastShipyard.campaign.data.completed'), ['first-contact','heavy-resistance','harbor-fire']);
+    await tap(campaignResultLayout(transform.designHeight).menu); await tap(ui.back);
+    await capture('shipyard-revived-360x800.png');
+    await send('Page.reload', {ignoreCache:true}); await delay(150); await waitReady();
+    assert.deepEqual(await evaluate('window.__lastShipyard.campaign.data.completed'), ['first-contact','heavy-resistance','harbor-fire']);
     // Existing persistence assertions below intentionally start with a one-mission save.
     await evaluate('window.__lastShipyard.campaign.reset()');
   }
@@ -213,7 +241,7 @@ try {
     assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.soundMuted)})`), "true");
   }
   assert.deepEqual(failures, []);
-  const report = { result: "PASS", mode: live ? "public" : siteMode ? "built-site" : "standalone", classicStarts: siteMode, viewport: "360x800", prefix, runtimeRequests: requests.size, checks: ["own menu identity", "active assets", "touch start and purchase", "pause and return", "own progress and sound reload", "Classic sentinel unchanged", "no requests outside experiment", "own progress reset", "Classic after reset"], completedVia: "persistence API; no simulated mission victory", failures };
+  const report = { result: "PASS", mode: live ? "public" : siteMode ? "built-site" : "standalone", classicStarts: siteMode, viewport: "360x800", prefix, runtimeRequests: requests.size, checks: ["own menu identity", "active assets", "touch start and purchase", "pause and return", "own progress and sound reload", "Classic sentinel unchanged", "no requests outside experiment", "own progress reset", "Classic after reset", ...(live ? [] : ["three mission victories", "equipment toggle and reload", "Aegis touch and pause", "chapter reward"])], completedVia: live ? "persistence API; public smoke avoids repeating balance runs" : "three representative missions through legal purchases; real result/unlock/equipment flow", failures };
   await writeFile(resolve(output, "report.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report, null, 2));
 } finally {

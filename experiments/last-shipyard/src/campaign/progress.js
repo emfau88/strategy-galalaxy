@@ -2,7 +2,7 @@ import { MISSIONS, missionById, missionUnlocked } from "../data/campaign.js";
 
 import { STORAGE_KEYS } from "../experiment.js";
 export const CAMPAIGN_STORAGE_KEY = STORAGE_KEYS.progress;
-const emptyProgress = () => ({ version: 1, completed: [], lastMissionId: null });
+const emptyProgress = () => ({ version: 1, completed: [], lastMissionId: null, equipment: { version: 1, ability: null } });
 const browserStorage = () => { try { return globalThis.localStorage ?? null; } catch { return null; } };
 
 export class CampaignProgress {
@@ -16,6 +16,7 @@ export class CampaignProgress {
         // Only implemented missions can have been completed in this version.
         this.data.completed = MISSIONS.filter((mission) => mission.available && Array.isArray(saved.completed)
           && saved.completed.includes(mission.id)).map((mission) => mission.id);
+        if (saved.equipment?.version === 1 && saved.equipment.ability === "aegis" && this.data.completed.includes("heavy-resistance")) this.data.equipment.ability = "aegis";
         const last = missionById(saved.lastMissionId);
         if (last?.available && missionUnlocked(last, this.data.completed)) this.data.lastMissionId = last.id;
       }
@@ -42,7 +43,10 @@ export class CampaignProgress {
   complete(id) {
     const mission = missionById(id);
     if (!mission?.available || !missionUnlocked(mission, this.data.completed)) return false;
-    if (!this.data.completed.includes(id)) this.data.completed.push(id);
+    if (!this.data.completed.includes(id)) {
+      this.data.completed.push(id);
+      if (id === "heavy-resistance") this.data.equipment.ability = "aegis";
+    }
     this.data.lastMissionId = id;
     this.save();
     return true;
@@ -58,5 +62,11 @@ export class CampaignProgress {
     return true;
   }
 
-  snapshot() { return { ...this.data, completed: [...this.data.completed], persistent: this.persistent }; }
+  toggleAegis() {
+    if (!this.data.completed.includes("heavy-resistance")) return false;
+    this.data.equipment.ability = this.data.equipment.ability === "aegis" ? null : "aegis";
+    this.save(); return true;
+  }
+
+  snapshot() { return { ...this.data, completed: [...this.data.completed], equipment: { ...this.data.equipment }, persistent: this.persistent }; }
 }

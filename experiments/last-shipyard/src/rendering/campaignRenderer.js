@@ -1,5 +1,5 @@
 import { EXPERIMENT } from "../experiment.js";
-import { MISSIONS, missionById, missionUnlocked, nextMission, shipyardStage } from "../data/campaign.js";
+import { MISSIONS, missionById, missionUnlocked, nextMission, shipyardStage, missionForProgress } from "../data/campaign.js";
 import { campaignUiLayout, campaignResultLayout } from "../ui/campaignUi.js";
 
 const C = { ivory: "#f5eddd", muted: "#9faebf", cyan: "#80dedb", brass: "#c7a46b", line: "rgba(188,210,222,.18)" };
@@ -63,8 +63,13 @@ export const renderCampaignMenu = (ctx, model) => {
     text(ctx, "Ein Hafen. Eine Flotte. Eine neue Hoffnung.", 38, at(194), 12, C.muted);
     const stage = shipyardStage(progress.completed);
     panel(ctx, { x: 44, y: at(458), width: 332, height: 52 });
-    text(ctx, ["HEIMATWERFT · NOTBETRIEB", "DOCK 01 · WIEDER IN BETRIEB", "HAFEN GESICHERT · KAPITEL 1 BEENDET"][stage], 60, at(476), 10, stage ? C.cyan : C.brass, "left", 700);
+    text(ctx, ["HEIMATWERFT · NOTBETRIEB", "DOCK 01 · WIEDER IN BETRIEB", "HAFEN WIEDERBELEBT · KAPITEL 1 BEENDET"][stage], 60, at(476), 10, stage ? C.cyan : C.brass, "left", 700);
     text(ctx, `${progress.completed.length} / 6 Einsätze abgeschlossen`, 60, at(496), 11, C.muted);
+    for (let dock = 1; dock <= 2; dock++) {
+      const active = stage >= dock, x = 280 + (dock - 1) * 44;
+      ctx.fillStyle = active ? C.cyan : "#314457"; ctx.fillRect(x, at(490), 4, 12);
+      text(ctx, `0${dock}`, x + 12, at(496), 10, active ? C.cyan : C.muted);
+    }
     button(ctx, ui.campaign, progress.lastMissionId ? "KAMPAGNE FORTSETZEN  →" : "KAMPAGNE BEGINNEN  →", true);
     button(ctx, ui.settings, "EINSTELLUNGEN");
     text(ctx, progress.persistent ? "Fortschritt wird auf diesem Gerät gespeichert." : "Fortschritt bleibt in dieser Sitzung erhalten.", 210, at(667), 10, C.muted, "center");
@@ -89,11 +94,11 @@ export const renderCampaignMenu = (ctx, model) => {
     }
     button(ctx, ui.back, "ZURÜCK ZUM HAFEN");
   } else if (model.menuScreen === "briefing") {
-    const m = missionById(model.selectedMissionId);
+    const m = missionForProgress(missionById(model.selectedMissionId), progress.completed);
     if (!m?.available) return;
     text(ctx, `EINSATZ ${String(m.number).padStart(2, "0")}`, 28, at(109), 11, C.brass, "left", 700);
     text(ctx, m.title, 28, at(143), 25, C.ivory, "left", 700);
-    panel(ctx, { x: 28, y: at(177), width: 364, height: 418 });
+    panel(ctx, { x: 28, y: at(177), width: 364, height: 426 });
     text(ctx, "AUFTRAG", 48, at(203), 10, C.brass, "left", 700);
     wrap(ctx, m.objective, 48, at(227), 324, 14, C.ivory);
     text(ctx, "DEINE FLOTTE", 48, at(276), 10, C.cyan, "left", 700);
@@ -104,9 +109,15 @@ export const renderCampaignMenu = (ctx, model) => {
     text(ctx, m.threat, 48, at(400), 12);
     text(ctx, `${m.enemyEnergy} E Start · +${m.enemyIncome} E/s · maximal ${m.enemyFleetLimit} Schiffe`, 48, at(422), 11, C.muted);
     text(ctx, `Ankündigung: ${m.warningSeconds}s · Aufbaupause: ${m.recoverySeconds}s`, 48, at(442), 11, C.muted);
-    text(ctx, "Keine kostenlosen Gegner-Waves.", 48, at(462), 10, C.muted);
-    wrap(ctx, m.briefing.join(" "), 48, at(493), 324, 12, C.ivory);
-    text(ctx, `GARANTIERTER BAUPLAN: ${m.reward.replace("-BAUPLAN", "")}`, 48, at(566), 10, C.cyan, "left", 700);
+    text(ctx, m.kind === "defense" ? "Angriffe aus dem Korridor. Kein Gegner-Carrier als Ziel." : "Keine kostenlosen Gegner-Waves.", 48, at(462), 10, C.muted);
+    wrap(ctx, m.briefing.join(" "), 48, at(486), 324, 12, C.ivory);
+    if (progress.completed.includes("heavy-resistance")) {
+      const equipped = progress.equipment?.ability === "aegis";
+      panel(ctx, ui.equipment, equipped);
+      text(ctx, equipped ? "AEGIS AUSGERÜSTET · 80 E" : "KEINE FÄHIGKEIT · AEGIS AUSRÜSTEN", 210, ui.equipment.y + 15, 11, C.ivory, "center", 700);
+      text(ctx, "Carrier + Flotte · 60% Schutz · 6s · 28s Cooldown", 210, ui.equipment.y + 33, 9, C.muted, "center");
+    }
+    text(ctx, `GARANTIERTER BAUPLAN: ${m.reward.replace("-BAUPLAN", "")}`, 48, at(progress.completed.includes("heavy-resistance") ? 591 : 566), 10, C.cyan, "left", 700);
     button(ctx, ui.start, model.levelLoading ? "EINSATZ WIRD VORBEREITET …" : "MISSION STARTEN  →", true, !model.levelLoading);
     button(ctx, ui.back, "ZURÜCK ZU DEN EINSÄTZEN");
   } else if (model.menuScreen === "settings") {
@@ -141,10 +152,10 @@ export const renderCampaignResult = (ctx, model) => {
 };
 
 export const renderMissionHud = (ctx, model) => {
-  const run = model.director.missionRuntime?.snapshot();
+  const run = model.director.missionRuntime?.snapshot(model.simulation.state);
   if (!run) return;
   panel(ctx, { x: 8, y: 62, width: 404, height: 59 });
   text(ctx, run.label, 20, 78, 10, run.phase === "warning" ? C.brass : C.cyan, "left", 700);
-  text(ctx, `${Math.ceil(run.remaining)}s`, 397, 78, 11, C.ivory, "right", 700);
+  text(ctx, run.counter, 397, 78, 11, C.ivory, "right", 700);
   wrap(ctx, run.phase === "warning" ? run.threat : run.hint, 20, 98, 374, 10, C.ivory, 13);
 };

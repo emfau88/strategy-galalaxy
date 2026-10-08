@@ -70,7 +70,8 @@ const unitTargetCandidates = (state, unit, positions = null) => {
     .map((id) => state.units.get(id))
     .filter((candidate) => candidate?.alive
       && !candidate.launching
-      && (isHostileUnitAhead(unit, candidate, positions)
+      && ((unit.team === TEAM.PLAYER && Number.isFinite(state.map.defenseLineY))
+        || isHostileUnitAhead(unit, candidate, positions)
         || (friendlyHq && inRange(positioned(friendlyHq, positions), positioned(candidate, positions), homeDefenseRange)))
       && inRange(positioned(unit, positions), positioned(candidate, positions), definition.aggroRange));
   const current = getEntity(state, unit.targetId);

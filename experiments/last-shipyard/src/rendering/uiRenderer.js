@@ -1,3 +1,4 @@
+import { renderAbilityHud } from "./abilityRenderer.js";
 import { renderCampaignMenu, renderCampaignResult, renderMissionHud } from "./campaignRenderer.js";
 import { EXPERIMENT } from "../experiment.js";
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
@@ -112,8 +113,8 @@ const header = (ctx, model, ui) => {
   text(ctx, incomeLabel, 18, 44, 8, C.text);
   text(ctx, model.mission ? "DRONE" : "NEXT WAVE", 158, 22, 9, C.text, "center");
   text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, 158, 42, 14, C.text, "center");
-  text(ctx, `${Math.round(ratio(enemyHq) * 100)}%  ${model.mission ? "GEGNER" : "RIVAL"}`, 280, 22, 10, C.enemy, "right");
-  miniBar(ctx, 280, 31, 72, ratio(enemyHq), C.enemy, "right");
+  text(ctx, model.mission?.kind === "defense" ? `ABGEWEHRT ${model.director.missionRuntime.defeatedAttacks}/3` : `${Math.round(ratio(enemyHq) * 100)}%  ${model.mission ? "GEGNER" : "RIVAL"}`, 280, 22, 10, C.enemy, "right");
+  miniBar(ctx, 280, 31, 72, model.mission?.kind === "defense" ? model.director.missionRuntime.defeatedAttacks / 3 : ratio(enemyHq), C.enemy, "right");
   const fleetCount = model.simulation?.state.lanes.get(model.selectedLaneId)?.unitIds.get(TEAM.PLAYER).length ?? 0;
   text(ctx, model.mission ? `FLOTTE ${fleetCount}/${model.director.config.caps.unitsPerLaneTeam}` : "LIVE DEPLOY", 280, 44, 9, C.muted, "right", 600);
   box(ctx, COMMAND_UI.pause, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
@@ -520,7 +521,7 @@ export const renderUiLayer = (ctx, model) => {
   if ((model.state === MATCH_STATE.LIVE_MATCH || model.state === MATCH_STATE.PAUSED) && model.simulation) {
     strategicNavigator(ctx, model);
     commandPanel(ctx, model, ui);
-    if (model.mission) renderMissionHud(ctx, model);
+    if (model.mission) { renderMissionHud(ctx, model); renderAbilityHud(ctx, model); }
     if (model.state === MATCH_STATE.PAUSED) paused(ctx, model);
   } else if ([MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(model.state)) endState(ctx, model);
   if (model.debugEnabled && model.lastAiDecision) text(ctx, `QA · AI ${laneName(model.lastAiDecision.defenseLane)} HOLD / ${laneName(model.lastAiDecision.pushLane)} PUSH`, model.width / 2, ui.debugY, 8, "#b8afcf", "center");

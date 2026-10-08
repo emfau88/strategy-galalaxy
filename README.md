@@ -2,7 +2,7 @@
 
 **[🧪 Die letzte Werft – Testkampagne spielen](https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/)**
 
-Eigener Spielstand. Aktuell spielbar: zwei gestaltete Missionen („Erstkontakt“); weitere Einsätze sind Vorschauen. [Lokal starten](experiments/last-shipyard/README.md) · [Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Bulk 2: Erstkontakt und Schwerer Widerstand sind spielbar. Aegis wird ab Bulk 3 eingesetzt.
+Eigener Spielstand. Aktuell spielbar: Kapitel 1 mit „Erstkontakt“, „Schwerer Widerstand“ und „Hafen im Feuer“. Eigenes Werft-Menü, Bomber-/Aegis-/Fregattenfreischaltung und drei vollständig abzuwehrende Angriffe. Missionen 4–6 sind Vorschauen. [Lokal starten](experiments/last-shipyard/README.md) · [Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Version 0.0.4-bulk3; menschlicher Ersttest noch offen.
 
 **[▶ Strategy Galalaxy spielen](https://emfau88.github.io/strategy-galalaxy/)**
 

@@ -16,8 +16,9 @@ import { commandActionAt, commandUiBottomInset, containsPoint, endActionAt, paus
 import { cameraNavigatorRatioAt } from "./ui/cameraUi.js";
 import { AI_PROFILES } from "./simulation/opponentAi.js";
 import { CLASSIC_LANES, ORBITAL_GARDEN, UNIT_DEFINITIONS } from "./data/definitions.js";
-import { missionById, missionMatchOptions, missionUnlocked, nextMission } from "./data/campaign.js";
+import { missionById, missionMatchOptions, missionUnlocked, nextMission, missionForProgress } from "./data/campaign.js";
 import { CampaignProgress } from "./campaign/progress.js";
+import { abilityActionAt } from "./ui/abilityUi.js";
 import { campaignActionAt, campaignResultActionAt } from "./ui/campaignUi.js";
 
 const parseCssPixels = (value) => Number.parseFloat(value) || 0;
@@ -181,6 +182,10 @@ export class Game {
         return;
       }
     }
+    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && this.match.aegis?.equipped) {
+      const ability = abilityActionAt(input);
+      if (ability) { this.executeCommandAction(ability); this.syncMatchState(); return; }
+    }
     if (this.handleCameraInput(input)) return;
     if (input.kind !== "down") return;
     this.sound.unlock().catch(() => {});
@@ -246,6 +251,7 @@ export class Game {
     else if (action.type === "OPEN_SETTINGS") this.menuScreen = "settings";
     else if (action.type === "MENU_BACK") this.menuScreen = this.menuScreen === "briefing" ? "missions" : "main";
     else if (action.type === "TOGGLE_SOUND") this.sound.toggleMuted();
+    else if (action.type === "TOGGLE_AEGIS") this.campaign.toggleAegis();
     else if (action.type === "OPEN_SKIRMISH") {
       const mapDefinition = LEVELS[this.levelIndex];
       this.match = new MatchDirector({ config: configForMap(mapDefinition), mapDefinition });
@@ -262,7 +268,7 @@ export class Game {
   }
 
   startMission() {
-    const mission = missionById(this.selectedMissionId);
+    const mission = missionForProgress(missionById(this.selectedMissionId), this.campaign.data.completed);
     if (this.menuScreen !== "briefing" || this.match.state !== MATCH_STATE.TITLE
       || !mission?.available || !missionUnlocked(mission, this.campaign.data.completed)) return false;
     if (!this.levelAssetsReady(mission.map)) {
@@ -271,7 +277,7 @@ export class Game {
       });
       return false;
     }
-    this.match = new MatchDirector(missionMatchOptions(mission));
+    this.match = new MatchDirector({ ...missionMatchOptions(mission), equippedAbility: this.campaign.data.equipment.ability });
     this.selectedLaneId = mission.map.lanes[0].id;
     this.commandMenu = "units";
     this.setCommandDockOpen(false);
@@ -300,6 +306,7 @@ export class Game {
   startSelectedMatch() {
     if (this.match.state !== MATCH_STATE.TITLE) return false;
     this.match.start();
+    this.syncCommandViewport();
     this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
     this.camera.reset("player");
     this.effects.reset();
@@ -425,6 +432,14 @@ export class Game {
 
   executeCommandAction(action) {
     if (!action) return;
+    if (action.type === "FOCUS_CARRIER") { this.camera.reset("player"); this.sound.play("select"); return; }
+    if (action.type === "ACTIVATE_AEGIS") {
+      const result = this.match.executeCommand({ ...action, team: TEAM.PLAYER, laneId: this.selectedLaneId });
+      this.showFeedback(result.ok ? "AEGIS AKTIV · 6 SEKUNDEN SCHUTZ" : this.commandFailureLabel(result.reason));
+      this.sound.play(result.ok ? "purchase" : "error");
+      if (result.ok) this.sound.vibrate([12, 20, 12]);
+      return;
+    }
     if (action.type === "FOCUS_FRONT") {
       const units = [...this.match.simulation.state.units.values()].filter(unit => unit.alive && unit.team === TEAM.PLAYER);
       const engaged = units.filter(unit => unit.targetId);
@@ -468,6 +483,7 @@ export class Game {
       return `ZU WENIG PLATZ · ${count}/${this.match.config.caps.unitsPerLaneTeam}`;
     }
     if (this.match.mission) return {
+      ABILITY_COOLDOWN: "AEGIS LÄDT NOCH", ABILITY_NOT_EQUIPPED: "AEGIS NICHT AUSGERÜSTET",
       INSUFFICIENT_ENERGY: "NICHT GENUG ENERGIE", COOLDOWN_ACTIVE: "EINHEIT LÄDT NACH",
       MISSION_LOCKED_UNIT: "IN DIESER MISSION NICHT VERFÜGBAR", MISSION_LOCKED_UPGRADE: "FORSCHUNG FOLGT SPÄTER",
     }[reason] ?? "BEFEHL NICHT VERFÜGBAR";
@@ -481,7 +497,7 @@ export class Game {
 
   syncCommandViewport() {
     if (!this.camera) return;
-    const topInset = this.match.mission ? 126 : CONFIG.camera.battlefieldTopInset;
+    const topInset = this.match.mission ? this.match.aegis?.equipped ? 180 : 126 : CONFIG.camera.battlefieldTopInset;
     if (this.camera.config.battlefieldTopInset !== topInset) {
       this.camera.config = { ...CONFIG.camera, battlefieldTopInset: topInset };
       this.camera.resize(this.camera.designWidth, this.camera.designHeight);

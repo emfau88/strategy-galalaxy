@@ -1,3 +1,4 @@
+import { AegisSystem } from "../campaign/aegisSystem.js";
 import { MissionRuntime } from "../campaign/missionRuntime.js";
 import { CONFIG } from "../config.js";
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
@@ -13,11 +14,13 @@ import { CLASSIC_LANES, isMapFeatureEnabled } from "../data/definitions.js";
 
 /** Coordinates a continuous match; specialized systems own combat, economy, capture, and deployment. */
 export class MatchDirector {
-  constructor({ config = CONFIG, mapDefinition = CLASSIC_LANES, aiProfile = AI_PROFILES.TACTICIAN, aiPreferredLane = null, aiInvestmentBias = INVESTMENT_BIASES.BALANCED, mission = null } = {}) {
+  constructor({ config = CONFIG, mapDefinition = CLASSIC_LANES, aiProfile = AI_PROFILES.TACTICIAN, aiPreferredLane = null, aiInvestmentBias = INVESTMENT_BIASES.BALANCED, mission = null, equippedAbility = null } = {}) {
     this.config = { ...config, balance: { ...config.balance, ...(mapDefinition.balanceOverrides ?? {}) } };
     this.mapDefinition = mapDefinition;
     this.mission = mission;
     this.missionRuntime = null;
+    this.equippedAbility = equippedAbility;
+    this.aegis = null;
     this.aiProfile = aiProfile;
     this.aiPreferredLane = aiPreferredLane ?? mapDefinition.lanes[0].id;
     this.aiInvestmentBias = aiInvestmentBias;
@@ -48,6 +51,8 @@ export class MatchDirector {
     this.liveDeployment = new LiveDeploymentSystem({ config: this.config });
     this.events = [{ type: "MATCH_STARTED", state: this.state }];
     this.missionRuntime = this.mission ? new MissionRuntime(this.mission) : null;
+    this.aegis = new AegisSystem(Boolean(this.mission && this.equippedAbility === "aegis"));
+    this.simulation.protection = this.aegis;
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
     this.lastAiDecision = null;
     this.aiDecisionRemaining = 0;
@@ -60,6 +65,12 @@ export class MatchDirector {
   }
 
   executeCommand(command) {
+    if (command?.type === "ACTIVATE_AEGIS") {
+      if (command.team !== TEAM.PLAYER) return { ok: false, reason: "INVALID_TEAM_OR_LANE" };
+      const result = this.aegis?.activate(this, command.laneId) ?? { ok: false, reason: "ABILITY_NOT_EQUIPPED" };
+      if (result.ok) this.missionRuntime.aegisUsed = true;
+      return result;
+    }
     const result = this.commands.execute(this, command);
     if (result.ok && command.team === TEAM.PLAYER && command.type === "DEPLOY_UNIT") this.missionRuntime?.notePurchase(command.unitType);
     return result;
@@ -76,18 +87,14 @@ export class MatchDirector {
     if (this.state !== MATCH_STATE.LIVE_MATCH) return false;
     this.economy.advance(this.simulation.state, step, this.activeMatchSeconds);
     this.liveDeployment.advance(step);
+    this.aegis?.advance(step);
     this.simulation.step(step);
     this.capture?.advance(this.simulation.state, step);
     this.activeMatchSeconds += step;
 
-    if (this.simulation.state.terminalTeam) {
-      this.state = this.simulation.state.terminalTeam === TEAM.PLAYER
-        ? MATCH_STATE.VICTORY
-        : this.simulation.state.terminalTeam === TEAM.ENEMY ? MATCH_STATE.DEFEAT : MATCH_STATE.DRAW;
-      this.missionRuntime?.finish();
-      this.events.push({ type: "MATCH_ENDED", state: this.state, cycle: this.cycle });
-      return true;
-    }
+    const goal = this.missionRuntime?.evaluateGoal(this);
+    if (goal) return this.finishMission(goal.team, goal.reason);
+    if (this.simulation.state.terminalTeam) return this.finishMission(this.simulation.state.terminalTeam, "CARRIER_DESTROYED");
 
     this.missionRuntime?.advance(this, step);
     this.aiDecisionRemaining -= step;
@@ -100,6 +107,15 @@ export class MatchDirector {
 
     if (!this.deployment.advance(step)) return liveDecision;
     this.deployWaves();
+    return true;
+  }
+
+  finishMission(team, reason) {
+    if (this.state !== MATCH_STATE.LIVE_MATCH) return false;
+    this.state = team === TEAM.PLAYER ? MATCH_STATE.VICTORY : team === TEAM.ENEMY ? MATCH_STATE.DEFEAT : MATCH_STATE.DRAW;
+    this.simulation.state.terminalTeam = team;
+    this.missionRuntime?.finish(); this.aegis?.cancel();
+    this.events.push({ type: "MATCH_ENDED", state: this.state, reason, cycle: this.cycle });
     return true;
   }
 
@@ -158,6 +174,8 @@ export class MatchDirector {
     if (this.state === MATCH_STATE.TITLE) return false;
     this.state = MATCH_STATE.TITLE;
     this.resumeState = null;
+    this.aegis?.cancel();
+    this.missionRuntime = null;
     this.simulation = null;
     this.activeMatchSeconds = 0;
     this.events.push({ type: "RETURNED_TO_TITLE" });

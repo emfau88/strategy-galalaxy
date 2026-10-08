@@ -383,7 +383,12 @@ export class BattleSimulation {
     if (!engaged) {
       const node = unit.unitType === "scout" ? [...this.state.nodes.values()].find((item) => item.laneId === unit.laneId) : null;
       const nodeAhead = node && (node.y - unit.y) * forwardDirection(unit.team) >= -node.radius;
-      if (nodeAhead && node.ownerTeam !== unit.team) {
+      if (unit.team === TEAM.PLAYER && Number.isFinite(this.state.map.defenseLineY)) {
+        const lane = this.state.map.lanes.find(item => item.id === unit.laneId);
+        const holdY = this.state.map.defenseLineY + unit.slotOffsetY;
+        if (Math.abs(unit.y - holdY) < 15) unit.state = UNIT_STATE.HOLDING;
+        this.steerUnit(unit, { x: lane.centerX + unit.slotOffsetX, y: holdY, separationVx }, motionDefinition, dt);
+      } else if (nodeAhead && node.ownerTeam !== unit.team) {
         const dx = node.x - unit.x;
         const dy = node.y - unit.y;
         const magnitude = Math.hypot(dx, dy) || 1;
@@ -697,10 +702,12 @@ export class BattleSimulation {
       const target = getEntity(this.state, event.targetId);
       if (!target?.alive || target.team === event.ownerTeam) continue;
       const availableShield = target.structureType ? 0 : target.shield ?? 0;
-      const absorbedDamage = Math.min(availableShield, event.damage);
+      const abilityAbsorption = this.protection?.absorbedDamage(target, event.damage) ?? 0;
+      const shieldAbsorption = Math.min(availableShield, event.damage - abilityAbsorption);
+      const absorbedDamage = shieldAbsorption + abilityAbsorption;
       const hullDamage = event.damage - absorbedDamage;
       if (absorbedDamage > 0) {
-        target.shield = Math.max(0, target.shield - absorbedDamage);
+        target.shield = Math.max(0, (target.shield ?? 0) - shieldAbsorption);
         target.lastShieldHitAt = this.state.time;
         const fallbackImpactAngle = Math.atan2(-(event.incomingVy ?? 0), -(event.incomingVx ?? 1));
         target.lastShieldImpactAngle = Number.isFinite(event.impactX) && Number.isFinite(event.impactY)
@@ -723,7 +730,7 @@ export class BattleSimulation {
       emitSimulationEvent(this.state, { type: "destroyed", entityId: target.id, x: target.x, y: target.y, heading: target.heading, team: target.team, laneId: target.laneId, entityType: target.structureType ?? target.unitType });
       if (target.structureType === "hq") headquartersDestroyed = true;
     }
-    if (headquartersDestroyed) {
+    if (headquartersDestroyed && !this.config.rules?.missionOwnsVictory) {
       const playerHq = this.state.structures.get("player-hq");
       const enemyHq = this.state.structures.get("enemy-hq");
       if (!playerHq?.alive && !enemyHq?.alive) this.state.terminalTeam = TEAM.DRAW;

@@ -18,3 +18,7 @@ Genau ein repräsentativer regulärer Kaufablauf pro Mission erreicht den Sieg: 
 ## Grenzen
 
 Die Zahlen sind Startwerte; die beiden optimal eingekauften technischen Durchläufe sind kürzer als das langfristige Ziel von drei bis sechs Minuten. Menschliche Spielbeobachtung soll über Druck und Länge entscheiden. Die Werft hat zunächst Statusanzeigen über einem gemeinsamen Motiv; ein eigenes Ausrüstungsmenü folgt später. Missionen 3–6 sind noch Vorschauen. Die eigenständige Verteidigungsbedingung und Aegis folgen in Bulk 3.
+
+## Veröffentlichung bestätigt
+
+Commit 3510995 wurde am 8. Oktober 2026 separat auf main und codex/last-shipyard gepusht. [Pages-Run 37821796443](https://github.com/emfau88/strategy-galalaxy/actions/runs/37821796443) erfolgreich. Beide öffentlichen Fassungen haben den Browser-Smoke bestanden; Menü, Kauf, Pause, Rückkehr, Reload und Speichertrennung funktionieren am tatsächlichen Play-Link.

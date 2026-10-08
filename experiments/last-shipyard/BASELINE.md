@@ -28,7 +28,7 @@ Bulk 1 darf den gemeinsamen Site-Build und den bestehenden zentralen Pages-Workf
 
 - Fortschritt: strategy-galalaxy:last-shipyard:v1:progress (Schema version: 1, completed, lastMissionId).
 - Sound: strategy-galalaxy:last-shipyard:v1:sound-muted (Boolean als String).
-- Ausrüstung wird erst bei ihrer Einführung mit eigener Schema-Version ergänzt.
+- Ausrüstung seit Bulk 3: equipment mit eigener version: 1 innerhalb des progress-Schemas. ability ist null oder aegis; Freischaltung wird aus dem Missionsfortschritt validiert. Alte version-1-Spielstände bleiben lesbar.
 - Kein Service Worker, kein globaler Reset und keine Classic-Migration.
 
 ## Abnahme
@@ -46,3 +46,5 @@ Keine Balance-Testserien, keine echte Smartphone-Abnahme und keine Veröffentlic
 ## Weiterentwicklung ab Bulk 2
 
 Die importierten 51 Bilder bleiben unverändert. Die Runtime-Kopie darf jetzt gezielt Missionsregeln und Darstellung entwickeln; nur Classic bleibt an die ursprüngliche Runtime-Baseline gebunden. Neue Key-Art ist in [generated-assets.json](provenance/generated-assets.json) mit Quelle, Auftrag und SHA-256 dokumentiert.
+
+Bulk 3 erweitert nur die isolierte Runtime: Missionsentscheidung aus Kampfereignissen, defensive Haltepositionen, temporäre Aegis-Schadensminderung und gespeicherte Ausrüstung. Die Classic-Dateien und importierten Bilder bleiben unverändert.

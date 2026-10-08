@@ -6,6 +6,7 @@ export const campaignUiLayout = (height = 760) => {
   const rect = (x, y, width, h) => ({ x, y: y + offset, width, height: h });
   return { campaign: rect(44, 530, 332, 52), settings: rect(44, 594, 332, 46),
     panel: rect(28, 262, 364, 292), sound: rect(58, 365, 304, 48),
+    equipment: rect(48, 535, 324, 44),
     back: rect(44, 684, 332, 46), start: rect(44, 614, 332, 52),
     missions: MISSIONS.map((mission, i) => ({ ...rect(28, 280 + i * 58, 364, 52), missionId: mission.id })) };
 };
@@ -17,6 +18,7 @@ export const campaignActionAt = (point, screen, height = 760) => {
   } else {
     if (containsPoint(ui.back, point)) return { type: "MENU_BACK" };
     if (screen === "settings" && containsPoint(ui.sound, point)) return { type: "TOGGLE_SOUND" };
+    if (screen === "briefing" && containsPoint(ui.equipment, point)) return { type: "TOGGLE_AEGIS" };
     if (screen === "briefing" && containsPoint(ui.start, point)) return { type: "START_MISSION" };
     if (screen === "missions") {
       const mission = ui.missions.find(rect => containsPoint(rect, point));
