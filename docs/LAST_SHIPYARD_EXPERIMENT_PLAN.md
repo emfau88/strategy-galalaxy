@@ -1,8 +1,8 @@
 # Die letzte Werft – Plan für eine isolierte Testkampagne
 
-Stand: 8. Oktober 2026. **Status: Bulk 0 und Bulk 1 abgeschlossen. Beide Fassungen sind veröffentlicht und geprüft. Bulk 2–7 sind offen.**
+Stand: 8. Oktober 2026. **Status: Bulk 0–2 abgeschlossen; Bulk 3 technisch umgesetzt. Drei Missionen, Aegis und Kapitelabschluss sind spielbar. Der Ersttest mit ein bis zwei Personen bleibt offen. Bulk 4–6 sind offen.**
 
-Arbeitsbranch: `codex/last-shipyard`. [Lokaler Einstieg und Befehle](https://github.com/emfau88/strategy-galalaxy/blob/main/experiments/last-shipyard/README.md) · [Herkunft und Abnahme](https://github.com/emfau88/strategy-galalaxy/blob/main/experiments/last-shipyard/BASELINE.md). Die folgenden Bulks sind weiterhin offen.
+Arbeitsbranch: `codex/last-shipyard`. [Lokaler Einstieg und Befehle](https://github.com/emfau88/strategy-galalaxy/blob/main/experiments/last-shipyard/README.md) · [Herkunft und Abnahme](https://github.com/emfau88/strategy-galalaxy/blob/main/experiments/last-shipyard/BASELINE.md). Umgesetzte Maßnahmen und offene Abnahmen sind unten einzeln gekennzeichnet.
 
 ## 1. Entscheidung und Ziel
 
@@ -99,7 +99,7 @@ Die bewusste Codekopie ist für dieses begrenzte Experiment akzeptabel. Erfolgre
 | Bisheriges Spiel | `https://emfau88.github.io/strategy-galalaxy/` |
 | Die letzte Werft | `https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/` |
 
-Beide Links sind **seit Bulk 1 live**. Aktuell enthält die Testkampagne eine vorläufige spielbare Mission. [Abnahme und Deployment](https://github.com/emfau88/strategy-galalaxy/blob/main/docs/LAST_SHIPYARD_BULK1_REPORT.md).
+Beide Links sind **seit Bulk 1 live**. Aktuell enthält die Testkampagne drei gestaltete Missionen. [Abnahme und Deployment](https://github.com/emfau88/strategy-galalaxy/blob/main/docs/LAST_SHIPYARD_BULK1_REPORT.md).
 
 GitHub Pages bietet eine Projektwebsite pro Repository. Deshalb werden die beiden Fassungen als Unterverzeichnisse **eines gemeinsamen Artefakts** veröffentlicht. Ein Branch allein erzeugt keine zweite Pages-Website. Grundlage: [GitHub Pages – Website-Typen](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages).
 
@@ -130,10 +130,10 @@ Feature-Branches bauen und prüfen Artefakte. Die Veröffentlichung erfolgt nach
 - [▶ Bisheriges Spiel](https://emfau88.github.io/strategy-galalaxy/)
 - [🧪 Die letzte Werft – Testkampagne](https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/)
 
-Die Testkampagne besitzt einen eigenen Spielstand. Aktuell spielbar: eine vorläufige Mission („Erstkontakt“).
+Die Testkampagne besitzt einen eigenen Spielstand. Aktuell spielbar: drei Missionen („Erstkontakt“, „Schwerer Widerstand“, „Hafen im Feuer“).
 ```
 
-Die README auf main enthält beide Play-Links und nennt eine spielbare Mission. Die Missionszahl wird bei weiteren Veröffentlichungen an die tatsächlich spielbaren Inhalte angepasst.
+Die README auf main enthält beide Play-Links und nennt drei spielbare Missionen. Die Missionszahl wird bei weiteren Veröffentlichungen an die tatsächlich spielbaren Inhalte angepasst.
 
 Für lokale Arbeit startet `npm run dev:werft` das Experiment auf `127.0.0.1:7101`. Nach `npm run build:pages` startet `npm run preview` die gemeinsame Vorschau auf Port 7102 unter `/strategy-galalaxy/` und dessen Experiment-Unterpfad. Der neue Vorschau-Server löst Verzeichnisse auf ihre index.html auf und ergänzt fehlende abschließende Slashes. Der gezielte Browsercheck wurde lokal und öffentlich ausgeführt.
 
@@ -158,7 +158,7 @@ Die Heimatwerft ist der Ausgangspunkt. Nach jedem Einsatz wird ein Teil ihres Um
 - Vier Grundklassen bleiben verständlich. Die Bomber-Variante wird vor dem Einsatz gewählt und kostenlos gewechselt.
 - Standardbomber haben volle Belagerungswirkung; Ionenbomber tauschen einen Teil davon gegen eine kurze Waffenunterbrechung bei gegnerischen Schiffen. Fähigkeiten und Statusanzeigen sollen dafür dieselben klaren Regeln nutzen.
 - Pro Mission wird genau eine Carrier-Fähigkeit ausgerüstet. Anfangs gibt es nur Aegis, später eine echte Wahl.
-- Aegis schützt eigene Schiffe in der gewählten Lane kurzzeitig. Es repariert den Carrier nicht dauerhaft.
+- Aegis schützt den eigenen Carrier und eigene Schiffe in der gewählten Lane sechs Sekunden lang vor 60 % des Schadens. Es kostet 80 E und hat 28 Sekunden Cooldown. Es repariert keine Hülle und erzeugt keine permanente Aufrüstung.
 - Störimpuls unterbricht gegnerische Schiffswaffen kurz. Relais und Carrier sind zunächst immun; so bleibt der Bomber als Belagerungswerkzeug relevant.
 - Beide Fähigkeiten kosten Energie und besitzen einen sichtbaren Cooldown. Fehlgeschlagene Auslösung kostet nichts. Ihre Bedienung benötigt kein pixelgenaues Zielen.
 - Ein Neustart verliert keine Freischaltungen. Es gibt keine Reparaturkosten oder dauerhaften Verluste zwischen Missionen.
@@ -226,13 +226,13 @@ Jeder Bulk endet mit einem überschaubaren Commit beziehungsweise PR, einem spie
 
 **Ziel:** Aus dem Gerüst wird ein zusammenhängender Kampagnenbeginn.
 
-- [ ] Heimatwerft-Key-Art, Emblem und kleine Sektorkarte mit sechs Positionen gestalten. Noch nicht gebaute Einsätze werden als solche gekennzeichnet.
-- [ ] Menü, Briefing, Ergebnis und garantierte Freischaltung als einheitlichen Ablauf verbinden.
-- [ ] Ein kleines Missionssystem für Einstieg, Warnung, Angriff, Erholung und Abschluss einführen. Keine universelle Skriptsprache bauen.
-- [ ] Spieler- und Gegnerarsenal getrennt definieren; Aufstellungen und Ressourcenbesonderheiten im Briefing sichtbar machen.
-- [ ] KI-Kaufabsichten missionsbezogen steuern, weiterhin über reguläre Spielbefehle.
-- [ ] Mission 1 mit verständlichen Hinweisen nach Spieleraktionen gestalten; Mission 2 auf geschützte Bomber und wenige schwere Gegner ausrichten.
-- [ ] Kaufoptionen kompakt halten, wichtige Front wiederfinden und einen echten Freischaltungsmoment nach dem Sieg zeigen.
+- [x] Heimatwerft-Key-Art, Emblem und kleine Sektorkarte mit sechs Positionen gestalten. Noch nicht gebaute Einsätze werden als solche gekennzeichnet.
+- [x] Menü, Briefing, Ergebnis und garantierte Freischaltung als einheitlichen Ablauf verbinden.
+- [x] Ein kleines Missionssystem für Einstieg, Warnung, Angriff, Erholung und Abschluss einführen. Keine universelle Skriptsprache bauen.
+- [x] Spieler- und Gegnerarsenal getrennt definieren; Aufstellungen und Ressourcenbesonderheiten im Briefing sichtbar machen.
+- [x] KI-Kaufabsichten missionsbezogen steuern, weiterhin über reguläre Spielbefehle.
+- [x] Mission 1 mit verständlichen Hinweisen nach Spieleraktionen gestalten; Mission 2 auf geschützte Bomber und wenige schwere Gegner ausrichten.
+- [x] Kaufoptionen kompakt halten, wichtige Front wiederfinden und einen echten Freischaltungsmoment nach dem Sieg zeigen.
 
 **Abnahme:** Beide Missionen unterscheiden sich erkennbar. Der Spieler kann erklären, warum und wann ein Bomber hilft. Der Abschluss schaltet den erwarteten Inhalt frei und bleibt nach Reload gespeichert.
 
@@ -242,13 +242,15 @@ Jeder Bulk endet mit einem überschaubaren Commit beziehungsweise PR, einem spie
 
 **Ziel:** Der Carrier wird zu einer aktiven Entscheidung; die Kampagne bekommt ihr erstes anderes Missionsziel.
 
-- [ ] Missionsziele von der bisherigen ausschließlichen HQ-Siegbedingung lösen. Kampfereignisse melden Zerstörungen; der Missionsablauf entscheidet genau einmal über Erfolg oder Scheitern. Der bisherige Terminalzustand der Simulation darf neue Ziele nicht vorzeitig beenden oder einfrieren.
-- [ ] Für Verteidigung festlegen: eigene Carrier-Zerstörung bedeutet Niederlage; drei vollständig abgewehrte angekündigte Angriffe bedeuten Sieg. Angriffszähler und Abschluss sind sichtbar.
-- [ ] Aegis mit Kosten, Cooldown, begrenzter Schutzwirkung und klarer Aktivierungsanzeige umsetzen.
-- [ ] Aegis ab Abschluss von Mission 2 tatsächlich ausrüstbar machen; Mission 3 führt seine Anwendung verständlich ein.
-- [ ] Pause, Wiederholen und Missionsende beenden beziehungsweise halten Fähigkeitseffekte korrekt an. Temporärer Schutz erzeugt keine dauerhafte Aufrüstung.
-- [ ] Mission 3 „Hafen im Feuer“ inklusive Ergebnis, Fregattenfreischaltung und zweitem Werftzustand fertigstellen.
+- [x] Missionsziele von der bisherigen ausschließlichen HQ-Siegbedingung lösen. Kampfereignisse melden Zerstörungen; der Missionsablauf entscheidet genau einmal über Erfolg oder Scheitern. Der bisherige Terminalzustand der Simulation darf neue Ziele nicht vorzeitig beenden oder einfrieren.
+- [x] Für Verteidigung festlegen: eigene Carrier-Zerstörung bedeutet Niederlage; drei vollständig abgewehrte angekündigte Angriffe bedeuten Sieg. Angriffszähler und Abschluss sind sichtbar.
+- [x] Aegis mit Kosten, Cooldown, begrenzter Schutzwirkung und klarer Aktivierungsanzeige umsetzen.
+- [x] Aegis ab Abschluss von Mission 2 tatsächlich ausrüstbar machen; Mission 3 führt seine Anwendung verständlich ein.
+- [x] Pause, Wiederholen und Missionsende beenden beziehungsweise halten Fähigkeitseffekte korrekt an. Temporärer Schutz erzeugt keine dauerhafte Aufrüstung.
+- [x] Mission 3 „Hafen im Feuer“ inklusive Ergebnis, Fregattenfreischaltung und zweitem Werftzustand fertigstellen.
 - [ ] Den Anfang mit ein bis zwei Personen spielen lassen und beobachtete Verständlichkeitsprobleme gezielt beheben.
+
+**Umsetzungsstand:** Technik und Browserablauf geprüft. Die sechs technischen Punkte sind erledigt; menschliche Verständlichkeit und tatsächliches Smartphone-Erlebnis sind noch nicht abgenommen. [Bericht Bulk 3](https://github.com/emfau88/strategy-galalaxy/blob/main/docs/LAST_SHIPYARD_BULK3_REPORT.md).
 
 **Abnahme:** Angriff und Verteidigung enden zuverlässig nach ihrer jeweiligen Regel. Aegis verändert eine beobachtbare Kampfsituation. Nach drei Missionen besteht ein verständlicher kleiner Spannungsbogen.
 
@@ -325,6 +327,10 @@ Eine aufwendigere Balanceprüfung kommt erst bei stabilen Inhalten und einem kon
 | Flottenentwicklung | 4 | Fünf Missionen, zwei Lanes, Ionenbomber und Carrier-Auswahl |
 | Vollständiges Experiment | 5–6 | Sechs Missionen, Schildnetz-Finale, kompakte Abnahme und Ergebnisbericht |
 
-**Abgeschlossen:** Bulk 0 mit isoliertem Kampagnenkern, eigener Speicherung und Herkunftsnachweisen; Bulk 1 mit gemeinsamem Pages-Build, zentralem Workflow, zwei öffentlichen Play-Links und Abnahme. Die vorhandene vorläufige Erstkontakt-Mission ist spielbar. Classic-Runtime und Classic-Ausgabe entsprechen weiterhin der festgehaltenen Basis ed8802b. Neue Kampagnenmechaniken und neue Assets beginnen erst mit den folgenden Bulks.
+**Abgeschlossen:** Bulk 0–1: Isolation, gemeinsamer Build und öffentlicher Play-Link. Bulk 2: eigenständiges Werftmotiv, Missionsrhythmus, zwei gestaltete Angriffe und Bomber-Bauplan. [Abnahme Bulk 2](https://github.com/emfau88/strategy-galalaxy/blob/main/docs/LAST_SHIPYARD_BULK2_REPORT.md); erfolgreicher Pages-Run [37821796443](https://github.com/emfau88/strategy-galalaxy/actions/runs/37821796443), Commit 3510995, beide öffentlichen Fassungen im Browser geprüft.
 
-**Nächster Schritt:** Bulk 2 – eigener visueller Einstieg, Missionsablauf und zwei gestaltete Angriffsmissionen. Bulk 2 wurde noch nicht begonnen.
+**Bulk 3 technisch umgesetzt:** Hafenverteidigung mit drei vollständig abgewehrten Angriffen; eine eigene, verlustpriorisierende Missionsentscheidung; temporäres Aegis; gespeicherte Ausrüstung; Fregatte nach dem dritten Sieg auch in Wiederholungen der Missionen 2–3 verfügbar; sichtbare Dock-/Hafenprogression. [Abnahme und Grenzen](https://github.com/emfau88/strategy-galalaxy/blob/main/docs/LAST_SHIPYARD_BULK3_REPORT.md). Veröffentlicht mit Commit 1c5b67d, [Pages-Run 37823771205](https://github.com/emfau88/strategy-galalaxy/actions/runs/37823771205) erfolgreich. Öffentliche Version 0.0.4-bulk3 einschließlich Hafenstart, Aegis-Touch und Ausrüstungs-Reload geprüft. Classic bleibt auf ed8802b.
+
+**Noch offen in Bulk 3:** Ersttest mit ein bis zwei echten Personen. Browser- und Mechanikprüfungen ersetzen ihn nicht. Es wird kein erfundener Spieltest abgehakt.
+
+**Nächster Entscheidungspunkt:** Die drei Missionen ausprobieren und Verständlichkeit, Druck und Länge beurteilen. Bulk 4–6 werden erst nach weiterer Beauftragung umgesetzt.
