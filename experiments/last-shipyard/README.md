@@ -1,6 +1,6 @@
 # Die letzte Werft – Testkampagne
 
-Version **0.0.9-v2-2**. Die neue Kampagne hat einen zusammenhängenden ersten Akt mit vier Missionen. Außenposten und Fähre bleiben frei spielbare Tests. Vier weitere Missionen sind Vorschauen; die bisherigen sechs Missionen bleiben ebenfalls spielbar.
+Version **0.0.10-opening-quality**. Fokus: drei überarbeitete Missionen mit direkter Kampfbedienung, ruhiger Darstellung und aktiver Unterstützung. Weitere Entwicklung von M4–M8 ist ausgesetzt; bisherige Inhalte und Siege bleiben erhalten. [Qualitätsauftrag](../../docs/FIRST_THREE_QUALITY_CONTRACT.md) · [Umsetzungsbericht mit Bildern](../../docs/FIRST_THREE_QUALITY_REPORT.md).
 
 ## Lokal spielen
 
@@ -10,7 +10,7 @@ Im aktuellen Repository-Stand:
 npm --prefix experiments/last-shipyard run dev
 ```
 
-Öffne http://127.0.0.1:7101/ → Kampagne starten → Neue Kampagne · Akt I spielen → Ein Licht im Schrott → Mission starten. Keine Installation zusätzlicher Pakete erforderlich. Der Server liefert ausschließlich diesen Experimentordner. Falls Port 7101 belegt ist: PORT=7102 als Umgebungsvariable setzen.
+Öffne http://127.0.0.1:7101/ → Den Hafen zurückerobern → Ein Licht im Schrott → Einsatz starten. Keine Installation zusätzlicher Pakete erforderlich. Der Server liefert ausschließlich diesen Experimentordner. Falls Port 7101 belegt ist: PORT=7102 als Umgebungsvariable setzen.
 
 Eigene Speicherstände und Soundeinstellungen; kein Import aus Classic. [Produktvorgabe](EXPERIMENT_VISION.md), [Herkunft](BASELINE.md), [Plan](../../docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md).
 
@@ -18,7 +18,7 @@ Eigene Speicherstände und Soundeinstellungen; kein Import aus Classic. [Produkt
 
 ```powershell
 npm --prefix experiments/last-shipyard run check
-npm --prefix experiments/last-shipyard run test:browser
+npm --prefix experiments/last-shipyard run test:quality:browser
 ```
 
 Der Browsercheck benötigt lokal Chrome oder Edge, verwendet ein eigenes temporäres Profil und prüft einen kurzen Start-/Kauf-/Pause-/Rückkehrablauf sowie Speicher- und Pfadtrennung unter dem veröffentlichten Unterpfad. Screenshots liegen im ignorierten tmp/. Keine Balance-Matrix.
@@ -37,6 +37,10 @@ npm run preview
 ```
 
 Die gemeinsame Vorschau läuft auf http://127.0.0.1:7102/strategy-galalaxy/ und deren Unterpfad experiments/last-shipyard/. Direktaufruf und fehlender abschließender Slash funktionieren. Der Einzelbuild des Experiments schreibt in einen eigenen temporären Ordner; der gemeinsame Build enthält die unveränderte Classic-Ausgabe plus Experiment.
+
+## Historische Ausbaustände
+
+Die folgenden Abschnitte beschreiben die jeweils damalige Lieferung. Für den heutigen Einstieg gelten der oben verlinkte Qualitätsauftrag und Bericht.
 
 ## Bulk 2
 

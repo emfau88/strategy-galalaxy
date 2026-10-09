@@ -109,7 +109,7 @@ export const planUnitTargets = (state, positions = null) => {
   const assignments = new Map();
   const targetLoads = new Map();
   const attackers = [...state.units.values()]
-    .filter((unit) => unit.alive && !unit.launching)
+    .filter((unit) => unit.alive && !unit.launching && unit.unitType !== "repair")
     .sort((left, right) => left.team.localeCompare(right.team)
       || left.laneId.localeCompare(right.laneId)
       || compareUnitOrder(left, right));

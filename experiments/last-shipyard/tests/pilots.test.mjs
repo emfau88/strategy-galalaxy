@@ -22,7 +22,7 @@ assert.equal(d.executeCommand({ type: "BUILD_STATION", team: TEAM.PLAYER, padId:
 assert.equal(d.economy.get(TEAM.PLAYER).energy, energy);
 const idle = create();
 for (let i = 0; i < 30; i++) idle.forceWave();
-assert.equal(state(idle).units.size, 2, "Waiting never fills the entire fleet with free Drones");
+assert.equal(state(idle).units.size, 0, "Waiting never fills the entire fleet with free Drones");
 assert.equal(idle.missionRuntime.triggered, false);
 assert.equal(idle.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId: idle.mapDefinition.lanes[0].id, unitType: "scout" }).ok, true);
 const built = build(d); assert.equal(built.ok, true);
@@ -52,7 +52,7 @@ capture.missionRuntime.advance(capture, .1); assert.equal(capture.missionRuntime
 scout.alive = false; const hostile = place(capture, "scout", TEAM.ENEMY);
 capture.capture.advance(state(capture), 20); assert.equal(node.ownerTeam, TEAM.ENEMY);
 hostile.alive = false; place(capture, "fighter"); capture.capture.advance(state(capture), 30); assert.equal(node.ownerTeam, TEAM.PLAYER);
-capture.missionRuntime.advance(capture, 1); assert.equal(capture.missionRuntime.remaining, 7, "Recapture does not reset the first warning");
+capture.missionRuntime.advance(capture, 1); assert.equal(capture.missionRuntime.remaining, 5, "Recapture does not reset the first warning");
 capture.missionRuntime.defeatedAttacks = 2;
 state(capture).projectiles.set("late-volley", { alive: true, ownerTeam: TEAM.ENEMY });
 assert.equal(capture.missionRuntime.evaluateGoal(capture), null, "Final hostile shot must clear");

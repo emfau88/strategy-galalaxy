@@ -12,7 +12,7 @@ import { MISSIONS } from "../src/data/campaign.js";
 import { EXPANSION_MISSIONS } from "../src/data/campaignExpansion.js";
 import { expansionUiLayout } from "../src/ui/expansionUi.js";
 import { checkPilots } from "./pilot-browser-checks.mjs";
-import { checkActOne } from "./act-one-browser-checks.mjs";
+import { checkQuality } from "./quality-browser-checks.mjs";
 import { TEAM } from "../src/core/constants.js";
 
 const browser = (process.platform === "win32"
@@ -21,8 +21,8 @@ const browser = (process.platform === "win32"
 assert.ok(browser, "Chrome or Edge required for this short browser check");
 const live = process.argv.includes("--live");
 const pilots = process.argv.includes("--pilots");
-const actOne = process.argv.includes("--act-one");
-const foundation = process.argv.includes("--foundation") || pilots || actOne;
+const quality = process.argv.includes("--quality") || process.argv.includes("--act-one");
+const foundation = process.argv.includes("--foundation") || pilots;
 const siteMode = live || process.argv.includes("--site");
 const output = resolve(experimentRoot, `../../tmp/last-shipyard-${live ? "live" : siteMode ? "bulk1" : "standalone"}`);
 await mkdir(output, { recursive: true });
@@ -138,8 +138,13 @@ try {
   await tap(ui.sound);
   assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.soundMuted)})`), "true");
   await tap(ui.back);
-  await tap(ui.campaign);
+  if (quality) await checkQuality({ evaluate, tap, capture, send, delay, waitReady });
+  await tap(ui.shipyard);
   assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "missions");
+  if (quality) {
+    await tap(ui.legacyEquipment); assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "shipyard");
+    await tap(ui.back); await tap(ui.shipyard);
+  }
   if (foundation) {
     const metadata = await (await fetch(origin + prefix + "version.json")).json();
     assert.equal(metadata.version, EXPERIMENT.version);
@@ -149,7 +154,7 @@ try {
     const oldSave = await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.progress)})`);
     const expansionUi = expansionUiLayout(transform.designHeight);
     await capture("campaign-with-v2-entry-360x800.png");
-    await tap(expansionUi.entry);
+    await tap(expansionUi.entry); await tap(expansionUi.pilots);
     assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "expansion");
     await capture("v2-overview-360x800.png");
     for (let index = 0; index < EXPANSION_MISSIONS.length; index++) {
@@ -173,12 +178,12 @@ try {
     await send("Page.reload", { ignoreCache: true }); await delay(150); await waitReady();
     assert.equal(await evaluate("window.__lastShipyard.selectedExpansionId"), EXPANSION_MISSIONS[7].id);
     assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.progress)})`), oldSave, "Preview never rewrites the old save");
-    await tap(ui.campaign);
+    await tap(ui.shipyard);
     await tap(expansionUi.entry); await tap(expansionUi.back);
     assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "missions");
   }
   if (pilots) await checkPilots({ evaluate, tap, capture, send, delay, waitReady });
-  if (actOne) await checkActOne({ evaluate, tap, capture, send, delay, waitReady });
+
   await tap(ui.missions[0]);
   assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "briefing");
   await capture("briefing-360x800.png");
@@ -200,7 +205,7 @@ try {
   await tap(overlayUiLayout(transform.designHeight).pauseMenu);
   assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "main");
   assert.equal(await evaluate("window.__lastShipyard.match.state"), "TITLE");
-  if (!live && !foundation && !process.argv.includes("--latest") && !process.argv.includes("--final")) {
+  if (!live && !foundation && !quality && !process.argv.includes("--latest") && !process.argv.includes("--final")) {
     // Verify the actual result -> next briefing -> second mission flow with legal purchases.
     const play = async () => {
       const result = await evaluate(`(() => {
@@ -218,7 +223,7 @@ try {
       })()`);
       assert.equal(result.state, 'VICTORY'); await delay(150); return result;
     };
-    await tap(ui.campaign); await tap(ui.missions[0]); await tap(ui.start);
+    await tap(ui.shipyard); await tap(ui.missions[0]); await tap(ui.start);
     await play(); await capture('mission1-unlock-360x800.png');
     const { campaignResultLayout } = await import('../src/ui/campaignUi.js');
     await tap(campaignResultLayout(transform.designHeight).next);
@@ -236,7 +241,7 @@ try {
     await send('Page.reload', {ignoreCache:true}); await delay(150); await waitReady();
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'), 'aegis');
     // Last mission remains mission 2 until mission 3 actually starts; select 3 explicitly after reload.
-    await tap(ui.campaign); await tap(ui.missions[2]);
+    await tap(ui.shipyard); await tap(ui.missions[2]);
     await capture('mission3-briefing-360x800.png');
     await send('Emulation.setDeviceMetricsOverride', {width:390,height:844,deviceScaleFactor:1,mobile:true}); await delay(150);
     await capture('mission3-briefing-390x844.png');
@@ -262,9 +267,9 @@ try {
   }
   if (!live && process.argv.includes('--latest')) {
     await evaluate("['first-contact','heavy-resistance','harbor-fire'].forEach(id=>window.__lastShipyard.campaign.complete(id))");
-    await tap(ui.shipyard); assert.equal(await evaluate('window.__lastShipyard.menuScreen'),'shipyard');
+    await tap(ui.shipyard); await tap(ui.legacyEquipment); assert.equal(await evaluate('window.__lastShipyard.menuScreen'),'shipyard');
     await capture('shipyard-loadout-360x800.png'); await tap(ui.back);
-    await tap(ui.campaign); await tap(ui.missions[3]); await capture('mission4-briefing-360x800.png'); await tap(ui.start);
+    await tap(ui.shipyard); await tap(ui.missions[3]); await capture('mission4-briefing-360x800.png'); await tap(ui.start);
     const twoLanes = await evaluate('window.__lastShipyard.match.mapDefinition.lanes.map(l=>l.id)');
     await tap(commandUiLayout(transform.designHeight,twoLanes,false).command);
     const fleet = commandUiLayout(transform.designHeight,twoLanes,true,'units',{units:['scout','fighter','bomber','frigate'],upgrades:[]});
@@ -287,17 +292,17 @@ try {
     };
     await playLatest(); await capture('ion-bomber-unlock-360x800.png');
     const {campaignResultLayout}=await import('../src/ui/campaignUi.js');
-    await tap(campaignResultLayout(transform.designHeight).menu); await tap(ui.back); await tap(ui.shipyard); await tap(ui.bomber);
+    await tap(campaignResultLayout(transform.designHeight).menu); await tap(ui.back); await tap(ui.shipyard); await tap(ui.legacyEquipment); await tap(ui.bomber);
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.bomberVariant'),'ion');
-    await capture('ion-loadout-360x800.png'); await tap(ui.back); await tap(ui.campaign); await tap(ui.missions[4]); await tap(ui.start);
+    await capture('ion-loadout-360x800.png'); await tap(ui.back); await tap(ui.shipyard); await tap(ui.missions[4]); await tap(ui.start);
     assert.equal(await evaluate('window.__lastShipyard.match.config.rules.bomberVariant'),'ion');
     await playLatest(); await capture('disruption-unlock-360x800.png');
-    await tap(campaignResultLayout(transform.designHeight).menu);await tap(ui.back);await tap(ui.shipyard);await tap(ui.ability);
+    await tap(campaignResultLayout(transform.designHeight).menu);await tap(ui.back);await tap(ui.shipyard);await tap(ui.legacyEquipment);await tap(ui.ability);
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'),'disrupt');
     await send('Page.reload',{ignoreCache:true});await delay(150);await waitReady();
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'),'disrupt');
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.bomberVariant'),'ion');
-    await tap(ui.campaign);await tap(ui.missions[4]);await tap(ui.start);
+    await tap(ui.shipyard);await tap(ui.missions[4]);await tap(ui.start);
     await evaluate('for(let i=0;i<17*60;i++)window.__lastShipyard.match.advanceLive(1/60)');
     const {abilityUiLayout}=await import('../src/ui/abilityUi.js');await tap(abilityUiLayout().aegis);
     assert.ok(await evaluate('window.__lastShipyard.match.disrupt.activeRemaining>0'));
@@ -307,10 +312,10 @@ try {
   }
   if (!live && process.argv.includes('--final')) {
     await evaluate("['first-contact','heavy-resistance','harbor-fire','split-front','the-window'].forEach(id=>window.__lastShipyard.campaign.complete(id))");
-    await tap(ui.shipyard); await tap(ui.ability); await tap(ui.ability);
+    await tap(ui.shipyard); await tap(ui.legacyEquipment); await tap(ui.ability); await tap(ui.ability);
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'),null);
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.bomberVariant'),'standard');
-    await tap(ui.back); await tap(ui.campaign); await tap(ui.missions[5]);
+    await tap(ui.back); await tap(ui.shipyard); await tap(ui.missions[5]);
     await capture('finale-briefing-360x800.png'); await tap(ui.start);
     assert.equal(await evaluate('window.__lastShipyard.match.mission.id'),'shield-network');
     const atlas = await evaluate(`(() => {const i=window.__lastShipyard.loader.get('shield-relay-atlas'),c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;const x=c.getContext('2d');x.drawImage(i,0,0);return {width:c.width,height:c.height,cornerAlpha:x.getImageData(0,0,1,1).data[3]};})()`);
@@ -339,7 +344,7 @@ try {
     await tap(COMMAND_UI.pause);await tap(overlayUiLayout(transform.designHeight).pauseMenu);
     await send('Page.reload',{ignoreCache:true});await delay(150);await waitReady();
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.completed.length'),6);
-    await capture('secured-shipyard-360x800.png');await tap(ui.shipyard);await capture('finale-badges-360x800.png');
+    await capture('secured-shipyard-360x800.png');await tap(ui.shipyard);await tap(ui.legacyEquipment);await capture('finale-badges-360x800.png');
     await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await delay(150);await capture('finale-badges-390x844.png');
     await send('Emulation.setDeviceMetricsOverride',{width:360,height:800,deviceScaleFactor:1,mobile:true});await delay(150);
     await evaluate('window.__lastShipyard.campaign.reset()');
@@ -354,12 +359,12 @@ try {
   assert.equal(await evaluate("window.__lastShipyard.sound.muted"), true);
   for (const [key, value] of Object.entries(classic)) assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(key)})`), value, "Classic storage unchanged");
   assert.ok([...requests].every(address => address.startsWith(origin + prefix) || address === origin + "/favicon.ico"), "All runtime requests stay in experiment subpath");
-  if (live && !foundation) {
+  if (live && !foundation && !quality) {
     const metadata = await evaluate("fetch('version.json?acceptance=bulk5').then(response=>response.json())");
     assert.equal(metadata.version, EXPERIMENT.version);
     assert.deepEqual(metadata.playableMissions, MISSIONS.filter(m => m.available).map(m => m.id));
     assert.equal(await evaluate("window.__lastShipyard.campaign.complete('heavy-resistance')"), true);
-    await tap(ui.campaign); await tap(ui.missions[2]); await tap(ui.start);
+    await tap(ui.shipyard); await tap(ui.missions[2]); await tap(ui.start);
     assert.equal(await evaluate('window.__lastShipyard.match.mission.id'), 'harbor-fire');
     const {abilityUiLayout} = await import('../src/ui/abilityUi.js');
     await tap(abilityUiLayout().aegis);
@@ -369,7 +374,7 @@ try {
     await send('Page.reload', {ignoreCache:true}); await delay(150); await waitReady();
     assert.equal(await evaluate('window.__lastShipyard.campaign.data.equipment.ability'), 'aegis');
     await evaluate("['harbor-fire','split-front','the-window'].forEach(id=>window.__lastShipyard.campaign.complete(id))");
-    await tap(ui.campaign);await tap(ui.missions[5]);
+    await tap(ui.shipyard);await tap(ui.missions[5]);
     // The second map has a separate asset load; wait for the real briefing readiness.
     await evaluate('(window.__lastShipyard.levelLoadPromise ?? Promise.resolve()).then(()=>true)');
     await tap(ui.start);
@@ -405,9 +410,9 @@ try {
   if (foundation) {
     report.checks = ["eight preview screens via touch", "no draft mission start", "previous/next navigation", "360x640 and 390x844 preview captures", "separate preview reload", "old save unchanged", "old campaign start/purchase/pause", "old reset retains preview", "Classic storage unchanged", "published scope metadata", "no browser errors"];
     report.completedVia = "No campaign playthroughs or balance runs; navigation and existing match controls only";
-    if (actOne) { report.checks.push("four mission campaign through next/result touch", "locked missions reject starts", "two harbor pads", "new RGBA station atlas", "Aegis protects selected-lane station", "unlock and active harbor persistence", "free pilots remain separate"); report.completedVia = "One representative Act I route through legal purchases, results and unlocks; no balance matrix"; }
     if (pilots) { report.checks.push("both pilots started through touch", "build/charge touch and pause", "actual M2 objective victory", "station loss/retry and result navigation", "360x640 and 390x844 pilot layouts", "V2 completion reload preserves old save"); report.completedVia = "M2 through legal purchases; M4 charging and a deliberate station-loss boundary; no balance sweep"; }
   }
+  if (quality) { report.checks = ["three opening missions through real menus and legal purchases", "locked start", "direct ship and ability touch", "repair/Aegis selection and persistence", "salvo warning and shield", "battle, build and result captures", "360x640 and 390x844 overview", "old campaign still starts", "Classic still starts", "no browser errors"]; report.completedVia = "One opening campaign path, no balance matrix"; }
   await writeFile(resolve(output, "report.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report, null, 2));
 } finally {

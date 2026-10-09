@@ -1,3 +1,4 @@
+import { RepairSupport } from "../campaign/repairSupport.js";
 import { DisruptionSystem } from "../campaign/disruptionSystem.js";
 import { AegisSystem } from "../campaign/aegisSystem.js";
 import { MissionRuntime } from "../campaign/missionRuntime.js";
@@ -58,6 +59,7 @@ export class MatchDirector {
     this.missionRuntime = this.mission ? isExpansionMission(this.mission) ? new ExpansionRuntime(this.mission) : new MissionRuntime(this.mission) : null;
     this.aegis = new AegisSystem(Boolean(this.mission && this.equippedAbility === "aegis"), isExpansionMission(this.mission) ? this.mission.goal.requiredAlive : []);
     this.simulation.protection = this.aegis;
+    this.repair = new RepairSupport(this.equippedAbility === "repair");
     this.disrupt = new DisruptionSystem(Boolean(this.mission && this.equippedAbility === "disrupt"));
     this.simulation.state.laneStances = new Map(this.mapDefinition.lanes.map((lane, index) => [lane.id, this.mission?.defaultHoldLane === index ? "hold" : "push"]));
     this.ai = new OpponentAi({ profile: this.aiProfile, preferredLane: this.aiPreferredLane, investmentBias: this.aiInvestmentBias });
@@ -104,6 +106,7 @@ export class MatchDirector {
     this.liveDeployment.advance(step);
     this.aegis?.advance(step);
     this.disrupt?.advance(step);
+    this.repair?.advance(step, this);
     this.simulation.step(step);
     this.capture?.advance(this.simulation.state, step);
     this.activeMatchSeconds += step;
@@ -132,7 +135,7 @@ export class MatchDirector {
     if (this.state !== MATCH_STATE.LIVE_MATCH) return false;
     this.state = team === TEAM.PLAYER ? MATCH_STATE.VICTORY : team === TEAM.ENEMY ? MATCH_STATE.DEFEAT : MATCH_STATE.DRAW;
     this.simulation.state.terminalTeam = team;
-    this.missionRuntime?.finish(); this.aegis?.cancel(); this.disrupt?.cancel();
+    this.missionRuntime?.finish(); this.aegis?.cancel(); this.disrupt?.cancel(); this.repair?.cancel();
     this.events.push({ type: "MATCH_ENDED", state: this.state, reason, cycle: this.cycle });
     return true;
   }
@@ -192,7 +195,7 @@ export class MatchDirector {
     if (this.state === MATCH_STATE.TITLE) return false;
     this.state = MATCH_STATE.TITLE;
     this.resumeState = null;
-    this.aegis?.cancel(); this.disrupt?.cancel();
+    this.aegis?.cancel(); this.disrupt?.cancel(); this.repair?.cancel();
     this.missionRuntime = null;
     this.simulation = null;
     this.activeMatchSeconds = 0;
@@ -200,7 +203,7 @@ export class MatchDirector {
     return true;
   }
 
-  get carrierAbility() { return this.equippedAbility === "disrupt" ? this.disrupt : this.aegis; }
+  get carrierAbility() { return this.equippedAbility === "repair" ? this.repair : this.equippedAbility === "disrupt" ? this.disrupt : this.aegis; }
   get baseWaveBacklog() { return this.deployment.baseWaveBacklog; }
   get cycle() { return this.deployment.cycleNumber; }
   get lastDeploymentAt() { return this.deployment.lastDeploymentAt; }

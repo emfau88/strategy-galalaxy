@@ -359,7 +359,27 @@ export const renderBattlefieldLayer = (ctx, model) => {
   const top = view.y;
   const bottom = view.y + view.height;
   const illustratedWorld = map.visualTheme === "orbital_garden" || map.visualTheme === "twin_foundries";
-  if (illustratedWorld) {
+  const opening = map.qualityOpening && asset(model.assets, "opening-worlds");
+  if (opening) {
+    const cell = opening.naturalWidth / 3;
+    // Environment art establishes the place at the perimeter. Combat gets a
+    // nearly uniform dark field; only ships, objectives and warnings may shine.
+    ctx.fillStyle = "#07121e";
+    ctx.fillRect(0, top, map.bounds.width, view.height);
+    ctx.save();
+    ctx.globalAlpha = .18;
+    ctx.drawImage(opening, cell*map.sceneIndex, 0, cell, opening.naturalHeight, 0, projection.y(0), map.bounds.width, map.bounds.height);
+    ctx.restore();
+    const quiet = ctx.createLinearGradient(0, 0, map.bounds.width, 0);
+    quiet.addColorStop(0, "rgba(7,18,30,0)");
+    quiet.addColorStop(.16, "rgba(7,18,30,.9)");
+    quiet.addColorStop(.32, "#07121e");
+    quiet.addColorStop(.68, "#07121e");
+    quiet.addColorStop(.84, "rgba(7,18,30,.9)");
+    quiet.addColorStop(1, "rgba(7,18,30,0)");
+    ctx.fillStyle = quiet; ctx.fillRect(0, top, map.bounds.width, view.height);
+  }
+  if (illustratedWorld && !opening) {
     const prefix = map.visualTheme === "orbital_garden" ? "background-orbital-garden" : "background-twin-foundries";
     const rivalSector = asset(model.assets, `${prefix}-rival`);
     const playerSector = asset(model.assets, `${prefix}-player`);
@@ -374,7 +394,7 @@ export const renderBattlefieldLayer = (ctx, model) => {
       ctx.restore();
     }
   }
-  if (map.features?.centerDecorations === false) {
+  if (map.features?.centerDecorations === false && !opening) {
     // Keep the authored edge identity while reserving the central combat band
     // for silhouettes, projectiles, health bars, and formation movement.
     const centerX = map.bounds.width / 2;
@@ -792,7 +812,7 @@ const drawStructure = (ctx, structure, model, projection) => {
   const state = model.simulation.state;
   const isHq = structure.structureType === "hq";
   const gardenTurret = !isHq && state.map.visualTheme === "orbital_garden";
-  const size = isHq ? 270 : gardenTurret ? 94 : 84;
+  const size = isHq ? state.map.qualityOpening ? 156 : 270 : gardenTurret ? state.map.qualityOpening ? 76 : 94 : 84;
   const color = teamColor(structure.team);
   const turretAssetKey = gardenTurret ? (structure.team === TEAM.ENEMY ? "structure-turret-garden-rival" : "structure-turret-garden-player") : "structure-turret";
   const sprite = isHq
@@ -1003,9 +1023,10 @@ export const renderEntityLayer = (ctx, model) => {
   }
   ctx.globalAlpha = 1;
   for (const unit of units.values()) {
+    if (unit.unitType === "repair") continue;
     if (unit.launching && unit.launchElapsed < 0) continue;
     if (!visible(unit.y, 60)) continue;
-    const fleetScale = simulation.state.map.visualTheme === "orbital_garden" ? 1.12 : 1;
+    const fleetScale = simulation.state.map.qualityOpening ? 1.55 : simulation.state.map.visualTheme === "orbital_garden" ? 1.12 : 1;
     const size = unitSize(unit.unitType) * fleetScale;
     const unifiedSprite = asset(model.assets, factionKey(unit));
     const sprite = unifiedSprite ?? asset(model.assets, legacyFactionKey(unit));

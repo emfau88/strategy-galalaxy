@@ -1,5 +1,7 @@
 # Die letzte Werft – eine Kampagne mit eigenständigen Missionen
 
+> **Aktueller Vorrang – 9. Oktober 2026:** Der weitere Missionsausbau ist ausgesetzt. Es gilt der [Qualitätsauftrag für die ersten drei Missionen](FIRST_THREE_QUALITY_CONTRACT.md). Die Umsetzung in 0.0.10 ist im [Bericht mit Bildern und offenen Abnahmen](FIRST_THREE_QUALITY_REPORT.md) dokumentiert. V2-3 bis V2-6 werden nicht automatisch begonnen. Die folgenden Bulks bleiben als historischer Plan erhalten.
+
 Stand: 9. Oktober 2026. **Status: V2-0 abgeschlossen; V2-1 und V2-2 technisch umgesetzt. Vier verbundene Missionen bilden Akt I, Außenposten und Fähre bleiben zusätzlich frei spielbare Testeinsätze. Missionen 5–8 sind Vorschauen. Menschliche Spielbeobachtung und echte Smartphone-Abnahme bleiben offen.** [V2-1-Bericht](LAST_SHIPYARD_V2_1_REPORT.md) · [V2-2-Bericht](LAST_SHIPYARD_V2_2_REPORT.md).
 
 Grundlage ist die tatsächlich gelesene Experiment-Fassung auf Commit `0dcb353`, einschließlich Missionsdaten, Simulation, Zielauswahl, Eroberung, Energie, Ausrüstung und Darstellung. Hinzu kommen die [Core Vision](../STRATEGY_GALALAXY_CORE_VISION.md), der [bisherige Experimentplan](LAST_SHIPYARD_EXPERIMENT_PLAN.md) und der [ursprüngliche Verbesserungsplan im erhaltenen Qualitätsbranch](https://github.com/emfau88/strategy-galalaxy/blob/d286e1341362cecb977aec90f78e87bbf93e9d31/docs/GAME_IMPROVEMENT_PLAN.md). Für diese Planung wurden keine weiteren Balance-Testserien durchgeführt.

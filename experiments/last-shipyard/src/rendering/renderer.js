@@ -1,4 +1,5 @@
 import { renderBackground, renderBattlefieldLayer, renderEffectsLayer, renderEntityLayer } from "./battlefieldRenderer.js";
+import { renderOpeningEffects } from "./openingRenderer.js";
 import { renderAegisField, renderDefenseLine, renderCombatStatus } from "./abilityRenderer.js";
 import { renderRelays } from "./relayRenderer.js";
 import { renderUiLayer } from "./uiRenderer.js";
@@ -102,6 +103,7 @@ export class Renderer {
       renderStationWorld(ctx, sceneModel);
       renderEntityLayer(ctx, sceneModel);
       renderAegisField(ctx, sceneModel);
+      renderOpeningEffects(ctx, sceneModel);
       renderCombatStatus(ctx, sceneModel);
       renderEffectsLayer(ctx, sceneModel);
     }

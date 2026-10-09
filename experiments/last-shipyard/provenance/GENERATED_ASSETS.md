@@ -250,3 +250,10 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
 - Source dimensions: 1774 × 887; 1568223 bytes. No raster postprocessing. Canvas selects the corresponding half at runtime.
 - Used by M3/M4 and the visible inactive/active harbor emblem after M3.
 - Exact final prompt and SHA-256: [generated-assets.json](generated-assets.json).
+
+## Opening quality pass: two Built-in Imagegen assets
+
+- Date: 2026-10-09. New generation, no source references and no raster postprocessing.
+- `assets/campaign/opening-worlds-v1.png`: three environment panels (wreckage, salvage, home harbor). Full-color menu/briefing art; battle draws at 18% opacity with an opaque dark center after the user's readability critique.
+- `assets/campaign/repair-support-v1.png`: transparent ivory/brass repair craft, used by the temporary targetable support ability. Healing beams, radius, health and lifetime are live Canvas layers.
+- Exact final prompts, original source paths and SHA-256: [generated-assets.json](generated-assets.json). These files are isolated to the experiment.
