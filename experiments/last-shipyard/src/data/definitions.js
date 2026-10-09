@@ -45,6 +45,7 @@ export const STRUCTURE_DEFINITIONS = freeze({
 
 export const ORBITAL_GARDEN = freeze({
   id: "orbital_garden",
+  anchors: freeze({ holdY: 780, defenseEnemySpawnY: 420, relayStagingY: 400, relayY: 340 }),
   level: 1,
   title: "ORBITAL GARDEN",
   features: CORE_SLICE_FEATURES,
@@ -76,6 +77,7 @@ export const ORBITAL_GARDEN = freeze({
 
 export const CLASSIC_LANES = freeze({
   id: "classic_lanes",
+  anchors: freeze({ holdY: 780, defenseEnemySpawnY: 420, relayStagingY: 400, relayY: 340 }),
   level: 2,
   title: "TWIN FRONTS",
   features: CORE_SLICE_FEATURES,

@@ -1,5 +1,6 @@
 import { MISSIONS } from "../data/campaign.js";
 import { containsPoint } from "./commandUi.js";
+import { expansionActionAt } from "./expansionUi.js";
 
 export const campaignUiLayout = (height = 760) => {
   const offset = height / 2 - 380;
@@ -12,6 +13,8 @@ export const campaignUiLayout = (height = 760) => {
     missions: MISSIONS.map((mission, i) => ({ ...rect(28, 280 + i * 58, 364, 52), missionId: mission.id })) };
 };
 export const campaignActionAt = (point, screen, height = 760) => {
+  const expansion = expansionActionAt(point, screen, height);
+  if (expansion || screen === "expansion" || screen === "expansion-map") return expansion;
   const ui = campaignUiLayout(height);
   if (screen === "main") {
     if (containsPoint(ui.campaign, point)) return { type: "OPEN_CAMPAIGN" };

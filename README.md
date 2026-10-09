@@ -2,7 +2,9 @@
 
 **[🧪 Die letzte Werft – Testkampagne spielen](https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/)**
 
-Eigener Spielstand. Alle sechs Missionen sind spielbar: Erstkontakt, Schwerer Widerstand, Hafen im Feuer, Geteilte Front, Das Zeitfenster und Das Schildnetz. Werft mit kostenloser Bomber-/Carrier-Auswahl, zwei Fronten mit gemeinsamem Flottenlimit und Schildrelais-Finale. [Lokal starten](experiments/last-shipyard/README.md) · [Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Version 0.0.6-bulk5; menschlicher Ersttest und Smartphone-Abnahme noch offen.
+Eigener Spielstand. Alle sechs Missionen sind spielbar: Erstkontakt, Schwerer Widerstand, Hafen im Feuer, Geteilte Front, Das Zeitfenster und Das Schildnetz. Werft mit kostenloser Bomber-/Carrier-Auswahl, zwei Fronten mit gemeinsamem Flottenlimit und Schildrelais-Finale. [Lokal starten](experiments/last-shipyard/README.md) · [Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Version 0.0.7-v2-0; menschlicher Ersttest und Smartphone-Abnahme noch offen.
+
+**Neu: Kampagne → Neue Kampagne · Kartenvorschau.** Acht eigene Kartenentwürfe mit Auftrag und geplanter Hauptentscheidung sind separat anwählbar. Diese acht Einsätze sind noch nicht spielbar; die sechs bisherigen Missionen bleiben verfügbar. [Kampagnen-Ausbauplan](docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) · [V2-0-Bericht](docs/LAST_SHIPYARD_V2_0_REPORT.md).
 
 **[▶ Strategy Galalaxy spielen](https://emfau88.github.io/strategy-galalaxy/)**
 
