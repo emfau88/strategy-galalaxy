@@ -1,0 +1,84 @@
+import { EXPANSION_MISSIONS, expansionMissionById } from "../data/campaignExpansion.js";
+import { expansionUiLayout } from "../ui/expansionUi.js";
+import { TEAM } from "../core/constants.js";
+
+const color = { text: "#f5eddd", muted: "#a7b5c5", cyan: "#80dedb", gold: "#d3b079", red: "#e99186" };
+const label = (ctx, value, x, y, size = 12, fill = color.text) => {
+  ctx.font = `600 ${size}px Inter, system-ui, sans-serif`; ctx.fillStyle = fill; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(value, x, y);
+};
+const wrap = (ctx, value, x, y, width, size = 12, fill = color.text) => {
+  let line = "", row = 0;
+  ctx.font = `600 ${size}px Inter, system-ui, sans-serif`;
+  for (const word of value.split(" ")) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(candidate).width > width) { label(ctx, line, x, y + row++ * 18, size, fill); line = word; }
+    else line = candidate;
+  }
+  label(ctx, line, x, y + row * 18, size, fill);
+  return (row + 1) * 18;
+};
+const panel = (ctx, rect, active = false) => {
+  ctx.beginPath(); ctx.roundRect(rect.x, rect.y, rect.width, rect.height, 9);
+  ctx.fillStyle = "rgba(9,22,36,.96)"; ctx.fill(); ctx.strokeStyle = active ? color.cyan : "#334558"; ctx.lineWidth = 1; ctx.stroke();
+};
+const button = (ctx, rect, text, enabled = true) => { panel(ctx, rect); label(ctx, text, rect.x + 15, rect.y + rect.height / 2, 11, enabled ? color.text : color.muted); };
+
+const drawMap = (ctx, map, rect) => {
+  panel(ctx, rect);
+  // All eight views use one scale: a shorter map really looks shorter here.
+  const scale = (rect.height - 30) / 1380;
+  const x = rect.x + (rect.width - map.bounds.width * scale) / 2, y = rect.y + rect.height - 15 - map.bounds.height * scale;
+  const px = worldX => x + worldX * scale, py = worldY => y + worldY * scale;
+  ctx.fillStyle = "#132b3b"; ctx.fillRect(x, y, map.bounds.width * scale, map.bounds.height * scale);
+  for (const lane of map.lanes) {
+    ctx.fillStyle = "rgba(128,222,219,.06)"; ctx.fillRect(px(lane.centerX - lane.width / 2), y, lane.width * scale, map.bounds.height * scale);
+    ctx.strokeStyle = "#38556a"; ctx.beginPath(); ctx.moveTo(px(lane.centerX), py(lane.enemySpawn.y)); ctx.lineTo(px(lane.centerX), py(lane.playerSpawn.y)); ctx.stroke();
+    for (const [spawn, tint, direction] of [[lane.playerSpawn, color.cyan, -1], [lane.enemySpawn, color.red, 1]]) {
+      ctx.fillStyle = tint; ctx.beginPath(); ctx.moveTo(px(spawn.x), py(spawn.y) + direction * 5); ctx.lineTo(px(spawn.x) - 4, py(spawn.y) - direction * 4); ctx.lineTo(px(spawn.x) + 4, py(spawn.y) - direction * 4); ctx.fill();
+    }
+    ctx.strokeStyle = color.cyan; ctx.setLineDash([3, 3]); ctx.beginPath();
+    ctx.moveTo(px(lane.centerX - lane.width / 2), py(lane.anchors.holdY)); ctx.lineTo(px(lane.centerX + lane.width / 2), py(lane.anchors.holdY)); ctx.stroke(); ctx.setLineDash([]);
+  }
+  for (const structure of map.structures) { ctx.fillStyle = structure.team === TEAM.PLAYER ? color.cyan : color.red; ctx.fillRect(px(structure.x) - 8, py(structure.y) - 3, 16, 6); }
+  for (const site of map.buildPads) { ctx.strokeStyle = color.cyan; ctx.strokeRect(px(site.x) - 5, py(site.y) - 5, 10, 10); }
+  for (const site of map.markers) { ctx.strokeStyle = site.kind === "sabotage" ? color.red : color.gold; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px(site.x), py(site.y), 6, 0, Math.PI * 2); ctx.stroke(); }
+};
+
+export const renderExpansionMenu = (ctx, model) => {
+  const ui = expansionUiLayout(model.height), at = y => y + model.height / 2 - 380;
+  label(ctx, "DIE LETZTE WERFT · NEUE KAMPAGNE", 28, at(58), 11, color.muted);
+  if (model.menuScreen === "expansion") {
+    label(ctx, "EIN SEKTOR ERWACHT", 28, at(110), 25);
+    label(ctx, "8 KARTENENTWÜRFE · NOCH KEIN EINSATZ SPIELBAR", 28, at(149), 10, color.gold);
+    label(ctx, "Einsatz antippen: Karte, Auftrag und Entscheidung", 28, at(170), 11, color.muted);
+    for (const [index, rect] of ui.missions.entries()) {
+      const mission = EXPANSION_MISSIONS[index];
+      panel(ctx, rect, model.expansionProgress.lastPreviewId === mission.id);
+      label(ctx, String(mission.number).padStart(2, "0"), rect.x + 12, rect.y + 26, 16, color.gold);
+      label(ctx, mission.title, rect.x + 45, rect.y + 17, 13);
+      label(ctx, `${mission.map.lanes.length} ${mission.map.lanes.length === 1 ? "Lane" : "Lanes"} · ${mission.map.sectorTheme} · Vorschau`, rect.x + 45, rect.y + 36, 9, color.muted);
+    }
+    button(ctx, ui.back, "ZUR BISHERIGEN KAMPAGNE");
+  } else {
+    const mission = expansionMissionById(model.selectedExpansionId) ?? EXPANSION_MISSIONS[0], map = mission.map;
+    label(ctx, `EINSATZ ${String(mission.number).padStart(2, "0")} · KARTENVORSCHAU`, 28, at(100), 11, color.gold);
+    wrap(ctx, mission.title, 28, at(130), 364, 23);
+    label(ctx, "Noch nicht spielbar · Bau- und Zielsysteme folgen", 28, at(186), 11, color.muted);
+    drawMap(ctx, map, ui.map);
+    label(ctx, "AUFTRAG", 210, at(231), 10, color.gold);
+    const goalHeight = wrap(ctx, mission.objective, 210, at(255), 180);
+    const decisionY = at(255) + goalHeight + 20;
+    label(ctx, "DEINE ENTSCHEIDUNG", 210, decisionY, 10, color.cyan);
+    const decisionHeight = wrap(ctx, mission.decision, 210, decisionY + 24, 180, 11, color.muted);
+    const infoY = decisionY + decisionHeight + 49;
+    label(ctx, `${map.bounds.width} × ${map.bounds.height} · ${map.lanes.length} ${map.lanes.length === 1 ? "Lane" : "Lanes"}`, 210, infoY, 11);
+    label(ctx, `${map.buildPads.length} feste Bauplätze geplant`, 210, infoY + 23, 11, color.muted);
+    wrap(ctx, `Belohnung: ${mission.reward}`, 210, infoY + 49, 180, 11, color.cyan);
+    label(ctx, "○ Zielanlage   □ Bauplatz   △ Startpunkt", 28, at(590), 11, color.muted);
+    label(ctx, "Gestrichelt: Halteposition · gleicher Kartenmaßstab", 28, at(609), 10, color.muted);
+    button(ctx, ui.previous, "← VORHERIGER EINSATZ", mission.number > 1);
+    button(ctx, ui.next, "NÄCHSTER EINSATZ →", mission.number < 8);
+    button(ctx, ui.back, "ZUR EINSATZÜBERSICHT");
+  }
+  label(ctx, model.expansionProgress.persistent ? "Letzte Kartenansicht wird auf diesem Gerät gemerkt." : "Vorschau-Auswahl bleibt in dieser Sitzung", 28, at(746), 9, color.muted);
+};

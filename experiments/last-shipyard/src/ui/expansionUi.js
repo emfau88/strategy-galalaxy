@@ -1,0 +1,27 @@
+import { EXPANSION_MISSIONS } from "../data/campaignExpansion.js";
+import { containsPoint } from "./commandUi.js";
+
+export const expansionUiLayout = (height = 760) => {
+  const offset = height / 2 - 380;
+  const rect = (x, y, width, h) => ({ x, y: y + offset, width, height: h });
+  return {
+    entry: rect(28, 169, 364, 44), back: rect(44, 684, 332, 46),
+    previous: rect(28, 622, 174, 44), next: rect(218, 622, 174, 44),
+    map: rect(28, 223, 164, 350),
+    missions: EXPANSION_MISSIONS.map((mission, index) => ({ ...rect(28, 190 + index * 58, 364, 52), missionId: mission.id })),
+  };
+};
+export const expansionActionAt = (point, screen, height) => {
+  const ui = expansionUiLayout(height);
+  if (screen === "missions" && containsPoint(ui.entry, point)) return { type: "OPEN_EXPANSION" };
+  if (screen !== "expansion" && screen !== "expansion-map") return null;
+  if (containsPoint(ui.back, point)) return { type: "EXPANSION_BACK" };
+  if (screen === "expansion-map") {
+    if (containsPoint(ui.previous, point)) return { type: "BROWSE_EXPANSION", delta: -1 };
+    if (containsPoint(ui.next, point)) return { type: "BROWSE_EXPANSION", delta: 1 };
+  } else {
+    const selected = ui.missions.find(rect => containsPoint(rect, point));
+    if (selected) return { type: "SELECT_EXPANSION_MISSION", missionId: selected.missionId };
+  }
+  return null;
+};

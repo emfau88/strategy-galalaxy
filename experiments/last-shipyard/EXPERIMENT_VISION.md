@@ -36,3 +36,7 @@ Fünf Missionen. Zwei Lanes teilen sich ein Gesamtbudget; Halten und Vorstoß we
 ## Stand Bulk 5
 
 Die sechs Einsätze haben einen Abschluss. Zwei lanegebundene Relais schützen den Blockade-Carrier; die Flotte bearbeitet zuerst erreichbare Relais, danach den verwundbaren Carrier. Eine bereits freie Lane wartet, während die zweite Front geöffnet wird. Höchstens drei bezahlte Gegnerangriffe; keine Relaisregeneration. Kampagnensieg sichert die Werft. Zwei optionale Abzeichen bieten konkrete Wiederholungsziele ohne neue Freischaltpflicht. Normale Ausrüstung genügt; der repräsentative Test gewann mit Standardbombern ohne Carrier-Fähigkeit. Menschliche Spielbeobachtung und Smartphone-Abnahme bleiben offen.
+
+## Ausbau ab V2-0
+
+Der [Kampagnen-Ausbauplan](../../docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) beschreibt die folgende Ausbaureihe mit acht unterschiedlichen Missionen, festen Bauplätzen und Stationsaufträgen. V2-0 stellt dafür acht getrennt gespeicherte Karten-/Missionsvorschauen bereit. Die sechs bisherigen Einsätze bleiben die spielbare Kampagne. Neue Bau- und Forschungsmechaniken sind noch nicht implementiert; ihre Grenzen und Freischaltungen richten sich bei Umsetzung nach dem Ausbauplan. Classic bleibt außerhalb dieser Erweiterung.

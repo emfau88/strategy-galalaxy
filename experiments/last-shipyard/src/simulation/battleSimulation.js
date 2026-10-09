@@ -1,4 +1,5 @@
-import { carrierProtected, laneWaitingForShield } from "../campaign/relayShield.js";
+import { carrierProtected } from "../campaign/relayShield.js";
+import { playerHoldLine } from "./tacticalAnchors.js";
 import { interruptWeapons } from "../campaign/weaponStatus.js";
 import { CONFIG } from "../config.js";
 import { PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
@@ -387,7 +388,7 @@ export class BattleSimulation {
     unit.fireCooldown = Math.max(0, unit.fireCooldown - dt);
     if (!engaged) {
       const node = unit.unitType === "scout" ? [...this.state.nodes.values()].find((item) => item.laneId === unit.laneId) : null;
-      const defenseLine = this.config.rules?.allowLaneStance && this.state.laneStances?.get(unit.laneId) === "hold" ? 780 : laneWaitingForShield(this.state, unit) ? this.state.map.relayStagingLineY : this.state.map.defenseLineY;
+      const defenseLine = playerHoldLine(this.state, unit.laneId, this.config.rules?.allowLaneStance);
       const nodeAhead = node && (node.y - unit.y) * forwardDirection(unit.team) >= -node.radius;
       if (unit.team === TEAM.PLAYER && Number.isFinite(defenseLine)) {
         const lane = this.state.map.lanes.find(item => item.id === unit.laneId);

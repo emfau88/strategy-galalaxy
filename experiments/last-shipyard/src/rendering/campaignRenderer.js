@@ -1,6 +1,8 @@
 import { EXPERIMENT } from "../experiment.js";
 import { MISSIONS, missionById, missionUnlocked, nextMission, shipyardStage, missionForProgress } from "../data/campaign.js";
 import { campaignUiLayout, campaignResultLayout } from "../ui/campaignUi.js";
+import { expansionUiLayout } from "../ui/expansionUi.js";
+import { renderExpansionMenu } from "./expansionRenderer.js";
 
 const C = { ivory: "#f5eddd", muted: "#9faebf", cyan: "#80dedb", brass: "#c7a46b", line: "rgba(188,210,222,.18)" };
 const text = (ctx, value, x, y, size = 12, color = C.ivory, align = "left", weight = 500) => {
@@ -52,6 +54,7 @@ const sectorMap = (ctx, completed, y) => {
 const className = type => ({ scout: "Scout ×3", fighter: "Fighter ×2", bomber: "Bomber", frigate: "Fregatte" })[type];
 
 export const renderCampaignMenu = (ctx, model) => {
+  if (model.menuScreen === "expansion" || model.menuScreen === "expansion-map") return renderExpansionMenu(ctx, model);
   const ui = campaignUiLayout(model.height), offset = model.height / 2 - 380;
   const progress = model.campaignProgress ?? { completed: [] };
   const at = y => y + offset;
@@ -83,7 +86,8 @@ export const renderCampaignMenu = (ctx, model) => {
   if (model.menuScreen === "missions") {
     text(ctx, "DER WEG ZUR WERFT", 28, at(112), 25, C.ivory, "left", 700);
     text(ctx, "SECHS EINSÄTZE · DIE HEIMATWERFT BEFREIEN", 28, at(147), 10, C.brass, "left", 700);
-    sectorMap(ctx, progress.completed, at(211));
+    button(ctx, expansionUiLayout(model.height).entry, "NEUE KAMPAGNE · KARTENVORSCHAU  →");
+    sectorMap(ctx, progress.completed, at(239));
     for (const rect of ui.missions) {
       const m = missionById(rect.missionId), unlocked = missionUnlocked(m, progress.completed), done = progress.completed.includes(m.id);
       panel(ctx, rect, m.available && unlocked);

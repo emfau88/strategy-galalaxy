@@ -1,6 +1,6 @@
 # Die letzte Werft – Testkampagne
 
-Version **0.0.6-bulk5**. Alle sechs gestalteten Missionen einschließlich des Schildnetz-Finales sind spielbar.
+Version **0.0.7-v2-0**. Alle sechs gestalteten Missionen einschließlich des Schildnetz-Finales sind spielbar.
 
 ## Lokal spielen
 
@@ -55,3 +55,11 @@ Geteilte Front begrenzt beide Lanes zusammen auf 18 eigene Schiffe. HALTEN/VORST
 Zwei lanegebundene Schildrelais schützen den gegnerischen Carrier. Nach dem ersten zerstörten Relais wartet die freie Lane auf die zweite Front. Nach dem zweiten fällt der Schutz und beide Flotten greifen den Carrier an. Bis zu drei regulär bezahlte Gegnerangriffe; danach kein Nachschub. Zerstörte Relais bleiben aus. Standardbomber und eine freie Fähigkeitswahl reichen aus. Kampagnenabschluss, gesicherte Werft und zwei freiwillige Finale-Abzeichen werden gespeichert. [Abnahme](../../docs/LAST_SHIPYARD_BULK5_REPORT.md). Gezielter Browserlauf: `node experiments/last-shipyard/scripts/browser-smoke.mjs --site --final`.
 
 Die zwei Abzeichen verlangen mindestens 80% Carrier-Hülle beziehungsweise keine ausgelöste Carrier-Fähigkeit im Finale. Sie sperren keine Inhalte und können in Wiederholungen nachgeholt werden.
+
+## V2-0 – Neue Kampagne als Kartenvorschau
+
+Kampagne → Neue Kampagne · Kartenvorschau öffnet acht Kartenentwürfe mit eigenen Höhen, Lanes, Startpunkten, Haltepositionen, geplanten Bauplätzen und Zielen. Alle acht sind ausdrücklich Vorschauen ohne Missionsstart. Die bisherige Kampagne bleibt spielbar. Die zuletzt betrachtete Karte wird unter einem eigenen V2-Schlüssel gespeichert; Anschauen erzeugt keine Siege.
+
+[Ausbauplan](../../docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) · [Umfang und Prüfung](../../docs/LAST_SHIPYARD_V2_0_REPORT.md). Bau, Forschung und neue Missionsabläufe folgen ab V2-1. Noch keine neuen Imagegen-Assets.
+
+Gezielter Browserablauf ohne weitere Kampagnen-Durchläufe: `npm --prefix experiments/last-shipyard run test:foundation:browser`. Für das gemeinsame Artefakt: `node experiments/last-shipyard/scripts/browser-smoke.mjs --site --foundation`.

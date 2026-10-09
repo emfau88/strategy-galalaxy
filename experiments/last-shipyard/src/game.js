@@ -18,6 +18,8 @@ import { AI_PROFILES } from "./simulation/opponentAi.js";
 import { CLASSIC_LANES, ORBITAL_GARDEN, UNIT_DEFINITIONS } from "./data/definitions.js";
 import { missionById, missionMatchOptions, missionUnlocked, nextMission, missionForProgress } from "./data/campaign.js";
 import { CampaignProgress } from "./campaign/progress.js";
+import { ExpansionProgress } from "./campaign/expansionProgress.js";
+import { EXPANSION_MISSIONS, expansionMissionById } from "./data/campaignExpansion.js";
 import { abilityActionAt } from "./ui/abilityUi.js";
 import { campaignActionAt, campaignResultActionAt } from "./ui/campaignUi.js";
 
@@ -40,6 +42,8 @@ export class Game {
     this.effects = new PresentationEffects();
     this.sound = new SoundSystem();
     this.campaign = new CampaignProgress();
+    this.expansion = new ExpansionProgress();
+    this.selectedExpansionId = this.expansion.data.lastPreviewId ?? EXPANSION_MISSIONS[0].id;
     this.menuScreen = "main";
     this.selectedMissionId = this.campaign.data.lastMissionId ?? "first-contact";
     this.recordedMissionResult = null;
@@ -247,6 +251,15 @@ export class Game {
 
   executeMenuAction(action) {
     this.sound.play("select");
+    if (action.type === "OPEN_EXPANSION") { this.menuScreen = "expansion"; return; }
+    if (action.type === "EXPANSION_BACK") { this.menuScreen = this.menuScreen === "expansion-map" ? "expansion" : "missions"; return; }
+    if (action.type === "SELECT_EXPANSION_MISSION" || action.type === "BROWSE_EXPANSION") {
+      const index = EXPANSION_MISSIONS.findIndex(mission => mission.id === this.selectedExpansionId);
+      const mission = action.type === "SELECT_EXPANSION_MISSION" ? expansionMissionById(action.missionId)
+        : EXPANSION_MISSIONS[index + action.delta];
+      if (mission && this.expansion.selectPreview(mission.id)) { this.selectedExpansionId = mission.id; this.menuScreen = "expansion-map"; }
+      return;
+    }
     if (action.type === "OPEN_SHIPYARD") this.menuScreen = "shipyard";
     else if (action.type === "TOGGLE_BOMBER") this.campaign.toggleBomber();
     else if (action.type === "OPEN_CAMPAIGN") this.menuScreen = "missions";
@@ -307,7 +320,7 @@ export class Game {
 
   startSelectedMatch() {
     if (this.match.state !== MATCH_STATE.TITLE) return false;
-    this.match.start();
+    if (!this.match.start()) return false;
     this.syncCommandViewport();
     this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
     this.camera.reset("player");
@@ -574,6 +587,8 @@ export class Game {
       menuScreen: this.menuScreen,
       selectedMissionId: this.selectedMissionId,
       campaignProgress: this.campaign.snapshot(),
+      expansionProgress: this.expansion.snapshot(),
+      selectedExpansionId: this.selectedExpansionId,
       mission: this.match.mission,
       rewardFirstTime: this.rewardFirstTime,
       aiProfile: this.match.aiProfile,

@@ -9,6 +9,8 @@ import { campaignUiLayout } from "../src/ui/campaignUi.js";
 import { commandUiLayout, overlayUiLayout, COMMAND_UI } from "../src/ui/commandUi.js";
 import { STORAGE_KEYS, EXPERIMENT } from "../src/experiment.js";
 import { MISSIONS } from "../src/data/campaign.js";
+import { EXPANSION_MISSIONS } from "../src/data/campaignExpansion.js";
+import { expansionUiLayout } from "../src/ui/expansionUi.js";
 import { TEAM } from "../src/core/constants.js";
 
 const browser = (process.platform === "win32"
@@ -16,6 +18,7 @@ const browser = (process.platform === "win32"
   : ["/usr/bin/google-chrome", "/usr/bin/chromium"]).find(existsSync);
 assert.ok(browser, "Chrome or Edge required for this short browser check");
 const live = process.argv.includes("--live");
+const foundation = process.argv.includes("--foundation");
 const siteMode = live || process.argv.includes("--site");
 const output = resolve(experimentRoot, `../../tmp/last-shipyard-${live ? "live" : siteMode ? "bulk1" : "standalone"}`);
 await mkdir(output, { recursive: true });
@@ -118,8 +121,9 @@ try {
   await evaluate(`Object.entries(${JSON.stringify(classic)}).forEach(([k,v])=>localStorage.setItem(k,v))`);
   const transform = await evaluate("window.__lastShipyard.transform");
   const tap = async rect => {
-    const x = transform.offsetX + (rect.x + rect.width / 2) * transform.scale;
-    const y = transform.offsetY + (rect.y + rect.height / 2) * transform.scale;
+    const currentTransform = await evaluate("window.__lastShipyard.transform");
+    const x = currentTransform.offsetX + (rect.x + rect.width / 2) * currentTransform.scale;
+    const y = currentTransform.offsetY + (rect.y + rect.height / 2) * currentTransform.scale;
     await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
     await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await delay(75);
@@ -132,6 +136,43 @@ try {
   await tap(ui.back);
   await tap(ui.campaign);
   assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "missions");
+  if (foundation) {
+    const metadata = await (await fetch(origin + prefix + "version.json")).json();
+    assert.equal(metadata.version, EXPERIMENT.version);
+    assert.equal(metadata.expansion.previewMissions, 8);
+    assert.deepEqual(metadata.expansion.playableMissions, []);
+    await evaluate("window.__lastShipyard.campaign.begin('first-contact')");
+    const oldSave = await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.progress)})`);
+    const expansionUi = expansionUiLayout(transform.designHeight);
+    await capture("campaign-with-v2-entry-360x800.png");
+    await tap(expansionUi.entry);
+    assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "expansion");
+    await capture("v2-overview-360x800.png");
+    for (let index = 0; index < EXPANSION_MISSIONS.length; index++) {
+      await tap(expansionUi.missions[index]);
+      assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "expansion-map");
+      assert.equal(await evaluate("window.__lastShipyard.selectedExpansionId"), EXPANSION_MISSIONS[index].id);
+      assert.equal(await evaluate("window.__lastShipyard.startMission()"), false);
+      assert.equal(await evaluate("window.__lastShipyard.match.state"), "TITLE");
+      assert.deepEqual(await evaluate("window.__lastShipyard.expansion.data.completed"), []);
+      await capture(`v2-mission-${index + 1}-360x800.png`);
+      if (index < EXPANSION_MISSIONS.length - 1) await tap(expansionUi.back);
+    }
+    await tap(expansionUi.next);
+    assert.equal(await evaluate("window.__lastShipyard.selectedExpansionId"), EXPANSION_MISSIONS[7].id, "Next stays at the final preview");
+    await tap(expansionUi.previous); await tap(expansionUi.next);
+    for (const [width, height] of [[360, 640], [390, 844]]) {
+      await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: true });
+      await delay(150); await capture(`v2-finale-${width}x${height}.png`);
+    }
+    await send("Emulation.setDeviceMetricsOverride", { width: 360, height: 800, deviceScaleFactor: 1, mobile: true });
+    await send("Page.reload", { ignoreCache: true }); await delay(150); await waitReady();
+    assert.equal(await evaluate("window.__lastShipyard.selectedExpansionId"), EXPANSION_MISSIONS[7].id);
+    assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.progress)})`), oldSave, "Preview never rewrites the old save");
+    await tap(ui.campaign);
+    await tap(expansionUi.entry); await tap(expansionUi.back);
+    assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "missions");
+  }
   await tap(ui.missions[0]);
   assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "briefing");
   await capture("briefing-360x800.png");
@@ -153,7 +194,7 @@ try {
   await tap(overlayUiLayout(transform.designHeight).pauseMenu);
   assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "main");
   assert.equal(await evaluate("window.__lastShipyard.match.state"), "TITLE");
-  if (!live && !process.argv.includes("--latest") && !process.argv.includes("--final")) {
+  if (!live && !foundation && !process.argv.includes("--latest") && !process.argv.includes("--final")) {
     // Verify the actual result -> next briefing -> second mission flow with legal purchases.
     const play = async () => {
       const result = await evaluate(`(() => {
@@ -307,7 +348,7 @@ try {
   assert.equal(await evaluate("window.__lastShipyard.sound.muted"), true);
   for (const [key, value] of Object.entries(classic)) assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(key)})`), value, "Classic storage unchanged");
   assert.ok([...requests].every(address => address.startsWith(origin + prefix) || address === origin + "/favicon.ico"), "All runtime requests stay in experiment subpath");
-  if (live) {
+  if (live && !foundation) {
     const metadata = await evaluate("fetch('version.json?acceptance=bulk5').then(response=>response.json())");
     assert.equal(metadata.version, EXPERIMENT.version);
     assert.deepEqual(metadata.playableMissions, MISSIONS.filter(m => m.available).map(m => m.id));
@@ -338,6 +379,7 @@ try {
   await delay(150);
   await waitReady();
   assert.deepEqual(await evaluate("window.__lastShipyard.campaign.data.completed"), []);
+  if (foundation) assert.equal(await evaluate("window.__lastShipyard.expansion.data.lastPreviewId"), EXPANSION_MISSIONS[7].id, "Old campaign reset retains V2 preview selection");
   assert.equal(await evaluate("window.__lastShipyard.sound.muted"), true, "Progress reset leaves sound intact");
   for (const [key, value] of Object.entries(classic)) assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(key)})`), value, "Classic storage survives reset");
   if (siteMode) {
@@ -354,6 +396,10 @@ try {
   }
   assert.deepEqual(failures, []);
   const report = { result: "PASS", mode: live ? "public" : siteMode ? "built-site" : "standalone", classicStarts: siteMode, viewport: "360x800", prefix, runtimeRequests: requests.size, checks: ["own menu identity", "active assets", "touch start and purchase", "pause and return", "own progress and sound reload", "Classic sentinel unchanged", "no requests outside experiment", "own progress reset", "Classic after reset", ...(live ? ["published campaign version", "unlocked harbor start and Aegis touch", "equipment reload", "finale start and shield relays"] : (process.argv.includes("--final") ? ["transparent relay atlas", "legal finale victory with standard loadout", "relay states and shield transition", "campaign completion, badges and reload", "finale retry"] : process.argv.includes("--latest") ? ["two-lane stance and purchase", "mission4/5 victories", "ion/ability loadout reload", "disruption touch"] : ["three mission victories", "equipment toggle and reload", "Aegis touch and pause", "chapter reward"]))], completedVia: live ? "persistence API; public smoke avoids repeating balance runs" : `${process.argv.includes("--final") ? "mission 6" : process.argv.includes("--latest") ? "missions 4 and 5" : "missions 1 to 3"} through legal purchases; real result/unlock/equipment flow`, failures };
+  if (foundation) {
+    report.checks = ["eight preview screens via touch", "no draft mission start", "previous/next navigation", "360x640 and 390x844 preview captures", "separate preview reload", "old save unchanged", "old campaign start/purchase/pause", "old reset retains preview", "Classic storage unchanged", "published scope metadata", "no browser errors"];
+    report.completedVia = "No campaign playthroughs or balance runs; navigation and existing match controls only";
+  }
   await writeFile(resolve(output, "report.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report, null, 2));
 } finally {

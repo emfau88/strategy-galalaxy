@@ -1,15 +1,18 @@
 import { DISRUPTION } from "../campaign/disruptionSystem.js";
 import { AEGIS } from "../campaign/aegisSystem.js";
 import { abilityUiLayout } from "../ui/abilityUi.js";
+import { playerHoldLine } from "../simulation/tacticalAnchors.js";
 
 export const renderDefenseLine = (ctx, model) => {
   const state = model.simulation?.state;
-  const line = state?.map.defenseLineY ?? (state?.laneStances?.get(model.selectedLaneId) === "hold" ? 780 : null);
+  const line = playerHoldLine(state, model.selectedLaneId, model.director?.config.rules?.allowLaneStance);
   if (!Number.isFinite(line)) return;
   const y = model.camera.viewport.y + line - model.camera.y;
   ctx.save(); ctx.strokeStyle = "rgba(128,222,219,.3)"; ctx.lineWidth = 1; ctx.setLineDash([6, 8]);
-  ctx.beginPath(); ctx.moveTo(38, y); ctx.lineTo(370, y); ctx.stroke(); ctx.setLineDash([]);
-  ctx.fillStyle = "rgba(185,230,230,.6)"; ctx.font = "600 9px Inter, system-ui, sans-serif"; ctx.textAlign = "left"; ctx.fillText("ABWEHRLINIE", 38, y - 9); ctx.restore();
+  const lane = state.map.lanes.find(item => item.id === model.selectedLaneId);
+  const left = lane.centerX - lane.width / 2, right = lane.centerX + lane.width / 2;
+  ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = "rgba(185,230,230,.6)"; ctx.font = "600 9px Inter, system-ui, sans-serif"; ctx.textAlign = "left"; ctx.fillText("HALTEPOSITION", left, y - 9); ctx.restore();
 };
 
 export const renderAegisField = (ctx, model) => {

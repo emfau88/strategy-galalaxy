@@ -44,6 +44,7 @@ export class MatchDirector {
   }
 
   start() {
+    if (this.mission?.available === false) return false;
     this.state = MATCH_STATE.LIVE_MATCH;
     this.resumeState = null;
     this.activeMatchSeconds = 0;
