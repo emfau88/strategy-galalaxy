@@ -2,7 +2,8 @@ import { EXPERIMENT } from "../experiment.js";
 import { MISSIONS, missionById, missionUnlocked, nextMission, shipyardStage, missionForProgress } from "../data/campaign.js";
 import { campaignUiLayout, campaignResultLayout } from "../ui/campaignUi.js";
 import { expansionUiLayout } from "../ui/expansionUi.js";
-import { renderExpansionMenu } from "./expansionRenderer.js";
+import { renderExpansionMenu, renderExpansionResult } from "./expansionRenderer.js";
+import { isExpansionMission } from "../data/expansionScenarios.js";
 
 const C = { ivory: "#f5eddd", muted: "#9faebf", cyan: "#80dedb", brass: "#c7a46b", line: "rgba(188,210,222,.18)" };
 const text = (ctx, value, x, y, size = 12, color = C.ivory, align = "left", weight = 500) => {
@@ -86,7 +87,7 @@ export const renderCampaignMenu = (ctx, model) => {
   if (model.menuScreen === "missions") {
     text(ctx, "DER WEG ZUR WERFT", 28, at(112), 25, C.ivory, "left", 700);
     text(ctx, "SECHS EINSÄTZE · DIE HEIMATWERFT BEFREIEN", 28, at(147), 10, C.brass, "left", 700);
-    button(ctx, expansionUiLayout(model.height).entry, "NEUE KAMPAGNE · KARTENVORSCHAU  →");
+    button(ctx, expansionUiLayout(model.height).entry, "NEUE KAMPAGNE · 2 TESTEINSÄTZE  →");
     sectorMap(ctx, progress.completed, at(239));
     for (const rect of ui.missions) {
       const m = missionById(rect.missionId), unlocked = missionUnlocked(m, progress.completed), done = progress.completed.includes(m.id);
@@ -158,6 +159,7 @@ export const renderCampaignMenu = (ctx, model) => {
 };
 
 export const renderCampaignResult = (ctx, model) => {
+  if (isExpansionMission(model.mission)) return renderExpansionResult(ctx, model);
   const win = model.state === "VICTORY", finale = model.mission.relayShield, center = model.height / 2;
   ctx.fillStyle = "rgba(3,10,20,.7)"; ctx.fillRect(0, 0, model.width, model.height);
   panel(ctx, { x: 28, y: center - 192, width: 364, height: 370 });
@@ -183,5 +185,5 @@ export const renderMissionHud = (ctx, model) => {
   panel(ctx, { x: 8, y: 62, width: 404, height: 59 });
   text(ctx, run.label, 20, 78, 10, run.phase === "warning" ? C.brass : C.cyan, "left", 700);
   text(ctx, run.counter, 397, 78, 11, C.ivory, "right", 700);
-  wrap(ctx, run.phase === "warning" && !model.mission.relayShield ? run.threat : run.hint, 20, 98, 374, 10, C.ivory, 13);
+  wrap(ctx, run.phase === "warning" && !model.mission.relayShield && !isExpansionMission(model.mission) ? run.threat : run.hint, 20, 98, 374, 10, C.ivory, 13);
 };

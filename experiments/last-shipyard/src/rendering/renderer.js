@@ -2,6 +2,7 @@ import { renderBackground, renderBattlefieldLayer, renderEffectsLayer, renderEnt
 import { renderAegisField, renderDefenseLine, renderCombatStatus } from "./abilityRenderer.js";
 import { renderRelays } from "./relayRenderer.js";
 import { renderUiLayer } from "./uiRenderer.js";
+import { renderStationWorld } from "./stationRenderer.js";
 
 const drawCover = (ctx, image, width, height, verticalAnchor = 0.5) => {
   const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
@@ -98,6 +99,7 @@ export class Renderer {
       renderBattlefieldLayer(ctx, sceneModel);
       renderDefenseLine(ctx, sceneModel);
       renderRelays(ctx, sceneModel);
+      renderStationWorld(ctx, sceneModel);
       renderEntityLayer(ctx, sceneModel);
       renderAegisField(ctx, sceneModel);
       renderCombatStatus(ctx, sceneModel);

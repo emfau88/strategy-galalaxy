@@ -19,7 +19,7 @@ assert.equal(new Set(EXPANSION_MISSIONS.map(m => m.id)).size, 8);
 for (const m of EXPANSION_MISSIONS) {
   assert.ok(!MISSIONS.some(old => old.id === m.id));
   assert.equal(m.campaignId, EXPANSION_ID);
-  assert.equal(m.available, false);
+  assert.equal(m.available, [2, 4].includes(m.number));
   assert.throws(() => missionMatchOptions(m), /not playable/);
   const director = new MatchDirector({ mission: m, mapDefinition: m.map });
   assert.equal(director.start(), false, "A preview cannot become an ordinary assault mission");

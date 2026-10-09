@@ -107,7 +107,7 @@ export const shipyardStage = completed => completed.includes("shield-network") ?
 
 // Each mission owns its arsenal and budget. Enemy purchases use the same legal commands.
 export const missionMatchOptions = (mission, equipment = {}) => {
-  if (!mission?.available) throw new Error("This mission is not playable yet.");
+  if (!mission?.available || mission.campaignId) throw new Error("This mission is not playable in the original campaign.");
   return {
     mission,
     mapDefinition: { ...mission.map, balanceOverrides: {}, relayShield: Boolean(mission.relayShield), defenseLineY: mission.kind === "defense" ? mission.map.anchors.holdY : null,

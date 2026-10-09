@@ -1,10 +1,10 @@
 # Die letzte Werft – eine Kampagne mit eigenständigen Missionen
 
-Stand: 9. Oktober 2026. **Status: V2-0 abgeschlossen. Acht Karten-/Missionsvorschauen mit eigenem Speicherbereich sind erreichbar. Neue spielbare Einsätze und Bau-/Forschungssysteme folgen ab V2-1.** [Bericht und Prüfungen zu V2-0](LAST_SHIPYARD_V2_0_REPORT.md).
+Stand: 9. Oktober 2026. **Status: V2-0 abgeschlossen. V2-1 technisch umgesetzt: Außenposten und Fähre sind separat spielbar; sechs weitere Einsätze bleiben Vorschauen. Menschliche Spielbeobachtung zu V2-1 noch offen.** [Bericht und Prüfungen zu V2-1](LAST_SHIPYARD_V2_1_REPORT.md).
 
 Grundlage ist die tatsächlich gelesene Experiment-Fassung auf Commit `0dcb353`, einschließlich Missionsdaten, Simulation, Zielauswahl, Eroberung, Energie, Ausrüstung und Darstellung. Hinzu kommen die [Core Vision](../STRATEGY_GALALAXY_CORE_VISION.md), der [bisherige Experimentplan](LAST_SHIPYARD_EXPERIMENT_PLAN.md) und der [ursprüngliche Verbesserungsplan im erhaltenen Qualitätsbranch](https://github.com/emfau88/strategy-galalaxy/blob/d286e1341362cecb977aec90f78e87bbf93e9d31/docs/GAME_IMPROVEMENT_PLAN.md). Für diese Planung wurden keine weiteren Balance-Testserien durchgeführt.
 
-Dieses Dokument beschreibt die nächste Ausbaureihe **innerhalb von `experiments/last-shipyard/`**. Es ersetzt keine erledigten Checklisten rückwirkend. Die bisherigen sechs Missionen bleiben der dokumentierte Ausgangspunkt; die nächste Fassung erhält acht neu gestaltete Einsätze. Diese Erweiterung des Umfangs ist eine bewusste Empfehlung für die jetzt gewünschte Kampagnenvielfalt. Die Umsetzung von V2-0 wurde beauftragt und abgeschlossen; spätere Bulks bleiben offen.
+Dieses Dokument beschreibt die nächste Ausbaureihe **innerhalb von `experiments/last-shipyard/`**. Es ersetzt keine erledigten Checklisten rückwirkend. Die bisherigen sechs Missionen bleiben der dokumentierte Ausgangspunkt; die nächste Fassung erhält acht neu gestaltete Einsätze. Diese Erweiterung des Umfangs ist eine bewusste Empfehlung für die jetzt gewünschte Kampagnenvielfalt. V2-0 und die technische Umsetzung von V2-1 sind geliefert; V2-2 bis V2-6 bleiben offen.
 
 ## 1. Meine Empfehlung
 
@@ -245,7 +245,7 @@ Erster Rahmen: drei notwendige und höchstens zwei ergänzende neue Raster-Asset
 
 ## 11. Umsetzungsbulks in drei spielbaren Ausbaustufen
 
-**V2-0 ist abgeschlossen; V2-1 bis V2-6 bleiben offen.** Ein technisch umgesetzter Punkt und eine ausstehende menschliche Spielbeobachtung werden getrennt ausgewiesen. Jeder Bulk erhält einen kurzen Bericht über tatsächlich Geleistetes und verbleibende Einschränkungen.
+**V2-0 ist abgeschlossen; V2-1 ist technisch umgesetzt, die menschliche Spielbeobachtung bleibt offen. V2-2 bis V2-6 sind noch nicht umgesetzt.** Jeder Bulk erhält einen kurzen Bericht über tatsächlich Geleistetes und verbleibende Einschränkungen.
 
 ### Ausbaustufe A – Beweisen, dass zwei Einsätze anders funktionieren
 
@@ -262,14 +262,18 @@ Erster Rahmen: drei notwendige und höchstens zwei ergänzende neue Raster-Asset
 
 #### V2-1 – Außenposten und Evakuierung als zwei vollständige Testeinsätze
 
-- [ ] Mission 2 mit Capture, einem Bauplatz, Bastion und ereignisabhängigen Gegenangriffen umsetzen.
-- [ ] Mission 4 mit zwei ungleichen Lanes, Sprungstation und drei bezahlten Ladungen umsetzen.
-- [ ] Kontextbedienung, Stations-Haltepunkte, Warnungen und eindeutige Niederlagen ergänzen.
-- [ ] Beide Einsätze im Testzugang direkt startbar machen; ihre benötigte Ausrüstung dort vorgeben, ohne alte Missionen nachspielen zu müssen.
-- [ ] Jeweils Sieg, Niederlage, Neustart und einen unterbrochenen Bau-/Ladeablauf gezielt prüfen.
+- [x] Mission 2 mit Capture, einem Bauplatz, Bastion und ereignisabhängigen Gegenangriffen umsetzen.
+- [x] Mission 4 mit zwei ungleichen Lanes, Sprungstation und drei bezahlten Ladungen umsetzen.
+- [x] Kontextbedienung, Stations-Haltepunkte, Warnungen und eindeutige Niederlagen ergänzen.
+- [x] Beide Einsätze im Testzugang direkt startbar machen; ihre benötigte Ausrüstung dort vorgeben, ohne alte Missionen nachspielen zu müssen.
+- [x] Jeweils Sieg, Niederlage, Neustart und einen unterbrochenen Bau-/Ladeablauf gezielt prüfen.
 - [ ] Menschlich beobachten: Verändert der Spieler zwischen den beiden Missionen tatsächlich seine Prioritäten?
 
 **Ergebnis:** Zwei kurze, vollständige Spielerlebnisse. Hier fällt die wichtigste Entscheidung über den weiteren Ausbau.
+
+**Technisch umgesetzt in `0.0.8-v2-1`:** Kampagne → Neue Kampagne · 2 Testeinsätze → Außenposten oder Fähre → Testeinsatz starten. Ein Bauplatz pro Karte, Bastion für 140 E mit 8s verwundbarer Bauzeit; drei einzeln gestartete Rettungsladungen zu je 120 E und 16s gesicherter Besatzung. Besitzverlust startet die zwei Außenpostenangriffe nicht erneut. Pause hält Bau und Ladung an; ein Neubau erhält eine neue Ziel-ID. Eigene Flotte: maximal 12 beim Außenposten, bei der Fähre 10 pro Lane und 16 insgesamt; höchstens zwei lebende kostenlose Drones pro Lane verhindern eine Blockade der Kaufplätze durch Warten. Startausrüstung und Siege bleiben vom bisherigen Kampagnenstand getrennt.
+
+**Bewusste Präzisierungen:** Haltepunkte liegen beim Außenposten bei y=610 und bei der Fähre links/rechts bei y=925/1060; Stationsbereiche haben Radius 90. Damit halten eigene Schiffe tatsächlich im benötigten Bereich beziehungsweise auf der Carrier-Front. Aegis schützt vorerst weiter Carrier und Schiffe; die Erweiterung auf Anlagen und das erste Imagegen-Stationsmotiv bleiben V2-2. V2-1 verwendet funktionale Vektorstationen und den vorhandenen Turret-Fallback. Noch keine Bauplan-Freischaltungen, Forschung oder Verbindung der acht Einsätze. [Umsetzung, Prüfungen und Grenzen](LAST_SHIPYARD_V2_1_REPORT.md).
 
 **Weiter erst, wenn:** Bauentscheidung und Rettungsinvestition verständlich sind, das sture Ausgeben aller Energie für dieselbe Schiffsklasse nicht beide Aufträge beiläufig erfüllt und wenigstens zwei plausible Vorgehensweisen beobachtbar sind. Bei Problemen Kosten, Lage und Angriffe überarbeiten; keine dritte Mechanik als Ablenkung hinzufügen.
 

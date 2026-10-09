@@ -2,7 +2,7 @@
 
 Stand: 8. Oktober 2026. **Status: Bulk 0–2 und 4–5 abgeschlossen; Bulk 3 technisch umgesetzt. Alle sechs Missionen, Werftausrüstung, Schildrelais-Finale und Kampagnenabschluss sind spielbar. Der menschliche Ersttest und Bulk 6 bleiben offen.**
 
-**Nächster Ausbau (9. Oktober):** Der [Kampagnen-Ausbauplan](LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) beschreibt acht eigenständig gestaltete Einsätze mit festen Bauplätzen, Stationszielen, Rettung und Forschung. V2-0 ist abgeschlossen: Acht Karten-/Missionsvorschauen mit eigenem Speicherbereich sind erreichbar. Die neuen Spielmechaniken folgen ab V2-1. Die Statusangaben und Abnahmen dieses bisherigen Sechs-Missionen-Versuchs bleiben davon unberührt.
+**Nächster Ausbau (9. Oktober):** Der [Kampagnen-Ausbauplan](LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) beschreibt acht eigenständig gestaltete Einsätze mit festen Bauplätzen, Stationszielen, Rettung und Forschung. V2-0 ist abgeschlossen; **V2-1 ist technisch umgesetzt:** Außenpostenbau und Evakuierung sind direkt startbare Testeinsätze mit getrenntem Fortschritt. Sechs weitere Einsätze bleiben Vorschauen, die menschliche Spielbeobachtung zu V2-1 ist offen. [V2-1-Bericht](LAST_SHIPYARD_V2_1_REPORT.md). Die Statusangaben und Abnahmen dieses bisherigen Sechs-Missionen-Versuchs bleiben davon unberührt.
 
 Arbeitsbranch: `codex/last-shipyard`. [Lokaler Einstieg und Befehle](../experiments/last-shipyard/README.md) · [Herkunft und Abnahme](../experiments/last-shipyard/BASELINE.md). Umgesetzte Maßnahmen und offene Abnahmen sind unten einzeln gekennzeichnet.
 

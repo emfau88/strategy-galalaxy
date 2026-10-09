@@ -1,6 +1,7 @@
 import { EXPANSION_MISSIONS, expansionMissionById } from "../data/campaignExpansion.js";
 import { expansionUiLayout } from "../ui/expansionUi.js";
 import { TEAM } from "../core/constants.js";
+import { campaignResultLayout } from "../ui/campaignUi.js";
 
 const color = { text: "#f5eddd", muted: "#a7b5c5", cyan: "#80dedb", gold: "#d3b079", red: "#e99186" };
 const label = (ctx, value, x, y, size = 12, fill = color.text) => {
@@ -49,36 +50,54 @@ export const renderExpansionMenu = (ctx, model) => {
   label(ctx, "DIE LETZTE WERFT · NEUE KAMPAGNE", 28, at(58), 11, color.muted);
   if (model.menuScreen === "expansion") {
     label(ctx, "EIN SEKTOR ERWACHT", 28, at(110), 25);
-    label(ctx, "8 KARTENENTWÜRFE · NOCH KEIN EINSATZ SPIELBAR", 28, at(149), 10, color.gold);
-    label(ctx, "Einsatz antippen: Karte, Auftrag und Entscheidung", 28, at(170), 11, color.muted);
+    label(ctx, "2 TESTEINSÄTZE SPIELBAR · 6 KARTENVORSCHAUEN", 28, at(149), 10, color.gold);
+    label(ctx, "Außenposten und Fähre direkt mit Startausrüstung spielen", 28, at(170), 10, color.muted);
     for (const [index, rect] of ui.missions.entries()) {
       const mission = EXPANSION_MISSIONS[index];
       panel(ctx, rect, model.expansionProgress.lastPreviewId === mission.id);
       label(ctx, String(mission.number).padStart(2, "0"), rect.x + 12, rect.y + 26, 16, color.gold);
       label(ctx, mission.title, rect.x + 45, rect.y + 17, 13);
-      label(ctx, `${mission.map.lanes.length} ${mission.map.lanes.length === 1 ? "Lane" : "Lanes"} · ${mission.map.sectorTheme} · Vorschau`, rect.x + 45, rect.y + 36, 9, color.muted);
+      const status = model.expansionProgress.completed.includes(mission.id) ? "✓ Abgeschlossen" : mission.available ? "▶ SPIELBAR" : "Vorschau";
+      label(ctx, `${mission.map.lanes.length} ${mission.map.lanes.length === 1 ? "Lane" : "Lanes"} · ${mission.map.sectorTheme} · ${status}`, rect.x + 45, rect.y + 36, 9, mission.available ? color.cyan : color.muted);
     }
     button(ctx, ui.back, "ZUR BISHERIGEN KAMPAGNE");
   } else {
     const mission = expansionMissionById(model.selectedExpansionId) ?? EXPANSION_MISSIONS[0], map = mission.map;
-    label(ctx, `EINSATZ ${String(mission.number).padStart(2, "0")} · KARTENVORSCHAU`, 28, at(100), 11, color.gold);
+    label(ctx, `EINSATZ ${String(mission.number).padStart(2, "0")} · ${mission.available ? "SPIELBARER TEST" : "KARTENVORSCHAU"}`, 28, at(100), 11, color.gold);
     wrap(ctx, mission.title, 28, at(130), 364, 23);
-    label(ctx, "Noch nicht spielbar · Bau- und Zielsysteme folgen", 28, at(186), 11, color.muted);
+    label(ctx, mission.available ? mission.number === 2 ? "Scout · Fighter · Bastion · 300 E Startenergie" : "Scout · Fighter · Bomber · Bastion · Aegis · 340 E" : "Noch nicht spielbar · Bau- und Zielsysteme folgen", 28, at(186), 11, color.muted);
     drawMap(ctx, map, ui.map);
     label(ctx, "AUFTRAG", 210, at(231), 10, color.gold);
-    const goalHeight = wrap(ctx, mission.objective, 210, at(255), 180);
+    const goalHeight = wrap(ctx, mission.objective, 210, at(255), 180, 11);
     const decisionY = at(255) + goalHeight + 20;
     label(ctx, "DEINE ENTSCHEIDUNG", 210, decisionY, 10, color.cyan);
     const decisionHeight = wrap(ctx, mission.decision, 210, decisionY + 24, 180, 11, color.muted);
     const infoY = decisionY + decisionHeight + 49;
     label(ctx, `${map.bounds.width} × ${map.bounds.height} · ${map.lanes.length} ${map.lanes.length === 1 ? "Lane" : "Lanes"}`, 210, infoY, 11);
-    label(ctx, `${map.buildPads.length} feste Bauplätze geplant`, 210, infoY + 23, 11, color.muted);
-    wrap(ctx, `Belohnung: ${mission.reward}`, 210, infoY + 49, 180, 11, color.cyan);
-    label(ctx, "○ Zielanlage   □ Bauplatz   △ Startpunkt", 28, at(590), 11, color.muted);
-    label(ctx, "Gestrichelt: Halteposition · gleicher Kartenmaßstab", 28, at(609), 10, color.muted);
+    label(ctx, `${map.buildPads.length} ${mission.available ? "fester Bauplatz · 140 E" : "feste Bauplätze geplant"}`, 210, infoY + 23, 11, color.muted);
+    if (mission.available) button(ctx, ui.start, model.levelLoading ? "WIRD VORBEREITET …" : "TESTEINSATZ STARTEN →", !model.levelLoading);
+    else wrap(ctx, `Belohnung: ${mission.reward}`, 210, infoY + 49, 180, 11, color.cyan);
+    label(ctx, mission.available ? mission.number === 2 ? "Relais besetzen löst zwei Angriffe aus. Flotte hält automatisch." : "Drei Ladungen: je 120 E + 16s mit Besatzung ohne Feinde." : "○ Zielanlage   □ Bauplatz   △ Startpunkt", 28, at(590), 10, color.muted);
+    label(ctx, mission.available ? mission.number === 2 ? "Max. 12 Schiffe · +10 E/s · Bauplan-Freischaltungen folgen." : "Max. 16 Schiffe · +12 E/s · Aegis schützt Carrier + Schiffe." : "Gestrichelt: Halteposition · gleicher Kartenmaßstab", 28, at(609), 10, color.muted);
     button(ctx, ui.previous, "← VORHERIGER EINSATZ", mission.number > 1);
     button(ctx, ui.next, "NÄCHSTER EINSATZ →", mission.number < 8);
     button(ctx, ui.back, "ZUR EINSATZÜBERSICHT");
   }
-  label(ctx, model.expansionProgress.persistent ? "Letzte Kartenansicht wird auf diesem Gerät gemerkt." : "Vorschau-Auswahl bleibt in dieser Sitzung", 28, at(746), 9, color.muted);
+  label(ctx, model.expansionProgress.persistent ? "Eigener Fortschritt · bisherige Kampagne bleibt erhalten." : "Auswahl und Fortschritt bleiben nur in dieser Sitzung", 28, at(746), 9, color.muted);
+};
+
+export const renderExpansionResult = (ctx, model) => {
+  const win = model.state === "VICTORY", y = model.height / 2;
+  const state = model.simulation.state, ferry = model.mission.goal.kind === "evacuate";
+  const run = model.director.missionRuntime.snapshot(state);
+  ctx.fillStyle = "rgba(3,10,20,.8)"; ctx.fillRect(0, 0, model.width, model.height);
+  panel(ctx, { x: 28, y: y - 192, width: 364, height: 370 });
+  label(ctx, "DIE LETZTE WERFT · TESTEINSATZ", 52, y - 153, 11, color.gold);
+  label(ctx, win ? ferry ? "EVAKUIERUNG GELUNGEN" : "AUSSENPOSTEN GESICHERT" : state.structures.get("player-hq")?.alive ? "SPRUNGSTATION VERLOREN" : "CARRIER VERLOREN", 52, y - 113, 19, win ? color.cyan : color.red);
+  label(ctx, model.mission.title, 52, y - 79, 14);
+  wrap(ctx, win ? ferry ? "Alle drei Rettungsladungen sind durch. Station und Carrier haben überlebt." : "Relais gehalten und beide Gegenangriffe abgewehrt." : ferry ? `${run.project.completed}/3 Ladungen gerettet. Verteidige Station links und Carrier rechts.` : `${run.defeatedAttacks}/2 Angriffe abgewehrt. Sichere das Relais mit Kauf-Schiffen und nutze bei Bedarf die Bastion.`, 52, y - 41, 316, 12);
+  wrap(ctx, "Dieser Test speichert seinen Abschluss separat. Baupläne und die zusammenhängende Kampagne folgen im Ausbau.", 52, y + 23, 316, 10, color.muted);
+  const ui = campaignResultLayout(model.height);
+  button(ctx, ui.retry, "ERNEUT SPIELEN"); button(ctx, ui.menu, "TESTEINSÄTZE");
+  label(ctx, model.expansionProgress.persistent ? "Fortschritt gespeichert" : "Fortschritt nur in dieser Sitzung", 52, y + 159, 10, color.muted);
 };

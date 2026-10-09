@@ -18,7 +18,7 @@ const pad = (laneId, x, y) => ({ laneId, x, y });
 const define = ({ slug, number, title, theme, height, lanes, markers, pads = [], objective, decision, reward,
   goal, requiredAlive = [], enemyCarrier = false, enemyCarrierLane = null, units }) => freeze({
   id: `v2-${slug}`, campaignId: EXPANSION_ID, number, title, objective, decision, reward,
-  available: false, status: "layout-preview", units,
+  available: [2, 4].includes(number), status: [2, 4].includes(number) ? "playable-pilot" : "layout-preview", units, upgrades: [],
   goal: { ...goal, requiredAlive: ["player-hq", ...requiredAlive] },
   map: { id: `v2-${slug}-layout`, title, level: lanes.length, visualTheme: lanes.length === 1 ? "orbital_garden" : "twin_foundries",
     sectorTheme: theme, bounds: { width: 420, height }, features: { ...CORE_SLICE_FEATURES },
@@ -32,7 +32,7 @@ const define = ({ slug, number, title, theme, height, lanes, markers, pads = [],
 });
 const light = ["scout", "fighter"], siege = [...light, "bomber"], full = [...siege, "frigate"];
 
-// Layout and goal contracts only. No draft mission can enter the old assault runtime.
+// Two independent pilots; the remaining layouts cannot enter a combat runtime.
 export const EXPANSION_MISSIONS = freeze([
   define({ slug: "light-in-the-wreckage", number: 1, title: "Ein Licht im Schrott", theme: "Schrottkorridor", height: 900,
     lanes: center(900, 140, 540), markers: [], units: light, enemyCarrier: true,
@@ -40,7 +40,7 @@ export const EXPANSION_MISSIONS = freeze([
     decision: "Schnelle Scouts schicken oder auf Fighter sparen?", reward: "Bastion-Bauplan",
     goal: { kind: "destroy", targets: ["enemy-hq"] } }),
   define({ slug: "first-outpost", number: 2, title: "Der erste Außenposten", theme: "Bergungssektor", height: 1180,
-    lanes: center(1180, 190, 660), markers: [marker("outpost-relay", "control", "Kontrollrelais", LANE.CENTER, 210, 590)],
+    lanes: center(1180, 190, 610), markers: [{ ...marker("outpost-relay", "control", "Kontrollrelais", LANE.CENTER, 210, 590), radius: 90 }],
     pads: [pad(LANE.CENTER, 120, 685)], units: light,
     objective: "Erobere das Relais und wehre zwei Gegenangriffe ab. Halte es am Ende sicher.",
     decision: "Eine Bastion errichten oder mehr Schiffe schicken?", reward: "Bomber-Bauplan",
@@ -52,7 +52,7 @@ export const EXPANSION_MISSIONS = freeze([
     decision: "Vorne abfangen oder hinten eine Verteidigung aufbauen?", reward: "Aegis · Hafen in Betrieb",
     goal: { kind: "defend", attacks: 3, requireClearBattle: true } }),
   define({ slug: "last-ferry", number: 4, title: "Die letzte Fähre", theme: "Ziviler Sprungkorridor", height: 1320,
-    lanes: twins(1320, 490, 180, 860, 910), markers: [marker("evacuation-gate", "project", "Sprungstation", LANE.LEFT, 105, 900)],
+    lanes: twins(1320, 490, 180, 925, 1060), markers: [{ ...marker("evacuation-gate", "project", "Sprungstation", LANE.LEFT, 105, 900), radius: 90 }],
     pads: [pad(LANE.LEFT, 65, 985)], units: siege, requiredAlive: ["evacuation-gate"],
     objective: "Schließe drei Evakuierungsladungen ab. Sprungstation und Carrier müssen überleben.",
     decision: "Energie für die Rettung oder für eine bedrohte Front?", reward: "Fregatten-Bauplan · Fachleute gerettet",

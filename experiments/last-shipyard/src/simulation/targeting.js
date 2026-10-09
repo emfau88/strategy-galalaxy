@@ -3,6 +3,7 @@ import { STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js"
 import { TEAM } from "../core/constants.js";
 import { enemyOf, laneFor } from "./battleState.js";
 import { compareUnitOrder, UNIT_STATE } from "./entities.js";
+import { playerHoldLine } from "./tacticalAnchors.js";
 
 const squaredDistance = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 const inRange = (a, b, range) => squaredDistance(a, b) <= range ** 2 + 1e-6;
@@ -19,7 +20,7 @@ const rolePriority = (unit, candidate) => {
   const type = candidate.unitType;
   if (unit.unitType === "bomber") {
     if (type === "frigate") return 0;
-    if (candidate.structureType === "turret" || candidate.structureType === "relay") return 1;
+    if (["turret", "relay", "station"].includes(candidate.structureType)) return 1;
     if (candidate.structureType === "hq") return 2;
     return 8;
   }
@@ -55,6 +56,11 @@ export const isValidUnitTarget = (state, unit, candidate, positions = null) => (
 
 const nextStructureTarget = (state, unit) => {
   const enemyTeam = enemyOf(unit.team);
+  if (state.map.objectiveMission) {
+    return [...state.structures.values()].filter(s => s.alive && s.team === enemyTeam
+      && (s.laneId === unit.laneId || s.laneId === null) && !carrierProtected(state, s))
+      .sort((a, b) => squaredDistance(unit, a) - squaredDistance(unit, b) || a.id.localeCompare(b.id))[0] ?? null;
+  }
   const relay = [...state.structures.values()].find(s => s.alive && s.team === enemyTeam && s.laneId === unit.laneId && s.structureType === "relay");
   if (relay) return relay;
   const turret = [...state.structures.values()].find((structure) => (
@@ -73,7 +79,7 @@ const unitTargetCandidates = (state, unit, positions = null) => {
     .map((id) => state.units.get(id))
     .filter((candidate) => candidate?.alive
       && !candidate.launching
-      && ((unit.team === TEAM.PLAYER && (Number.isFinite(state.map.defenseLineY) || state.laneStances?.get(unit.laneId) === "hold" || laneWaitingForShield(state, unit)))
+      && ((unit.team === TEAM.PLAYER && (Number.isFinite(playerHoldLine(state, unit.laneId, true)) || laneWaitingForShield(state, unit)))
         || isHostileUnitAhead(unit, candidate, positions)
         || (friendlyHq && inRange(positioned(friendlyHq, positions), positioned(candidate, positions), homeDefenseRange)))
       && inRange(positioned(unit, positions), positioned(candidate, positions), definition.aggroRange));
