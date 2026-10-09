@@ -11,6 +11,7 @@ import { STORAGE_KEYS, EXPERIMENT } from "../src/experiment.js";
 import { MISSIONS } from "../src/data/campaign.js";
 import { EXPANSION_MISSIONS } from "../src/data/campaignExpansion.js";
 import { expansionUiLayout } from "../src/ui/expansionUi.js";
+import { checkPilots } from "./pilot-browser-checks.mjs";
 import { TEAM } from "../src/core/constants.js";
 
 const browser = (process.platform === "win32"
@@ -18,7 +19,8 @@ const browser = (process.platform === "win32"
   : ["/usr/bin/google-chrome", "/usr/bin/chromium"]).find(existsSync);
 assert.ok(browser, "Chrome or Edge required for this short browser check");
 const live = process.argv.includes("--live");
-const foundation = process.argv.includes("--foundation");
+const pilots = process.argv.includes("--pilots");
+const foundation = process.argv.includes("--foundation") || pilots;
 const siteMode = live || process.argv.includes("--site");
 const output = resolve(experimentRoot, `../../tmp/last-shipyard-${live ? "live" : siteMode ? "bulk1" : "standalone"}`);
 await mkdir(output, { recursive: true });
@@ -77,7 +79,7 @@ try {
       const handler = pending.get(message.id);
       pending.delete(message.id);
       if (message.error) handler?.reject(new Error(message.error.message)); else handler?.done(message.result);
-    } else if (message.method === "Runtime.exceptionThrown") failures.push(message.params.exceptionDetails.text);
+    } else if (message.method === "Runtime.exceptionThrown") failures.push(message.params.exceptionDetails.exception?.description ?? message.params.exceptionDetails.text);
     else if (message.method === "Log.entryAdded" && message.params.entry.level === "error" && !message.params.entry.url?.endsWith("/favicon.ico")) failures.push(message.params.entry.text);
     else if (message.method === "Network.loadingFailed" && !message.params.canceled) failures.push(message.params.errorText);
     else if (message.method === "Network.responseReceived") {
@@ -139,8 +141,8 @@ try {
   if (foundation) {
     const metadata = await (await fetch(origin + prefix + "version.json")).json();
     assert.equal(metadata.version, EXPERIMENT.version);
-    assert.equal(metadata.expansion.previewMissions, 8);
-    assert.deepEqual(metadata.expansion.playableMissions, []);
+    assert.equal(metadata.expansion.previewMissions, EXPANSION_MISSIONS.filter(m => !m.available).length);
+    assert.deepEqual(metadata.expansion.playableMissions, EXPANSION_MISSIONS.filter(m => m.available).map(m => m.id));
     await evaluate("window.__lastShipyard.campaign.begin('first-contact')");
     const oldSave = await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.progress)})`);
     const expansionUi = expansionUiLayout(transform.designHeight);
@@ -173,6 +175,7 @@ try {
     await tap(expansionUi.entry); await tap(expansionUi.back);
     assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "missions");
   }
+  if (pilots) await checkPilots({ evaluate, tap, capture, send, delay, waitReady });
   await tap(ui.missions[0]);
   assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "briefing");
   await capture("briefing-360x800.png");
@@ -399,6 +402,7 @@ try {
   if (foundation) {
     report.checks = ["eight preview screens via touch", "no draft mission start", "previous/next navigation", "360x640 and 390x844 preview captures", "separate preview reload", "old save unchanged", "old campaign start/purchase/pause", "old reset retains preview", "Classic storage unchanged", "published scope metadata", "no browser errors"];
     report.completedVia = "No campaign playthroughs or balance runs; navigation and existing match controls only";
+    if (pilots) { report.checks.push("both pilots started through touch", "build/charge touch and pause", "actual M2 objective victory", "station loss/retry and result navigation", "360x640 and 390x844 pilot layouts", "V2 completion reload preserves old save"); report.completedVia = "M2 through legal purchases; M4 charging and a deliberate station-loss boundary; no balance sweep"; }
   }
   await writeFile(resolve(output, "report.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report, null, 2));

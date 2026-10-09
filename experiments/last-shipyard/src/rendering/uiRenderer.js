@@ -1,5 +1,6 @@
 import { carrierProtected } from "../campaign/relayShield.js";
 import { renderAbilityHud } from "./abilityRenderer.js";
+import { renderStationUi } from "./stationRenderer.js";
 import { renderCampaignMenu, renderCampaignResult, renderMissionHud } from "./campaignRenderer.js";
 import { EXPERIMENT } from "../experiment.js";
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
@@ -108,16 +109,19 @@ const header = (ctx, model, ui) => {
   commandFrame(ctx, { x: 8, y: 8, width: model.width - 16, height: 48 }, { fill: "rgba(13,29,47,0.96)", strong: true, radius: 10 });
   text(ctx, `${model.mission ? "DU" : "YOU"}  ${Math.round(ratio(playerHq) * 100)}%`, 18, 22, 11, C.player);
   miniBar(ctx, 18, 31, 102, ratio(playerHq), C.player);
-  const incomeLabel = model.simulation?.state.map.features?.captureNodes === false
+  const incomeLabel = model.simulation?.state.map.features?.captureNodes === false || model.mapDefinition.objectiveMission
     ? `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s`
     : `${economy ? Math.floor(economy.get(TEAM.PLAYER).energy) : 0} E · +${income}/s · NODE ${nodeIncome}`;
   text(ctx, incomeLabel, 18, 44, 8, C.text);
   text(ctx, model.mission ? "DRONE" : "NEXT WAVE", 158, 22, 9, C.text, "center");
   text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, 158, 42, 14, C.text, "center");
-  text(ctx, model.mission?.kind === "defense" ? `ABGEWEHRT ${model.director.missionRuntime.defeatedAttacks}/3` : carrierProtected(model.simulation.state, enemyHq) ? "SCHILD AKTIV" : `${Math.round(ratio(enemyHq) * 100)}%  ${model.mission ? "GEGNER" : "RIVAL"}`, 280, 22, 10, C.enemy, "right");
-  miniBar(ctx, 280, 31, 72, model.mission?.kind === "defense" ? model.director.missionRuntime.defeatedAttacks / 3 : ratio(enemyHq), C.enemy, "right");
+  const objectiveRun = model.mapDefinition.objectiveMission ? model.director.missionRuntime : null;
+  const objectiveValue = objectiveRun ? objectiveRun.ferry ? objectiveRun.project.completed / 3 : objectiveRun.defeatedAttacks / 2 : null;
+  text(ctx, objectiveRun ? objectiveRun.ferry ? `RETTUNG ${objectiveRun.project.completed}/3` : `ABWEHR ${objectiveRun.defeatedAttacks}/2` : model.mission?.kind === "defense" ? `ABGEWEHRT ${model.director.missionRuntime.defeatedAttacks}/3` : carrierProtected(model.simulation.state, enemyHq) ? "SCHILD AKTIV" : `${Math.round(ratio(enemyHq) * 100)}%  ${model.mission ? "GEGNER" : "RIVAL"}`, 280, 22, 10, objectiveRun ? C.player : C.enemy, "right");
+  miniBar(ctx, 280, 31, 72, objectiveValue ?? (model.mission?.kind === "defense" ? model.director.missionRuntime.defeatedAttacks / 3 : ratio(enemyHq)), objectiveRun ? C.player : C.enemy, "right");
   const fleetCount = model.simulation?.state.lanes.get(model.selectedLaneId)?.unitIds.get(TEAM.PLAYER).length ?? 0;
-  text(ctx, model.mission ? model.mission.fleetTotal ? `L ${fleetCount}/${model.mission.fleetLimit} · Σ ${[...model.simulation.state.units.values()].filter(u => u.alive && u.team === TEAM.PLAYER).length}/${model.mission.fleetTotal}` : `FLOTTE ${fleetCount}/${model.director.config.caps.unitsPerLaneTeam}` : "LIVE DEPLOY", 280, 44, 9, C.muted, "right", 600);
+  const totalLimit = objectiveRun ? model.director.config.caps.unitsPerTeamByTeam[TEAM.PLAYER] : model.mission?.fleetTotal;
+  text(ctx, model.mission ? totalLimit ? `L ${fleetCount}/${model.director.config.caps.unitsPerLaneTeam} · Σ ${[...model.simulation.state.units.values()].filter(u => u.alive && u.team === TEAM.PLAYER).length}/${totalLimit}` : `FLOTTE ${fleetCount}/${model.director.config.caps.unitsPerLaneTeam}` : "LIVE DEPLOY", 280, 44, 9, C.muted, "right", 600);
   box(ctx, COMMAND_UI.pause, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
   text(ctx, model.state === MATCH_STATE.PAUSED ? "▶" : "Ⅱ", 305, 30, 12, C.text, "center");
   box(ctx, COMMAND_UI.sound, "rgba(36, 68, 91, 0.72)", "rgba(190,229,239,0.24)", 7);
@@ -406,12 +410,12 @@ const expandedCommandPanel = (ctx, model, ui) => {
   drawCommandMedallion(ctx, model, ui.fleetTab.x + 10, ui.fleetTab.y + 6, 30);
   text(ctx, model.mission ? "FLOTTE" : "FLEET", ui.fleetTab.x + 112, ui.fleetTab.y + 21, 11, model.commandMenu === "units" ? C.text : C.muted, "center");
   box(ctx, ui.upgradeTab, model.commandMenu === "upgrades" ? "rgba(68,91,93,0.98)" : "rgba(20,45,67,0.94)", model.commandMenu === "upgrades" ? C.gold : "rgba(125,180,201,0.34)", 8);
-  text(ctx, model.mission && !model.mission.upgrades.length ? `${model.mission.fleetLimit} FLOTTENPLÄTZE` : "⌃  UPGRADES", ui.upgradeTab.x + ui.upgradeTab.width / 2, ui.upgradeTab.y + 21, 10, model.commandMenu === "upgrades" ? C.text : C.muted, "center");
+  text(ctx, model.mission && !model.mission.upgrades.length ? `${model.director.config.caps.unitsPerTeamByTeam[TEAM.PLAYER]} FLOTTENPLÄTZE` : "⌃  UPGRADES", ui.upgradeTab.x + ui.upgradeTab.width / 2, ui.upgradeTab.y + 21, 10, model.commandMenu === "upgrades" ? C.text : C.muted, "center");
   const cards = model.commandMenu === "units" ? ui.units : ui.upgrades;
   for (const rect of cards) model.commandMenu === "units" ? unitCard(ctx, model, rect) : upgradeCard(ctx, model, rect);
   if (model.mission && model.mission.units.length === 2) {
-    text(ctx, "Scouts bilden den Schutzschirm.", 24, ui.panel.y + 129, 11, C.muted, "left", 500);
-    text(ctx, "Fighter verstärken den Angriff.", 24, ui.panel.y + 148, 11, C.muted, "left", 500);
+    text(ctx, model.mapDefinition.objectiveMission ? "Scouts erobern das Kontrollrelais." : "Scouts bilden den Schutzschirm.", 24, ui.panel.y + 129, 11, C.muted, "left", 500);
+    text(ctx, model.mapDefinition.objectiveMission ? "Fighter halten den Stationsbereich." : "Fighter verstärken den Angriff.", 24, ui.panel.y + 148, 11, C.muted, "left", 500);
   }
   for (const rect of ui.lanes) footerLaneSelector(ctx, model, rect);
   box(ctx, ui.undo, "rgba(31,66,78,0.9)", null, 6);
@@ -523,6 +527,7 @@ export const renderUiLayer = (ctx, model) => {
     strategicNavigator(ctx, model);
     commandPanel(ctx, model, ui);
     if (model.mission) { renderMissionHud(ctx, model); renderAbilityHud(ctx, model); }
+    renderStationUi(ctx, model);
     if (model.state === MATCH_STATE.PAUSED) paused(ctx, model);
   } else if ([MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(model.state)) endState(ctx, model);
   if (model.debugEnabled && model.lastAiDecision) text(ctx, `QA · AI ${laneName(model.lastAiDecision.defenseLane)} HOLD / ${laneName(model.lastAiDecision.pushLane)} PUSH`, model.width / 2, ui.debugY, 8, "#b8afcf", "center");

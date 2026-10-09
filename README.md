@@ -2,9 +2,9 @@
 
 **[🧪 Die letzte Werft – Testkampagne spielen](https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/)**
 
-Eigener Spielstand. Alle sechs Missionen sind spielbar: Erstkontakt, Schwerer Widerstand, Hafen im Feuer, Geteilte Front, Das Zeitfenster und Das Schildnetz. Werft mit kostenloser Bomber-/Carrier-Auswahl, zwei Fronten mit gemeinsamem Flottenlimit und Schildrelais-Finale. [Lokal starten](experiments/last-shipyard/README.md) · [Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Version 0.0.7-v2-0; menschlicher Ersttest und Smartphone-Abnahme noch offen.
+Eigener Spielstand. Die bisherigen sechs Missionen mit Werft, freier Ausrüstungswahl und Schildrelais-Finale bleiben spielbar. [Lokal starten](experiments/last-shipyard/README.md) · [Bisheriger Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Version **0.0.8-v2-1**; menschliche Spielbeobachtung und Smartphone-Abnahme noch offen.
 
-**Neu: Kampagne → Neue Kampagne · Kartenvorschau.** Acht eigene Kartenentwürfe mit Auftrag und geplanter Hauptentscheidung sind separat anwählbar. Diese acht Einsätze sind noch nicht spielbar; die sechs bisherigen Missionen bleiben verfügbar. [Kampagnen-Ausbauplan](docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) · [V2-0-Bericht](docs/LAST_SHIPYARD_V2_0_REPORT.md).
+**Neu: Kampagne → Neue Kampagne · 2 Testeinsätze.** **Der erste Außenposten**: Relais erobern, optional eine Bastion bauen, zwei Gegenangriffe abwehren. **Die letzte Fähre**: auf zwei ungleichen Fronten Station und Carrier verteidigen und drei Rettungsladungen bezahlen. Beide starten direkt mit passender Ausrüstung und eigenem V2-Fortschritt. Die übrigen sechs neuen Einsätze sind Karten-/Missionsvorschauen. [Kampagnen-Ausbauplan](docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) · [V2-1-Bericht](docs/LAST_SHIPYARD_V2_1_REPORT.md).
 
 **[▶ Strategy Galalaxy spielen](https://emfau88.github.io/strategy-galalaxy/)**
 

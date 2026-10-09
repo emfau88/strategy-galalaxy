@@ -1,6 +1,8 @@
 import { DisruptionSystem } from "../campaign/disruptionSystem.js";
 import { AegisSystem } from "../campaign/aegisSystem.js";
 import { MissionRuntime } from "../campaign/missionRuntime.js";
+import { ExpansionRuntime } from "../campaign/expansionRuntime.js";
+import { isExpansionMission } from "../data/expansionScenarios.js";
 import { CONFIG } from "../config.js";
 import { LANE, MATCH_STATE, TEAM } from "../core/constants.js";
 import { createBattleState } from "./battleState.js";
@@ -44,7 +46,7 @@ export class MatchDirector {
   }
 
   start() {
-    if (this.mission?.available === false) return false;
+    if (this.mission?.available === false || (isExpansionMission(this.mission) && !this.mapDefinition.objectiveMission)) return false;
     this.state = MATCH_STATE.LIVE_MATCH;
     this.resumeState = null;
     this.activeMatchSeconds = 0;
@@ -53,7 +55,7 @@ export class MatchDirector {
     this.deployment = new DeploymentDirector({ config: this.config, laneIds: this.mapDefinition.lanes.map((lane) => lane.id) });
     this.liveDeployment = new LiveDeploymentSystem({ config: this.config });
     this.events = [{ type: "MATCH_STARTED", state: this.state }];
-    this.missionRuntime = this.mission ? new MissionRuntime(this.mission) : null;
+    this.missionRuntime = this.mission ? isExpansionMission(this.mission) ? new ExpansionRuntime(this.mission) : new MissionRuntime(this.mission) : null;
     this.aegis = new AegisSystem(Boolean(this.mission && this.equippedAbility === "aegis"));
     this.simulation.protection = this.aegis;
     this.disrupt = new DisruptionSystem(Boolean(this.mission && this.equippedAbility === "disrupt"));
@@ -70,6 +72,9 @@ export class MatchDirector {
   }
 
   executeCommand(command) {
+    if (command?.type === "BUILD_STATION" || command?.type === "START_PROJECT") {
+      return this.missionRuntime instanceof ExpansionRuntime ? this.missionRuntime.executeCommand(this, command) : { ok: false, reason: "UNKNOWN_COMMAND" };
+    }
     if (command?.type === "SET_LANE_STANCE") {
       if (this.state !== MATCH_STATE.LIVE_MATCH) return { ok: false, reason: "WRONG_PHASE" };
       if (!this.config.rules?.allowLaneStance || command.team !== TEAM.PLAYER || !this.simulation.state.lanes.has(command.laneId) || !["hold", "push"].includes(command.stance)) return { ok: false, reason: "INVALID_TEAM_OR_LANE" };
@@ -103,11 +108,13 @@ export class MatchDirector {
     this.capture?.advance(this.simulation.state, step);
     this.activeMatchSeconds += step;
 
+    if (this.missionRuntime instanceof ExpansionRuntime) this.missionRuntime.advance(this, step);
+
     const goal = this.missionRuntime?.evaluateGoal(this);
     if (goal) return this.finishMission(goal.team, goal.reason);
     if (this.simulation.state.terminalTeam) return this.finishMission(this.simulation.state.terminalTeam, "CARRIER_DESTROYED");
 
-    this.missionRuntime?.advance(this, step);
+    if (!(this.missionRuntime instanceof ExpansionRuntime)) this.missionRuntime?.advance(this, step);
     this.aiDecisionRemaining -= step;
     let liveDecision = false;
     if (this.aiDecisionRemaining <= Number.EPSILON) {

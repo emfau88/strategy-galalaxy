@@ -1,6 +1,6 @@
 {
   "name": "Die letzte Werft",
-  "version": "0.0.7-v2-0",
+  "version": "0.0.8-v2-1",
   "classicCommit": "ed8802b2652d07ae2e7884f1dc2eabd195b34057",
   "runtimeSourceCommit": "311af9efca548bbd11b2951cb3e67e86effb453b",
   "playableMissions": [
@@ -13,8 +13,11 @@
   ],
   "expansion": {
     "id": "last-shipyard-sector-rebuild-v2",
-    "status": "layout-preview",
-    "previewMissions": 8,
-    "playableMissions": []
+    "status": "playable-pilots",
+    "previewMissions": 6,
+    "playableMissions": [
+      "v2-first-outpost",
+      "v2-last-ferry"
+    ]
   }
 }

@@ -1,10 +1,10 @@
 # Die letzte Werft – Testkampagne
 
-Version **0.0.7-v2-0**. Alle sechs gestalteten Missionen einschließlich des Schildnetz-Finales sind spielbar.
+Version **0.0.8-v2-1**. Die bisherigen sechs Missionen bleiben spielbar. Zusätzlich sind Außenpostenbau und Evakuierung als zwei unabhängige Testeinsätze der neuen Kampagne verfügbar.
 
 ## Lokal spielen
 
-Im Repository des Branches codex/last-shipyard:
+Im aktuellen Repository-Stand:
 
 ```powershell
 npm --prefix experiments/last-shipyard run dev
@@ -58,8 +58,22 @@ Die zwei Abzeichen verlangen mindestens 80% Carrier-Hülle beziehungsweise keine
 
 ## V2-0 – Neue Kampagne als Kartenvorschau
 
+Historischer Umfang von V2-0; V2-1 aktiviert inzwischen zwei dieser Einsätze (siehe unten).
+
 Kampagne → Neue Kampagne · Kartenvorschau öffnet acht Kartenentwürfe mit eigenen Höhen, Lanes, Startpunkten, Haltepositionen, geplanten Bauplätzen und Zielen. Alle acht sind ausdrücklich Vorschauen ohne Missionsstart. Die bisherige Kampagne bleibt spielbar. Die zuletzt betrachtete Karte wird unter einem eigenen V2-Schlüssel gespeichert; Anschauen erzeugt keine Siege.
 
 [Ausbauplan](../../docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) · [Umfang und Prüfung](../../docs/LAST_SHIPYARD_V2_0_REPORT.md). Bau, Forschung und neue Missionsabläufe folgen ab V2-1. Noch keine neuen Imagegen-Assets.
 
 Gezielter Browserablauf ohne weitere Kampagnen-Durchläufe: `npm --prefix experiments/last-shipyard run test:foundation:browser`. Für das gemeinsame Artefakt: `node experiments/last-shipyard/scripts/browser-smoke.mjs --site --foundation`.
+
+## V2-1 – Außenposten und Fähre spielen
+
+**Kampagne → Neue Kampagne · 2 Testeinsätze → Der erste Außenposten / Die letzte Fähre → Testeinsatz starten.** Keine Freischaltung der alten Missionen nötig.
+
+- **Außenposten:** Scout/Fighter kaufen, Relais besetzen, zwei angekündigte Rückeroberungsangriffe abwehren. Ein eigener Bauplatz bietet eine optionale Bastion (140 E, 8s Bauzeit). Am Ende eigene Besatzung und sichere Relaiskontrolle nötig.
+- **Fähre:** Links Sprungstation, rechts Carrier-Front. Drei Ladungen direkt an der Station einzeln starten (je 120 E, 16s). Mindestens ein gekaufter eigener Scout/Fighter/Bomber im Stationsbereich, kein Gegner. Feindkontakt oder fehlende Besatzung pausiert den bezahlten Fortschritt. Station oder Carrier verloren bedeutet Niederlage.
+- **Bedienung:** Station/Bauplatz antippen oder die beschrifteten Kameratasten verwenden. Es ist jeweils ein Kontextfeld oder das Flottenmenü offen. Flotten halten automatisch an den jeweiligen Linien. Bau und Ladung pausieren mit dem Spiel.
+- **Vorgaben:** Außenposten 300 E, +10 E/s, 12 Flottenplätze; Fähre 340 E, +12 E/s, 10 pro Lane/16 gesamt, Aegis als Startausrüstung. Höchstens zwei lebende kostenlose Drones pro Lane. Aegis schützt in diesem Bulk Carrier und Schiffe, noch keine Anlagen.
+- **Umfang:** Zwei separat gespeicherte Abschlüsse, sechs weitere Vorschauen. Forschung, neue Bauplan-Freischaltungen, endgültige Stationsbilder und der zusammenhängende Verlauf folgen. Menschliche Spielbeobachtung bleibt der nächste Entscheidungspunkt.
+
+[Aktuelle Checkliste](../../docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) · [V2-1-Bericht](../../docs/LAST_SHIPYARD_V2_1_REPORT.md). Gezielter Browserablauf: `node experiments/last-shipyard/scripts/browser-smoke.mjs --site --pilots` nach `npm run build:pages`; mit `--live --pilots` gegen die öffentliche Fassung.

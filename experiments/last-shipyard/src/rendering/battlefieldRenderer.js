@@ -991,14 +991,14 @@ export const renderEntityLayer = (ctx, model) => {
     const screenY = projection.y(worldY);
     return screenY >= view.y - padding && screenY <= view.y + view.height + padding;
   };
-  if (simulation.state.map.features?.captureNodes !== false) {
+  if (simulation.state.map.features?.captureNodes !== false && !simulation.state.map.objectiveMission) {
     for (const node of nodes.values()) if (visible(node.y, 120)) drawNode(ctx, node, model.frameTime, model.assets, projection, simulation.state.map.visualTheme);
   }
   for (const structure of structures.values()) {
-    if (structure.structureType === "relay") continue;
+    if (structure.structureType === "relay" || structure.structureType === "station") continue;
     if (structure.structureType === "turret" && simulation.state.map.features?.defensiveTurrets === false) continue;
     if (!visible(structure.y, structure.structureType === "hq" ? 80 : 50)) continue;
-    ctx.globalAlpha = structure.alive ? 1 : 0.16;
+    ctx.globalAlpha = structure.alive ? structure.constructionRemaining > 0 ? 0.4 : 1 : 0.16;
     drawStructure(ctx, structure, model, projection);
   }
   ctx.globalAlpha = 1;

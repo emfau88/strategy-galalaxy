@@ -14,13 +14,14 @@ export class CaptureSystem {
       const lane = state.lanes.get(node.laneId);
       const power = (team) => lane.unitIds.get(team)
         .map((id) => state.units.get(id))
+        .filter(unit => !state.map.objectiveCapture?.paidOnly || UNIT_DEFINITIONS[unit?.unitType]?.cost > 0)
         .filter((unit) => unit?.alive && !unit.launching && Math.hypot(unit.x - node.x, unit.y - node.y) <= node.radius)
         .reduce((sum, unit) => sum + (UNIT_DEFINITIONS[unit.unitType].captureStrength ?? 1), 0);
       const playerPower = power(TEAM.PLAYER);
       const enemyPower = power(TEAM.ENEMY);
       const netPower = playerPower - enemyPower;
       node.capturePower = { [TEAM.PLAYER]: playerPower, [TEAM.ENEMY]: enemyPower };
-      node.contested = playerPower > 0 && enemyPower > 0 && Math.abs(netPower) < 0.1;
+      node.contested = playerPower > 0 && enemyPower > 0 && (state.map.objectiveCapture?.pauseWhenContested || Math.abs(netPower) < 0.1);
       if (node.contested || Math.abs(netPower) < 0.1) continue;
 
       const previousProgress = node.progress;

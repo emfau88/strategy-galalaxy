@@ -39,7 +39,10 @@ export class DeploymentDirector {
       let teamAvailable = (this.config.caps.unitsPerTeamByTeam?.[team] ?? Infinity) - [...simulation.state.units.values()].filter(unit => unit.alive && unit.team === team).length;
       for (const laneId of this.laneIds) {
         const pendingBase = this.baseWaveBacklog.get(team).get(laneId);
-        const baseEntries = [...pendingBase, ...Array.from({ length: this.baseWaveSize(simulation.state.time, team) }, () => "drone")];
+        const droneCount = simulation.state.lanes.get(laneId).unitIds.get(team)
+          .filter(id => simulation.state.units.get(id)?.alive && simulation.state.units.get(id).unitType === "drone").length;
+        const droneSlots = Math.max(0, (this.config.balance.maximumActiveDronesPerLane ?? Infinity) - droneCount);
+        const baseEntries = [...pendingBase, ...Array.from({ length: this.baseWaveSize(simulation.state.time, team) }, () => "drone")].slice(0, droneSlots);
         const active = simulation.state.lanes.get(laneId).unitIds.get(team).length;
         const available = Math.max(0, Math.min(teamAvailable, (this.config.caps.unitsPerLaneTeamByTeam?.[team] ?? this.config.caps.unitsPerLaneTeam) - active));
         const acceptedBase = baseEntries.slice(0, available);

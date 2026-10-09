@@ -568,7 +568,13 @@ export class BattleSimulation {
   }
 
   updateStructure(structure, dt, positions = null) {
-    if (!structure.alive || structure.structureType === "relay") return;
+    if (!structure.alive || structure.structureType === "relay" || structure.structureType === "station") return;
+    if (structure.constructionRemaining > 0) {
+      structure.constructionRemaining = Math.max(0, structure.constructionRemaining - dt);
+      if (structure.constructionRemaining > 1e-8) return;
+      structure.constructionRemaining = 0;
+      emitSimulationEvent(this.state, { type: "BUILD_COMPLETED", entityId: structure.id, padId: structure.padId });
+    }
     const definition = STRUCTURE_DEFINITIONS[structure.structureType];
     const target = acquireStructureTarget(this.state, structure, positions);
     structure.targetId = target?.id ?? null;

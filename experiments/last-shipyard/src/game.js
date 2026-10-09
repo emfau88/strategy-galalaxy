@@ -20,6 +20,8 @@ import { missionById, missionMatchOptions, missionUnlocked, nextMission, mission
 import { CampaignProgress } from "./campaign/progress.js";
 import { ExpansionProgress } from "./campaign/expansionProgress.js";
 import { EXPANSION_MISSIONS, expansionMissionById } from "./data/campaignExpansion.js";
+import { expansionMatchOptions, isExpansionMission } from "./data/expansionScenarios.js";
+import { stationActionAt, worldSiteAt } from "./ui/stationUi.js";
 import { abilityActionAt } from "./ui/abilityUi.js";
 import { campaignActionAt, campaignResultActionAt } from "./ui/campaignUi.js";
 
@@ -53,6 +55,7 @@ export class Game {
     this.selectedLaneId = LEVELS[this.levelIndex].lanes[0].id;
     this.commandMenu = "units";
     this.commandDockOpen = false;
+    this.selectedSiteId = null;
     this.commandFeedback = null;
     this.commandFeedbackUntil = 0;
     this.fullscreenActive = false;
@@ -169,7 +172,8 @@ export class Game {
       }
     }
     if (input.kind === "down" && [MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(this.match.state)) {
-      const next = this.match.mission && nextMission(this.match.mission);
+      const expansion = isExpansionMission(this.match.mission);
+      const next = this.match.mission && !expansion && nextMission(this.match.mission);
       const action = this.match.mission
         ? campaignResultActionAt(input, this.transform?.designHeight, this.match.state === MATCH_STATE.VICTORY && next?.available)
         : endActionAt(input, this.transform?.designHeight);
@@ -178,7 +182,7 @@ export class Game {
       }
       if (action?.type === "RETURN_TO_TITLE" || action?.type === "RETURN_TO_MISSIONS") {
         this.returnToTitle();
-        if (action.type === "RETURN_TO_MISSIONS") this.menuScreen = "missions";
+        if (action.type === "RETURN_TO_MISSIONS") this.menuScreen = expansion ? "expansion" : "missions";
         return;
       }
       if (action?.type === "RESTART_MATCH") {
@@ -189,6 +193,10 @@ export class Game {
     if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && this.match.carrierAbility?.equipped) {
       const ability = abilityActionAt(input);
       if (ability) { this.executeCommandAction(ability); this.syncMatchState(); return; }
+    }
+    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && isExpansionMission(this.match.mission)) {
+      const action = stationActionAt(input, this.transform?.designHeight, this.selectedSiteId, this.commandDockOpen);
+      if (action) { this.executeStationAction(action); return; }
     }
     if (this.handleCameraInput(input)) return;
     if (input.kind !== "down") return;
@@ -251,13 +259,17 @@ export class Game {
 
   executeMenuAction(action) {
     this.sound.play("select");
+    if (action.type === "START_EXPANSION") { this.startExpansionMission(); return; }
     if (action.type === "OPEN_EXPANSION") { this.menuScreen = "expansion"; return; }
     if (action.type === "EXPANSION_BACK") { this.menuScreen = this.menuScreen === "expansion-map" ? "expansion" : "missions"; return; }
     if (action.type === "SELECT_EXPANSION_MISSION" || action.type === "BROWSE_EXPANSION") {
       const index = EXPANSION_MISSIONS.findIndex(mission => mission.id === this.selectedExpansionId);
       const mission = action.type === "SELECT_EXPANSION_MISSION" ? expansionMissionById(action.missionId)
         : EXPANSION_MISSIONS[index + action.delta];
-      if (mission && this.expansion.selectPreview(mission.id)) { this.selectedExpansionId = mission.id; this.menuScreen = "expansion-map"; }
+      if (mission && this.expansion.selectPreview(mission.id)) {
+        this.selectedExpansionId = mission.id; this.menuScreen = "expansion-map";
+        if (mission.available) this.prepareLevelAssets(mission.map);
+      }
       return;
     }
     if (action.type === "OPEN_SHIPYARD") this.menuScreen = "shipyard";
@@ -302,6 +314,42 @@ export class Game {
     return this.startSelectedMatch();
   }
 
+  startExpansionMission() {
+    const mission = expansionMissionById(this.selectedExpansionId);
+    if (this.menuScreen !== "expansion-map" || this.match.state !== MATCH_STATE.TITLE || !mission?.available) return false;
+    if (!this.levelAssetsReady(mission.map)) {
+      this.prepareLevelAssets(mission.map).then(() => {
+        if (this.selectedExpansionId === mission.id && this.menuScreen === "expansion-map") this.startExpansionMission();
+      });
+      return false;
+    }
+    this.match = new MatchDirector(expansionMatchOptions(mission));
+    this.selectedLaneId = mission.map.lanes[0].id;
+    this.selectedSiteId = null; this.commandMenu = "units";
+    this.setCommandDockOpen(false); this.commandFeedback = null; this.recordedMissionResult = null;
+    return this.startSelectedMatch();
+  }
+
+  executeStationAction(action) {
+    const map = this.match.mapDefinition;
+    if (action.type === "SITE_PANEL") return;
+    if (action.type === "CLOSE_SITE") { this.selectedSiteId = null; this.syncCommandViewport(); return; }
+    if (action.type === "FOCUS_SITE") {
+      const site = action.site === "pad" ? map.buildPads[0] : map.markers[0];
+      this.selectedSiteId = site.id; this.setCommandDockOpen(false);
+      this.camera.jumpToWorld(site.y); this.sound.play("select"); return;
+    }
+    if (action.type === "SITE_COMMAND") {
+      const pad = map.buildPads.find(p => p.id === this.selectedSiteId);
+      const command = pad ? { type: "BUILD_STATION", padId: pad.id, module: "bastion" }
+        : { type: "START_PROJECT", stationId: this.selectedSiteId };
+      if (!pad && this.match.mission.goal.kind !== "evacuate") return;
+      const result = this.match.executeCommand({ ...command, team: TEAM.PLAYER });
+      this.showFeedback(result.ok ? pad ? "BASTION IM BAU · 8 SEKUNDEN" : "RETTUNGSLADUNG BEZAHLT" : this.commandFailureLabel(result.reason));
+      this.sound.play(result.ok ? "purchase" : "error");
+    }
+  }
+
   levelAssetsReady(mapDefinition) {
     return Object.keys(levelAssetManifest(mapDefinition.level)).every((key) => this.loader.get(key));
   }
@@ -334,6 +382,7 @@ export class Game {
 
   restartMatch() {
     if (!this.match.restart()) return false;
+    this.selectedSiteId = null;
     this.setCommandDockOpen(false);
     this.commandMenu = "units";
     this.commandFeedback = null;
@@ -349,8 +398,9 @@ export class Game {
 
   returnToTitle() {
     if (!this.match.returnToTitle()) return false;
+    this.selectedSiteId = null;
     this.cameraGesture = null;
-    this.menuScreen = "main";
+    this.menuScreen = isExpansionMission(this.match.mission) ? "expansion" : "main";
     this.commandMenu = "units";
     this.setCommandDockOpen(false);
     this.commandFeedback = null;
@@ -411,6 +461,12 @@ export class Game {
       if (this.cameraGesture.moved) this.camera.endPan();
       else {
         this.camera.cancelPan();
+        const site = this.match.mapDefinition.objectiveMission && this.match.state === MATCH_STATE.LIVE_MATCH
+          ? worldSiteAt(this.match.mapDefinition, { x: this.cameraGesture.originX, y: this.camera.screenToWorldY(this.cameraGesture.originY) }) : null;
+        if (site) {
+          this.selectedSiteId = site.id; this.setCommandDockOpen(false); this.camera.jumpToWorld(site.y);
+          this.sound.play("select"); this.cameraGesture = null; return true;
+        }
         if (this.match.state === MATCH_STATE.LIVE_MATCH && this.playerHqContains({ x: this.cameraGesture.originX, y: this.cameraGesture.originY })) {
           this.setCommandDockOpen(!this.commandDockOpen);
           this.sound.play("select");
@@ -506,6 +562,8 @@ export class Game {
       TEAM_CAPACITY: "GESAMTFLOTTE VOLL · AUF VERLUSTE WARTEN", NO_ABILITY_TARGETS: "KEINE GEGNERSCHIFFE IN DIESER LANE",
       ABILITY_COOLDOWN: "CARRIER-FÄHIGKEIT LÄDT NOCH", ABILITY_NOT_EQUIPPED: "AEGIS NICHT AUSGERÜSTET",
       INSUFFICIENT_ENERGY: "NICHT GENUG ENERGIE", COOLDOWN_ACTIVE: "EINHEIT LÄDT NACH",
+      SITE_OCCUPIED: "BAUPLATZ BEREITS BELEGT", STATION_UNSECURED: "STATION BRAUCHT EIGENE BESATZUNG UND RUHE",
+      PROJECT_ALREADY_STARTED: "LADUNG BEREITS BEZAHLT", OBJECTIVE_LOST: "ZIELANLAGE VERLOREN",
       MISSION_LOCKED_UNIT: "IN DIESER MISSION NICHT VERFÜGBAR", MISSION_LOCKED_UPGRADE: "FORSCHUNG FOLGT SPÄTER",
     }[reason] ?? "BEFEHL NICHT VERFÜGBAR";
     return Object.freeze({ INSUFFICIENT_ENERGY: "NOT ENOUGH ENERGY", LANE_CAPACITY: "LANE AT CAPACITY", COOLDOWN_ACTIVE: "WING RECHARGING", UNAVAILABLE_UPGRADE: "UPGRADE UNAVAILABLE", WRONG_PHASE: "COMMAND UNAVAILABLE", MAX_LEVEL: "UPGRADE ALREADY MAXED" })[reason] ?? "COMMAND UNAVAILABLE";
@@ -513,6 +571,7 @@ export class Game {
 
   setCommandDockOpen(open) {
     this.commandDockOpen = Boolean(open);
+    if (open) this.selectedSiteId = null;
     this.syncCommandViewport();
   }
 
@@ -523,7 +582,8 @@ export class Game {
       this.camera.config = { ...CONFIG.camera, battlefieldTopInset: topInset };
       this.camera.resize(this.camera.designWidth, this.camera.designHeight);
     }
-    this.camera.setBottomInset(this.commandDockOpen ? commandUiBottomInset(this.commandMenu) : CONFIG.camera.battlefieldBottomInset);
+    this.camera.setBottomInset(this.commandDockOpen ? commandUiBottomInset(this.commandMenu)
+      : isExpansionMission(this.match.mission) ? this.selectedSiteId ? 296 : 132 : CONFIG.camera.battlefieldBottomInset);
   }
 
   playerHqContains(point) {
@@ -545,6 +605,10 @@ export class Game {
   syncMatchState() {
     this.state = this.assetsReady ? this.match.state : MATCH_STATE.LOADING;
     if (this.match.mission && this.match.state === MATCH_STATE.VICTORY && this.recordedMissionResult !== this.match) {
+      if (isExpansionMission(this.match.mission)) {
+        this.rewardFirstTime = !this.expansion.data.completed.includes(this.match.mission.id);
+        this.expansion.complete(this.match.mission.id); this.recordedMissionResult = this.match; return;
+      }
       this.rewardFirstTime = !this.campaign.data.completed.includes(this.match.mission.id);
       const hq = this.match.simulation.state.structures.get("player-hq");
       this.campaign.complete(this.match.mission.id, {carrierHpRatio: hq.hp / hq.maxHp, abilityUses: this.match.missionRuntime.abilityUses});
@@ -589,6 +653,7 @@ export class Game {
       campaignProgress: this.campaign.snapshot(),
       expansionProgress: this.expansion.snapshot(),
       selectedExpansionId: this.selectedExpansionId,
+      selectedSiteId: this.selectedSiteId,
       mission: this.match.mission,
       rewardFirstTime: this.rewardFirstTime,
       aiProfile: this.match.aiProfile,
