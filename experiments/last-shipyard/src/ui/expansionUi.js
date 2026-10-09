@@ -9,7 +9,8 @@ export const expansionUiLayout = (height = 760) => {
     previous: rect(28, 622, 174, 44), next: rect(218, 622, 174, 44),
     map: rect(28, 223, 164, 350),
     start: rect(210, 526, 182, 47),
-    missions: EXPANSION_MISSIONS.map((mission, index) => ({ ...rect(28, 190 + index * 58, 364, 52), missionId: mission.id })),
+    campaign: rect(28, 154, 174, 44), pilots: rect(218, 154, 174, 44),
+    missions: EXPANSION_MISSIONS.map((mission, index) => ({ ...rect(28, 210 + index * 56, 364, 52), missionId: mission.id })),
   };
 };
 export const expansionActionAt = (point, screen, height) => {
@@ -22,6 +23,8 @@ export const expansionActionAt = (point, screen, height) => {
     if (containsPoint(ui.previous, point)) return { type: "BROWSE_EXPANSION", delta: -1 };
     if (containsPoint(ui.next, point)) return { type: "BROWSE_EXPANSION", delta: 1 };
   } else {
+    if (containsPoint(ui.campaign, point)) return { type: "SET_EXPANSION_MODE", mode: "campaign" };
+    if (containsPoint(ui.pilots, point)) return { type: "SET_EXPANSION_MODE", mode: "pilots" };
     const selected = ui.missions.find(rect => containsPoint(rect, point));
     if (selected) return { type: "SELECT_EXPANSION_MISSION", missionId: selected.missionId };
   }

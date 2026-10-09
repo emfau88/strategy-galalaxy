@@ -1,6 +1,6 @@
 # Die letzte Werft – Testkampagne
 
-Version **0.0.8-v2-1**. Die bisherigen sechs Missionen bleiben spielbar. Zusätzlich sind Außenpostenbau und Evakuierung als zwei unabhängige Testeinsätze der neuen Kampagne verfügbar.
+Version **0.0.9-v2-2**. Die neue Kampagne hat einen zusammenhängenden ersten Akt mit vier Missionen. Außenposten und Fähre bleiben frei spielbare Tests. Vier weitere Missionen sind Vorschauen; die bisherigen sechs Missionen bleiben ebenfalls spielbar.
 
 ## Lokal spielen
 
@@ -10,7 +10,7 @@ Im aktuellen Repository-Stand:
 npm --prefix experiments/last-shipyard run dev
 ```
 
-Öffne http://127.0.0.1:7101/ → Kampagne starten → Erstkontakt → Mission starten. Keine Installation zusätzlicher Pakete erforderlich. Der Server liefert ausschließlich diesen Experimentordner. Falls Port 7101 belegt ist: PORT=7102 als Umgebungsvariable setzen.
+Öffne http://127.0.0.1:7101/ → Kampagne starten → Neue Kampagne · Akt I spielen → Ein Licht im Schrott → Mission starten. Keine Installation zusätzlicher Pakete erforderlich. Der Server liefert ausschließlich diesen Experimentordner. Falls Port 7101 belegt ist: PORT=7102 als Umgebungsvariable setzen.
 
 Eigene Speicherstände und Soundeinstellungen; kein Import aus Classic. [Produktvorgabe](EXPERIMENT_VISION.md), [Herkunft](BASELINE.md), [Plan](../../docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md).
 
@@ -58,7 +58,7 @@ Die zwei Abzeichen verlangen mindestens 80% Carrier-Hülle beziehungsweise keine
 
 ## V2-0 – Neue Kampagne als Kartenvorschau
 
-Historischer Umfang von V2-0; V2-1 aktiviert inzwischen zwei dieser Einsätze (siehe unten).
+Historischer Umfang von V2-0; inzwischen sind vier Einsätze verbunden spielbar (V2-2, siehe unten).
 
 Kampagne → Neue Kampagne · Kartenvorschau öffnet acht Kartenentwürfe mit eigenen Höhen, Lanes, Startpunkten, Haltepositionen, geplanten Bauplätzen und Zielen. Alle acht sind ausdrücklich Vorschauen ohne Missionsstart. Die bisherige Kampagne bleibt spielbar. Die zuletzt betrachtete Karte wird unter einem eigenen V2-Schlüssel gespeichert; Anschauen erzeugt keine Siege.
 
@@ -67,6 +67,8 @@ Kampagne → Neue Kampagne · Kartenvorschau öffnet acht Kartenentwürfe mit ei
 Gezielter Browserablauf ohne weitere Kampagnen-Durchläufe: `npm --prefix experiments/last-shipyard run test:foundation:browser`. Für das gemeinsame Artefakt: `node experiments/last-shipyard/scripts/browser-smoke.mjs --site --foundation`.
 
 ## V2-1 – Außenposten und Fähre spielen
+
+Historischer Umfang von V2-1. Seit V2-2 unter „Freie Tests“ erreichbar; der Aegis-Schutz umfasst inzwischen auch relevante Missionsanlagen.
 
 **Kampagne → Neue Kampagne · 2 Testeinsätze → Der erste Außenposten / Die letzte Fähre → Testeinsatz starten.** Keine Freischaltung der alten Missionen nötig.
 
@@ -77,3 +79,16 @@ Gezielter Browserablauf ohne weitere Kampagnen-Durchläufe: `npm --prefix experi
 - **Umfang:** Zwei separat gespeicherte Abschlüsse, sechs weitere Vorschauen. Forschung, neue Bauplan-Freischaltungen, endgültige Stationsbilder und der zusammenhängende Verlauf folgen. Menschliche Spielbeobachtung bleibt der nächste Entscheidungspunkt.
 
 [Aktuelle Checkliste](../../docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) · [V2-1-Bericht](../../docs/LAST_SHIPYARD_V2_1_REPORT.md). Gezielter Browserablauf: `node experiments/last-shipyard/scripts/browser-smoke.mjs --site --pilots` nach `npm run build:pages`; mit `--live --pilots` gegen die öffentliche Fassung.
+
+## V2-2 – Der erste Akt
+
+**Kampagne → Neue Kampagne · Akt I spielen → Kampagne.** Vier Siege öffnen den Lernpfad in Reihenfolge:
+
+1. **Ein Licht im Schrott:** Kurzer Durchbruch mit Scout/Fighter. Belohnung: Bastion.
+2. **Der erste Außenposten:** Relais erobern, optional eine Bastion bauen, zwei Gegenangriffe abwehren. Belohnung: Bomber.
+3. **Hafen im Feuer:** Dock und Carrier gegen drei Angriffe halten (leichte Schiffe, schwere Eskorte, Bomber). Zwei Bauplätze erlauben eine vordere oder hintere Investition. Belohnung: Aegis und sichtbarer Hafenbetrieb.
+4. **Die letzte Fähre:** Zwei Fronten und drei bezahlte Rettungsladungen. Aegis schützt Carrier sowie Schiffe und Missionsanlage der gewählten Lane. Belohnung: Fregatten-Bauplan für kommende Einsätze.
+
+Wiederholungen behalten die Ausrüstung ihrer Lernstufe. M5–8 und Forschung sind Vorschauen. Die freien Tests M2/M4 bleiben ohne Kampagnenfreischaltung startbar. Testsiege und Kampagnensiege werden getrennt gespeichert; vorhandene V2-1-Siege wandern in die Testliste. Classic und die bisherige Kampagne behalten ihre Speicherstände. Ein neuer Imagegen-Atlas zeigt Hafendock und Sprungstation.
+
+[Umsetzungsbericht](../../docs/LAST_SHIPYARD_V2_2_REPORT.md) · [Aktuelle Checkliste](../../docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) · [Asset-Herkunft und Prompt](provenance/GENERATED_ASSETS.md). Gezielter Browserablauf nach dem Build: `node experiments/last-shipyard/scripts/browser-smoke.mjs --site --act-one`; öffentliche Fassung: `--live --act-one`. Menschliche Spielbeobachtung und echte Smartphone-Abnahme bleiben offen.

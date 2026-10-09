@@ -1,14 +1,15 @@
 {
   "name": "strategy-galalaxy-last-shipyard",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
-    "check": "node tests/isolation.test.mjs && node tests/missions.test.mjs && node tests/defense.test.mjs && node tests/fleet.test.mjs && node tests/finale.test.mjs && node tests/expansion.test.mjs && node tests/pilots.test.mjs",
+    "check": "node tests/isolation.test.mjs && node tests/missions.test.mjs && node tests/defense.test.mjs && node tests/fleet.test.mjs && node tests/finale.test.mjs && node tests/expansion.test.mjs && node tests/pilots.test.mjs && node tests/act-one.test.mjs",
     "test:browser": "node scripts/browser-smoke.mjs",
     "build": "node scripts/build.mjs",
     "test:foundation:browser": "node scripts/browser-smoke.mjs --foundation",
-    "test:pilots:browser": "node scripts/browser-smoke.mjs --pilots"
+    "test:pilots:browser": "node scripts/browser-smoke.mjs --pilots",
+    "test:act-one:browser": "node scripts/browser-smoke.mjs --act-one"
   }
 }

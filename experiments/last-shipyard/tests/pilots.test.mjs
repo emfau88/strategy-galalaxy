@@ -108,9 +108,10 @@ for (const number of [2, 4]) {
 
 const values = new Map(), storage = { getItem: k => values.get(k) ?? null, setItem: (k, v) => values.set(k, v) };
 const progress = new ExpansionProgress(storage);
-assert.equal(progress.complete(EXPANSION_MISSIONS[0].id), false);
-progress.complete(EXPANSION_MISSIONS[1].id); progress.complete(EXPANSION_MISSIONS[1].id);
-assert.deepEqual(new ExpansionProgress(storage).data.completed, [EXPANSION_MISSIONS[1].id]);
+assert.equal(progress.complete(EXPANSION_MISSIONS[0].id, "pilots"), false);
+progress.complete(EXPANSION_MISSIONS[1].id, "pilots"); progress.complete(EXPANSION_MISSIONS[1].id, "pilots");
+assert.deepEqual(new ExpansionProgress(storage).data.pilotCompleted, [EXPANSION_MISSIONS[1].id]);
+assert.deepEqual(new ExpansionProgress(storage).data.completed, []);
 for (const height of [760, 933]) {
   const ui = stationUiLayout(height), center = r => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
   assert.equal(stationActionAt(center(ui.action), height, "site", false).type, "SITE_COMMAND");

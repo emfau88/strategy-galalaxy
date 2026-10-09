@@ -12,6 +12,12 @@ const FERRY_ATTACKS = [
   [{ unitType: "fighter", lane: 0, at: 0 }, { unitType: "bomber", lane: 0, at: 5 }],
   [{ unitType: "scout", lane: 1, at: 0 }, { unitType: "fighter", lane: 1, at: 5 }],
 ];
+const CORRIDOR_ATTACKS = [[{ unitType: "scout", at: 0 }], [{ unitType: "fighter", at: 0 }]];
+const HARBOR_ATTACKS = [
+  [{ unitType: "scout", at: 0 }, { unitType: "fighter", at: 5 }],
+  [{ unitType: "frigate", at: 0 }, { unitType: "fighter", at: 5 }],
+  [{ unitType: "bomber", at: 0 }, { unitType: "fighter", at: 3 }, { unitType: "bomber", at: 7 }],
+];
 const battleClear = state => ![...state.units.values()].some(u => u.alive && u.team === TEAM.ENEMY)
   && ![...state.projectiles.values()].some(p => p.alive && p.ownerTeam === TEAM.ENEMY);
 
@@ -19,22 +25,26 @@ export class ExpansionRuntime {
   constructor(mission) {
     this.mission = mission;
     this.ferry = mission.goal.kind === "evacuate";
+    this.capture = mission.goal.kind === "capture-defend";
+    this.defense = mission.goal.kind === "defend";
+    this.assault = mission.goal.kind === "destroy";
     this.site = mission.map.markers[0];
-    this.phase = this.ferry ? "intro" : "capture";
-    this.remaining = this.ferry ? 14 : 0;
+    this.phase = this.capture ? "capture" : "intro";
+    this.remaining = this.ferry ? 14 : this.defense ? 10 : this.assault ? 5 : 0;
     this.attackNumber = 0; this.defeatedAttacks = 0;
     this.orders = []; this.orderIndex = 0; this.attackElapsed = 0; this.retryIn = 0;
     this.triggered = false; this.result = null; this.abilityUses = 0;
     this.project = { completed: 0, active: false, elapsed: 0 };
+    this.purchases = new Set();
   }
 
-  notePurchase() {}
+  notePurchase(type) { this.purchases.add(type); }
   finish() { this.phase = "complete"; this.remaining = 0; }
   enter(phase) {
     this.phase = phase;
     this.remaining = ({ warning: 8, recovery: 12, assault: 14 })[phase] ?? 0;
     if (phase !== "assault") return;
-    const attacks = this.ferry ? FERRY_ATTACKS : OUTPOST_ATTACKS;
+    const attacks = this.ferry ? FERRY_ATTACKS : this.defense ? HARBOR_ATTACKS : this.assault ? CORRIDOR_ATTACKS : OUTPOST_ATTACKS;
     this.orders = attacks[this.attackNumber % attacks.length];
     this.attackNumber++; this.orderIndex = 0; this.attackElapsed = 0; this.retryIn = 0;
   }
@@ -88,10 +98,10 @@ export class ExpansionRuntime {
         emitSimulationEvent(state, { type: "EVACUATION_COMPLETED", stationId: this.site.id, segment: this.project.completed });
       }
     }
-    if (!this.ferry && !this.triggered && state.nodes.get(this.site.id)?.ownerTeam === TEAM.PLAYER) {
+    if (this.capture && !this.triggered && state.nodes.get(this.site.id)?.ownerTeam === TEAM.PLAYER) {
       this.triggered = true; this.enter("warning"); return;
     }
-    if (this.phase === "capture" || this.phase === "secure") return;
+    if (["capture", "secure", "siege"].includes(this.phase)) return;
     this.remaining = Math.max(0, this.remaining - dt);
     if (this.phase === "assault") {
       this.attackElapsed += dt; this.retryIn -= dt;
@@ -103,34 +113,42 @@ export class ExpansionRuntime {
         if (result.ok) this.orderIndex++;
       }
       if (this.orderIndex !== this.orders.length) return;
-      if (!this.ferry && battleClear(state)) {
+      if ((this.capture || this.defense) && battleClear(state)) {
         this.defeatedAttacks++;
         this.enter(this.defeatedAttacks >= this.mission.goal.attacks ? "secure" : "recovery");
-      } else if (this.ferry && this.remaining === 0) this.enter("recovery");
+      } else if ((this.ferry || this.assault) && this.remaining === 0) this.enter(this.assault && this.attackNumber === CORRIDOR_ATTACKS.length ? "siege" : "recovery");
     } else if (this.remaining === 0) this.enter(this.phase === "warning" ? "assault" : "warning");
   }
 
   evaluateGoal(director) {
     const state = director.simulation.state;
-    const complete = this.ferry ? this.project.completed >= this.mission.goal.segments
+    const complete = this.assault ? this.mission.goal.targets.every(id => !state.structures.get(id)?.alive)
+      : this.defense ? this.defeatedAttacks >= this.mission.goal.attacks
+      : this.ferry ? this.project.completed >= this.mission.goal.segments
       : this.defeatedAttacks >= this.mission.goal.attacks && state.nodes.get(this.site.id)?.ownerTeam === TEAM.PLAYER && stationOccupation(state, this.site).secure;
     this.result = objectiveOutcome(state, this.mission.goal, complete);
     return this.result;
   }
 
   snapshot(state) {
-    const occupation = stationOccupation(state, this.site), node = state.nodes.get(this.site.id);
+    const occupation = stationOccupation(state, this.site), node = state.nodes.get(this.site?.id);
     const attack = this.phase === "assault" ? this.attackNumber : this.attackNumber + 1;
-    const threat = this.ferry ? attack % 2 ? "LINKS: Fighter + Bomber bedrohen die Sprungstation." : "RECHTS: Scouts + Fighter auf Kurs zum Carrier."
+    const threat = this.assault ? attack === 1 ? "Leichte Scouts kreuzen den Weg zum Blockadeträger." : "Fighter-Verstärkung! Schütze deine Scouts mit einer Eskorte."
+      : this.defense ? ["Leichter Überfall: Scouts + Fighter auf das Hafendock.", "Schwere Eskorte: Fregatte mit Fightern. Bomber helfen.", "Belagerung: Zwei Bomber mit Eskorte bedrohen das Dock."][Math.min(2, attack - 1)]
+      : this.ferry ? attack % 2 ? "LINKS: Fighter + Bomber bedrohen die Sprungstation." : "RECHTS: Scouts + Fighter auf Kurs zum Carrier."
       : attack === 1 ? "Fighter + Scouts wollen das Relais zurückerobern." : "Bomber mit Fighter-Eskorte: Bastion und Carrier schützen.";
-    const phaseLabel = { capture: "RELAIS BESETZEN", warning: "GEGENANGRIFF", assault: "ANGRIFF LÄUFT", recovery: "VERSTÄRKUNGSPAUSE", secure: "RELAIS SICHERN", intro: "BEIDE FRONTEN BESETZEN", complete: "EINSATZ BEENDET" }[this.phase];
-    const hint = this.ferry ? this.project.active
+    const phaseLabel = { capture: "RELAIS BESETZEN", warning: "GEGENANGRIFF", assault: "ANGRIFF LÄUFT", recovery: "VERSTÄRKUNGSPAUSE", secure: this.defense ? "HAFEN GESICHERT" : "RELAIS SICHERN", intro: this.ferry ? "BEIDE FRONTEN BESETZEN" : this.defense ? "HAFENDOCK SCHÜTZEN" : "DEN KORRIDOR ÖFFNEN", siege: "TRÄGER BESIEGEN · KEIN NACHSCHUB", complete: "EINSATZ BEENDET" }[this.phase];
+    const hint = this.assault ? !this.purchases.has("scout") ? "FLOTTE öffnen: ein Scout-Verband erkundet den Korridor."
+      : !this.purchases.has("fighter") ? "Ergänze Fighter. ZUR FRONT zeigt dir den Vorstoß." : "Zerstöre den gegnerischen Träger. Dein Carrier muss leben."
+      : this.defense ? this.phase === "recovery" ? "Angriff abgewehrt. Dock sichern; Schiffe oder Bastion nachbauen." : "Dock und Carrier müssen überleben. Zwei Bauplätze, ein Energievorrat."
+      : this.ferry ? this.project.active
       ? occupation.secure ? "Rettung läuft. Sichere auch die rechte Carrier-Front." : "Ladung pausiert: eigene Kauf-Schiffe am Gate, Gegner entfernen."
       : "Sprungstation öffnen: Besatzung sichern, dann Ladung bezahlen."
       : !this.triggered ? "Scouts erobern. Fighter sichern. Bastion ist optional."
         : this.phase === "secure" ? "Relais zurückholen und mit eigenen Kauf-Schiffen besetzt halten." : "Halte das Relais. Die Flotte kehrt automatisch zur Station zurück.";
     return { phase: this.phase, label: phaseLabel, remaining: this.remaining,
-      counter: this.ferry ? `RETTUNG ${this.project.completed}/3` : `ABGEWEHRT ${this.defeatedAttacks}/2`, threat,
+      counter: this.assault ? `TRÄGER ${Math.ceil((state.structures.get("enemy-hq")?.hp ?? 0) / (state.structures.get("enemy-hq")?.maxHp ?? 1) * 100)}%`
+        : this.ferry ? `RETTUNG ${this.project.completed}/3` : `ABGEWEHRT ${this.defeatedAttacks}/${this.mission.goal.attacks}`, threat,
       hint: this.phase === "warning" ? `${Math.ceil(this.remaining)}s · ${threat}` : hint,
       attackNumber: this.attackNumber, defeatedAttacks: this.defeatedAttacks, occupation,
       control: node ? { ownerTeam: node.ownerTeam, progress: node.progress, contested: node.contested } : null,

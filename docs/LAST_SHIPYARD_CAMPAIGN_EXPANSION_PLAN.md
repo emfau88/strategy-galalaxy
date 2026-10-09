@@ -1,10 +1,10 @@
 # Die letzte Werft – eine Kampagne mit eigenständigen Missionen
 
-Stand: 9. Oktober 2026. **Status: V2-0 abgeschlossen. V2-1 technisch umgesetzt: Außenposten und Fähre sind separat spielbar; sechs weitere Einsätze bleiben Vorschauen. Menschliche Spielbeobachtung zu V2-1 noch offen.** [Bericht und Prüfungen zu V2-1](LAST_SHIPYARD_V2_1_REPORT.md).
+Stand: 9. Oktober 2026. **Status: V2-0 abgeschlossen; V2-1 und V2-2 technisch umgesetzt. Vier verbundene Missionen bilden Akt I, Außenposten und Fähre bleiben zusätzlich frei spielbare Testeinsätze. Missionen 5–8 sind Vorschauen. Menschliche Spielbeobachtung und echte Smartphone-Abnahme bleiben offen.** [V2-1-Bericht](LAST_SHIPYARD_V2_1_REPORT.md) · [V2-2-Bericht](LAST_SHIPYARD_V2_2_REPORT.md).
 
 Grundlage ist die tatsächlich gelesene Experiment-Fassung auf Commit `0dcb353`, einschließlich Missionsdaten, Simulation, Zielauswahl, Eroberung, Energie, Ausrüstung und Darstellung. Hinzu kommen die [Core Vision](../STRATEGY_GALALAXY_CORE_VISION.md), der [bisherige Experimentplan](LAST_SHIPYARD_EXPERIMENT_PLAN.md) und der [ursprüngliche Verbesserungsplan im erhaltenen Qualitätsbranch](https://github.com/emfau88/strategy-galalaxy/blob/d286e1341362cecb977aec90f78e87bbf93e9d31/docs/GAME_IMPROVEMENT_PLAN.md). Für diese Planung wurden keine weiteren Balance-Testserien durchgeführt.
 
-Dieses Dokument beschreibt die nächste Ausbaureihe **innerhalb von `experiments/last-shipyard/`**. Es ersetzt keine erledigten Checklisten rückwirkend. Die bisherigen sechs Missionen bleiben der dokumentierte Ausgangspunkt; die nächste Fassung erhält acht neu gestaltete Einsätze. Diese Erweiterung des Umfangs ist eine bewusste Empfehlung für die jetzt gewünschte Kampagnenvielfalt. V2-0 und die technische Umsetzung von V2-1 sind geliefert; V2-2 bis V2-6 bleiben offen.
+Dieses Dokument beschreibt die nächste Ausbaureihe **innerhalb von `experiments/last-shipyard/`**. Es ersetzt keine erledigten Checklisten rückwirkend. Die bisherigen sechs Missionen bleiben der dokumentierte Ausgangspunkt; die nächste Fassung erhält acht neu gestaltete Einsätze. Diese Erweiterung des Umfangs ist eine bewusste Empfehlung für die jetzt gewünschte Kampagnenvielfalt. V2-0 und die technische Umsetzung von V2-1/V2-2 sind geliefert; V2-3 bis V2-6 bleiben offen.
 
 ## 1. Meine Empfehlung
 
@@ -161,7 +161,7 @@ Die Reihenfolge der Prototypen ist eine zeitweise Spezialisierung. Ein Spieler w
 
 **Störimpuls:** bereits als Carrier-Fähigkeit vorhanden. Eine bedrohliche Salve oder einen Angriff auf das Relais unterbrechen. Er ersetzt Aegis im aktiven Slot und ist kein zusätzlicher kostenloser Rettungsknopf.
 
-**Aegis:** bleibt das Schutzwerkzeug. Für diese Kampagne soll seine Wirkung zusätzlich auf eine eigene Missionsanlage in der gewählten Lane erweitert werden. Der Werftkern im Finale gehört als gemeinsames Ziel ausdrücklich dazu. Reparaturdock und Bastion benötigen keine weitere separate aktive Fähigkeit. Schutzumfang, Energiepreis und Dauer müssen zusammen lesbar bleiben; diese Erweiterung ist noch zu implementieren.
+**Aegis:** bleibt das Schutzwerkzeug. Seit V2-2 schützt es zusätzlich eigene, für das Missionsziel notwendige Anlagen in der gewählten Lane. Der gemeinsame Werftkern ist technisch als laneübergreifendes Ziel berücksichtigt; sein Einsatz folgt in V2-4. Bastionen und Reparaturdocks sind keine geschützten Missionsziele. Preis (80 E), Dauer (6s), Schadensminderung (60 %) und die geschützte Lane werden angezeigt; nach M3 wird Aegis für M4 verfügbar.
 
 Eine Forschungsentscheidung braucht eine erkennbare Verwendung und einen Verzicht. Die alten allgemeinen Schadens-, Feuerraten- und Einkommensstufen werden dafür nicht zusätzlich eingeblendet.
 
@@ -241,11 +241,13 @@ Die vorhandenen Schiffe, der Turret, der Schildrelais-Atlas und das Menü-Key-Ar
 | 4 | Ein Set aus Werft- und Schrottfeld-Landmarken | Vier Schauplätze wiedererkennbar machen, ohne die Front zu verdecken |
 | 5 | Bei Bedarf ein zusätzliches Landmarkenmotiv für zivile Anlagen | Rettung und Forschung räumlich stärker unterscheiden |
 
+**Geliefert in V2-2:** Ein unveränderter transparenter Imagegen-Atlas mit zwei Motiven (Hafendock und Sprungstation), genutzt in M3/M4 und für den aktiven/inaktiven Hafen in der Übersicht. Archiv-/Werftkernvarianten und die weiteren Motive bleiben offen. [Asset und exakter Prompt](../experiments/last-shipyard/provenance/GENERATED_ASSETS.md).
+
 Erster Rahmen: drei notwendige und höchstens zwei ergänzende neue Raster-Assets beziehungsweise kleine Atlanten. Zustandsringe, Baufortschritt, Symbole und Menübeleuchtung entstehen möglichst direkt in der vorhandenen Darstellung. Gameplay-Assets bleiben in echter Draufsicht. Kein neues Menübild pro Mission und keine neue komplette Schiffsflotte.
 
 ## 11. Umsetzungsbulks in drei spielbaren Ausbaustufen
 
-**V2-0 ist abgeschlossen; V2-1 ist technisch umgesetzt, die menschliche Spielbeobachtung bleibt offen. V2-2 bis V2-6 sind noch nicht umgesetzt.** Jeder Bulk erhält einen kurzen Bericht über tatsächlich Geleistetes und verbleibende Einschränkungen.
+**V2-0 ist abgeschlossen; V2-1 und V2-2 sind technisch umgesetzt, die menschliche Spielbeobachtung bleibt offen. V2-3 bis V2-6 sind noch nicht umgesetzt.** Jeder Bulk erhält einen kurzen Bericht über tatsächlich Geleistetes und verbleibende Einschränkungen.
 
 ### Ausbaustufe A – Beweisen, dass zwei Einsätze anders funktionieren
 
@@ -275,19 +277,23 @@ Erster Rahmen: drei notwendige und höchstens zwei ergänzende neue Raster-Asset
 
 **Bewusste Präzisierungen:** Haltepunkte liegen beim Außenposten bei y=610 und bei der Fähre links/rechts bei y=925/1060; Stationsbereiche haben Radius 90. Damit halten eigene Schiffe tatsächlich im benötigten Bereich beziehungsweise auf der Carrier-Front. Aegis schützt vorerst weiter Carrier und Schiffe; die Erweiterung auf Anlagen und das erste Imagegen-Stationsmotiv bleiben V2-2. V2-1 verwendet funktionale Vektorstationen und den vorhandenen Turret-Fallback. Noch keine Bauplan-Freischaltungen, Forschung oder Verbindung der acht Einsätze. [Umsetzung, Prüfungen und Grenzen](LAST_SHIPYARD_V2_1_REPORT.md).
 
-**Weiter erst, wenn:** Bauentscheidung und Rettungsinvestition verständlich sind, das sture Ausgeben aller Energie für dieselbe Schiffsklasse nicht beide Aufträge beiläufig erfüllt und wenigstens zwei plausible Vorgehensweisen beobachtbar sind. Bei Problemen Kosten, Lage und Angriffe überarbeiten; keine dritte Mechanik als Ablenkung hinzufügen.
+**Qualitätsgate (menschliche Beobachtung weiterhin offen):** Bauentscheidung und Rettungsinvestition müssen verständlich sein. Stures Ausgeben aller Energie für dieselbe Schiffsklasse sollte nicht beide Aufträge beiläufig erfüllen; wenigstens zwei plausible Vorgehensweisen müssen beobachtbar sein. Bei Problemen Kosten, Lage und Angriffe überarbeiten; keine dritte Mechanik als Ablenkung hinzufügen.
+
+**Fortsetzung:** V2-2 wurde auf ausdrücklichen Nutzerauftrag umgesetzt. Damit ist dieses Qualitätsgate nicht nachträglich als bestanden erklärt. Die bisherigen technischen Siegabläufe belegen weder mehrere gleichwertige Strategien noch endgültige Schwierigkeit.
 
 ### Ausbaustufe B – Eine zusammenhängende Kampagne bis zur Sabotage
 
 #### V2-2 – Ersten Akt und Lernreihenfolge fertigstellen
 
-- [ ] Mission 1 kurz und klar auf Scout/Fighter zuschneiden.
-- [ ] Mission 3 mit gefährdetem Dock, zwei Bauplätzen und drei erkennbaren Angriffen gestalten.
-- [ ] Missionen 1–4 zu einem durchspielbaren Verlauf mit den vorgesehenen Freischaltungen verbinden.
-- [ ] Aegis für relevante Missionsanlagen erweitern und in Mission 4 verständlich einführen.
-- [ ] Erstes Stationsmotiv und ersten sichtbaren Werftfortschritt integrieren, soweit die Platzhalter ihre Aufgabe erfüllen.
+- [x] Mission 1 kurz und klar auf Scout/Fighter zuschneiden.
+- [x] Mission 3 mit gefährdetem Dock, zwei Bauplätzen und drei erkennbaren Angriffen gestalten.
+- [x] Missionen 1–4 zu einem durchspielbaren Verlauf mit den vorgesehenen Freischaltungen verbinden.
+- [x] Aegis für relevante Missionsanlagen erweitern und in Mission 4 verständlich einführen.
+- [x] Erstes Stationsmotiv und ersten sichtbaren Werftfortschritt integrieren, soweit die Platzhalter ihre Aufgabe erfüllen.
 
 **Ergebnis:** Ein zusammenhängender Einstieg mit Durchbruch, Aufbau, Verteidigung und Rettung. Neue Spieler brauchen den freien Testzugang nicht mehr.
+
+**Umgesetzt in `0.0.9-v2-2`:** Kampagne → Neue Kampagne · Akt I spielen → Kampagne. M1 führt mit Scout/Fighter zum ersten Sieg; M2 schaltet Bomber frei; M3 verteidigt ein angreifbares Dock gegen leichte, schwere und Bomber-Angriffe und öffnet Aegis; M4 rettet Fachleute und sichert den Fregatten-Bauplan für spätere Einsätze. Frühere Missionen behalten auch in Wiederholungen ihre überschaubare Ausrüstung. Die freien Tests M2/M4 bleiben separat erreichbar. Alte V2-1-Siege werden als Testsiege übernommen, ohne den Lernpfad zu überspringen. Ein Imagegen-Atlas mit Hafen und Sprungstation ist integriert; nach M3 wird der Hafen in der Übersicht sichtbar aktiv. [Prüfungen, konkrete Regeln und Grenzen](LAST_SHIPYARD_V2_2_REPORT.md).
 
 #### V2-3 – Forschung und Überfall ergänzen
 

@@ -12,6 +12,7 @@ import { MISSIONS } from "../src/data/campaign.js";
 import { EXPANSION_MISSIONS } from "../src/data/campaignExpansion.js";
 import { expansionUiLayout } from "../src/ui/expansionUi.js";
 import { checkPilots } from "./pilot-browser-checks.mjs";
+import { checkActOne } from "./act-one-browser-checks.mjs";
 import { TEAM } from "../src/core/constants.js";
 
 const browser = (process.platform === "win32"
@@ -20,7 +21,8 @@ const browser = (process.platform === "win32"
 assert.ok(browser, "Chrome or Edge required for this short browser check");
 const live = process.argv.includes("--live");
 const pilots = process.argv.includes("--pilots");
-const foundation = process.argv.includes("--foundation") || pilots;
+const actOne = process.argv.includes("--act-one");
+const foundation = process.argv.includes("--foundation") || pilots || actOne;
 const siteMode = live || process.argv.includes("--site");
 const output = resolve(experimentRoot, `../../tmp/last-shipyard-${live ? "live" : siteMode ? "bulk1" : "standalone"}`);
 await mkdir(output, { recursive: true });
@@ -176,6 +178,7 @@ try {
     assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "missions");
   }
   if (pilots) await checkPilots({ evaluate, tap, capture, send, delay, waitReady });
+  if (actOne) await checkActOne({ evaluate, tap, capture, send, delay, waitReady });
   await tap(ui.missions[0]);
   assert.equal(await evaluate("window.__lastShipyard.menuScreen"), "briefing");
   await capture("briefing-360x800.png");
@@ -402,6 +405,7 @@ try {
   if (foundation) {
     report.checks = ["eight preview screens via touch", "no draft mission start", "previous/next navigation", "360x640 and 390x844 preview captures", "separate preview reload", "old save unchanged", "old campaign start/purchase/pause", "old reset retains preview", "Classic storage unchanged", "published scope metadata", "no browser errors"];
     report.completedVia = "No campaign playthroughs or balance runs; navigation and existing match controls only";
+    if (actOne) { report.checks.push("four mission campaign through next/result touch", "locked missions reject starts", "two harbor pads", "new RGBA station atlas", "Aegis protects selected-lane station", "unlock and active harbor persistence", "free pilots remain separate"); report.completedVia = "One representative Act I route through legal purchases, results and unlocks; no balance matrix"; }
     if (pilots) { report.checks.push("both pilots started through touch", "build/charge touch and pause", "actual M2 objective victory", "station loss/retry and result navigation", "360x640 and 390x844 pilot layouts", "V2 completion reload preserves old save"); report.completedVia = "M2 through legal purchases; M4 charging and a deliberate station-loss boundary; no balance sweep"; }
   }
   await writeFile(resolve(output, "report.json"), JSON.stringify(report, null, 2) + "\n");

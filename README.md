@@ -2,9 +2,9 @@
 
 **[🧪 Die letzte Werft – Testkampagne spielen](https://emfau88.github.io/strategy-galalaxy/experiments/last-shipyard/)**
 
-Eigener Spielstand. Die bisherigen sechs Missionen mit Werft, freier Ausrüstungswahl und Schildrelais-Finale bleiben spielbar. [Lokal starten](experiments/last-shipyard/README.md) · [Bisheriger Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Version **0.0.8-v2-1**; menschliche Spielbeobachtung und Smartphone-Abnahme noch offen.
+Eigener Spielstand. Die bisherigen sechs Missionen mit Werft, freier Ausrüstungswahl und Schildrelais-Finale bleiben spielbar. [Lokal starten](experiments/last-shipyard/README.md) · [Bisheriger Umsetzungsplan](docs/LAST_SHIPYARD_EXPERIMENT_PLAN.md). Version **0.0.9-v2-2**; menschliche Spielbeobachtung und Smartphone-Abnahme noch offen.
 
-**Neu: Kampagne → Neue Kampagne · 2 Testeinsätze.** **Der erste Außenposten**: Relais erobern, optional eine Bastion bauen, zwei Gegenangriffe abwehren. **Die letzte Fähre**: auf zwei ungleichen Fronten Station und Carrier verteidigen und drei Rettungsladungen bezahlen. Beide starten direkt mit passender Ausrüstung und eigenem V2-Fortschritt. Die übrigen sechs neuen Einsätze sind Karten-/Missionsvorschauen. [Kampagnen-Ausbauplan](docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) · [V2-1-Bericht](docs/LAST_SHIPYARD_V2_1_REPORT.md).
+**Neu: Kampagne → Neue Kampagne · Akt I spielen.** Vier verbundene Missionen: Durchbruch, Außenpostenbau, Hafenverteidigung und Evakuierung. Siege öffnen nacheinander Bastion, Bomber, Aegis und den Fregatten-Bauplan für spätere Einsätze. M3 bietet zwei Bauplätze und drei unterschiedliche Angriffe; Aegis schützt in M4 auch die Sprungstation. Der Hafen wird nach M3 sichtbar aktiv. Außenposten und Fähre bleiben unter „Freie Tests“ direkt spielbar, mit getrennten Testsiegen. Missionen 5–8 sind Vorschauen. [Kampagnen-Ausbauplan](docs/LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) · [V2-2-Bericht](docs/LAST_SHIPYARD_V2_2_REPORT.md).
 
 **[▶ Strategy Galalaxy spielen](https://emfau88.github.io/strategy-galalaxy/)**
 

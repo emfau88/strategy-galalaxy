@@ -26,7 +26,7 @@ for (const path of walk(resolve(root, "src"))) {
   }
 }
 const activePaths = [...new Set(Object.values(ASSET_GROUPS).flatMap(Object.values))];
-assert.equal(activePaths.length, 53);
+assert.equal(activePaths.length, 54);
 const generated = JSON.parse(readFileSync(resolve(root, "provenance/generated-assets.json")));
 for (const path of activePaths) {
   assert.ok(path.startsWith("assets/") && !path.includes(".."));
@@ -79,4 +79,4 @@ try {
   assert.equal((await fetch(origin + prefix + ".git/config")).status, 403);
   assert.equal((await fetch(origin + prefix + "%2e%2e%5c%2e%2e%5csrc%5cmain.js")).status, 403);
 } finally { await new Promise(done => server.close(done)); }
-console.log("PASS: own imports, 53 image hashes, Classic baseline, storage separation, version and nested HTTP paths.");
+console.log("PASS: own imports, 54 image hashes, Classic baseline, storage separation, version and nested HTTP paths.");

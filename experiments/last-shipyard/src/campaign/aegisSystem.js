@@ -5,7 +5,10 @@ export const AEGIS = Object.freeze({ cost: 80, duration: 6, cooldown: 28, absorp
 
 /** Temporary damage mitigation, independent of permanent shield research or hull repairs. */
 export class AegisSystem {
-  constructor(equipped = false) { this.equipped = equipped; this.activeRemaining = 0; this.cooldownRemaining = 0; this.laneId = null; }
+  constructor(equipped = false, missionStructures = []) {
+    this.equipped = equipped; this.activeRemaining = 0; this.cooldownRemaining = 0; this.laneId = null;
+    this.missionStructures = new Set(missionStructures);
+  }
   availability(director, laneId) {
     if (director.state !== MATCH_STATE.LIVE_MATCH) return { ok: false, reason: "WRONG_PHASE" };
     if (!this.equipped) return { ok: false, reason: "ABILITY_NOT_EQUIPPED" };
@@ -26,7 +29,8 @@ export class AegisSystem {
   }
   advance(dt) { this.activeRemaining = Math.max(0, this.activeRemaining - dt); this.cooldownRemaining = Math.max(0, this.cooldownRemaining - dt); }
   protects(entity) { return this.activeRemaining > 0 && entity.team === TEAM.PLAYER
-    && (entity.structureType === "hq" || (!entity.structureType && entity.laneId === this.laneId)); }
+    && (entity.structureType === "hq" || (!entity.structureType && entity.laneId === this.laneId)
+      || (this.missionStructures.has(entity.id) && (entity.laneId === this.laneId || entity.laneId === null))); }
   absorbedDamage(entity, damage) { return this.protects(entity) ? damage * AEGIS.absorption : 0; }
   cancel() { this.activeRemaining = 0; this.laneId = null; }
 }

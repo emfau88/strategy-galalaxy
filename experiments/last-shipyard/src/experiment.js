@@ -1,5 +1,5 @@
 export const EXPERIMENT = Object.freeze({
-  id: "last-shipyard", title: "Die letzte Werft", version: "0.0.8-v2-1", storageVersion: 1,
+  id: "last-shipyard", title: "Die letzte Werft", version: "0.0.9-v2-2", storageVersion: 1,
 });
 export const STORAGE_KEYS = Object.freeze({
   progress: "strategy-galalaxy:last-shipyard:v1:progress",

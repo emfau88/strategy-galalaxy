@@ -115,9 +115,9 @@ const header = (ctx, model, ui) => {
   text(ctx, incomeLabel, 18, 44, 8, C.text);
   text(ctx, model.mission ? "DRONE" : "NEXT WAVE", 158, 22, 9, C.text, "center");
   text(ctx, `${Math.ceil(model.phaseRemaining ?? 0)}s`, 158, 42, 14, C.text, "center");
-  const objectiveRun = model.mapDefinition.objectiveMission ? model.director.missionRuntime : null;
-  const objectiveValue = objectiveRun ? objectiveRun.ferry ? objectiveRun.project.completed / 3 : objectiveRun.defeatedAttacks / 2 : null;
-  text(ctx, objectiveRun ? objectiveRun.ferry ? `RETTUNG ${objectiveRun.project.completed}/3` : `ABWEHR ${objectiveRun.defeatedAttacks}/2` : model.mission?.kind === "defense" ? `ABGEWEHRT ${model.director.missionRuntime.defeatedAttacks}/3` : carrierProtected(model.simulation.state, enemyHq) ? "SCHILD AKTIV" : `${Math.round(ratio(enemyHq) * 100)}%  ${model.mission ? "GEGNER" : "RIVAL"}`, 280, 22, 10, objectiveRun ? C.player : C.enemy, "right");
+  const objectiveRun = model.mapDefinition.objectiveMission && model.mission.goal.kind !== "destroy" ? model.director.missionRuntime : null;
+  const objectiveValue = objectiveRun ? objectiveRun.ferry ? objectiveRun.project.completed / 3 : objectiveRun.defeatedAttacks / model.mission.goal.attacks : null;
+  text(ctx, objectiveRun ? objectiveRun.ferry ? `RETTUNG ${objectiveRun.project.completed}/3` : `ABWEHR ${objectiveRun.defeatedAttacks}/${model.mission.goal.attacks}` : model.mission?.kind === "defense" ? `ABGEWEHRT ${model.director.missionRuntime.defeatedAttacks}/3` : carrierProtected(model.simulation.state, enemyHq) ? "SCHILD AKTIV" : `${Math.round(ratio(enemyHq) * 100)}%  ${model.mission ? "GEGNER" : "RIVAL"}`, 280, 22, 10, objectiveRun ? C.player : C.enemy, "right");
   miniBar(ctx, 280, 31, 72, objectiveValue ?? (model.mission?.kind === "defense" ? model.director.missionRuntime.defeatedAttacks / 3 : ratio(enemyHq)), objectiveRun ? C.player : C.enemy, "right");
   const fleetCount = model.simulation?.state.lanes.get(model.selectedLaneId)?.unitIds.get(TEAM.PLAYER).length ?? 0;
   const totalLimit = objectiveRun ? model.director.config.caps.unitsPerTeamByTeam[TEAM.PLAYER] : model.mission?.fleetTotal;
@@ -414,8 +414,8 @@ const expandedCommandPanel = (ctx, model, ui) => {
   const cards = model.commandMenu === "units" ? ui.units : ui.upgrades;
   for (const rect of cards) model.commandMenu === "units" ? unitCard(ctx, model, rect) : upgradeCard(ctx, model, rect);
   if (model.mission && model.mission.units.length === 2) {
-    text(ctx, model.mapDefinition.objectiveMission ? "Scouts erobern das Kontrollrelais." : "Scouts bilden den Schutzschirm.", 24, ui.panel.y + 129, 11, C.muted, "left", 500);
-    text(ctx, model.mapDefinition.objectiveMission ? "Fighter halten den Stationsbereich." : "Fighter verstärken den Angriff.", 24, ui.panel.y + 148, 11, C.muted, "left", 500);
+    text(ctx, model.mission.goal?.kind === "capture-defend" ? "Scouts erobern das Kontrollrelais." : "Scouts bilden den Schutzschirm.", 24, ui.panel.y + 129, 11, C.muted, "left", 500);
+    text(ctx, model.mission.goal?.kind === "capture-defend" ? "Fighter halten den Stationsbereich." : "Fighter verstärken den Angriff.", 24, ui.panel.y + 148, 11, C.muted, "left", 500);
   }
   for (const rect of ui.lanes) footerLaneSelector(ctx, model, rect);
   box(ctx, ui.undo, "rgba(31,66,78,0.9)", null, 6);

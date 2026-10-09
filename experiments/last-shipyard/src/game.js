@@ -19,7 +19,7 @@ import { CLASSIC_LANES, ORBITAL_GARDEN, UNIT_DEFINITIONS } from "./data/definiti
 import { missionById, missionMatchOptions, missionUnlocked, nextMission, missionForProgress } from "./data/campaign.js";
 import { CampaignProgress } from "./campaign/progress.js";
 import { ExpansionProgress } from "./campaign/expansionProgress.js";
-import { EXPANSION_MISSIONS, expansionMissionById } from "./data/campaignExpansion.js";
+import { EXPANSION_MISSIONS, expansionMissionById, nextExpansionMission } from "./data/campaignExpansion.js";
 import { expansionMatchOptions, isExpansionMission } from "./data/expansionScenarios.js";
 import { stationActionAt, worldSiteAt } from "./ui/stationUi.js";
 import { abilityActionAt } from "./ui/abilityUi.js";
@@ -173,11 +173,15 @@ export class Game {
     }
     if (input.kind === "down" && [MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(this.match.state)) {
       const expansion = isExpansionMission(this.match.mission);
-      const next = this.match.mission && !expansion && nextMission(this.match.mission);
+      const next = expansion ? this.expansionRunMode === "campaign" && nextExpansionMission(this.match.mission) : this.match.mission && nextMission(this.match.mission);
       const action = this.match.mission
         ? campaignResultActionAt(input, this.transform?.designHeight, this.match.state === MATCH_STATE.VICTORY && next?.available)
         : endActionAt(input, this.transform?.designHeight);
       if (action?.type === "NEXT_MISSION") {
+        if (expansion) {
+          this.returnToTitle(); this.selectedExpansionId = next.id; this.expansion.selectPreview(next.id);
+          this.menuScreen = "expansion-map"; this.prepareLevelAssets(next.map); return;
+        }
         this.returnToTitle(); this.selectedMissionId = next.id; this.menuScreen = "briefing"; this.prepareLevelAssets(next.map); return;
       }
       if (action?.type === "RETURN_TO_TITLE" || action?.type === "RETURN_TO_MISSIONS") {
@@ -194,8 +198,8 @@ export class Game {
       const ability = abilityActionAt(input);
       if (ability) { this.executeCommandAction(ability); this.syncMatchState(); return; }
     }
-    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && isExpansionMission(this.match.mission)) {
-      const action = stationActionAt(input, this.transform?.designHeight, this.selectedSiteId, this.commandDockOpen);
+    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && isExpansionMission(this.match.mission) && this.match.mapDefinition.markers.length) {
+      const action = stationActionAt(input, this.transform?.designHeight, this.selectedSiteId, this.commandDockOpen, this.match.mapDefinition.buildPads.length);
       if (action) { this.executeStationAction(action); return; }
     }
     if (this.handleCameraInput(input)) return;
@@ -259,6 +263,7 @@ export class Game {
 
   executeMenuAction(action) {
     this.sound.play("select");
+    if (action.type === "SET_EXPANSION_MODE") { this.expansion.setMode(action.mode); return; }
     if (action.type === "START_EXPANSION") { this.startExpansionMission(); return; }
     if (action.type === "OPEN_EXPANSION") { this.menuScreen = "expansion"; return; }
     if (action.type === "EXPANSION_BACK") { this.menuScreen = this.menuScreen === "expansion-map" ? "expansion" : "missions"; return; }
@@ -316,7 +321,7 @@ export class Game {
 
   startExpansionMission() {
     const mission = expansionMissionById(this.selectedExpansionId);
-    if (this.menuScreen !== "expansion-map" || this.match.state !== MATCH_STATE.TITLE || !mission?.available) return false;
+    if (this.menuScreen !== "expansion-map" || this.match.state !== MATCH_STATE.TITLE || !this.expansion.canStart(mission?.id)) return false;
     if (!this.levelAssetsReady(mission.map)) {
       this.prepareLevelAssets(mission.map).then(() => {
         if (this.selectedExpansionId === mission.id && this.menuScreen === "expansion-map") this.startExpansionMission();
@@ -324,6 +329,7 @@ export class Game {
       return false;
     }
     this.match = new MatchDirector(expansionMatchOptions(mission));
+    this.expansionRunMode = this.expansion.data.mode;
     this.selectedLaneId = mission.map.lanes[0].id;
     this.selectedSiteId = null; this.commandMenu = "units";
     this.setCommandDockOpen(false); this.commandFeedback = null; this.recordedMissionResult = null;
@@ -335,7 +341,8 @@ export class Game {
     if (action.type === "SITE_PANEL") return;
     if (action.type === "CLOSE_SITE") { this.selectedSiteId = null; this.syncCommandViewport(); return; }
     if (action.type === "FOCUS_SITE") {
-      const site = action.site === "pad" ? map.buildPads[0] : map.markers[0];
+      const site = action.site === "pad" ? map.buildPads[action.index ?? 0] : map.markers[0];
+      if (site.laneId) this.selectedLaneId = site.laneId;
       this.selectedSiteId = site.id; this.setCommandDockOpen(false);
       this.camera.jumpToWorld(site.y); this.sound.play("select"); return;
     }
@@ -464,6 +471,7 @@ export class Game {
         const site = this.match.mapDefinition.objectiveMission && this.match.state === MATCH_STATE.LIVE_MATCH
           ? worldSiteAt(this.match.mapDefinition, { x: this.cameraGesture.originX, y: this.camera.screenToWorldY(this.cameraGesture.originY) }) : null;
         if (site) {
+          if (site.laneId) this.selectedLaneId = site.laneId;
           this.selectedSiteId = site.id; this.setCommandDockOpen(false); this.camera.jumpToWorld(site.y);
           this.sound.play("select"); this.cameraGesture = null; return true;
         }
@@ -583,7 +591,7 @@ export class Game {
       this.camera.resize(this.camera.designWidth, this.camera.designHeight);
     }
     this.camera.setBottomInset(this.commandDockOpen ? commandUiBottomInset(this.commandMenu)
-      : isExpansionMission(this.match.mission) ? this.selectedSiteId ? 296 : 132 : CONFIG.camera.battlefieldBottomInset);
+      : isExpansionMission(this.match.mission) && this.match.mapDefinition.markers.length ? this.selectedSiteId ? 296 : 132 : CONFIG.camera.battlefieldBottomInset);
   }
 
   playerHqContains(point) {
@@ -606,8 +614,9 @@ export class Game {
     this.state = this.assetsReady ? this.match.state : MATCH_STATE.LOADING;
     if (this.match.mission && this.match.state === MATCH_STATE.VICTORY && this.recordedMissionResult !== this.match) {
       if (isExpansionMission(this.match.mission)) {
-        this.rewardFirstTime = !this.expansion.data.completed.includes(this.match.mission.id);
-        this.expansion.complete(this.match.mission.id); this.recordedMissionResult = this.match; return;
+        const completed = this.expansionRunMode === "pilots" ? this.expansion.data.pilotCompleted : this.expansion.data.completed;
+        this.rewardFirstTime = !completed.includes(this.match.mission.id);
+        this.expansion.complete(this.match.mission.id, this.expansionRunMode); this.recordedMissionResult = this.match; return;
       }
       this.rewardFirstTime = !this.campaign.data.completed.includes(this.match.mission.id);
       const hq = this.match.simulation.state.structures.get("player-hq");
@@ -654,6 +663,7 @@ export class Game {
       expansionProgress: this.expansion.snapshot(),
       selectedExpansionId: this.selectedExpansionId,
       selectedSiteId: this.selectedSiteId,
+      expansionRunMode: this.expansionRunMode,
       mission: this.match.mission,
       rewardFirstTime: this.rewardFirstTime,
       aiProfile: this.match.aiProfile,
