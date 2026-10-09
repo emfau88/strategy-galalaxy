@@ -242,3 +242,11 @@ The earlier generated single-center-gate HQ concept was rejected during integrat
   remain live code-driven layers registered to each authored silhouette.
 - **Status:** Active runtime HQ family. The procedural triangle remains only as a
   missing-asset fallback; all four delivered gameplay sprites are strictly top-down.
+
+## V2-2: homeport-stations-v1.png
+
+- Destination: `assets/campaign/homeport-stations-v1.png`.
+- Built-in Imagegen, `stylized-concept`, 2026-10-09. One unedited RGBA atlas containing harbor dock (left) and evacuation station (right), orthographic ivory/brass/cyan station family.
+- Source dimensions: 1774 × 887; 1568223 bytes. No raster postprocessing. Canvas selects the corresponding half at runtime.
+- Used by M3/M4 and the visible inactive/active harbor emblem after M3.
+- Exact final prompt and SHA-256: [generated-assets.json](generated-assets.json).

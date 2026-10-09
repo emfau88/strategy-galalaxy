@@ -12,7 +12,7 @@ export const checkPilots = async ({ evaluate, tap, capture, send, delay, waitRea
   let height = await read("g.transform.designHeight");
   let ui = expansionUiLayout(height), station = stationUiLayout(height);
   const oldSave = await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.progress)})`);
-  await tap(ui.entry); await tap(ui.missions[1]);
+  await tap(ui.entry); await tap(ui.pilots); await tap(ui.missions[1]);
   await evaluate("(window.__lastShipyard.levelLoadPromise ?? Promise.resolve()).then(()=>true)");
   await capture("v2-outpost-briefing.png"); await tap(ui.start);
   assert.equal(await read("d.mission.id"), "v2-first-outpost");
@@ -39,7 +39,7 @@ export const checkPilots = async ({ evaluate, tap, capture, send, delay, waitRea
   const won = await run(`let purchases=0; for(let i=0;i<160*60 && d.state==='LIVE_MATCH';i++) {
     if(i%60===0) {const r=d.executeCommand({type:'DEPLOY_UNIT',team:'${TEAM.PLAYER}',laneId:g.selectedLaneId,unitType:'fighter'}); if(r.ok)purchases++;}
     d.advanceLive(1/60);
-  } g.syncMatchState(); return {state:d.state,completed:g.expansion.snapshot().completed};`);
+  } g.syncMatchState(); return {state:d.state,completed:g.expansion.snapshot().pilotCompleted};`);
   assert.equal(won.state, "VICTORY"); assert.deepEqual(won.completed, ["v2-first-outpost"]);
   await delay(100); await capture("v2-outpost-victory.png");
   await tap(campaignResultLayout(height).menu); assert.equal(await read("g.menuScreen"), "expansion");
@@ -65,7 +65,7 @@ export const checkPilots = async ({ evaluate, tap, capture, send, delay, waitRea
   await delay(180); assert.equal(await read("d.missionRuntime.project.elapsed"), paidProgress);
   await tap(overlayUiLayout(height).pauseResume);
   await run(`d.simulation.applyDamage([{targetId:'evacuation-gate',damage:10000,ownerTeam:'${TEAM.ENEMY}'}]); d.advanceLive(1/60);g.syncMatchState()`);
-  assert.equal(await read("d.state"), "DEFEAT"); assert.deepEqual(await read("g.expansion.data.completed"), ["v2-first-outpost"]);
+  assert.equal(await read("d.state"), "DEFEAT"); assert.deepEqual(await read("g.expansion.data.pilotCompleted"), ["v2-first-outpost"]);
   await delay(80); await capture("v2-ferry-station-lost.png");
   await tap(campaignResultLayout(height).retry);
   assert.equal(await read("d.simulation.state.structures.get('evacuation-gate').hp"), 900);
@@ -76,6 +76,6 @@ export const checkPilots = async ({ evaluate, tap, capture, send, delay, waitRea
   // Restore selection expected by the foundation check, then verify persistence.
   await tap(ui.missions[7]);
   await send("Page.reload", { ignoreCache: true }); await delay(100); await waitReady();
-  assert.deepEqual(await read("g.expansion.data.completed"), ["v2-first-outpost"]);
+  assert.deepEqual(await read("g.expansion.data.pilotCompleted"), ["v2-first-outpost"]);
   await tap(campaignUiLayout(height).campaign);
 };

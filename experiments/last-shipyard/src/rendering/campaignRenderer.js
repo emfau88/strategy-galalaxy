@@ -87,7 +87,7 @@ export const renderCampaignMenu = (ctx, model) => {
   if (model.menuScreen === "missions") {
     text(ctx, "DER WEG ZUR WERFT", 28, at(112), 25, C.ivory, "left", 700);
     text(ctx, "SECHS EINSÄTZE · DIE HEIMATWERFT BEFREIEN", 28, at(147), 10, C.brass, "left", 700);
-    button(ctx, expansionUiLayout(model.height).entry, "NEUE KAMPAGNE · 2 TESTEINSÄTZE  →");
+    button(ctx, expansionUiLayout(model.height).entry, "NEUE KAMPAGNE · AKT I SPIELEN  →");
     sectorMap(ctx, progress.completed, at(239));
     for (const rect of ui.missions) {
       const m = missionById(rect.missionId), unlocked = missionUnlocked(m, progress.completed), done = progress.completed.includes(m.id);

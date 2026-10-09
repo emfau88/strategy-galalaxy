@@ -18,7 +18,7 @@ const pad = (laneId, x, y) => ({ laneId, x, y });
 const define = ({ slug, number, title, theme, height, lanes, markers, pads = [], objective, decision, reward,
   goal, requiredAlive = [], enemyCarrier = false, enemyCarrierLane = null, units }) => freeze({
   id: `v2-${slug}`, campaignId: EXPANSION_ID, number, title, objective, decision, reward,
-  available: [2, 4].includes(number), status: [2, 4].includes(number) ? "playable-pilot" : "layout-preview", units, upgrades: [],
+  available: number <= 4, status: number <= 4 ? "playable-act-one" : "layout-preview", units, upgrades: [],
   goal: { ...goal, requiredAlive: ["player-hq", ...requiredAlive] },
   map: { id: `v2-${slug}-layout`, title, level: lanes.length, visualTheme: lanes.length === 1 ? "orbital_garden" : "twin_foundries",
     sectorTheme: theme, bounds: { width: 420, height }, features: { ...CORE_SLICE_FEATURES },
@@ -32,7 +32,7 @@ const define = ({ slug, number, title, theme, height, lanes, markers, pads = [],
 });
 const light = ["scout", "fighter"], siege = [...light, "bomber"], full = [...siege, "frigate"];
 
-// Two independent pilots; the remaining layouts cannot enter a combat runtime.
+// Act I is playable in order; M2/M4 also remain accessible as independent pilots.
 export const EXPANSION_MISSIONS = freeze([
   define({ slug: "light-in-the-wreckage", number: 1, title: "Ein Licht im Schrott", theme: "Schrottkorridor", height: 900,
     lanes: center(900, 140, 540), markers: [], units: light, enemyCarrier: true,
@@ -46,7 +46,7 @@ export const EXPANSION_MISSIONS = freeze([
     decision: "Eine Bastion errichten oder mehr Schiffe schicken?", reward: "Bomber-Bauplan",
     goal: { kind: "capture-defend", controlTarget: "outpost-relay", attacks: 2, requireClearBattle: true } }),
   define({ slug: "harbor-under-fire", number: 3, title: "Hafen im Feuer", theme: "Werftbecken", height: 980,
-    lanes: center(980, 260, 620), markers: [marker("harbor-dock", "protect", "Vorgeschobenes Dock", LANE.CENTER, 120, 720)],
+    lanes: center(980, 260, 660), markers: [marker("harbor-dock", "protect", "Vorgeschobenes Dock", LANE.CENTER, 120, 720)],
     pads: [pad(LANE.CENTER, 300, 590), pad(LANE.CENTER, 145, 825)], units: siege, requiredAlive: ["harbor-dock"],
     objective: "Wehre drei Angriffe ab. Dock und Carrier müssen überleben.",
     decision: "Vorne abfangen oder hinten eine Verteidigung aufbauen?", reward: "Aegis · Hafen in Betrieb",
@@ -84,3 +84,13 @@ export const EXPANSION_MISSIONS = freeze([
     goal: { kind: "activate-defend", projectTarget: "shipyard-core", segments: 3, requireClearBattle: true } }),
 ]);
 export const expansionMissionById = id => EXPANSION_MISSIONS.find(mission => mission.id === id) ?? null;
+export const nextExpansionMission = mission => EXPANSION_MISSIONS[mission.number] ?? null;
+export const isPilotMission = mission => Boolean(mission?.available && [2, 4].includes(mission.number));
+export const expansionUnlocked = (mission, completed = []) => Boolean(mission?.available
+  && EXPANSION_MISSIONS.slice(0, mission.number - 1).every(previous => completed.includes(previous.id)));
+export const expansionUnlocks = completed => [
+  ...(completed.includes(EXPANSION_MISSIONS[0].id) ? ["bastion"] : []),
+  ...(completed.includes(EXPANSION_MISSIONS[1].id) ? ["bomber"] : []),
+  ...(completed.includes(EXPANSION_MISSIONS[2].id) ? ["aegis"] : []),
+  ...(completed.includes(EXPANSION_MISSIONS[3].id) ? ["frigate"] : []),
+];

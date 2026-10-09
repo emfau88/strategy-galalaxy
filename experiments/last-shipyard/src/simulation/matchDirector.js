@@ -56,7 +56,7 @@ export class MatchDirector {
     this.liveDeployment = new LiveDeploymentSystem({ config: this.config });
     this.events = [{ type: "MATCH_STARTED", state: this.state }];
     this.missionRuntime = this.mission ? isExpansionMission(this.mission) ? new ExpansionRuntime(this.mission) : new MissionRuntime(this.mission) : null;
-    this.aegis = new AegisSystem(Boolean(this.mission && this.equippedAbility === "aegis"));
+    this.aegis = new AegisSystem(Boolean(this.mission && this.equippedAbility === "aegis"), isExpansionMission(this.mission) ? this.mission.goal.requiredAlive : []);
     this.simulation.protection = this.aegis;
     this.disrupt = new DisruptionSystem(Boolean(this.mission && this.equippedAbility === "disrupt"));
     this.simulation.state.laneStances = new Map(this.mapDefinition.lanes.map((lane, index) => [lane.id, this.mission?.defaultHoldLane === index ? "hold" : "push"]));

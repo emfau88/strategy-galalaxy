@@ -5,37 +5,46 @@ import { EXPANSION_ID } from "./campaignExpansion.js";
 export const BASTION = Object.freeze({ cost: 140, buildSeconds: 8, maxHp: 340 });
 export const EVACUATION = Object.freeze({ cost: 120, seconds: 16 });
 export const isExpansionMission = mission => mission?.campaignId === EXPANSION_ID;
+export const ACT_ONE_PRESETS = Object.freeze({
+  1: { energy: 220, income: 10, laneLimit: 10, totalLimit: 10, carrierHp: 1200, enemyCarrierHp: 650, enemyLimit: 8, ability: null },
+  2: { energy: 300, income: 10, laneLimit: 12, totalLimit: 12, carrierHp: 1400, enemyLimit: 8, ability: null },
+  3: { energy: 320, income: 12, laneLimit: 14, totalLimit: 14, carrierHp: 1400, enemyLimit: 9, ability: null },
+  4: { energy: 340, income: 12, laneLimit: 10, totalLimit: 16, carrierHp: 1400, enemyLimit: 12, ability: "aegis" },
+});
 
-// These are test presets. They neither require nor grant equipment in the old campaign.
+// Authored Act I equipment. Free pilots reuse it without changing campaign unlocks.
 export const expansionMatchOptions = mission => {
-  if (!isExpansionMission(mission) || !mission.available || ![2, 4].includes(mission.number)) throw new Error("This mission is not playable yet.");
+  if (!isExpansionMission(mission) || !mission.available || !ACT_ONE_PRESETS[mission.number]) throw new Error("This mission is not playable yet.");
+  const preset = ACT_ONE_PRESETS[mission.number];
   const ferry = mission.goal.kind === "evacuate";
+  const capture = mission.goal.kind === "capture-defend";
+  const defense = mission.goal.kind === "defend";
   const marker = mission.map.markers[0];
   const mapDefinition = { ...mission.map, objectiveMission: true,
-    features: { ...mission.map.features, captureNodes: !ferry, defensiveTurrets: true },
+    features: { ...mission.map.features, captureNodes: capture, defensiveTurrets: true },
     objectiveCapture: { paidOnly: true, pauseWhenContested: true },
-    lanes: mission.map.lanes.map(lane => ({ ...lane, defenseLineY: lane.anchors.holdY,
-      ...(!ferry ? { node: marker } : {}) })),
-    structures: mission.map.structures.map(s => ({ ...s, maxHp: 1400 })).concat(ferry ? [{
+    lanes: mission.map.lanes.map(lane => ({ ...lane, defenseLineY: mission.goal.kind === "destroy" ? null : lane.anchors.holdY,
+      ...(capture ? { node: marker } : {}) })),
+    structures: mission.map.structures.map(s => ({ ...s, maxHp: s.team === TEAM.PLAYER ? preset.carrierHp : preset.enemyCarrierHp })).concat(ferry || defense ? [{
       id: marker.id, structureType: "station", team: TEAM.PLAYER, laneId: marker.laneId,
       x: marker.x, y: marker.y, maxHp: 900,
     }] : []),
   };
-  return { mission, mapDefinition, equippedAbility: ferry ? "aegis" : null,
+  return { mission, mapDefinition, equippedAbility: preset.ability,
     config: { ...CONFIG,
       timing: { ...CONFIG.timing, deploymentIntervalSeconds: 30 },
-      caps: { ...CONFIG.caps, unitsPerLaneTeam: ferry ? 10 : 12,
-        unitsPerLaneTeamByTeam: { [TEAM.PLAYER]: ferry ? 10 : 12, [TEAM.ENEMY]: 8 },
-        unitsPerTeamByTeam: { [TEAM.PLAYER]: ferry ? 16 : 12, [TEAM.ENEMY]: ferry ? 12 : 8 } },
-      balance: { ...CONFIG.balance, startingEnergy: ferry ? 340 : 300, energyCap: 400,
-        startingEnergyByTeam: { [TEAM.PLAYER]: ferry ? 340 : 300, [TEAM.ENEMY]: 400 },
-        incomePerSecondByTeam: { [TEAM.PLAYER]: ferry ? 12 : 10, [TEAM.ENEMY]: 12 },
-        baseIncomePerSecond: ferry ? 12 : 10, nodeIncomePerSecond: 0, nodeCaptureRatePerSecond: 8,
+      caps: { ...CONFIG.caps, unitsPerLaneTeam: preset.laneLimit,
+        unitsPerLaneTeamByTeam: { [TEAM.PLAYER]: preset.laneLimit, [TEAM.ENEMY]: ferry ? 8 : preset.enemyLimit },
+        unitsPerTeamByTeam: { [TEAM.PLAYER]: preset.totalLimit, [TEAM.ENEMY]: preset.enemyLimit } },
+      balance: { ...CONFIG.balance, startingEnergy: preset.energy, energyCap: 400,
+        startingEnergyByTeam: { [TEAM.PLAYER]: preset.energy, [TEAM.ENEMY]: 400 },
+        incomePerSecondByTeam: { [TEAM.PLAYER]: preset.income, [TEAM.ENEMY]: 12 },
+        baseIncomePerSecond: preset.income, nodeIncomePerSecond: 0, nodeCaptureRatePerSecond: 8,
         baseWaveDronesPerLane: 1, freeDronesByTeam: { [TEAM.PLAYER]: 1, [TEAM.ENEMY]: 0 },
         baseWaveDroneEscalationMaximumBonus: 0, maximumBacklogWaves: 1, maximumActiveDronesPerLane: 2,
         escalation: [{ fromBattleSeconds: 0, multiplier: 1 }] },
       rules: { missionOwnsVictory: true, allowLaneStance: false, bomberVariant: "standard",
-        units: mission.units, unitsByTeam: { [TEAM.PLAYER]: mission.units, [TEAM.ENEMY]: ["scout", "fighter", "bomber"] }, upgrades: [] },
+        units: mission.units, unitsByTeam: { [TEAM.PLAYER]: mission.units, [TEAM.ENEMY]: defense ? ["scout", "fighter", "bomber", "frigate"] : mission.number === 1 ? ["scout", "fighter"] : ["scout", "fighter", "bomber"] }, upgrades: [] },
     },
   };
 };

@@ -1,18 +1,20 @@
 import { containsPoint } from "./commandUi.js";
 
-export const stationUiLayout = (height = 760) => ({
+export const stationUiLayout = (height = 760, padCount = 1) => ({
   objective: { x: 12, y: height - 124, width: 192, height: 44 },
   pad: { x: 212, y: height - 124, width: 196, height: 44 },
+  pads: Array.from({ length: padCount }, (_, index) => ({ x: 212 + index * 102, y: height - 124, width: padCount === 1 ? 196 : 94, height: 44 })),
   panel: { x: 12, y: height - 288, width: 396, height: 156 },
   close: { x: 358, y: height - 288, width: 50, height: 44 },
   action: { x: 26, y: height - 189, width: 368, height: 44 },
 });
 
-export const stationActionAt = (point, height, selectedSiteId, dockOpen) => {
+export const stationActionAt = (point, height, selectedSiteId, dockOpen, padCount = 1) => {
   if (dockOpen) return null;
-  const ui = stationUiLayout(height);
+  const ui = stationUiLayout(height, padCount);
   if (containsPoint(ui.objective, point)) return { type: "FOCUS_SITE", site: "objective" };
-  if (containsPoint(ui.pad, point)) return { type: "FOCUS_SITE", site: "pad" };
+  const padIndex = ui.pads.findIndex(rect => containsPoint(rect, point));
+  if (padIndex >= 0) return { type: "FOCUS_SITE", site: "pad", index: padIndex };
   if (!selectedSiteId) return null;
   if (containsPoint(ui.close, point)) return { type: "CLOSE_SITE" };
   if (containsPoint(ui.action, point)) return { type: "SITE_COMMAND" };
