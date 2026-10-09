@@ -1,5 +1,6 @@
 import { carrierProtected } from "../campaign/relayShield.js";
 import { playerHoldLine } from "./tacticalAnchors.js";
+import { openingHoldPositions } from "./openingFormation.js";
 import { interruptWeapons } from "../campaign/weaponStatus.js";
 import { CONFIG } from "../config.js";
 import { PROJECTILE_DEFINITIONS, STRUCTURE_DEFINITIONS, UNIT_DEFINITIONS } from "../data/definitions.js";
@@ -362,7 +363,7 @@ export class BattleSimulation {
 
   updateUnit(unit, dt, positions = null, targetAssignments = null, combatSlots = null, separationVelocities = null) {
     if (!unit.alive) return;
-    if (unit.launching) return;
+    if (unit.launching || unit.unitType === "repair") return;
     const startX = unit.x;
     const startY = unit.y;
     const definition = UNIT_DEFINITIONS[unit.unitType];
@@ -392,9 +393,11 @@ export class BattleSimulation {
       const nodeAhead = node && (node.y - unit.y) * forwardDirection(unit.team) >= -node.radius;
       if (unit.team === TEAM.PLAYER && Number.isFinite(defenseLine)) {
         const lane = this.state.map.lanes.find(item => item.id === unit.laneId);
-        const holdY = defenseLine + unit.slotOffsetY;
+        const hold = this.state.map.qualityOpening ? openingHoldPositions(this.state, unit.laneId, defenseLine).get(unit.id) : null;
+        const holdY = hold?.y ?? defenseLine + unit.slotOffsetY;
         if (Math.abs(unit.y - holdY) < 15) unit.state = UNIT_STATE.HOLDING;
-        this.steerUnit(unit, { x: lane.centerX + unit.slotOffsetX, y: holdY, separationVx }, motionDefinition, dt);
+        this.steerUnit(unit, { x: hold?.x ?? lane.centerX + unit.slotOffsetX, y: holdY, separationVx,
+          separationVy: hold ? unit.separationVy : 0 }, motionDefinition, dt, hold ? -Math.PI / 2 : null);
       } else if (nodeAhead && node.ownerTeam !== unit.team) {
         const dx = node.x - unit.x;
         const dy = node.y - unit.y;

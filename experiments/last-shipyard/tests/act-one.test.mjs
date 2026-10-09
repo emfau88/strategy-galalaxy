@@ -30,9 +30,9 @@ for (const number of [1, 3]) {
   const laneId = d.mapDefinition.lanes[0].id;
   if (number === 1) {
     assert.equal(d.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.PLAYER, laneId, unitType: "bomber" }).reason, "MISSION_LOCKED_UNIT");
-    assert.equal(d.aegis.equipped, false); assert.equal(d.mapDefinition.buildPads.length, 0);
+    assert.equal(d.aegis.equipped, true); assert.equal(d.mapDefinition.buildPads.length, 0);
   } else {
-    assert.equal(d.mapDefinition.buildPads.length, 2); assert.equal(d.aegis.equipped, false);
+    assert.equal(d.mapDefinition.buildPads.length, 2); assert.equal(d.aegis.equipped, true);
     const pad = d.mapDefinition.buildPads[0];
     assert.equal(d.executeCommand({ type: "BUILD_STATION", team: TEAM.PLAYER, module: "bastion", padId: pad.id }).ok, true);
   }
@@ -56,7 +56,7 @@ for (const number of [1, 3]) {
 
 for (let i = 0; i < 4; i++) {
   assert.equal(progress.canStart(ids[i]), true); assert.equal(progress.complete(ids[i]), true);
-  const expected = ["bastion", "bomber", "aegis", "frigate"].slice(0, i + 1);
+  const expected = ["aegis", "bastion", "repair", ...(i >= 1 ? ["bomber"] : []), ...(i >= 3 ? ["frigate"] : [])];
   assert.deepEqual(progress.snapshot().unlocks, expected);
   assert.equal(progress.snapshot().harborActive, i >= 2);
   progress = new ExpansionProgress(storage); assert.deepEqual(expansionUnlocks(progress.data.completed), expected);

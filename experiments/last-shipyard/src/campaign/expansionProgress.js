@@ -1,7 +1,7 @@
 import { EXPANSION_ID, EXPANSION_MISSIONS, expansionMissionById, expansionUnlocked, expansionUnlocks, isPilotMission } from "../data/campaignExpansion.js";
 import { STORAGE_KEYS } from "../experiment.js";
 
-const empty = () => ({ version: 3, campaignId: EXPANSION_ID, lastPreviewId: null, mode: "campaign", completed: [], pilotCompleted: [] });
+const empty = () => ({ version: 3, campaignId: EXPANSION_ID, lastPreviewId: null, mode: "campaign", ability: "aegis", completed: [], pilotCompleted: [] });
 const browserStorage = () => { try { return globalThis.localStorage ?? null; } catch { return null; } };
 
 /** The Act I sequence and freely accessible pilots have separate completion records. */
@@ -16,6 +16,7 @@ export class ExpansionProgress {
         if (Array.isArray(pilots)) this.data.pilotCompleted = [...new Set(pilots.filter(id => isPilotMission(expansionMissionById(id))))];
         if (saved.version === 3) {
           this.data.mode = saved.mode === "pilots" ? "pilots" : "campaign";
+          this.data.ability = saved.ability === "repair" ? "repair" : "aegis";
           // Restore only a contiguous playable prefix. Pilot wins cannot skip the learning order.
           for (const mission of EXPANSION_MISSIONS) {
             if (!mission.available || !Array.isArray(saved.completed) || !saved.completed.includes(mission.id)) break;
@@ -30,6 +31,10 @@ export class ExpansionProgress {
     this.data.lastPreviewId = id;
     this.save();
     return true;
+  }
+  selectAbility(ability) {
+    if (!["aegis", "repair"].includes(ability)) return false;
+    this.data.ability = ability; this.save(); return true;
   }
   setMode(mode) {
     if (!["campaign", "pilots"].includes(mode)) return false;

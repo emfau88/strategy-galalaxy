@@ -21,6 +21,7 @@ import { CampaignProgress } from "./campaign/progress.js";
 import { ExpansionProgress } from "./campaign/expansionProgress.js";
 import { EXPANSION_MISSIONS, expansionMissionById, nextExpansionMission } from "./data/campaignExpansion.js";
 import { expansionMatchOptions, isExpansionMission } from "./data/expansionScenarios.js";
+import { openingActionAt } from "./ui/openingUi.js";
 import { stationActionAt, worldSiteAt } from "./ui/stationUi.js";
 import { abilityActionAt } from "./ui/abilityUi.js";
 import { campaignActionAt, campaignResultActionAt } from "./ui/campaignUi.js";
@@ -175,7 +176,7 @@ export class Game {
       const expansion = isExpansionMission(this.match.mission);
       const next = expansion ? this.expansionRunMode === "campaign" && nextExpansionMission(this.match.mission) : this.match.mission && nextMission(this.match.mission);
       const action = this.match.mission
-        ? campaignResultActionAt(input, this.transform?.designHeight, this.match.state === MATCH_STATE.VICTORY && next?.available)
+        ? campaignResultActionAt(input, this.transform?.designHeight, this.match.state === MATCH_STATE.VICTORY && next?.available && (!this.match.mapDefinition.qualityOpening || this.match.mission.number < 3))
         : endActionAt(input, this.transform?.designHeight);
       if (action?.type === "NEXT_MISSION") {
         if (expansion) {
@@ -194,11 +195,19 @@ export class Game {
         return;
       }
     }
-    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && this.match.carrierAbility?.equipped) {
+    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && this.match.mapDefinition.qualityOpening) {
+      const action = openingActionAt(input, this.transform.designHeight, this.match.mission, this.selectedSiteId);
+      if (action) {
+        if (["FOCUS_SITE", "CLOSE_SITE", "SITE_PANEL", "SITE_COMMAND"].includes(action.type)) this.executeStationAction(action);
+        else this.executeCommandAction(action);
+        this.syncMatchState(); return;
+      }
+    }
+    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && !this.match.mapDefinition.qualityOpening && this.match.carrierAbility?.equipped) {
       const ability = abilityActionAt(input);
       if (ability) { this.executeCommandAction(ability); this.syncMatchState(); return; }
     }
-    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && isExpansionMission(this.match.mission) && this.match.mapDefinition.markers.length) {
+    if (input.kind === "down" && this.match.state === MATCH_STATE.LIVE_MATCH && isExpansionMission(this.match.mission) && !this.match.mapDefinition.qualityOpening && this.match.mapDefinition.markers.length) {
       const action = stationActionAt(input, this.transform?.designHeight, this.selectedSiteId, this.commandDockOpen, this.match.mapDefinition.buildPads.length);
       if (action) { this.executeStationAction(action); return; }
     }
@@ -222,7 +231,7 @@ export class Game {
       return;
     }
     if (this.match.state === MATCH_STATE.TITLE) {
-      const menuAction = campaignActionAt(input, this.menuScreen, this.transform?.designHeight);
+      const menuAction = campaignActionAt(input, this.menuScreen, this.transform?.designHeight, this.expansion.data.mode);
       if (menuAction) {
         this.executeMenuAction(menuAction);
         this.syncMatchState();
@@ -263,6 +272,8 @@ export class Game {
 
   executeMenuAction(action) {
     this.sound.play("select");
+    if (action.type === "SELECT_SUPPORT") { if ([2,3].includes(expansionMissionById(this.selectedExpansionId)?.number)) this.expansion.selectAbility(action.ability); return; }
+    if (action.type === "OPEN_NEW_CAMPAIGN") { this.expansion.setMode("campaign"); this.menuScreen = "expansion"; return; }
     if (action.type === "SET_EXPANSION_MODE") { this.expansion.setMode(action.mode); return; }
     if (action.type === "START_EXPANSION") { this.startExpansionMission(); return; }
     if (action.type === "OPEN_EXPANSION") { this.menuScreen = "expansion"; return; }
@@ -328,7 +339,7 @@ export class Game {
       });
       return false;
     }
-    this.match = new MatchDirector(expansionMatchOptions(mission));
+    this.match = new MatchDirector(expansionMatchOptions(mission, { ability: this.expansion.data.mode === "campaign" ? this.expansion.data.ability : "aegis" }));
     this.expansionRunMode = this.expansion.data.mode;
     this.selectedLaneId = mission.map.lanes[0].id;
     this.selectedSiteId = null; this.commandMenu = "units";
@@ -378,7 +389,7 @@ export class Game {
     if (!this.match.start()) return false;
     this.syncCommandViewport();
     this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
-    this.camera.reset("player");
+    this.camera.reset(this.match.mapDefinition.qualityOpening ? "center" : "player");
     this.effects.reset();
     this.sound.reset();
     this.sound.play("deploy");
@@ -395,7 +406,7 @@ export class Game {
     this.commandFeedback = null;
     this.recordedMissionResult = null;
     this.camera.setWorldHeight(this.match.simulation.state.map.bounds.height);
-    this.camera.reset("player");
+    this.camera.reset(this.match.mapDefinition.qualityOpening ? "center" : "player");
     this.effects.reset();
     this.sound.reset();
     this.sound.play("deploy");
@@ -475,7 +486,7 @@ export class Game {
           this.selectedSiteId = site.id; this.setCommandDockOpen(false); this.camera.jumpToWorld(site.y);
           this.sound.play("select"); this.cameraGesture = null; return true;
         }
-        if (this.match.state === MATCH_STATE.LIVE_MATCH && this.playerHqContains({ x: this.cameraGesture.originX, y: this.cameraGesture.originY })) {
+        if (this.match.state === MATCH_STATE.LIVE_MATCH && !this.match.mapDefinition.qualityOpening && this.playerHqContains({ x: this.cameraGesture.originX, y: this.cameraGesture.originY })) {
           this.setCommandDockOpen(!this.commandDockOpen);
           this.sound.play("select");
         }
@@ -519,7 +530,7 @@ export class Game {
     }
     if (action.type === "ACTIVATE_AEGIS" || action.type === "ACTIVATE_CARRIER") {
       const result = this.match.executeCommand({ ...action, team: TEAM.PLAYER, laneId: this.selectedLaneId });
-      this.showFeedback(result.ok ? this.match.equippedAbility === "disrupt" ? "STÖRIMPULS · 3,5s WAFFENPAUSE" : "AEGIS AKTIV · 6 SEKUNDEN SCHUTZ" : this.commandFailureLabel(result.reason));
+      this.showFeedback(result.ok ? this.match.equippedAbility === "repair" ? "REPARATURSCHIFF · UNTERSTÜTZUNG VOR ORT" : this.match.equippedAbility === "disrupt" ? "STÖRIMPULS · 3,5s WAFFENPAUSE" : "AEGIS AKTIV · 6 SEKUNDEN SCHUTZ" : this.commandFailureLabel(result.reason));
       this.sound.play(result.ok ? "purchase" : "error");
       if (result.ok) this.sound.vibrate([12, 20, 12]);
       return;
@@ -585,11 +596,12 @@ export class Game {
 
   syncCommandViewport() {
     if (!this.camera) return;
-    const topInset = this.match.mission ? this.match.carrierAbility?.equipped ? 180 : 126 : CONFIG.camera.battlefieldTopInset;
+    const topInset = this.match.mapDefinition.qualityOpening ? 110 : this.match.mission ? this.match.carrierAbility?.equipped ? 180 : 126 : CONFIG.camera.battlefieldTopInset;
     if (this.camera.config.battlefieldTopInset !== topInset) {
       this.camera.config = { ...CONFIG.camera, battlefieldTopInset: topInset };
       this.camera.resize(this.camera.designWidth, this.camera.designHeight);
     }
+    if (this.match.mapDefinition.qualityOpening) { this.camera.setBottomInset(this.selectedSiteId ? 334 : this.match.mapDefinition.markers.length ? 198 : 144); return; }
     this.camera.setBottomInset(this.commandDockOpen ? commandUiBottomInset(this.commandMenu)
       : isExpansionMission(this.match.mission) && this.match.mapDefinition.markers.length ? this.selectedSiteId ? 296 : 132 : CONFIG.camera.battlefieldBottomInset);
   }

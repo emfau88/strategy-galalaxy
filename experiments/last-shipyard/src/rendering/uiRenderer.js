@@ -1,3 +1,4 @@
+import { renderOpeningHud } from "./openingRenderer.js";
 import { carrierProtected } from "../campaign/relayShield.js";
 import { renderAbilityHud } from "./abilityRenderer.js";
 import { renderStationUi } from "./stationRenderer.js";
@@ -521,6 +522,12 @@ const paused = (ctx, model) => {
 export const renderUiLayer = (ctx, model) => {
   if (model.state === MATCH_STATE.LOADING) return loading(ctx, model);
   if (model.state === MATCH_STATE.TITLE) return model.menuScreen && model.menuScreen !== "skirmish" ? campaignTitle(ctx, model) : title(ctx, model);
+  if (model.mapDefinition.qualityOpening) {
+    renderOpeningHud(ctx, model); strategicNavigator(ctx, model);
+    if (model.state === MATCH_STATE.PAUSED) paused(ctx, model);
+    else if ([MATCH_STATE.VICTORY, MATCH_STATE.DEFEAT, MATCH_STATE.DRAW].includes(model.state)) endState(ctx, model);
+    return;
+  }
   const ui = commandUiLayout(model.height, laneIdsFor(model), model.commandDockOpen, model.commandMenu, model.director?.config.rules);
   header(ctx, model, ui);
   if ((model.state === MATCH_STATE.LIVE_MATCH || model.state === MATCH_STATE.PAUSED) && model.simulation) {

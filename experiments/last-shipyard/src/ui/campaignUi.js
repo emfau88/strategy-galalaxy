@@ -5,20 +5,20 @@ import { expansionActionAt } from "./expansionUi.js";
 export const campaignUiLayout = (height = 760) => {
   const offset = height / 2 - 380;
   const rect = (x, y, width, h) => ({ x, y: y + offset, width, height: h });
-  return { campaign: rect(44, 530, 332, 52), shipyard: rect(44, 594, 332, 44), settings: rect(44, 646, 332, 44),
+  return { legacyEquipment: rect(280,36,112,44), campaign: rect(44, 530, 332, 52), shipyard: rect(44, 594, 332, 44), settings: rect(44, 646, 332, 44),
     bomber: rect(48, 255, 324, 44), ability: rect(48, 390, 324, 44),
     panel: rect(28, 262, 364, 292), sound: rect(58, 365, 304, 48),
     equipment: rect(48, 535, 324, 44),
     back: rect(44, 684, 332, 46), start: rect(44, 614, 332, 52),
     missions: MISSIONS.map((mission, i) => ({ ...rect(28, 280 + i * 58, 364, 52), missionId: mission.id })) };
 };
-export const campaignActionAt = (point, screen, height = 760) => {
-  const expansion = expansionActionAt(point, screen, height);
+export const campaignActionAt = (point, screen, height = 760, expansionMode = "campaign") => {
+  const expansion = expansionActionAt(point, screen, height, expansionMode);
   if (expansion || screen === "expansion" || screen === "expansion-map") return expansion;
   const ui = campaignUiLayout(height);
   if (screen === "main") {
-    if (containsPoint(ui.campaign, point)) return { type: "OPEN_CAMPAIGN" };
-    if (containsPoint(ui.shipyard, point)) return { type: "OPEN_SHIPYARD" };
+    if (containsPoint(ui.campaign, point)) return { type: "OPEN_NEW_CAMPAIGN" };
+    if (containsPoint(ui.shipyard, point)) return { type: "OPEN_CAMPAIGN" };
     if (containsPoint(ui.settings, point)) return { type: "OPEN_SETTINGS" };
   } else {
     if (containsPoint(ui.back, point)) return { type: "MENU_BACK" };
@@ -28,6 +28,7 @@ export const campaignActionAt = (point, screen, height = 760) => {
     if (screen === "briefing" && containsPoint(ui.equipment, point)) return { type: "TOGGLE_AEGIS" };
     if (screen === "briefing" && containsPoint(ui.start, point)) return { type: "START_MISSION" };
     if (screen === "missions") {
+      if (containsPoint(ui.legacyEquipment, point)) return { type: "OPEN_SHIPYARD" };
       const mission = ui.missions.find(rect => containsPoint(rect, point));
       if (mission) return { type: "SELECT_MISSION", missionId: mission.missionId };
     }

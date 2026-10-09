@@ -89,7 +89,7 @@ for (const height of [760, 844, 933]) {
   assert.equal(campaignActionAt(center(ui.entry), "missions", height).type, "OPEN_EXPANSION");
   for (const r of ui.missions) {
     assert.ok(r.y + r.height < ui.back.y && r.height >= 44);
-    assert.equal(campaignActionAt(center(r), "expansion", height).missionId, r.missionId);
+    assert.equal(campaignActionAt(center(r), "expansion", height, "pilots").missionId, r.missionId);
   }
   assert.equal(campaignActionAt({ x: 210, y: 620 + height / 2 - 380 }, "expansion-map", height), null, "No hidden legacy START_MISSION hitbox");
 }

@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { expansionUiLayout } from "../src/ui/expansionUi.js";
+import { openingLayout } from "../src/ui/openingUi.js";
+import { EXPANSION_MISSIONS } from "../src/data/campaignExpansion.js";
 import { stationUiLayout } from "../src/ui/stationUi.js";
 import { commandUiLayout, COMMAND_UI, overlayUiLayout } from "../src/ui/commandUi.js";
 import { campaignUiLayout, campaignResultLayout } from "../src/ui/campaignUi.js";
@@ -10,7 +12,8 @@ export const checkPilots = async ({ evaluate, tap, capture, send, delay, waitRea
   const read = expression => evaluate(`(() => { const g=window.__lastShipyard, d=g.match; return (${expression}); })()`);
   const run = code => evaluate(`(() => { const g=window.__lastShipyard, d=g.match; ${code} })()`);
   let height = await read("g.transform.designHeight");
-  let ui = expansionUiLayout(height), station = stationUiLayout(height);
+  const opening=openingLayout(height,EXPANSION_MISSIONS[1]);
+  let ui = expansionUiLayout(height), station = {pad:opening.sites[1],close:opening.close,action:opening.build};
   const oldSave = await evaluate(`localStorage.getItem(${JSON.stringify(STORAGE_KEYS.progress)})`);
   await tap(ui.entry); await tap(ui.pilots); await tap(ui.missions[1]);
   await evaluate("(window.__lastShipyard.levelLoadPromise ?? Promise.resolve()).then(()=>true)");
@@ -32,9 +35,9 @@ export const checkPilots = async ({ evaluate, tap, capture, send, delay, waitRea
   assert.equal(await read("d.state"), "LIVE_MATCH");
   await tap(station.close);
   let dock = commandUiLayout(height, [await read("g.selectedLaneId")], false);
-  await tap(dock.command); assert.equal(await read("g.commandDockOpen"), true);
+
   const opened = commandUiLayout(height, [await read("g.selectedLaneId")], true, "units", { units: ["scout", "fighter"], upgrades: [] });
-  await tap(opened.units[0]);
+  await tap(opening.units[0]);
   await run("g.setCommandDockOpen(false)");
   const won = await run(`let purchases=0; for(let i=0;i<160*60 && d.state==='LIVE_MATCH';i++) {
     if(i%60===0) {const r=d.executeCommand({type:'DEPLOY_UNIT',team:'${TEAM.PLAYER}',laneId:g.selectedLaneId,unitType:'fighter'}); if(r.ok)purchases++;}
@@ -77,5 +80,5 @@ export const checkPilots = async ({ evaluate, tap, capture, send, delay, waitRea
   await tap(ui.missions[7]);
   await send("Page.reload", { ignoreCache: true }); await delay(100); await waitReady();
   assert.deepEqual(await read("g.expansion.data.pilotCompleted"), ["v2-first-outpost"]);
-  await tap(campaignUiLayout(height).campaign);
+  await tap(campaignUiLayout(height).shipyard);
 };

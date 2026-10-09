@@ -1,6 +1,8 @@
 /** Only assets owned by this isolated experiment. */
 export const ASSET_GROUPS = Object.freeze({
   boot: Object.freeze({
+  "opening-worlds": "assets/campaign/opening-worlds-v1.png",
+  "repair-support": "assets/campaign/repair-support-v1.png",
   "homeport-stations": "assets/campaign/homeport-stations-v1.png",
   "shield-relay-atlas": "assets/campaign/shield-relay-atlas-v1.png",
   "shipyard-keyart": "assets/campaign/shipyard-keyart-v1.png",

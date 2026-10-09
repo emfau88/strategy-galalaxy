@@ -1,5 +1,5 @@
 import { EXPERIMENT } from "../experiment.js";
-import { MISSIONS, missionById, missionUnlocked, nextMission, shipyardStage, missionForProgress } from "../data/campaign.js";
+import { MISSIONS, missionById, missionUnlocked, nextMission, missionForProgress } from "../data/campaign.js";
 import { campaignUiLayout, campaignResultLayout } from "../ui/campaignUi.js";
 import { expansionUiLayout } from "../ui/expansionUi.js";
 import { renderExpansionMenu, renderExpansionResult } from "./expansionRenderer.js";
@@ -65,17 +65,18 @@ export const renderCampaignMenu = (ctx, model) => {
     text(ctx, "DIE LETZTE", 36, at(116), 34, C.ivory, "left", 700);
     text(ctx, "WERFT", 36, at(154), 42, C.ivory, "left", 700);
     text(ctx, "Ein Hafen. Eine Flotte. Eine neue Hoffnung.", 38, at(194), 12, C.muted);
-    const stage = shipyardStage(progress.completed);
+    const openingCompleted = model.expansionProgress.completed.filter(id => ["v2-light-in-the-wreckage","v2-first-outpost","v2-harbor-under-fire"].includes(id));
+    const stage = openingCompleted.length >= 3 ? 2 : openingCompleted.length >= 2 ? 1 : 0;
     panel(ctx, { x: 44, y: at(458), width: 332, height: 52 });
     text(ctx, ["HEIMATWERFT · NOTBETRIEB", "DOCK 01 · WIEDER IN BETRIEB", "HAFEN WIEDERBELEBT · KAPITEL 1 BEENDET", "HEIMATWERFT GESICHERT · KAMPAGNE BEENDET"][stage], 60, at(476), 10, stage ? C.cyan : C.brass, "left", 700);
-    text(ctx, `${progress.completed.length} / 6 Einsätze abgeschlossen`, 60, at(496), 11, C.muted);
+    text(ctx, `${openingCompleted.length} / 3 Einsätze · Der Weg zum Hafen`, 60, at(496), 11, C.muted);
     for (let dock = 1; dock <= 2; dock++) {
       const active = stage >= dock, x = 280 + (dock - 1) * 44;
       ctx.fillStyle = active ? C.cyan : "#314457"; ctx.fillRect(x, at(490), 4, 12);
       text(ctx, `0${dock}`, x + 12, at(496), 10, active ? C.cyan : C.muted);
     }
-    button(ctx, ui.campaign, progress.lastMissionId ? "KAMPAGNE FORTSETZEN  →" : "KAMPAGNE BEGINNEN  →", true);
-    button(ctx, ui.shipyard, "WERFT · AUSRÜSTUNG");
+    button(ctx, ui.campaign, openingCompleted.length ? "ZUM KAMPAGNENANFANG  →" : "DEN HAFEN ZURÜCKEROBERN  →", true);
+    button(ctx, ui.shipyard, "FRÜHERE KAMPAGNE & TESTSTÄNDE");
     button(ctx, ui.settings, "EINSTELLUNGEN");
     text(ctx, progress.persistent ? "Fortschritt wird auf diesem Gerät gespeichert." : "Fortschritt bleibt in dieser Sitzung erhalten.", 210, at(712), 10, C.muted, "center");
     text(ctx, `TESTKAMPAGNE · ${EXPERIMENT.version}`, 210, at(737), 9, C.muted, "center");
@@ -85,9 +86,10 @@ export const renderCampaignMenu = (ctx, model) => {
   emblem(ctx, 50, at(56), 22);
   text(ctx, "DIE LETZTE WERFT", 73, at(57), 11, C.muted, "left", 700);
   if (model.menuScreen === "missions") {
+    button(ctx, ui.legacyEquipment, "AUSRÜSTUNG");
     text(ctx, "DER WEG ZUR WERFT", 28, at(112), 25, C.ivory, "left", 700);
     text(ctx, "SECHS EINSÄTZE · DIE HEIMATWERFT BEFREIEN", 28, at(147), 10, C.brass, "left", 700);
-    button(ctx, expansionUiLayout(model.height).entry, "NEUE KAMPAGNE · AKT I SPIELEN  →");
+    button(ctx, expansionUiLayout(model.height).entry, "ZUM NEUEN KAMPAGNENANFANG  →");
     sectorMap(ctx, progress.completed, at(239));
     for (const rect of ui.missions) {
       const m = missionById(rect.missionId), unlocked = missionUnlocked(m, progress.completed), done = progress.completed.includes(m.id);
@@ -153,7 +155,7 @@ export const renderCampaignMenu = (ctx, model) => {
     text(ctx, "KAMPFSOUND", 210, at(318), 11, C.brass, "center", 700);
     button(ctx, ui.sound, model.soundEnabled ? "SOUND: AN" : "SOUND: AUS", true);
     text(ctx, "Sound und Fortschritt werden automatisch gespeichert.", 210, at(447), 10, C.muted, "center");
-    text(ctx, "Karte wischen · FLOTTE öffnen · Schiffe antippen", 210, at(488), 11, C.ivory, "center");
+    text(ctx, "Karte wischen · Verstärkung kaufen · Fähigkeit einsetzen", 210, at(488), 11, C.ivory, "center");
     button(ctx, ui.back, "ZURÜCK ZUM HAFEN");
   }
 };

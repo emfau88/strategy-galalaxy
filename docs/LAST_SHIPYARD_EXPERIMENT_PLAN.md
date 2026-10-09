@@ -1,5 +1,7 @@
 # Die letzte Werft – Plan für eine isolierte Testkampagne
 
+> **Aktueller Vorrang – 9. Oktober 2026:** Der weitere Missionsausbau ist ausgesetzt. Es gilt der [Qualitätsauftrag für die ersten drei Missionen](FIRST_THREE_QUALITY_CONTRACT.md). Die Umsetzung in 0.0.10 ist im [Bericht mit Bildern und offenen Abnahmen](FIRST_THREE_QUALITY_REPORT.md) dokumentiert. V2-3 bis V2-6 werden nicht automatisch begonnen. Die folgenden Bulks bleiben als historischer Plan erhalten.
+
 Stand: 8. Oktober 2026. **Status: Bulk 0–2 und 4–5 abgeschlossen; Bulk 3 technisch umgesetzt. Alle sechs Missionen, Werftausrüstung, Schildrelais-Finale und Kampagnenabschluss sind spielbar. Der menschliche Ersttest und Bulk 6 bleiben offen.**
 
 **Nächster Ausbau (9. Oktober):** Der [Kampagnen-Ausbauplan](LAST_SHIPYARD_CAMPAIGN_EXPANSION_PLAN.md) beschreibt acht eigenständig gestaltete Einsätze mit festen Bauplätzen, Stationszielen, Rettung und Forschung. V2-0 ist abgeschlossen; **V2-1 und V2-2 sind technisch umgesetzt:** Vier verbundene Missionen bilden den ersten Akt mit Durchbruch, Außenposten, Hafenverteidigung und Evakuierung. Außenposten und Fähre bleiben freie Tests; Missionen 5–8 bleiben Vorschauen. Freischaltungen, erweiterter Aegis-Schutz und erste Imagegen-Stationsbilder sind integriert. Menschliche Spielbeobachtung bleibt offen. [V2-2-Bericht](LAST_SHIPYARD_V2_2_REPORT.md). Die Statusangaben und Abnahmen dieses bisherigen Sechs-Missionen-Versuchs bleiben davon unberührt.

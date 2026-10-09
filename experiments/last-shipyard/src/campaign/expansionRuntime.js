@@ -1,3 +1,4 @@
+import { TelegraphSalvo } from "./telegraphedSalvo.js";
 import { MATCH_STATE, TEAM } from "../core/constants.js";
 import { BASTION, EVACUATION } from "../data/expansionScenarios.js";
 import { createStructure } from "../simulation/entities.js";
@@ -5,18 +6,18 @@ import { emitSimulationEvent } from "../simulation/battleState.js";
 import { objectiveOutcome, stationOccupation } from "./objectiveRules.js";
 
 const OUTPOST_ATTACKS = [
-  [{ unitType: "fighter", at: 0 }, { unitType: "scout", at: 5 }],
+  [{ unitType: "scout", at: 0 }, { unitType: "fighter", at: 2 }, { unitType: "scout", at: 6 }],
   [{ unitType: "fighter", at: 0 }, { unitType: "bomber", at: 4 }, { unitType: "fighter", at: 8 }],
 ];
 const FERRY_ATTACKS = [
   [{ unitType: "fighter", lane: 0, at: 0 }, { unitType: "bomber", lane: 0, at: 5 }],
   [{ unitType: "scout", lane: 1, at: 0 }, { unitType: "fighter", lane: 1, at: 5 }],
 ];
-const CORRIDOR_ATTACKS = [[{ unitType: "scout", at: 0 }], [{ unitType: "fighter", at: 0 }]];
+const CORRIDOR_ATTACKS = [[{ unitType: "scout", at: 0 }], [{ unitType: "fighter", at: 0 }, { unitType: "scout", at: 4 }]];
 const HARBOR_ATTACKS = [
   [{ unitType: "scout", at: 0 }, { unitType: "fighter", at: 5 }],
-  [{ unitType: "frigate", at: 0 }, { unitType: "fighter", at: 5 }],
-  [{ unitType: "bomber", at: 0 }, { unitType: "fighter", at: 3 }, { unitType: "bomber", at: 7 }],
+  [{ unitType: "frigate", at: 0 }, { unitType: "fighter", at: 3 }, { unitType: "frigate", at: 8 }],
+  [{ unitType: "bomber", at: 0, entry: { x: 55, y: 500 } }, { unitType: "fighter", at: 2 }, { unitType: "bomber", at: 4, entry: { x: 65, y: 510 } }, { unitType: "fighter", at: 7 }],
 ];
 const battleClear = state => ![...state.units.values()].some(u => u.alive && u.team === TEAM.ENEMY)
   && ![...state.projectiles.values()].some(p => p.alive && p.ownerTeam === TEAM.ENEMY);
@@ -30,7 +31,8 @@ export class ExpansionRuntime {
     this.assault = mission.goal.kind === "destroy";
     this.site = mission.map.markers[0];
     this.phase = this.capture ? "capture" : "intro";
-    this.remaining = this.ferry ? 14 : this.defense ? 10 : this.assault ? 5 : 0;
+    this.remaining = this.ferry ? 14 : this.defense ? 9 : this.assault ? 1 : 0;
+    this.salvo = this.assault ? new TelegraphSalvo() : null;
     this.attackNumber = 0; this.defeatedAttacks = 0;
     this.orders = []; this.orderIndex = 0; this.attackElapsed = 0; this.retryIn = 0;
     this.triggered = false; this.result = null; this.abilityUses = 0;
@@ -42,7 +44,7 @@ export class ExpansionRuntime {
   finish() { this.phase = "complete"; this.remaining = 0; }
   enter(phase) {
     this.phase = phase;
-    this.remaining = ({ warning: 8, recovery: 12, assault: 14 })[phase] ?? 0;
+    this.remaining = ({ warning: this.assault ? 3 : this.ferry ? 8 : 6, recovery: this.ferry ? 12 : 7, assault: 14 })[phase] ?? 0;
     if (phase !== "assault") return;
     const attacks = this.ferry ? FERRY_ATTACKS : this.defense ? HARBOR_ATTACKS : this.assault ? CORRIDOR_ATTACKS : OUTPOST_ATTACKS;
     this.orders = attacks[this.attackNumber % attacks.length];
@@ -90,6 +92,7 @@ export class ExpansionRuntime {
     const state = director.simulation.state;
     // Damage has already been resolved this step. A lost objective never finishes a charge.
     if (objectiveOutcome(state, this.mission.goal, false)) return;
+    this.salvo?.advance(director, dt);
     const secure = stationOccupation(state, this.site).secure;
     if (this.project.active && secure) {
       this.project.elapsed = Math.min(EVACUATION.seconds, this.project.elapsed + dt);
@@ -110,7 +113,13 @@ export class ExpansionRuntime {
         const result = director.executeCommand({ type: "DEPLOY_UNIT", team: TEAM.ENEMY,
           laneId: director.mapDefinition.lanes[order.lane ?? 0].id, unitType: order.unitType });
         this.retryIn = 1;
-        if (result.ok) this.orderIndex++;
+        if (result.ok) {
+          if (order.entry) for (const unit of result.spawned) {
+            unit.x = order.entry.x + unit.slotOffsetX; unit.y = order.entry.y;
+            unit.launching = false; unit.vx = 0; unit.vy = 0;
+          }
+          this.orderIndex++;
+        }
       }
       if (this.orderIndex !== this.orders.length) return;
       if ((this.capture || this.defense) && battleClear(state)) {
@@ -134,11 +143,11 @@ export class ExpansionRuntime {
     const occupation = stationOccupation(state, this.site), node = state.nodes.get(this.site?.id);
     const attack = this.phase === "assault" ? this.attackNumber : this.attackNumber + 1;
     const threat = this.assault ? attack === 1 ? "Leichte Scouts kreuzen den Weg zum Blockadeträger." : "Fighter-Verstärkung! Schütze deine Scouts mit einer Eskorte."
-      : this.defense ? ["Leichter Überfall: Scouts + Fighter auf das Hafendock.", "Schwere Eskorte: Fregatte mit Fightern. Bomber helfen.", "Belagerung: Zwei Bomber mit Eskorte bedrohen das Dock."][Math.min(2, attack - 1)]
+      : this.defense ? ["Überfall von vorn · Scouts und Fighter", "Schwere Eskorte · Bomber gegen Fregatten", "Bomber links! Dock mit Fighter oder Aegis schützen."][Math.min(2, attack - 1)]
       : this.ferry ? attack % 2 ? "LINKS: Fighter + Bomber bedrohen die Sprungstation." : "RECHTS: Scouts + Fighter auf Kurs zum Carrier."
       : attack === 1 ? "Fighter + Scouts wollen das Relais zurückerobern." : "Bomber mit Fighter-Eskorte: Bastion und Carrier schützen.";
     const phaseLabel = { capture: "RELAIS BESETZEN", warning: "GEGENANGRIFF", assault: "ANGRIFF LÄUFT", recovery: "VERSTÄRKUNGSPAUSE", secure: this.defense ? "HAFEN GESICHERT" : "RELAIS SICHERN", intro: this.ferry ? "BEIDE FRONTEN BESETZEN" : this.defense ? "HAFENDOCK SCHÜTZEN" : "DEN KORRIDOR ÖFFNEN", siege: "TRÄGER BESIEGEN · KEIN NACHSCHUB", complete: "EINSATZ BEENDET" }[this.phase];
-    const hint = this.assault ? !this.purchases.has("scout") ? "FLOTTE öffnen: ein Scout-Verband erkundet den Korridor."
+    const hint = this.salvo?.warning ? "Schwere Salve! Aegis schützt deine Flotte." : this.assault ? !this.purchases.has("scout") ? "SCOUTS antippen: Ein Verband erkundet den Korridor."
       : !this.purchases.has("fighter") ? "Ergänze Fighter. ZUR FRONT zeigt dir den Vorstoß." : "Zerstöre den gegnerischen Träger. Dein Carrier muss leben."
       : this.defense ? this.phase === "recovery" ? "Angriff abgewehrt. Dock sichern; Schiffe oder Bastion nachbauen." : "Dock und Carrier müssen überleben. Zwei Bauplätze, ein Energievorrat."
       : this.ferry ? this.project.active
@@ -149,7 +158,8 @@ export class ExpansionRuntime {
     return { phase: this.phase, label: phaseLabel, remaining: this.remaining,
       counter: this.assault ? `TRÄGER ${Math.ceil((state.structures.get("enemy-hq")?.hp ?? 0) / (state.structures.get("enemy-hq")?.maxHp ?? 1) * 100)}%`
         : this.ferry ? `RETTUNG ${this.project.completed}/3` : `ABGEWEHRT ${this.defeatedAttacks}/${this.mission.goal.attacks}`, threat,
-      hint: this.phase === "warning" ? `${Math.ceil(this.remaining)}s · ${threat}` : hint,
+      salvo: this.salvo,
+      hint: this.salvo?.warning ? "Schwere Salve! Aegis schützt deine Flotte." : this.phase === "warning" ? `${Math.ceil(this.remaining)}s · ${threat}` : hint,
       attackNumber: this.attackNumber, defeatedAttacks: this.defeatedAttacks, occupation,
       control: node ? { ownerTeam: node.ownerTeam, progress: node.progress, contested: node.contested } : null,
       project: { ...this.project, duration: EVACUATION.seconds, cost: EVACUATION.cost,

@@ -49,6 +49,7 @@ const drawMap = (ctx, map, rect) => {
 export const renderExpansionMenu = (ctx, model) => {
   const ui = expansionUiLayout(model.height), at = y => y + model.height / 2 - 380;
   const progress = model.expansionProgress, pilots = progress.mode === "pilots";
+  if (!pilots) return renderOpeningMenu(ctx, model, ui);
   const access = mission => pilots ? isPilotMission(mission) : expansionUnlocked(mission, progress.completed);
   label(ctx, "DIE LETZTE WERFT · NEUE KAMPAGNE", 28, at(58), 11, color.muted);
   if (model.menuScreen === "expansion") {
@@ -124,9 +125,48 @@ export const renderExpansionResult = (ctx, model) => {
   const next = nextExpansionMission(model.mission);
   if (campaign && win) {
     label(ctx, `GESICHERT: ${model.mission.reward.split(" · ")[0]}`, 52, y + 6, 11, color.cyan);
-    if (next?.available) button(ctx, ui.next, `WEITER: ${next.title.toUpperCase()} →`);
-    else wrap(ctx, "AKT I ABGESCHLOSSEN · Vier Einsätze frei wiederholbar. Forschung und Akt II folgen im nächsten Ausbau.", 52, y + 38, 316, 10, color.gold);
+    if (next?.available && number < 3) button(ctx, ui.next, `WEITER: ${next.title.toUpperCase()} →`);
+    else wrap(ctx, number === 3 ? "DER HAFEN IST GERETTET. Drei Einsätze frei wiederholbar. Probiere beim nächsten Mal eine andere Unterstützung." : "TESTABSCHNITT ABGESCHLOSSEN. Weitere Missionen werden derzeit nicht ausgebaut.", 52, y + 38, 316, 10, color.gold);
   } else wrap(ctx, campaign ? "Deine Freischaltungen bleiben erhalten. Wiederholen kostet keine dauerhafte Ressource." : "Freie Tests speichern ihren eigenen Abschluss. Der Kampagnenweg beginnt mit Einsatz 1.", 52, y + 23, 316, 10, color.muted);
   button(ctx, ui.retry, "ERNEUT SPIELEN"); button(ctx, ui.menu, campaign ? "ZUR WERFT" : "TESTEINSÄTZE");
   label(ctx, model.expansionProgress.persistent ? "Fortschritt gespeichert" : "Fortschritt nur in dieser Sitzung", 52, y + 159, 10, color.muted);
+};
+
+const renderOpeningMenu = (ctx, model, ui) => {
+  const at=y=>y+model.height/2-380, progress=model.expansionProgress,atlas=model.assets.get("opening-worlds");
+  const scenes=["WRACKKORRIDOR","BERGUNGSAUSSENPOSTEN","HEIMATHAFEN"], descriptions=["Öffne den Korridor. Schütze deine Flotte vor der schweren Salve.","Sichere das Relais. Investiere in Schiffe, Bastion oder Unterstützung.","Rette das Dock. Bereite dich auf Jäger, schwere Schiffe und Bomber vor."];
+  const drawScene=(index,r)=>{ctx.save();ctx.beginPath();ctx.roundRect(r.x,r.y,r.width,r.height,10);ctx.clip();if(atlas){const w=atlas.naturalWidth/3;ctx.drawImage(atlas,w*index,0,w,atlas.naturalHeight,r.x,r.y,r.width,r.height);}ctx.restore();};
+  label(ctx,"DIE LETZTE WERFT",28,at(61),11,color.gold);
+  if(model.menuScreen==="expansion"){
+    label(ctx,"DER WEG ZUM HAFEN",28,at(104),26);
+    label(ctx,progress.harborActive?"Hafen in Betrieb. Deine Flotte kehrt zurück.":"Drei Einsätze. Ein Zuhause zurückgewinnen.",28,at(136),12,color.muted);
+    button(ctx,ui.campaign,"● KAMPAGNENANFANG");button(ctx,ui.pilots,"WEITERE TESTSTÄNDE");
+    for(const [i,r]of ui.openingMissions.entries()){
+      const m=EXPANSION_MISSIONS[i],open=expansionUnlocked(m,progress.completed),done=progress.completed.includes(m.id);panel(ctx,r,open);
+      drawScene(i,{x:r.x+2,y:r.y+2,width:92,height:r.height-4});
+      label(ctx,`0${i+1}  ${scenes[i]}`,r.x+107,r.y+20,10,color.gold);label(ctx,m.title,r.x+107,r.y+43,17);
+      wrap(ctx,descriptions[i],r.x+107,r.y+65,239,11,color.muted);
+      label(ctx,done?"ERNEUT SPIELEN →":open?"EINSATZBEREIT →":`Nach Einsatz ${i}`,r.x+107,r.y+105,10,open?color.cyan:color.muted);
+    }
+    label(ctx,"Unterstützung ab Einsatz 2 vor jedem Start frei wählen.",28,at(636),11,color.muted);
+    button(ctx,ui.back,"FRÜHERE KAMPAGNE");return;
+  }
+  const m=expansionMissionById(model.selectedExpansionId)??EXPANSION_MISSIONS[0],i=m.number-1;
+  label(ctx,`EINSATZ 0${m.number} · ${scenes[i]??m.map.sectorTheme}`,28,at(102),11,color.gold);label(ctx,m.title,28,at(137),26);
+  drawScene(Math.min(2,i),{x:28,y:at(170),width:364,height:177});
+  ctx.fillStyle="rgba(3,10,17,.35)";ctx.fillRect(28,at(283),364,64);
+  label(ctx,["DURCHBRUCH","EROBERN & HALTEN","HAFEN VERTEIDIGEN"][i]??"TESTSTAND",44,at(318),17);
+  label(ctx,"DEIN AUFTRAG",28,at(374),10,color.gold);wrap(ctx,m.objective,28,at(398),364,14);
+  wrap(ctx,m.decision,28,at(449),364,12,color.cyan);
+  const lesson=["Scouts bilden den Schirm. Fighter eskortieren. Aegis fängt die angekündigte Salve ab.","Die Bastion hält einen Ort. Ein Reparaturschiff begleitet deine Flotte. Beides kostet Energie.","Bomber knacken die schwere Eskorte. Fighter fangen feindliche Bomber ab. Schütze das Dock."][i]??m.objective;
+  wrap(ctx,lesson,28,at(486),364,11,color.muted);
+  if(m.number===1){panel(ctx,{x:28,y:at(548),width:364,height:62},true);label(ctx,"AEGIS · DEINE ERSTE CARRIER-FÄHIGKEIT",42,at(568),12,color.cyan);label(ctx,"80 E · 6 Sekunden · 60% Schaden abgefangen",42,at(590),11,color.muted);}
+  else{
+    for(const [id,r,name,desc]of [["aegis",ui.supportAegis,"AEGIS · 80 E","Salven abfangen · 6s"],["repair",ui.supportRepair,"REPARATUR · 90 E","2 Schiffe heilen · 18s"]]){
+      panel(ctx,r,progress.ability===id);label(ctx,`${progress.ability===id?"●":"○"} ${name}`,r.x+12,r.y+21,11,progress.ability===id?color.cyan:color.muted);label(ctx,desc,r.x+12,r.y+44,10,color.muted);
+    }
+  }
+  const open=expansionUnlocked(m,progress.completed);
+  button(ctx,ui.openingStart,model.levelLoading?"WIRD VORBEREITET …":open?"EINSATZ STARTEN →":`ZUERST EINSATZ ${m.number-1} ABSCHLIESSEN`,open&&!model.levelLoading);
+  button(ctx,ui.back,"ZUR EINSATZÜBERSICHT");
 };
